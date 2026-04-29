@@ -40,12 +40,7 @@
 
       const { error } = await supabase
         .from("users")
-        .insert([
-          {
-            nickname: nickname,
-            team: team
-          }
-        ]);
+        .insert([{ nickname, team }]);
 
       if (error) {
         alert("저장 실패: " + error.message);
@@ -84,9 +79,7 @@
 
       data.forEach((user, index) => {
         result.innerHTML += `
-          <div>
-            ${index + 1}. [${user.team}] ${user.nickname}
-          </div>
+          <div>${index + 1}. [${user.team}] ${user.nickname}</div>
         `;
       });
     }
