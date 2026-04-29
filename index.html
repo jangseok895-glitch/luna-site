@@ -16,70 +16,16 @@
   <hr>
   <div id="result">아직 불러온 데이터가 없습니다.</div>
 
-  <script>
-    const SUPABASE_URL = "https://xyibdanmecakevhtdajl.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_uvYqwDymxodcSdpT1zAWyg_PeVHh_ZO";
-    const TABLE_NAME = "users";
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
-    document.getElementById("saveBtn").onclick = saveUser;
-    document.getElementById("loadBtn").onclick = loadUsers;
+<script>
+const SUPABASE_URL = "https://xyibdanmecakevhtdaj.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_uvYqwDymxodcSdpT1zAWyg_PeVHh_ZO";
 
-    async function saveUser() {
-      alert("저장 버튼 작동 확인");
-
-      const nickname = document.getElementById("nickname").value.trim();
-      const team = document.getElementById("team").value.trim();
-
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_NAME}`, {
-        method: "POST",
-        headers: {
-          "apikey": SUPABASE_KEY,
-          "Authorization": `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": "application/json",
-          "Prefer": "return=representation"
-        },
-body: JSON.stringify({
-  "nickname": nickname,
-  "team": team
-})
-      });
-
-      const text = await res.text();
-
-      if (!res.ok) {
-        alert("저장 실패: " + text);
-        return;
-      }
-
-      alert("저장 완료");
-      loadUsers();
-    }
-
-    async function loadUsers() {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=*&order=id.desc`, {
-        headers: {
-          "apikey": SUPABASE_KEY,
-          "Authorization": `Bearer ${SUPABASE_KEY}`
-        }
-      });
-
-      const text = await res.text();
-
-      if (!res.ok) {
-        alert("불러오기 실패: " + text);
-        return;
-      }
-
-      const data = JSON.parse(text);
-
-      document.getElementById("result").innerHTML = data.map(row => `
-        <div>
-          ${row.id}. [${row.team}] ${row.nickname}
-        </div>
-      `).join("");
-    }
-
-    loadUsers();
-  </script>
+const supabase = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
+</script>
 </body>
 </html>
