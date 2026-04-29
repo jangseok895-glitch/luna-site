@@ -38,10 +38,10 @@
           "Content-Type": "application/json",
           "Prefer": "return=representation"
         },
-        body: JSON.stringify({
-          "별명": nickname,
-          "team": team
-        })
+body: JSON.stringify({
+  "nickname": nickname,
+  "team": team
+})
       });
 
       const text = await res.text();
@@ -74,7 +74,7 @@
 
       document.getElementById("result").innerHTML = data.map(row => `
         <div>
-          ${row.id}. [${row.team}] ${row["별명"]}
+          ${row.id}. [${row.team}] ${row.nickname}
         </div>
       `).join("");
     }
