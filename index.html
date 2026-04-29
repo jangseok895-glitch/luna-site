@@ -42,10 +42,10 @@
       const { data, error } = await supabase
         .from(TABLE_NAME)
         .insert([
-          {
-            nickname: nickname,
-            team: team
-          }
+{
+  "별명": nickname,
+  team: team
+}
         ])
         .select();
 
@@ -82,7 +82,7 @@
 
       result.innerHTML = data.map(row => `
         <div style="padding:8px; border-bottom:1px solid #ddd;">
-          <b>${row.id}</b>. [${row.team}] ${row.nickname}
+          <b>${row.id}</b>. [${row.team}] ${row["별명"]}
         </div>
       `).join("");
     }
