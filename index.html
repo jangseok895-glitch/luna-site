@@ -1,31 +1,93 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>루칭방 테스트</title>
 </head>
 <body>
-  <h1>루칭방 사이트 테스트</h1>
-  <button onclick="testApi()">API 테스트</button>
+  <h1>루칭방 Supabase 테스트</h1>
 
-<script>
-  async function testApi(){
-    const res = await fetch("/api/test");
-    const data = await res.json();
-    alert(data.message);
-  }
-</script>
+  <input id="nickname" placeholder="닉네임 입력" />
+  <input id="team" placeholder="단체명 입력" />
 
-<!-- ✅ 여기부터 추가 -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <button onclick="saveUser()">저장</button>
+  <button onclick="loadUsers()">목록 불러오기</button>
 
-<script>
-  const supabase = window.supabase.createClient(
-  "https://xyibdanmecakevhtdajl.supabase.co",
-  "sb_publishable_uvYqwDymxodcSdpT1zAWyg_PeVHh_ZO"
-  );
-</script>
-<!-- ✅ 여기까지 -->
+  <hr />
 
+  <div id="result">아직 불러온 데이터가 없습니다.</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    const SUPABASE_URL = "https://xyibdanmecakevhtdajl.supabase.co";
+    const SUPABASE_KEY = "YOUR_PUBLISHABLE_KEY_HERE";
+    const TABLE_NAME = "users";
+
+    const supabase = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    async function saveUser() {
+      const nickname = document.getElementById("nickname").value.trim();
+      const team = document.getElementById("team").value.trim();
+
+      if (!nickname || !team) {
+        alert("닉네임과 단체명을 입력하세요.");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from(TABLE_NAME)
+        .insert([
+          {
+            nickname: nickname,
+            team: team
+          }
+        ])
+        .select();
+
+      if (error) {
+        alert("저장 실패: " + error.message);
+        console.error(error);
+        return;
+      }
+
+      alert("저장 완료");
+      document.getElementById("nickname").value = "";
+      document.getElementById("team").value = "";
+      loadUsers();
+    }
+
+    async function loadUsers() {
+      const { data, error } = await supabase
+        .from(TABLE_NAME)
+        .select("*")
+        .order("id", { ascending: false });
+
+      if (error) {
+        alert("불러오기 실패: " + error.message);
+        console.error(error);
+        return;
+      }
+
+      const result = document.getElementById("result");
+
+      if (!data || data.length === 0) {
+        result.innerHTML = "저장된 데이터가 없습니다.";
+        return;
+      }
+
+      result.innerHTML = data.map(row => `
+        <div style="padding:8px; border-bottom:1px solid #ddd;">
+          <b>${row.id}</b>. [${row.team}] ${row.nickname}
+        </div>
+      `).join("");
+    }
+
+    loadUsers();
+  </script>
 </body>
 </html>
