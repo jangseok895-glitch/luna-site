@@ -1,31 +1,97 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>루칭방 Supabase 테스트</title>
 </head>
 <body>
   <h1>루칭방 Supabase 테스트</h1>
 
-  <input id="nickname" placeholder="닉네임 입력">
-  <input id="team" placeholder="단체명 입력">
+  <input id="nickname" placeholder="닉네임 입력" />
+  <input id="team" placeholder="단체명 입력" />
 
-  <button id="saveBtn">저장</button>
-  <button id="loadBtn">목록 불러오기</button>
+  <button onclick="saveUser()">저장</button>
+  <button onclick="loadUsers()">목록 불러오기</button>
 
-  <hr>
+  <hr />
+
   <div id="result">아직 불러온 데이터가 없습니다.</div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
-<script>
-const SUPABASE_URL = "https://xyibdanmecakevhtdaj.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_uvYqwDymxodcSdpT1zAWyg_PeVHh_ZO";
+  <script>
+    const SUPABASE_URL = "https://xyibdanmecakevhtdaj.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_uvYqwDymxodcSdpT1zAWyg_PeVHh_ZO";
 
-const supabase = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
-);
-</script>
+    const supabase = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
+
+    async function saveUser() {
+      const nickname = document.getElementById("nickname").value.trim();
+      const team = document.getElementById("team").value.trim();
+
+      if (!nickname || !team) {
+        alert("닉네임과 단체명을 입력해주세요.");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("users")
+        .insert([
+          {
+            nickname: nickname,
+            team: team
+          }
+        ]);
+
+      if (error) {
+        alert("저장 실패: " + error.message);
+        console.error(error);
+        return;
+      }
+
+      alert("저장 완료");
+
+      document.getElementById("nickname").value = "";
+      document.getElementById("team").value = "";
+
+      loadUsers();
+    }
+
+    async function loadUsers() {
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .order("id", { ascending: true });
+
+      if (error) {
+        alert("불러오기 실패: " + error.message);
+        console.error(error);
+        return;
+      }
+
+      const result = document.getElementById("result");
+
+      if (!data || data.length === 0) {
+        result.innerHTML = "저장된 데이터가 없습니다.";
+        return;
+      }
+
+      result.innerHTML = "";
+
+      data.forEach((user, index) => {
+        result.innerHTML += `
+          <div>
+            ${index + 1}. [${user.team}] ${user.nickname}
+          </div>
+        `;
+      });
+    }
+
+    loadUsers();
+  </script>
 </body>
 </html>
