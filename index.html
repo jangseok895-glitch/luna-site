@@ -1,88 +1,80 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>루칭방 테스트</title>
+  <meta charset="UTF-8">
+  <title>루칭방 Supabase 테스트</title>
 </head>
 <body>
   <h1>루칭방 Supabase 테스트</h1>
 
-  <input id="nickname" placeholder="닉네임 입력" />
-  <input id="team" placeholder="단체명 입력" />
+  <input id="nickname" placeholder="닉네임 입력">
+  <input id="team" placeholder="단체명 입력">
 
-  <button onclick="saveUser()">저장</button>
-  <button onclick="loadUsers()">목록 불러오기</button>
+  <button id="saveBtn">저장</button>
+  <button id="loadBtn">목록 불러오기</button>
 
-  <hr />
-
+  <hr>
   <div id="result">아직 불러온 데이터가 없습니다.</div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
     const SUPABASE_URL = "https://xyibdanmecakevhtdajl.supabase.co";
     const SUPABASE_KEY = "sb_publishable_uvYqwDymxodcSdpT1zAWyg_PeVHh_ZO";
     const TABLE_NAME = "users";
 
-    const supabase = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
-    );
+    document.getElementById("saveBtn").onclick = saveUser;
+    document.getElementById("loadBtn").onclick = loadUsers;
 
     async function saveUser() {
+      alert("저장 버튼 작동 확인");
+
       const nickname = document.getElementById("nickname").value.trim();
       const team = document.getElementById("team").value.trim();
 
-      if (!nickname || !team) {
-        alert("닉네임과 단체명을 입력하세요.");
-        return;
-      }
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_NAME}`, {
+        method: "POST",
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json",
+          "Prefer": "return=representation"
+        },
+        body: JSON.stringify({
+          "별명": nickname,
+          "team": team
+        })
+      });
 
-      const { data, error } = await supabase
-        .from(TABLE_NAME)
-        .insert([
-{
-  "별명": nickname,
-  team: team
-}
-        ])
-        .select();
+      const text = await res.text();
 
-      if (error) {
-        alert("저장 실패: " + error.message);
-        console.error(error);
+      if (!res.ok) {
+        alert("저장 실패: " + text);
         return;
       }
 
       alert("저장 완료");
-      document.getElementById("nickname").value = "";
-      document.getElementById("team").value = "";
       loadUsers();
     }
 
     async function loadUsers() {
-      const { data, error } = await supabase
-        .from(TABLE_NAME)
-        .select("*")
-        .order("id", { ascending: false });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=*&order=id.desc`, {
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`
+        }
+      });
 
-      if (error) {
-        alert("불러오기 실패: " + error.message);
-        console.error(error);
+      const text = await res.text();
+
+      if (!res.ok) {
+        alert("불러오기 실패: " + text);
         return;
       }
 
-      const result = document.getElementById("result");
+      const data = JSON.parse(text);
 
-      if (!data || data.length === 0) {
-        result.innerHTML = "저장된 데이터가 없습니다.";
-        return;
-      }
-
-      result.innerHTML = data.map(row => `
-        <div style="padding:8px; border-bottom:1px solid #ddd;">
-          <b>${row.id}</b>. [${row.team}] ${row["별명"]}
+      document.getElementById("result").innerHTML = data.map(row => `
+        <div>
+          ${row.id}. [${row.team}] ${row["별명"]}
         </div>
       `).join("");
     }
