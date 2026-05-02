@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>루칭방 Supabase 1차 테스트</title>
+  <title>루칭방 군표 저장 테스트</title>
 
   <style>
     body {
@@ -12,22 +12,19 @@
       padding: 30px;
       color: #111827;
     }
-
     .box {
-      max-width: 500px;
+      max-width: 520px;
       margin: 0 auto;
       background: white;
       padding: 24px;
       border-radius: 16px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.08);
     }
-
     h1 {
       text-align: center;
       color: #0284c7;
     }
-
-    input, button {
+    input, select, button {
       width: 100%;
       padding: 14px;
       margin-top: 10px;
@@ -36,7 +33,6 @@
       border: 1px solid #93c5fd;
       box-sizing: border-box;
     }
-
     button {
       background: #38bdf8;
       color: white;
@@ -44,11 +40,6 @@
       cursor: pointer;
       border: none;
     }
-
-    button:hover {
-      background: #0284c7;
-    }
-
     #result {
       margin-top: 20px;
       padding: 14px;
@@ -62,52 +53,82 @@
 
 <body>
   <div class="box">
-    <h1>루칭방 Supabase 1차 테스트</h1>
+    <h1>루칭방 군표 저장 테스트</h1>
 
     <input id="nickname" placeholder="닉네임 입력" />
-    <input id="team" placeholder="단체명 입력" />
+    <input id="pin5" placeholder="비밀번호 5자리" maxlength="5" />
 
-    <button onclick="saveUser()">저장</button>
-    <button onclick="loadUsers()">목록 불러오기</button>
+    <select id="tier">
+      <option value="프로">프로</option>
+      <option value="강주력">강주력</option>
+      <option value="주력">주력</option>
+      <option value="1군">1군</option>
+      <option value="2군">2군</option>
+      <option value="3군">3군</option>
+      <option value="4군">4군</option>
+      <option value="5군">5군</option>
+    </select>
 
-    <div id="result">아직 불러온 데이터가 없습니다.</div>
+    <button onclick="saveProfile()">군표 저장</button>
+    <button onclick="loadProfile()">군표 불러오기</button>
+
+    <div id="result">아직 저장된 데이터가 없습니다.</div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<script>
-  const SUPABASE_URL = "https://xyibdanmecakevhtdajl.supabase.co";
-  const SUPABASE_ANON_KEY = "sb_publishable_uvYqwDymxodcSdpT1zAWyg_PeVHh_ZO";
+  <script>
+    const SUPABASE_URL = "https://xyibdanmecakevhtdajl.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_uvYqwDymxodcSdpT1zAWyg_PeVHh_ZO";
 
-  const db = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-  );
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  async function saveUser() {
-    const nickname = document.getElementById("nickname").value.trim();
-    const team = document.getElementById("team").value.trim();
-    const result = document.getElementById("result");
+    const WEIGHTS = {
+      "프로": 128,
+      "강주력": 64,
+      "주력": 32,
+      "1군": 16,
+      "2군": 8,
+      "3군": 4,
+      "4군": 2,
+      "5군": 1
+    };
 
-    try {
+    async function saveProfile() {
+      const nickname = document.getElementById("nickname").value.trim();
+      const pin5 = document.getElementById("pin5").value.trim();
+      const tier = document.getElementById("tier").value;
+      const result = document.getElementById("result");
+
       if (!nickname) {
         alert("닉네임을 입력하세요.");
         return;
       }
 
-      if (!team) {
-        alert("단체명을 입력하세요.");
+      if (!/^[0-9]{5}$/.test(pin5)) {
+        alert("비밀번호는 숫자 5자리입니다.");
         return;
       }
 
-      result.textContent = "저장 중입니다...";
+      const selections = {
+        test_map_1: {
+          map: "테스트맵",
+          tier: tier
+        }
+      };
+
+      const total = WEIGHTS[tier] || 0;
+
+      result.textContent = "군표 저장 중입니다...";
 
       const { data, error } = await db
-        .from("users")
+        .from("profiles")
         .insert([
           {
             nickname: nickname,
-            team: team
+            pin5: pin5,
+            total: total,
+            selections: selections
           }
         ])
         .select();
@@ -117,23 +138,28 @@
         return;
       }
 
-      result.textContent = "저장 성공!\n" + JSON.stringify(data, null, 2);
-
-    } catch (err) {
-      result.textContent = "오류 발생:\n" + err.message;
+      result.textContent = "군표 저장 성공!\n" + JSON.stringify(data, null, 2);
     }
-  }
 
-  async function loadUsers() {
-    const result = document.getElementById("result");
+    async function loadProfile() {
+      const nickname = document.getElementById("nickname").value.trim();
+      const pin5 = document.getElementById("pin5").value.trim();
+      const result = document.getElementById("result");
 
-    try {
-      result.textContent = "불러오는 중입니다...";
+      if (!nickname || !pin5) {
+        alert("닉네임과 비밀번호를 입력하세요.");
+        return;
+      }
+
+      result.textContent = "군표 불러오는 중입니다...";
 
       const { data, error } = await db
-        .from("users")
+        .from("profiles")
         .select("*")
-        .order("id", { ascending: false });
+        .eq("nickname", nickname)
+        .eq("pin5", pin5)
+        .order("id", { ascending: false })
+        .limit(1);
 
       if (error) {
         result.textContent = "불러오기 실패:\n" + error.message;
@@ -141,18 +167,12 @@
       }
 
       if (!data || data.length === 0) {
-        result.textContent = "저장된 데이터가 없습니다.";
+        result.textContent = "일치하는 군표가 없습니다.";
         return;
       }
 
-      result.textContent = data
-        .map(row => `[${row.id}] ${row.team} - ${row.nickname}`)
-        .join("\n");
-
-    } catch (err) {
-      result.textContent = "오류 발생:\n" + err.message;
+      result.textContent = "군표 불러오기 성공!\n" + JSON.stringify(data[0], null, 2);
     }
-  }
-</script>
+  </script>
 </body>
 </html>
