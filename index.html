@@ -149,22 +149,35 @@ let selections = {};
 
 // 맵 불러오기
 async function loadMaps(){
-  const {data} = await db
+  const {data, error} = await db
     .from("map_records")
     .select("*")
     .order("sort_order",{ascending:true});
 
+  if(error){
+    alert("맵 데이터 불러오기 실패: " + error.message);
+    console.error(error);
+    return;
+  }
+
+  console.log("불러온 맵 데이터:", data);
+
   const tbody = document.querySelector("#table tbody");
   tbody.innerHTML = "";
+
+  if(!data || data.length === 0){
+    tbody.innerHTML = `<tr><td colspan="9">맵 데이터가 없습니다.</td></tr>`;
+    return;
+  }
 
   data.forEach(row=>{
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
-      <td class="map-name">${row.map_name}</td>
+      <td class="map-name">${row.map_name || ""}</td>
       ${["pro","strong","main","g1","g2","g3","g4","g5"].map(tier=>`
         <td onclick="select(this,'${row.id}','${tier}')">
-          ${row[tier]}
+          ${row[tier] || ""}
         </td>
       `).join("")}
     `;
