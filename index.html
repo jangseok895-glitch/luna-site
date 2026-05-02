@@ -3,28 +3,83 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>루칭방 Supabase 테스트</title>
+  <title>루칭방 Supabase 1차 테스트</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eaf8ff;
+      padding: 30px;
+      color: #111827;
+    }
+
+    .box {
+      max-width: 500px;
+      margin: 0 auto;
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      text-align: center;
+      color: #0284c7;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #93c5fd;
+      box-sizing: border-box;
+    }
+
+    button {
+      background: #38bdf8;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+    }
+
+    button:hover {
+      background: #0284c7;
+    }
+
+    #result {
+      margin-top: 20px;
+      padding: 14px;
+      background: #f0f9ff;
+      border-radius: 10px;
+      white-space: pre-wrap;
+      font-size: 15px;
+    }
+  </style>
 </head>
+
 <body>
-  <h1>루칭방 Supabase 테스트</h1>
+  <div class="box">
+    <h1>루칭방 Supabase 1차 테스트</h1>
 
-  <input id="nickname" placeholder="닉네임 입력" />
-  <input id="team" placeholder="단체명 입력" />
+    <input id="nickname" placeholder="닉네임 입력" />
+    <input id="team" placeholder="단체명 입력" />
 
-  <button onclick="saveUser()">저장</button>
-  <button onclick="loadUsers()">목록 불러오기</button>
+    <button onclick="saveUser()">저장</button>
+    <button onclick="loadUsers()">목록 불러오기</button>
 
-  <hr />
+    <div id="result">아직 불러온 데이터가 없습니다.</div>
+  </div>
 
-  <div id="result">아직 불러온 데이터가 없습니다.</div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
-    const SUPABASE_URL = "https://xyibdanmecakevhtdaj.supabase.co";
+    const SUPABASE_URL = "luna-site.jangseok7.workers.dev";
     const SUPABASE_ANON_KEY = "sb_publishable_uvYqwDymxodcSdpT1zAWyg_PeVHh_ZO";
 
-    const supabase = window.supabase.createClient(
+    const supabaseClient = supabase.createClient(
       SUPABASE_URL,
       SUPABASE_ANON_KEY
     );
@@ -32,59 +87,64 @@
     async function saveUser() {
       const nickname = document.getElementById("nickname").value.trim();
       const team = document.getElementById("team").value.trim();
+      const result = document.getElementById("result");
 
-      if (!nickname || !team) {
-        alert("닉네임과 단체명을 입력해주세요.");
+      if (!nickname) {
+        alert("닉네임을 입력하세요.");
         return;
       }
 
-      const { error } = await supabase
+      if (!team) {
+        alert("단체명을 입력하세요.");
+        return;
+      }
+
+      result.textContent = "저장 중입니다...";
+
+      const { error } = await supabaseClient
         .from("users")
-        .insert([{ nickname, team }]);
+        .insert([
+          {
+            nickname: nickname,
+            team: team
+          }
+        ]);
 
       if (error) {
-        alert("저장 실패: " + error.message);
         console.error(error);
+        result.textContent = "저장 실패:\n" + error.message;
         return;
       }
 
-      alert("저장 완료");
-
+      result.textContent = "저장 성공!";
       document.getElementById("nickname").value = "";
       document.getElementById("team").value = "";
-
-      loadUsers();
     }
 
     async function loadUsers() {
-      const { data, error } = await supabase
+      const result = document.getElementById("result");
+      result.textContent = "불러오는 중입니다...";
+
+      const { data, error } = await supabaseClient
         .from("users")
         .select("*")
-        .order("id", { ascending: true });
+        .order("id", { ascending: false });
 
       if (error) {
-        alert("불러오기 실패: " + error.message);
         console.error(error);
+        result.textContent = "불러오기 실패:\n" + error.message;
         return;
       }
-
-      const result = document.getElementById("result");
 
       if (!data || data.length === 0) {
-        result.innerHTML = "저장된 데이터가 없습니다.";
+        result.textContent = "저장된 데이터가 없습니다.";
         return;
       }
 
-      result.innerHTML = "";
-
-      data.forEach((user, index) => {
-        result.innerHTML += `
-          <div>${index + 1}. [${user.team}] ${user.nickname}</div>
-        `;
-      });
+      result.textContent = data
+        .map(row => `[${row.id}] ${row.team} - ${row.nickname}`)
+        .join("\n");
     }
-
-    loadUsers();
   </script>
 </body>
 </html>
