@@ -84,42 +84,53 @@
       SUPABASE_ANON_KEY
     );
 
-    async function saveUser() {
-      const nickname = document.getElementById("nickname").value.trim();
-      const team = document.getElementById("team").value.trim();
-      const result = document.getElementById("result");
+async function saveUser() {
+  const nickname = document.getElementById("nickname").value.trim();
+  const team = document.getElementById("team").value.trim();
+  const result = document.getElementById("result");
 
-      if (!nickname) {
-        alert("닉네임을 입력하세요.");
-        return;
-      }
-
-      if (!team) {
-        alert("단체명을 입력하세요.");
-        return;
-      }
-
-      result.textContent = "저장 중입니다...";
-
-      const { error } = await supabaseClient
-        .from("users")
-        .insert([
-          {
-            nickname: nickname,
-            team: team
-          }
-        ]);
-
-      if (error) {
-        console.error(error);
-        result.textContent = "저장 실패:\n" + error.message;
-        return;
-      }
-
-      result.textContent = "저장 성공!";
-      document.getElementById("nickname").value = "";
-      document.getElementById("team").value = "";
+  try {
+    if (!nickname) {
+      alert("닉네임을 입력하세요.");
+      return;
     }
+
+    if (!team) {
+      alert("단체명을 입력하세요.");
+      return;
+    }
+
+    result.textContent = "저장 중입니다...";
+
+    if (!supabaseClient) {
+      result.textContent = "Supabase 연결 객체가 없습니다.";
+      return;
+    }
+
+    const { data, error } = await supabaseClient
+      .from("users")
+      .insert([
+        {
+          nickname: nickname,
+          team: team
+        }
+      ])
+      .select();
+
+    if (error) {
+      console.error(error);
+      result.textContent = "저장 실패:\n" + error.message;
+      return;
+    }
+
+    console.log(data);
+    result.textContent = "저장 성공!\n" + JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    console.error(err);
+    result.textContent = "오류 발생:\n" + err.message;
+  }
+}
 
     async function loadUsers() {
       const result = document.getElementById("result");
