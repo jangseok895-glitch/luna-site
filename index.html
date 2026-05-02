@@ -249,6 +249,7 @@ input{
   transform:translateX(-50%);
   width:8px;
   height:56px;
+  transition:left .35s cubic-bezier(.22,.61,.36,1);
   border-radius:999px;
   background:linear-gradient(to bottom,#ff6b6b,#ff1744);
   box-shadow:0 0 8px rgba(255,23,68,.9),0 0 18px rgba(255,23,68,.55);
@@ -361,6 +362,39 @@ tbody tr:hover{background:rgba(186,230,253,.25)}
   border-color:#1e40af!important;
   box-shadow:0 0 0 3px rgba(29,78,216,.25)!important;
 }
+
+/* ===== 난이도별 색상 복구 ===== */
+tr.diff-rookie .map,
+tr.diff-rookie .chip{
+  background:#fff3b0!important;
+  border-color:#facc15!important;
+}
+tr.diff-l3 .map,
+tr.diff-l3 .chip{
+  background:#bbf7d0!important;
+  border-color:#22c55e!important;
+}
+tr.diff-l2 .map,
+tr.diff-l2 .chip{
+  background:#bfdbfe!important;
+  border-color:#3b82f6!important;
+}
+tr.diff-l1 .map,
+tr.diff-l1 .chip{
+  background:#fecaca!important;
+  border-color:#ef4444!important;
+}
+tr.diff-rookie .map{background:#fde68a!important;border-color:#eab308!important}
+tr.diff-l3 .map{background:#86efac!important;border-color:#16a34a!important}
+tr.diff-l2 .map{background:#93c5fd!important;border-color:#2563eb!important}
+tr.diff-l1 .map{background:#fca5a5!important;border-color:#dc2626!important}
+.chip.selected{
+  background:#1d4ed8!important;
+  color:#ffffff!important;
+  border-color:#1e40af!important;
+  box-shadow:0 0 0 3px rgba(29,78,216,.25)!important;
+}
+
 .placeholder{
   text-align:center;
   padding:70px 15px;
@@ -454,7 +488,7 @@ tbody tr:hover{background:rgba(186,230,253,.25)}
         </div>
       </div>
 
-      <div class="msg" id="msg">군표를 체크한 뒤 저장하기를 누르세요.</div>
+      <div class="msg hidden" id="msg"></div>
     </div>
 
     <div id="pcTableSection" class="table-wrap">
@@ -479,10 +513,10 @@ tbody tr:hover{background:rgba(186,230,253,.25)}
     </div>
   </section>
 
-  <section id="realSection" class="hidden"><div class="panel placeholder">군 실명제는 다음 단계에서 Supabase로 연결됩니다.</div></section>
-  <section id="eventTournamentSection" class="hidden"><div class="panel placeholder">이벤트/대회는 다음 단계에서 이전됩니다.</div></section>
-  <section id="promoSection" class="hidden"><div class="panel placeholder">홍보 게시판은 다음 단계에서 이전됩니다.</div></section>
-  <section id="qnaSection" class="hidden"><div class="panel placeholder">민원Q/A는 다음 단계에서 이전됩니다.</div></section>
+  <section id="realSection" class="hidden"><div class="panel placeholder">군 실명제 작업 대기 중입니다. 다음 단계에서 단체 등록/조회/검색을 연결합니다.</div></section>
+  <section id="eventTournamentSection" class="hidden"><div class="panel placeholder">이벤트/대회 작업 대기 중입니다. 포스터/이미지 목록 기능을 연결합니다.</div></section>
+  <section id="promoSection" class="hidden"><div class="panel placeholder">홍보 게시판 작업 대기 중입니다. 글쓰기/목록/수정/삭제를 연결합니다.</div></section>
+  <section id="qnaSection" class="hidden"><div class="panel placeholder">민원Q/A 작업 대기 중입니다. 질문/답변 게시판을 연결합니다.</div></section>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -519,7 +553,11 @@ let selections = {};
 
 function $(id){return document.getElementById(id);}
 function showLoading(v){$("loadingOverlay").classList.toggle("hidden",!v);}
-function setMsg(t){$("msg").textContent=t;}
+function setMsg(t){
+  const el = $("msg");
+  el.textContent = t || "";
+  el.classList.toggle("hidden", !t);
+}
 
 async function loadMaps(){
   const tbody = $("mapBody");
@@ -552,6 +590,9 @@ function renderMaps(){
 
   MAPS.forEach(row => {
     const tr = document.createElement("tr");
+    const diffText = String(row.difficulty || "").trim().toLowerCase();
+    const diffClass = diffText.includes("루키") ? "diff-rookie" : diffText.includes("l3") ? "diff-l3" : diffText.includes("l2") ? "diff-l2" : diffText.includes("l1") ? "diff-l1" : "diff-rookie";
+    tr.className = diffClass;
 
     const mapTd = document.createElement("td");
     mapTd.innerHTML = `<span class="map">${row.map_name || ""}</span>`;
@@ -728,7 +769,7 @@ function resetAll(){
   selections = {};
   refreshSelected();
   updateRank();
-  setMsg("선택이 초기화되었습니다.");
+  setMsg("");
 }
 
 function showTab(tab){
