@@ -1,265 +1,758 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=1200" />
-<title>루칭방 군 계산기</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=1200, initial-scale=1.0"/>
+<title>루칭방 S38 군계산기</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css"/>
 
 <style>
-body{
+:root{
+  --bg:#eaf8ff;
+  --card:linear-gradient(135deg,#ffffff 0%,#e4f7ff 50%,#c7efff 100%);
+  --line:rgba(30,80,120,.22);
+  --accent:#0ea5e9;
+  --danger:#ef4444;
+  --wrap:1206px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{
   margin:0;
-  font-family: Arial;
-  background:#eaf6ff;
+  padding:0;
+  width:100%;
+  min-width:1200px;
+  font-family:"Pretendard Variable",system-ui,sans-serif;
+  color:#111827;
+  background:
+    radial-gradient(circle at top left,rgba(255,255,255,.96),transparent 35%),
+    linear-gradient(180deg,#eaf8ff 0%,#cdefff 46%,#ffffff 100%)!important;
+}
+.hidden{display:none!important}
+.wrap{
+  width:1206px;
+  margin:0 auto;
+  padding:10px 14px 42px;
 }
 
-/* 상단 */
-.header{
-  padding:20px;
-  font-size:24px;
-  font-weight:bold;
+/* ===== 상단 ===== */
+.sticky-top{
+  position:sticky;
+  top:0;
+  z-index:999;
+  background:rgba(235,248,255,.96);
+  backdrop-filter:blur(6px);
+  border-bottom:1px solid rgba(30,80,120,.18);
+  box-shadow:0 4px 18px rgba(14,165,233,.12);
 }
+.sticky-inner{
+  width:1206px;
+  margin:0 auto;
+  padding:9px 14px 8px;
+}
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.main-title-image{
+  height:50px;
+  width:auto;
+  display:block;
+  object-fit:contain;
+}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 
-/* 버튼 */
 .btn{
-  padding:10px 20px;
-  border-radius:10px;
-  border:none;
+  border:1px solid rgba(14,165,233,.35);
+  background:linear-gradient(135deg,#dff6ff,#9be3ff);
+  color:#111827;
+  padding:14px 18px;
+  border-radius:12px;
+  font-size:18px;
+  font-weight:900;
+  white-space:nowrap;
   cursor:pointer;
-  font-weight:bold;
+  box-shadow:0 3px 10px rgba(14,165,233,.15);
+}
+.btn.gold{
+  background:linear-gradient(135deg,#fff7cc,#ffd95a);
+  border:1px solid #f6c742;
+}
+.btn.red{
+  background:linear-gradient(135deg,#ff8a8a,#ef4444);
+  color:#fff;
+  border:0;
+}
+.btn.link{
+  background:rgba(255,255,255,.45);
+  border:1px dashed rgba(14,165,233,.45);
 }
 
-.btn.save{background:#ffd66b;}
-.btn.load{background:#4cc3ff;color:#fff;}
-.btn.reset{background:#ff6b6b;color:#fff;}
-
-/* 입력 */
-input{
-  padding:10px;
-  border-radius:10px;
-  border:1px solid #ccc;
+/* ===== 탭 ===== */
+.main-tabs{
+  display:flex;
+  gap:10px;
+  margin:10px 0 8px;
+  padding:10px 10px 0;
+  border-radius:18px 18px 0 0;
+  background:linear-gradient(180deg,#e9f8ff,#cdefff);
+  border:1px solid rgba(14,165,233,.25);
+  box-shadow:0 4px 14px rgba(14,165,233,.12);
 }
-
-/* 결과 */
-.result{
-  margin-top:20px;
-  padding:15px;
-  background:#dff1ff;
-  border-radius:10px;
-  text-align:center;
-  font-size:22px;
-  font-weight:bold;
-}
-
-/* 그래프 */
-.bar{
-  margin-top:15px;
-  height:40px;
-  border-radius:20px;
-  background:linear-gradient(to right,#4cc3ff,#7ed957,#ffe066,#ffa94d,#ff6b6b);
+.main-tab{
   position:relative;
+  flex:1;
+  border:1px solid rgba(14,165,233,.35);
+  border-bottom:none;
+  color:#0f172a;
+  border-radius:16px 16px 0 0;
+  padding:15px 8px 16px;
+  font-size:18px;
+  font-weight:1000;
+  cursor:pointer;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
+  transform:translateY(1px);
 }
-
-.marker{
+.main-tab::after{
+  content:"";
   position:absolute;
-  top:50%;
-  transform:translate(-50%,-50%);
-  width:8px;
-  height:40px;
-  background:red;
-  border-radius:4px;
+  left:50%;
+  bottom:-9px;
+  transform:translateX(-50%);
+  width:26px;
+  height:14px;
+  background:inherit;
+  clip-path:polygon(0 0,100% 0,50% 100%);
+}
+.main-tab[data-tab="gunpyo"]{background:linear-gradient(135deg,#38bdf8,#0ea5e9)}
+.main-tab[data-tab="real"]{background:linear-gradient(135deg,#7dd3fc,#38bdf8)}
+.main-tab[data-tab="eventTournament"]{background:linear-gradient(135deg,#bae6fd,#7dd3fc)}
+.main-tab[data-tab="promo"]{background:linear-gradient(135deg,#dbeafe,#93c5fd)}
+.main-tab[data-tab="qna"]{background:linear-gradient(135deg,#e0f2fe,#a5f3fc)}
+.main-tab.active{
+  color:#fff;
+  border-color:#0284c7;
+  transform:translateY(-4px);
+  box-shadow:0 8px 18px rgba(14,165,233,.28),inset 0 1px 0 rgba(255,255,255,.75);
+  z-index:2;
 }
 
-/* 테이블 */
+/* ===== 군표 상단 패널 ===== */
+.panel{
+  background:var(--card);
+  border:1px solid rgba(30,80,120,.22);
+  border-radius:14px;
+  padding:12px 14px;
+  margin-top:8px;
+  box-shadow:0 8px 24px rgba(14,165,233,.12);
+}
+.controls{
+  display:flex;
+  align-items:flex-end;
+  flex-wrap:wrap;
+  gap:12px;
+}
+.input-wrap{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.input-wrap.nick{width:190px;flex:0 0 190px}
+.input-wrap.pin{width:126px;flex:0 0 126px}
+.input-wrap label{
+  font-size:13px;
+  color:#111827;
+  font-weight:700;
+}
+input{
+  width:100%;
+  height:50px;
+  background:#fff;
+  color:#111827;
+  border:1px solid rgba(14,165,233,.35);
+  border-radius:10px;
+  padding:12px 10px;
+  font-size:15px;
+}
+.rank-row{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  margin-top:10px;
+}
+.big-rank{
+  flex:1;
+  height:58px;
+  padding:4px 10px;
+  border:2px solid #38bdf8;
+  border-radius:10px;
+  background:linear-gradient(135deg,#ffffff,#e0f7ff);
+  box-shadow:0 0 16px rgba(56,189,248,.25);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.big-rank .rank-text{
+  width:100%;
+  color:#0284c7;
+  font-size:30px;
+  line-height:1.1;
+  font-weight:1000;
+  text-align:center;
+}
+.rank-emph{
+  display:inline-block;
+  padding:1px 10px 2px;
+  margin:0 3px;
+  color:#1b1400;
+  font-size:1.05em;
+  font-weight:1000;
+  letter-spacing:.5px;
+  background:linear-gradient(135deg,#fff7cc,#ffd54f,#ffca28);
+  border-radius:999px;
+  box-shadow:0 1px 2px rgba(0,0,0,.25),0 0 8px rgba(255,213,79,.45);
+}
+
+/* ===== 등급 막대 ===== */
+.rank-meter{
+  margin:18px 2px 0;
+  position:relative;
+  padding-top:0;
+}
+.meter-scale{
+  display:grid;
+  grid-template-columns:repeat(9,1fr);
+  height:38px;
+  border-radius:12px;
+  overflow:hidden;
+  background:linear-gradient(90deg,#38bdf8 0%,#7dd3fc 15%,#bae6fd 30%,#bbf7d0 45%,#fef9c3 60%,#fde68a 75%,#fdba74 90%,#fb7185 100%);
+  border:1px solid rgba(14,165,233,.25);
+}
+.meter-seg{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#111827;
+  font-size:17px;
+  font-weight:1000;
+  letter-spacing:.5px;
+  text-shadow:0 1px 0 rgba(255,255,255,.6);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.10);
+}
+.meter-marker{
+  position:absolute;
+  top:-9px;
+  left:var(--pos,94%);
+  transform:translateX(-50%);
+  width:8px;
+  height:56px;
+  border-radius:999px;
+  background:linear-gradient(to bottom,#ff6b6b,#ff1744);
+  box-shadow:0 0 8px rgba(255,23,68,.9),0 0 18px rgba(255,23,68,.55);
+  z-index:5;
+}
+.meter-marker::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:-4px;
+  transform:translateX(-50%);
+  width:15px;
+  height:15px;
+  border-radius:50%;
+  background:#ff1744;
+  box-shadow:0 0 12px rgba(255,23,68,.8);
+}
+
+.msg{
+  margin-top:14px;
+  white-space:pre-wrap;
+  background:rgba(255,255,255,.72);
+  border:1px solid rgba(14,165,233,.22);
+  border-radius:12px;
+  padding:12px 16px;
+  color:#0f172a;
+  font-size:14px;
+  line-height:1.45;
+}
+
+/* ===== 표 ===== */
+.table-wrap{
+  border-radius:14px;
+  border:1px solid rgba(14,165,233,.25);
+  margin-top:28px;
+  overflow:visible;
+  background:linear-gradient(135deg,#ffffff 0%,#e4f7ff 50%,#c7efff 100%);
+  padding:8px;
+  box-shadow:0 8px 24px rgba(14,165,233,.10);
+}
 table{
   width:100%;
-  border-collapse:collapse;
-  margin-top:20px;
+  border-collapse:separate;
+  border-spacing:0;
+  table-layout:fixed;
+  color:#111827;
 }
-
-th,td{
-  border:1px solid #ccc;
-  padding:8px;
+thead th{
+  position:sticky;
+  top:0;
+  z-index:100;
+  background:linear-gradient(135deg,#dff6ff,#9be3ff);
+  color:#111827;
+  font-size:20px;
+  font-weight:1000;
+  padding:12px 6px;
+  white-space:nowrap;
+  border-bottom:1px solid rgba(14,165,233,.3);
   text-align:center;
 }
-
-th{
-  background:#bfe4ff;
+thead th:first-child{border-radius:10px 0 0 0;width:300px}
+thead th:not(:first-child){width:110px}
+thead th:last-child{border-radius:0 10px 0 0}
+tbody td{
+  padding:3px 2px;
+  border-bottom:1px solid rgba(14,165,233,.16);
+  font-size:15px;
+  vertical-align:middle;
+  text-align:center;
 }
-
-.map-name{
-  background:#ffe066;
-  font-weight:bold;
+tbody tr:hover{background:rgba(186,230,253,.25)}
+.map{
+  display:block;
+  width:100%;
+  padding:10px 6px;
+  background:#ffe98a;
+  border:1px solid #f5c400;
+  border-radius:7px;
+  color:#111827;
+  font-weight:1000;
+  font-size:20px;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
-
-.active{
-  background:#3b82f6;
+.chip{
+  display:block;
+  width:100%;
+  min-height:44px;
+  padding:6px 4px;
+  border:1px solid #f5c400;
+  border-radius:7px;
+  background:#fff1a6;
+  color:#111827;
+  font-size:21px;
+  font-weight:1000;
+  line-height:1.2;
+  text-align:center;
+  cursor:pointer;
+  user-select:none;
+}
+.chip.disabled{
+  opacity:.45;
+  pointer-events:none;
+}
+.chip.selected{
+  background:#1d4ed8!important;
+  color:#ffffff!important;
+  border-color:#1e40af!important;
+  box-shadow:0 0 0 3px rgba(29,78,216,.25)!important;
+}
+.placeholder{
+  text-align:center;
+  padding:70px 15px;
+  font-size:22px;
+  font-weight:1000;
+  color:#2563eb;
+}
+.loading-overlay{
+  position:fixed;
+  inset:0;
+  z-index:999999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,.30);
+}
+.loading-box{
+  background:rgba(15,23,42,.86);
   color:#fff;
+  padding:18px 30px;
+  border-radius:14px;
+  font-size:24px;
+  font-weight:900;
+  box-shadow:0 0 20px rgba(0,0,0,.45);
 }
 </style>
 </head>
 
 <body>
+<div id="loadingOverlay" class="loading-overlay hidden"><div class="loading-box">처리 중...</div></div>
 
-<div class="header">루칭방 군 계산기</div>
+<div class="sticky-top">
+  <div class="sticky-inner">
+    <div class="topbar">
+      <img class="main-title-image" src="https://i.ibb.co/DgDzPPJB/44444.png" alt="루칭방 군 계산기">
+      <div class="row" style="gap:8px">
+        <button class="btn link" id="goPcBtn" type="button">PC로 보기</button>
+        <button class="btn red" id="goMobileBtn" type="button">모바일로 보기</button>
+      </div>
+    </div>
 
-<div style="padding:20px">
-
-<input id="nickname" placeholder="닉네임">
-<input id="pin" placeholder="비밀번호">
-
-<button class="btn save" onclick="save()">저장</button>
-<button class="btn load" onclick="load()">불러오기</button>
-<button class="btn reset" onclick="resetAll()">초기화</button>
-
-<div class="result" id="result">군표를 체크하세요</div>
-
-<div class="bar">
-  <div class="marker" id="marker"></div>
+    <div class="main-tabs">
+      <button class="main-tab active" data-tab="gunpyo" type="button">🔎 군표</button>
+      <button class="main-tab" data-tab="real" type="button">▤ 군 실명제</button>
+      <button class="main-tab" data-tab="eventTournament" type="button">♛ 이벤트/대회</button>
+      <button class="main-tab" data-tab="promo" type="button">◔ 홍 보</button>
+      <button class="main-tab" data-tab="qna" type="button">◌ 민원Q/A</button>
+    </div>
+  </div>
 </div>
 
-<table id="table">
-<thead>
-<tr>
-<th>맵이름</th>
-<th>프로</th>
-<th>강주력</th>
-<th>주력</th>
-<th>1군</th>
-<th>2군</th>
-<th>3군</th>
-<th>4군</th>
-<th>5군</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
+<div class="wrap">
+  <section id="gunpyoSection">
+    <div id="gunpyoTopPanel" class="panel">
+      <div class="controls">
+        <button class="btn gold" id="btnSave" type="button">저장하기</button>
 
+        <div class="input-wrap nick">
+          <label>닉네임</label>
+          <input id="nickname" placeholder="닉네임 입력"/>
+        </div>
+
+        <div class="input-wrap pin">
+          <label>비밀번호(5자리)</label>
+          <input id="pin5" placeholder="예: 01234" maxlength="5" inputmode="numeric"/>
+        </div>
+
+        <button class="btn" id="btnLoad" type="button">불러오기</button>
+        <button class="btn" id="btnReset" type="button">초기화</button>
+        <button class="btn" id="btnShot" type="button">스크린샷</button>
+      </div>
+
+      <div class="rank-row">
+        <div class="big-rank">
+          <div class="rank-text" id="rankText">당신은 <span class="rank-emph">6군</span> 입니다</div>
+        </div>
+      </div>
+
+      <div class="rank-meter">
+        <div class="meter-marker" id="meterMarker"></div>
+        <div class="meter-scale">
+          <div class="meter-seg">프로</div>
+          <div class="meter-seg">강주력</div>
+          <div class="meter-seg">주력</div>
+          <div class="meter-seg">1군</div>
+          <div class="meter-seg">2군</div>
+          <div class="meter-seg">3군</div>
+          <div class="meter-seg">4군</div>
+          <div class="meter-seg">5군</div>
+          <div class="meter-seg">6군</div>
+        </div>
+      </div>
+
+      <div class="msg" id="msg">군표를 체크한 뒤 저장하기를 누르세요.</div>
+    </div>
+
+    <div id="pcTableSection" class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>맵이름</th>
+            <th>프로</th>
+            <th>강주력</th>
+            <th>주력</th>
+            <th>1군</th>
+            <th>2군</th>
+            <th>3군</th>
+            <th>4군</th>
+            <th>5군</th>
+          </tr>
+        </thead>
+        <tbody id="mapBody">
+          <tr><td colspan="9">맵 데이터를 불러오는 중입니다...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="realSection" class="hidden"><div class="panel placeholder">군 실명제는 다음 단계에서 Supabase로 연결됩니다.</div></section>
+  <section id="eventTournamentSection" class="hidden"><div class="panel placeholder">이벤트/대회는 다음 단계에서 이전됩니다.</div></section>
+  <section id="promoSection" class="hidden"><div class="panel placeholder">홍보 게시판은 다음 단계에서 이전됩니다.</div></section>
+  <section id="qnaSection" class="hidden"><div class="panel placeholder">민원Q/A는 다음 단계에서 이전됩니다.</div></section>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
-// 🔥 본인값 유지
 const SUPABASE_URL = "https://xyibdanmecakevhtdajl.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_uvYqwDymxodcSdpT1zAWyg_PeVHh_ZO";
-
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+const TIERS = [
+  {key:"pro", label:"프로", weight:128},
+  {key:"strong", label:"강주력", weight:64},
+  {key:"main", label:"주력", weight:32},
+  {key:"g1", label:"1군", weight:16},
+  {key:"g2", label:"2군", weight:8},
+  {key:"g3", label:"3군", weight:4},
+  {key:"g4", label:"4군", weight:2},
+  {key:"g5", label:"5군", weight:1}
+];
+
+const RANKS = [
+  {min:5760,label:"프로군",pos:5.5},
+  {min:2880,label:"강주력",pos:16.6},
+  {min:1440,label:"주력",pos:27.7},
+  {min:720,label:"1군",pos:38.8},
+  {min:360,label:"2군",pos:50.0},
+  {min:180,label:"3군",pos:61.1},
+  {min:90,label:"4군",pos:72.2},
+  {min:45,label:"5군",pos:83.3},
+  {min:0,label:"6군",pos:94.4}
+];
+
+let MAPS = [];
 let selections = {};
 
-// 맵 불러오기
+function $(id){return document.getElementById(id);}
+function showLoading(v){$("loadingOverlay").classList.toggle("hidden",!v);}
+function setMsg(t){$("msg").textContent=t;}
+
 async function loadMaps(){
+  const tbody = $("mapBody");
+  tbody.innerHTML = `<tr><td colspan="9">맵 데이터를 불러오는 중입니다...</td></tr>`;
+
   const {data, error} = await db
     .from("map_records")
     .select("*")
     .order("sort_order",{ascending:true});
 
   if(error){
-    alert("맵 데이터 불러오기 실패: " + error.message);
-    console.error(error);
+    tbody.innerHTML = `<tr><td colspan="9">맵 데이터 불러오기 실패: ${error.message}</td></tr>`;
+    setMsg("맵 데이터 불러오기 실패:\n" + error.message);
     return;
   }
 
-  console.log("불러온 맵 데이터:", data);
+  MAPS = data || [];
 
-  const tbody = document.querySelector("#table tbody");
-  tbody.innerHTML = "";
-
-  if(!data || data.length === 0){
+  if(MAPS.length === 0){
     tbody.innerHTML = `<tr><td colspan="9">맵 데이터가 없습니다.</td></tr>`;
     return;
   }
 
-  data.forEach(row=>{
+  renderMaps();
+}
+
+function renderMaps(){
+  const body = $("mapBody");
+  body.innerHTML = "";
+
+  MAPS.forEach(row => {
     const tr = document.createElement("tr");
 
-    tr.innerHTML = `
-      <td class="map-name">${row.map_name || ""}</td>
-      ${["pro","strong","main","g1","g2","g3","g4","g5"].map(tier=>`
-        <td onclick="select(this,'${row.id}','${tier}')">
-          ${row[tier] || ""}
-        </td>
-      `).join("")}
-    `;
+    const mapTd = document.createElement("td");
+    mapTd.innerHTML = `<span class="map">${row.map_name || ""}</span>`;
+    tr.appendChild(mapTd);
 
-    tbody.appendChild(tr);
+    TIERS.forEach(t => {
+      const td = document.createElement("td");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "chip";
+      btn.dataset.rowId = String(row.id);
+      btn.dataset.tier = t.key;
+      btn.textContent = row[t.key] || "";
+
+      if(!row[t.key]) {
+        btn.classList.add("disabled");
+      } else {
+        btn.addEventListener("click", () => selectTier(row, t.key, t.label, row[t.key]));
+      }
+
+      td.appendChild(btn);
+      tr.appendChild(td);
+    });
+
+    body.appendChild(tr);
+  });
+
+  refreshSelected();
+}
+
+function selectTier(row, tierKey, tierLabel, time){
+  const key = String(row.id);
+
+  if(selections[key] && selections[key].tier === tierKey){
+    delete selections[key];
+  } else {
+    selections[key] = {
+      map: row.map_name,
+      tier: tierKey,
+      tierLabel: tierLabel,
+      time: time,
+      bonus: Number(row.bonus || 0)
+    };
+  }
+
+  refreshSelected();
+  updateRank();
+}
+
+function refreshSelected(){
+  document.querySelectorAll(".chip").forEach(btn => {
+    const rowId = btn.dataset.rowId;
+    const tier = btn.dataset.tier;
+    btn.classList.toggle("selected", !!(selections[rowId] && selections[rowId].tier === tier));
   });
 }
 
-// 선택
-function select(td,mapId,tier){
-  td.parentElement.querySelectorAll("td").forEach(e=>e.classList.remove("active"));
-  td.classList.add("active");
-
-  selections[mapId] = tier;
-  updateResult();
+function calcTotal(){
+  let total = 0;
+  Object.values(selections).forEach(v => {
+    const tier = TIERS.find(t => t.key === v.tier);
+    const weight = tier ? tier.weight : 0;
+    const bonus = 1 + ((Number(v.bonus) || 0) / 100);
+    total += weight * bonus;
+  });
+  return Math.round(total * 100) / 100;
 }
 
-// 결과 계산
-function updateResult(){
-  const count = Object.keys(selections).length;
-
-  let tier = "6군";
-
-  if(count>=20) tier="1군";
-  else if(count>=15) tier="2군";
-  else if(count>=10) tier="3군";
-  else if(count>=5) tier="4군";
-
-  document.getElementById("result").innerText =
-    `당신은 ${tier} 입니다`;
-
-  // 막대 위치
-  const pos = {
-    "1군":10,
-    "2군":30,
-    "3군":50,
-    "4군":70,
-    "5군":85,
-    "6군":95
-  };
-
-  document.getElementById("marker").style.left = pos[tier]+"%";
+function rankFromTotal(total){
+  for(const r of RANKS){
+    if(total >= r.min) return r;
+  }
+  return RANKS[RANKS.length - 1];
 }
 
-// 저장
-async function save(){
-  const nickname = document.getElementById("nickname").value;
-  const pin = document.getElementById("pin").value;
-
-  await db.from("profiles").insert([{
-    nickname,
-    pin5:pin,
-    selections
-  }]);
-
-  alert("저장 완료");
+function updateRank(){
+  const total = calcTotal();
+  const r = rankFromTotal(total);
+  $("rankText").innerHTML = `당신은 <span class="rank-emph">${r.label}</span> 입니다`;
+  $("meterMarker").style.setProperty("--pos", r.pos + "%");
 }
 
-// 불러오기
-async function load(){
-  const nickname = document.getElementById("nickname").value;
+function validateInput(){
+  const nickname = $("nickname").value.trim();
+  const pin5 = $("pin5").value.trim();
 
-  const {data} = await db
-    .from("profiles")
-    .select("*")
-    .eq("nickname",nickname)
-    .single();
+  if(!nickname){
+    alert("닉네임을 입력하세요.");
+    return null;
+  }
 
-  selections = data.selections || {};
-  alert("불러오기 완료");
+  if(!/^[0-9]{5}$/.test(pin5)){
+    alert("비밀번호는 숫자 5자리입니다.");
+    return null;
+  }
+
+  return {nickname, pin5};
 }
 
-// 초기화
+async function saveProfile(){
+  const input = validateInput();
+  if(!input) return;
+
+  const total = calcTotal();
+
+  if(total <= 0){
+    alert("군표 기록을 하나 이상 선택하세요.");
+    return;
+  }
+
+  showLoading(true);
+  setMsg("저장 중입니다...");
+
+  try{
+    const {error} = await db.from("profiles").insert([{
+      nickname: input.nickname,
+      pin5: input.pin5,
+      total: total,
+      selections: selections
+    }]);
+
+    if(error) throw error;
+
+    const r = rankFromTotal(total);
+    setMsg(`저장 성공!\n닉네임: ${input.nickname}\n군: 당신은 ${r.label}입니다`);
+  }catch(err){
+    setMsg("저장 실패:\n" + (err.message || String(err)));
+  }finally{
+    showLoading(false);
+  }
+}
+
+async function loadProfile(){
+  const input = validateInput();
+  if(!input) return;
+
+  showLoading(true);
+  setMsg("불러오는 중입니다...");
+
+  try{
+    const {data, error} = await db
+      .from("profiles")
+      .select("*")
+      .eq("nickname", input.nickname)
+      .eq("pin5", input.pin5)
+      .order("id", {ascending:false})
+      .limit(1);
+
+    if(error) throw error;
+
+    if(!data || data.length === 0){
+      setMsg("일치하는 군표가 없습니다.");
+      return;
+    }
+
+    const prof = data[0];
+    selections = prof.selections || {};
+
+    refreshSelected();
+    updateRank();
+
+    const total = Number(prof.total) || calcTotal();
+    const r = rankFromTotal(total);
+    setMsg(`불러오기 성공!\n닉네임: ${prof.nickname}\n군: 당신은 ${r.label}입니다`);
+  }catch(err){
+    setMsg("불러오기 실패:\n" + (err.message || String(err)));
+  }finally{
+    showLoading(false);
+  }
+}
+
 function resetAll(){
+  if(!confirm("선택한 군표를 초기화할까요?")) return;
   selections = {};
-  document.querySelectorAll("td").forEach(e=>e.classList.remove("active"));
-  updateResult();
+  refreshSelected();
+  updateRank();
+  setMsg("선택이 초기화되었습니다.");
 }
 
-// 실행
-loadMaps();
-</script>
+function showTab(tab){
+  document.querySelectorAll(".main-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  $("gunpyoSection").classList.toggle("hidden", tab !== "gunpyo");
+  $("realSection").classList.toggle("hidden", tab !== "real");
+  $("eventTournamentSection").classList.toggle("hidden", tab !== "eventTournament");
+  $("promoSection").classList.toggle("hidden", tab !== "promo");
+  $("qnaSection").classList.toggle("hidden", tab !== "qna");
+}
 
+document.addEventListener("DOMContentLoaded", () => {
+  loadMaps();
+  updateRank();
+
+  $("btnSave").addEventListener("click", saveProfile);
+  $("btnLoad").addEventListener("click", loadProfile);
+  $("btnReset").addEventListener("click", resetAll);
+  $("btnShot").addEventListener("click", () => window.print());
+
+  document.querySelectorAll(".main-tab").forEach(btn => {
+    btn.addEventListener("click", () => showTab(btn.dataset.tab));
+  });
+});
+</script>
 </body>
 </html>
