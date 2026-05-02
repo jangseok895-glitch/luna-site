@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.3, maximum-scale=3.0, user-scalable=yes"> content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.3, maximum-scale=3.0, user-scalable=yes">
 <title>카러플 군 계산기</title>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css"/>
@@ -1212,8 +1212,9 @@ tbody tr:hover{
   display:block !important;
   width:100% !important;
   height:260px !important;
-  object-fit:cover !important;
+  object-fit:contain !important;
   object-position:top center !important;
+  background:#ffffff !important;
   border-radius:10px !important;
   border:1px solid rgba(14,165,233,.25) !important;
 }
@@ -1755,6 +1756,104 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   }
   body.pc-view #mobileSection{
     display:none !important;
+  }
+}
+
+
+/* =========================================================
+   2026-05 모바일/이벤트/로딩 보정
+   - PC와 모바일의 이벤트/대회 배치 통일
+   - 포스터 팝업 짤림 방지
+   - 로딩 화면 제거
+========================================================= */
+#loadingOverlay{
+  display:none !important;
+}
+
+/* 모바일에서도 이벤트/대회가 PC처럼 가로 카드형으로 유지 */
+@media (max-width:900px){
+  .tournament-main-grid{
+    grid-template-columns:repeat(4, 1fr) !important;
+    gap:14px !important;
+  }
+  .tournament-thumb-card{
+    padding:10px !important;
+  }
+  .tournament-thumb-img,
+  .tournament-text-thumb{
+    height:260px !important;
+  }
+}
+
+@media (max-width:520px){
+  .tournament-main-grid{
+    grid-template-columns:repeat(4, 1fr) !important;
+  }
+  .tournament-thumb-img,
+  .tournament-text-thumb{
+    height:260px !important;
+  }
+}
+
+/* 포스터 크게보기: 휴대폰에서도 안 잘리고 화면 안에 맞춤 */
+#tournamentPopup{
+  align-items:center !important;
+  justify-content:center !important;
+  padding:12px !important;
+  overflow:auto !important;
+}
+
+.tournament-popup-box{
+  width:min(900px,96vw) !important;
+  max-width:96vw !important;
+  max-height:92vh !important;
+  overflow:auto !important;
+  padding:16px !important;
+}
+
+.tournament-popup-slider{
+  width:100% !important;
+  min-width:0 !important;
+}
+
+.tournament-popup-img{
+  width:auto !important;
+  max-width:calc(96vw - 56px) !important;
+  max-height:calc(92vh - 130px) !important;
+  height:auto !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  display:block !important;
+}
+
+.tournament-popup-title{
+  margin:8px 54px 12px !important;
+  line-height:1.25 !important;
+  word-break:keep-all !important;
+}
+
+@media (max-width:520px){
+  .tournament-popup-box{
+    padding:12px !important;
+  }
+  .tournament-popup-title{
+    font-size:18px !important;
+    margin:6px 46px 10px !important;
+  }
+  .tournament-close{
+    top:8px !important;
+    right:8px !important;
+    padding:6px 10px !important;
+    font-size:12px !important;
+  }
+  .tournament-arrow{
+    width:36px !important;
+    height:36px !important;
+    font-size:22px !important;
+  }
+  .tournament-popup-img{
+    max-width:calc(96vw - 48px) !important;
+    max-height:calc(92vh - 110px) !important;
   }
 }
 
@@ -3763,7 +3862,7 @@ async function addAdminReplyToBoardSupabase(id, pin, reply){
   window.google = {script:{run:runner()}};
 })();
 
-showLoading("");
+// 로딩 화면 제거: 바로 데이터만 불러옵니다.
 
 google.script.run
   .withSuccessHandler((p) => {
@@ -3789,11 +3888,9 @@ google.script.run
   .getSheetData();
 
 function showLoading(msg) {
+  // Cloudflare/Supabase 이전 후 속도가 빨라져 로딩 화면은 표시하지 않습니다.
   const overlay = document.getElementById("loadingOverlay");
-  const text = document.getElementById("loadingText");
-
-  if (text) text.textContent = msg || "로딩중... 잠시만 기다려주세요";
-  if (overlay) overlay.classList.remove("hidden");
+  if (overlay) overlay.classList.add("hidden");
 }
 
 function hideLoading() {
