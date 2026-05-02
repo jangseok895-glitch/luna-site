@@ -2,96 +2,842 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=1200, initial-scale=1.0"/>
-<title>루칭방 S38 군계산기</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>카러플 군 계산기</title>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css"/>
 
 <style>
 :root{
-  --bg:#eaf8ff;
-  --card:linear-gradient(135deg,#ffffff 0%,#e4f7ff 50%,#c7efff 100%);
-  --line:rgba(30,80,120,.22);
-  --accent:#0ea5e9;
-  --danger:#ef4444;
-  --wrap:1206px;
+  --bg:#241036;
+  --card:#2f1446;
+  --table:#2a1242;
+  --input:#2b0f43;
+  --sticky-bg:#3a1856;
+  --text:#f3eefc;
+  --muted:#d2bfe8;
+  --line:rgba(255,255,255,.14);
+  --accent:#d4af37;
+  --danger:#d34242;
+  --rank-red:#ff1744;
+  --w-map:180px;
+  --w-cell:70px;
+  --header-offset:0px;
+  --wrap:1100px;
 }
+
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 html,body{
   margin:0;
   padding:0;
-  width:100%;
-  min-width:1200px;
+  background:var(--bg);
+  color:var(--text);
   font-family:"Pretendard Variable",system-ui,sans-serif;
-  color:#111827;
-  background:
-    radial-gradient(circle at top left,rgba(255,255,255,.96),transparent 35%),
-    linear-gradient(180deg,#eaf8ff 0%,#cdefff 46%,#ffffff 100%)!important;
-}
-.hidden{display:none!important}
-.wrap{
-  width:1206px;
-  margin:0 auto;
-  padding:10px 14px 42px;
+  font-weight:400;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
 }
 
-/* ===== 상단 ===== */
-.sticky-top{
-  position:sticky;
-  top:0;
-  z-index:999;
-  background:rgba(235,248,255,.96);
-  backdrop-filter:blur(6px);
-  border-bottom:1px solid rgba(30,80,120,.18);
-  box-shadow:0 4px 18px rgba(14,165,233,.12);
+.wrap{max-width:var(--wrap);margin:0 auto;padding:10px 14px 40px}
+.hidden{display:none!important}
+
+/* ===== 공통 UI ===== */
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.panel{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:12px 14px;
+  margin-top:8px;
 }
-.sticky-inner{
-  width:1206px;
-  margin:0 auto;
-  padding:9px 14px 8px;
-}
-.topbar{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-}
-.main-title-image{
-  height:50px;
-  width:auto;
-  display:block;
-  object-fit:contain;
-}
-.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 
 .btn{
-  border:1px solid rgba(14,165,233,.35);
-  background:linear-gradient(135deg,#dff6ff,#9be3ff);
-  color:#111827;
+  border:1px solid var(--line);
+  background:#3b1458;
+  color:#fff;
   padding:14px 18px;
   border-radius:12px;
   font-size:18px;
-  font-weight:900;
+  font-weight:800;
   white-space:nowrap;
   cursor:pointer;
-  box-shadow:0 3px 10px rgba(14,165,233,.15);
 }
-.btn.gold{
-  background:linear-gradient(135deg,#fff7cc,#ffd95a);
-  border:1px solid #f6c742;
+.btn.link{background:transparent;border:1px dashed rgba(255,255,255,.22);opacity:.9}
+.btn.link:hover{opacity:1}
+.btn.gold{background:linear-gradient(135deg,#e7cf7a,#d4af37);color:#222;border:none}
+.btn.red{background:var(--danger);border:none}
+
+.select,.text,
+#gunpyoTopPanel .input-wrap input{
+  background:var(--input)!important;
+  border:1px solid var(--line)!important;
+  border-radius:10px!important;
+  color:#fff!important;
+  padding:12px 10px!important;
+  font-size:15px!important;
 }
-.btn.red{
-  background:linear-gradient(135deg,#ff8a8a,#ef4444);
-  color:#fff;
-  border:0;
+.select{width:140px}
+.text.sm{width:140px}
+.text.pin{width:130px}
+
+/* ===== 상단 고정 ===== */
+.sticky-top{
+  position:fixed;
+  left:0;right:0;top:0;
+  z-index:9999;
+  background:rgba(36,16,54,.98);
+  backdrop-filter:blur(6px);
+  border-bottom:1px solid rgba(255,255,255,.06);
 }
-.btn.link{
-  background:rgba(255,255,255,.45);
-  border:1px dashed rgba(14,165,233,.45);
+.sticky-inner{max-width:var(--wrap);margin:0 auto;padding:10px 14px 8px}
+.sticky-push{height:var(--header-offset)}
+.topbar{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.title{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.badge{
+  background:linear-gradient(135deg,#e7cf7a,#d4af37);
+  color:#222;
+  border-radius:999px;
+  padding:10px 18px;
+  font-size:28px;
+  font-weight:900;
+}
+.subnote{font-size:clamp(18px,2.4vw,22px)}
+
+/* ===== 입력 영역 ===== */
+.controls{display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px}
+.input-wrap{display:flex;flex-direction:column;gap:6px;min-width:0;flex:0 1 auto}
+.input-wrap.nick{width:170px;flex:0 0 170px}
+.input-wrap.pin{width:100px;flex:0 0 100px}
+.input-wrap input{min-width:0}
+#gunpyoTopPanel .input-wrap label{font-size:13px;color:var(--muted)}
+
+/* ===== 랭크 박스 ===== */
+.rank-row{display:flex;gap:12px;align-items:center;margin-top:10px}
+.big-rank{
+  flex:1;
+  height:52px;
+  min-height:52px;
+  padding:4px 10px;
+  border:2px double #ff4d4d;
+  border-radius:10px;
+  background:rgba(0,0,0,.25);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.big-rank .rank-text{
+  width:100%;
+  color:var(--accent);
+  font-size:26px;
+  line-height:1;
+  font-weight:900;
+  text-align:center;
+}
+.rank-banner{display:none}
+
+/* ===== 등급 막대 ===== */
+.rank-meter{margin:12px 2px 0}
+.meter-scale{
+  display:grid;
+  grid-template-columns:repeat(9,1fr);
+  gap:0!important;
+  height:34px;
+  border-radius:12px;
+  overflow:hidden;
+  padding:0!important;
+  background:linear-gradient(90deg,#ff1744 0%,#ff4fd8 12%,#9b6dff 24%,#1e40af 36%,#00bcd4 48%,#20d6a0 60%,#d4e157 72%,#ff8a00 84%,#ef4444 100%)!important;
+}
+.meter-seg{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:transparent!important;
+  color:#111;
+  border-radius:0!important;
+  font-family:"Pretendard Variable",system-ui,sans-serif;
+  font-size:17px;
+  font-weight:1000;
+  letter-spacing:.5px;
+  text-shadow:0 1px 0 rgba(255,255,255,.45),0 0 6px rgba(255,255,255,.35);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.12),0 2px 6px rgba(0,0,0,.18);
+  transform:scale(.98);
+}
+.meter-arrow{position:relative;height:0;margin:6px 0 2px;width:100%}
+.meter-arrow::after,
+.meter-arrow::before{
+  content:"";
+  position:absolute;
+  left:var(--pos,100%);
+  transform:translateX(-50%);
+  transition:left .65s cubic-bezier(.22,1,.36,1);
+}
+.meter-arrow::after{
+  top:-42px;
+  width:8px;
+  height:38px;
+  border-radius:999px;
+  background:linear-gradient(to bottom,#ff6b6b,var(--rank-red));
+  box-shadow:0 0 8px rgba(255,23,68,.9),0 0 18px rgba(255,23,68,.55);
+}
+.meter-arrow::before{
+  top:-13px;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:var(--rank-red);
+  box-shadow:0 0 12px rgba(255,23,68,.8);
 }
 
-/* ===== 탭 ===== */
+/* ===== PC 표 ===== */
+.table-wrap{border-radius:14px;border:1px solid var(--line);margin-top:14px;overflow:visible}
+table{width:100%;border-collapse:separate;border-spacing:0;background:var(--table);table-layout:fixed}
+thead th{
+  position:sticky;
+  top:var(--header-offset);
+  z-index:100;
+  background:var(--sticky-bg);
+  color:#fff;
+  font-size:clamp(17px,2.9vw,20px);
+  font-weight:700;
+  padding:8px 3px;
+  white-space:nowrap;
+  border-bottom:1px solid var(--line);
+  text-align:center;
+}
+tbody td{
+  padding:4px 1px;
+  border-bottom:1px solid rgba(255,255,255,.4)!important;
+  font-size:15px;
+  font-weight:400;
+  vertical-align:middle;
+}
+tbody tr:hover{background:rgba(255,255,255,.07)}
+thead th:nth-child(1),td:nth-child(1){width:var(--w-map)}
+thead th:nth-child(n+2),td:nth-child(n+2){width:var(--w-cell)}
+.map{font-weight:600;font-size:clamp(15px,4vw,18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;text-align:center !important;}
+.center{text-align:center}
+
+#pcTableSection.panel{padding-left:6px!important;padding-right:6px!important}
+#pcTableSection table{table-layout:auto!important;width:100%!important}
+#pcTableSection thead th:nth-child(1),
+#pcTableSection tbody td:nth-child(1){width:260px!important}
+#pcTableSection thead th:nth-child(n+2),
+#pcTableSection tbody td:nth-child(n+2){width:auto!important}
+
+/* ===== 선택 칩 ===== */
+.chip{
+  display:block;
+  width:100%;
+  padding:4px 0;
+  border:2px solid transparent;
+  border-radius:6px;
+  background:#0b1940;
+  color:#fff;
+  font-size:clamp(16px,4.9vw,19px);
+  font-weight:600;
+  line-height:1.32;
+  text-align:center;
+  cursor:pointer;
+  user-select:none;
+}
+.chip.disabled{opacity:.45;pointer-events:none}
+.chip.selected{border-color:#ff3b3b!important;background:#ff3b3b!important;color:#fff!important;box-shadow:0 0 0 3px rgba(255,59,59,.25)}
+.row-l-rookie .chip{background:#402b0f;border-color:#5a3a15!important;color:#ffd4a8!important}
+.row-l-l3 .chip{background:#163a1a;border-color:#1f5a27!important;color:#a9f0b4!important}
+.row-l-l2 .chip{background:#0c2f3a;border-color:#145465!important;color:#9ff2ff!important}
+.row-l-l1 .chip{background:#3a1216;border-color:#5a1c22!important;color:#ffb3b3!important}
+#realSection .chip{pointer-events:none!important;cursor:default!important}
+
+/* ===== 모바일 카드 ===== */
+.mobile-section{margin-top:24px}
+.card{background:var(--table);border:1px solid var(--line);border-radius:20px;padding:10px 12px;margin-bottom:14px}
+.card-head{display:grid;grid-template-columns:auto 80px 1fr;gap:10px;align-items:center}
+.diff-badge{background:#3a1c55;color:#ffe36e;font-size:22px;font-weight:900;border-radius:12px;padding:6px 10px}
+.thumb{width:100%;height:60px;border-radius:10px;background:#3a1856 center/cover no-repeat;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.map-big{font-size:30px;font-weight:900;letter-spacing:.5px}
+.card-headers,.card-times{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.card-headers{margin:6px 0 4px}
+.card-times{margin-top:6px}
+.card-headers .h{text-align:center;font-size:22px;font-weight:700;color:#cfe0ff;opacity:.95}
+.card .chip{font-size:26px;padding:6px 0}
+
+/* ===== 실명제 UI ===== */
+.real-topline{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.real-msg{color:var(--muted);font-size:14px;line-height:1.3;text-align:right}
+.real-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.real-tag{min-width:38px;font-weight:900;opacity:.95}
+.real-header{display:flex;align-items:center;gap:16px}
+.real-guide{color:#b9c6ff;font-size:13px;line-height:1.4;opacity:.95;text-align:left}
+.real-guide b{
+  color:#ef4444 !important;
+  font-weight:800;
+  text-shadow:0 0 6px rgba(239,68,68,.35);
+}
+#realTopPanel .real-topline{justify-content:space-between}
+#realTopPanel .real-guide{margin-left:0!important;text-align:left}
+
+.real-rank-line{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:20px}
+.real-rank-line .rank-text{text-align:left!important;width:auto!important;flex:1}
+#realSavedAt{color:var(--muted);font-size:16px;font-weight:800;white-space:nowrap;text-align:right}
+#realBigRank{min-height:34px!important;height:34px!important;padding:2px 10px!important;margin-top:8px!important}
+#realBigRank .rank-text{font-size:24px!important;line-height:1!important}
+
+#realSection{position:relative!important}
+#realSection .big-rank{min-height:44px;height:44px;padding:2px 10px;border-width:2px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+#realSection .big-rank .rank-text{font-size:26px;line-height:1;text-align:center;white-space:nowrap}
+
+.rank-emph{
+  display:inline-block;
+  padding:2px 8px;
+  margin:0 4px;
+  color:#1b1400;
+  font-size:1.05em;
+  font-weight:900;
+  letter-spacing:.5px;
+  background:linear-gradient(135deg,#ffe082,#ffd54f,#ffca28);
+  border-radius:999px;
+  box-shadow:0 1px 2px rgba(0,0,0,.35),0 0 8px rgba(255,213,79,.45);
+}
+
+/* ===== 실명제 결과 표 ===== */
+.member-box{margin-top:10px}
+.member-table{width:100%;border-collapse:separate;border-spacing:0;background:var(--table);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.member-table th,.member-table td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.12)}
+.member-table th{background:rgba(58,24,86,.9);position:static;text-align:left}
+.member-table td:nth-child(2){text-align:center;width:120px}
+.member-table td:nth-child(3){text-align:right;width:140px}
+
+/* ===== 실명제 관리탭 ===== */
+#realTopPanel{
+  position:relative!important;
+}
+
+#realScrollAwayArea{
+  transition:none!important;
+  transform:none!important;
+  opacity:1!important;
+  max-height:none!important;
+  overflow:visible!important;
+}
+
+body.real-manage-closed #realScrollAwayArea{
+  display:none!important;
+}
+
+/* 관리탭 열기 버튼 박스 */
+#manageOpenBox{
+  display:none!important;
+  position:absolute!important;
+
+  /* 프로 그래프 아래쪽 위치 */
+  left:20px!important;
+  bottom:-62px!important;
+
+  z-index:900!important;
+  height:auto!important;
+  margin:0!important;
+  padding:0!important;
+}
+
+/* 관리탭 닫혔을 때만 보임 */
+body.real-manage-closed #manageOpenBox{
+  display:block!important;
+}
+
+/* 동그라미 버튼 */
+#btnOpenManageTab{
+  width:76px!important;
+  height:76px!important;
+  padding:0!important;
+
+  border-radius:50%!important;
+  border:4px solid #ffffff!important;
+
+  background:linear-gradient(135deg,#38bdf8,#2563eb)!important;
+  color:#ffffff!important;
+
+  font-size:15px!important;
+  font-weight:900!important;
+  line-height:1.15!important;
+  text-align:center!important;
+
+  box-shadow:
+    0 8px 18px rgba(37,99,235,.35),
+    0 0 0 5px rgba(56,189,248,.25),
+    inset 0 2px 0 rgba(255,255,255,.45)!important;
+
+  cursor:pointer!important;
+}
+
+/* 살짝 통통 튀는 강조 효과 */
+@keyframes managePulse{
+  0%,100%{
+    transform:scale(1);
+    box-shadow:
+      0 8px 20px rgba(37,99,235,.35),
+      0 0 0 6px rgba(56,189,248,.20),
+      inset 0 2px 0 rgba(255,255,255,.45);
+  }
+  50%{
+    transform:scale(1.07);
+    box-shadow:
+      0 10px 26px rgba(37,99,235,.50),
+      0 0 0 10px rgba(56,189,248,.28),
+      inset 0 2px 0 rgba(255,255,255,.55);
+  }
+}
+
+#btnOpenManageTab:hover{
+  transform:scale(1.1)!important;
+  background:linear-gradient(135deg,#60a5fa,#1d4ed8)!important;
+}
+
+/* ===== 팝업 / 로딩 ===== */
+#loadingOverlay,
+#registerPopup,
+#memberSearchPopup,
+#autoNoticePopup{
+  position:fixed!important;
+  inset:0!important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+#loadingOverlay{width:100vw!important;height:100vh!important;background:rgba(0,0,0,.45)!important;z-index:9999999!important;padding:0!important;margin:0!important;transform:none!important}
+#registerPopup,#memberSearchPopup{background:rgba(0,0,0,.35);z-index:999999!important}
+#autoNoticePopup{background:rgba(0,0,0,.45);z-index:99999999}
+#loadingOverlay.hidden,#registerPopup.hidden,#memberSearchPopup.hidden,#autoNoticePopup.hidden{display:none!important}
+
+#loadingText,.loading-box{
+  position:static!important;
+  transform:none!important;
+  background:rgba(0,0,0,.85)!important;
+  color:#fff!important;
+  padding:18px 30px!important;
+  border-radius:14px!important;
+  font-size:24px!important;
+  font-weight:900!important;
+  box-shadow:0 0 20px rgba(0,0,0,.45)!important;
+}
+
+.search-popup-box{
+  width:min(420px,90vw);
+  max-height:70vh!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:14px 14px 20px!important;
+  box-shadow:0 12px 40px rgba(0,0,0,.45);
+}
+.search-popup-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.search-popup-head button{background:var(--danger);color:#fff;border:0;border-radius:8px;padding:6px 10px;font-weight:800;cursor:pointer}
+.search-member-item{
+  padding:10px 12px;
+  margin:6px 0;
+  border:1px solid var(--line);
+  border-radius:10px;
+  cursor:pointer;
+  background:var(--input);
+  font-weight:400!important;
+  font-size:15px!important;
+}
+
+.auto-notice-box{width:min(430px,90vw);background:var(--card);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:22px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.auto-notice-msg{color:#fff;font-size:20px;font-weight:900;line-height:1.45;margin-bottom:18px}
+
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#222;padding:10px 16px;border-radius:8px;color:#fff;font-weight:700;z-index:200;display:none}
+
+.ai-warning{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-left:12px;
+  padding:5px 12px;
+  border-radius:999px;
+  background:linear-gradient(135deg,#ff1744,#ff6b6b);
+  color:#fff;
+  font-size:.72em;
+  font-weight:900;
+  letter-spacing:.3px;
+
+  border:2px solid rgba(255,255,255,.9);
+
+  animation:aiBorderBlink 1s infinite;
+}
+
+@keyframes aiBorderBlink{
+  0%,100%{
+    border-color:rgba(255,255,255,.55);
+    box-shadow:
+      0 0 0 2px rgba(255,23,68,.25),
+      0 0 8px rgba(255,23,68,.45);
+  }
+
+  50%{
+    border-color:#ffffff;
+    box-shadow:
+      0 0 0 5px rgba(255,23,68,.55),
+      0 0 18px rgba(255,23,68,.95),
+      0 0 32px rgba(255,23,68,.65);
+  }
+}
+
+/* ===== 캡처 모드 ===== */
+body.capture-mode{overflow:visible!important}
+body.capture-mode .sticky-top{position:static!important;top:auto!important}
+body.capture-mode .sticky-push{display:none!important}
+body.capture-mode thead th,
+body.capture-mode #realDataTable thead th{position:static!important;top:auto!important;transform:none!important}
+body.capture-mode #realDataTable tbody tr:first-child td{padding-top:0!important}
+body.capture-mode #realPcTableSection{margin-top:4px!important}
+
+/* 실명제 표 헤더 고정 */
+body.real-mode #realDataTable thead th{
+  position:sticky!important;
+  top:var(--header-offset)!important;
+  z-index:500!important;
+  transform:none!important;
+  transition:none!important;
+}
+
+/* ===== 반응형 ===== */
+@media (max-width:900px){
+  .input-wrap.nick{width:160px;flex:0 0 160px}
+  .input-wrap.pin{width:110px;flex:0 0 110px}
+}
+
+@media (max-width:720px){
+  .badge{font-size:24px;padding:8px 14px}
+  .btn{padding:12px 14px;font-size:16px}
+  .big-rank{height:auto;gap:4px}
+  .big-rank .rank-text{font-size:29px}
+  #btnGoReal{font-size:0}
+  #btnGoReal::after{content:"군실명제";font-size:13px;font-weight:900}
+}
+
+/* ================================
+   봄 하늘색 테마 덮어쓰기
+   - 군 시간 기록 chip은 기존 색 유지
+================================ */
+
+/* 전체 색상 변수 변경 */
+:root{
+  --bg:#eaf8ff;
+  --card:linear-gradient(135deg,#ffffff 0%,#dff5ff 45%,#bfeaff 100%);
+  --sticky-bg:linear-gradient(135deg,#ffffff 0%,#d9f3ff 55%,#aee3ff 100%);
+  --text:#111827;
+  --muted:#374151;
+  --line:rgba(30,80,120,.22);
+  --accent:#0ea5e9;
+}
+
+/* 전체 배경 */
+html,
+body{
+  background:
+    radial-gradient(circle at top left, rgba(255,255,255,.95), transparent 35%),
+    linear-gradient(180deg,#eaf8ff 0%,#cdefff 45%,#ffffff 100%) !important;
+  color:#111827 !important;
+}
+
+/* 상단 고정 영역 */
+.sticky-top{
+  background:rgba(235,248,255,.96) !important;
+  border-bottom:1px solid rgba(30,80,120,.18) !important;
+  box-shadow:0 4px 18px rgba(14,165,233,.12);
+}
+
+/* 패널 */
+.panel,
+.card,
+.member-table,
+.search-popup-box,
+.auto-notice-box{
+  background:linear-gradient(135deg,#ffffff 0%,#e4f7ff 50%,#c7efff 100%) !important;
+  border:1px solid rgba(30,80,120,.22) !important;
+  color:#111827 !important;
+  box-shadow:0 8px 24px rgba(14,165,233,.12);
+}
+
+/* 제목 배지 */
+.badge{
+  background:linear-gradient(135deg,#ffffff,#b8ecff,#72d7ff) !important;
+  color:#0f172a !important;
+  border:1px solid rgba(14,165,233,.35);
+  box-shadow:0 4px 14px rgba(14,165,233,.25);
+}
+
+/* 설명 글씨 */
+.subnote,
+.real-guide,
+.real-msg,
+.input-wrap label,
+#realSavedAt{
+  color:#111827 !important;
+}
+
+/* 버튼 */
+.btn{
+  background:linear-gradient(135deg,#dff6ff,#9be3ff) !important;
+  color:#111827 !important;
+  border:1px solid rgba(14,165,233,.35) !important;
+  box-shadow:0 3px 10px rgba(14,165,233,.15);
+}
+
+.btn.gold{
+  background:linear-gradient(135deg,#fff7cc,#ffd95a) !important;
+  color:#111827 !important;
+}
+
+.btn.red{
+  background:linear-gradient(135deg,#ff8a8a,#ef4444) !important;
+  color:#fff !important;
+}
+
+.btn.link{
+  background:rgba(255,255,255,.45) !important;
+  color:#111827 !important;
+  border:1px dashed rgba(14,165,233,.45) !important;
+}
+
+/* 입력창 */
+input,
+.select,
+.text,
+#gunpyoTopPanel .input-wrap input{
+  background:#ffffff !important;
+  color:#111827 !important;
+  border:1px solid rgba(14,165,233,.35) !important;
+}
+
+/* 랭크 박스 */
+.big-rank{
+  background:linear-gradient(135deg,#ffffff,#e0f7ff) !important;
+  border:2px solid #38bdf8 !important;
+  box-shadow:0 0 16px rgba(56,189,248,.25);
+}
+
+.big-rank .rank-text{
+  color:#0284c7 !important;
+}
+
+/* 랭크 강조 */
+.rank-emph{
+  background:linear-gradient(135deg,#fff7cc,#ffd54f) !important;
+  color:#111827 !important;
+}
+
+/* PC 표 전체 */
+table{
+  background:#ffffff !important;
+  color:#111827 !important;
+}
+
+thead th{
+  background:linear-gradient(135deg,#dff6ff,#9be3ff) !important;
+  color:#111827 !important;
+  border-bottom:1px solid rgba(14,165,233,.3) !important;
+}
+
+tbody td{
+  color:#111827 !important;
+  border-bottom:1px solid rgba(14,165,233,.22) !important;
+}
+
+tbody tr:hover{
+  background:rgba(186,230,253,.38) !important;
+}
+
+/* 맵 이름 */
+.map,
+.map-big,
+.real-tag,
+.member-table th,
+.member-table td{
+  color:#111827 !important;
+}
+
+/* 군 시간 기록 chip은 기존처럼 잘 보이게 유지 */
+.chip{
+  color:#fff !important;
+}
+
+/* 선택된 기록 */
+.chip.selected{
+  background:#ff3b3b !important;
+  color:#fff !important;
+  border-color:#ff3b3b !important;
+}
+
+/* 등급 막대는 봄 느낌으로 변경 */
+.meter-scale{
+  background:linear-gradient(
+    90deg,
+    #38bdf8 0%,
+    #7dd3fc 15%,
+    #bae6fd 30%,
+    #bbf7d0 45%,
+    #fef9c3 60%,
+    #fde68a 75%,
+    #fdba74 90%,
+    #fb7185 100%
+  ) !important;
+  border:1px solid rgba(14,165,233,.25);
+}
+
+.meter-seg{
+  color:#111827 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.6) !important;
+}
+
+/* 팝업 */
+#loadingText,
+.loading-box{
+  background:rgba(15,23,42,.86) !important;
+  color:#fff !important;
+}
+
+/* 실명제 안내/검색 팝업 */
+.search-member-item{
+  background:#ffffff !important;
+  color:#111827 !important;
+  border:1px solid rgba(14,165,233,.28) !important;
+}
+
+/* 모바일 카드 */
+.diff-badge{
+  background:linear-gradient(135deg,#dff6ff,#8bdcff) !important;
+  color:#111827 !important;
+}
+
+.thumb{
+  background-color:#dff6ff !important;
+  background-size:cover !important;
+  background-position:center !important;
+  background-repeat:no-repeat !important;
+  color:#111827 !important;
+}
+
+.card-headers .h{
+  color:#111827 !important;
+}
+
+/* ================================
+   기록 칸 색상 봄톤 변경
+================================ */
+
+/* 기본 기록칸 글씨 */
+.chip{
+  color:#111827 !important;
+  border:1px solid rgba(0,0,0,.08) !important;
+  box-shadow:none !important;
+}
+
+/* 루키: 옅은 노란색 */
+.row-l-rookie .chip{
+  background:#fff3b0 !important;
+  color:#111827 !important;
+  border-color:#facc15 !important;
+}
+
+/* L3: 옅은 녹색 */
+.row-l-l3 .chip{
+  background:#bbf7d0 !important;
+  color:#111827 !important;
+  border-color:#22c55e !important;
+}
+
+/* L2: 옅은 파란색 */
+.row-l-l2 .chip{
+  background:#bfdbfe !important;
+  color:#111827 !important;
+  border-color:#3b82f6 !important;
+}
+
+/* L1: 옅은 붉은색 */
+.row-l-l1 .chip{
+  background:#fecaca !important;
+  color:#111827 !important;
+  border-color:#ef4444 !important;
+}
+
+/* 선택된 기록칸: 짙은 파란색 + 흰색 글씨 */
+.chip.selected,
+.row-l-rookie .chip.selected,
+.row-l-l3 .chip.selected,
+.row-l-l2 .chip.selected,
+.row-l-l1 .chip.selected{
+  background:#1d4ed8 !important;
+  color:#ffffff !important;
+  border-color:#1e40af !important;
+  box-shadow:0 0 0 3px rgba(29,78,216,.25) !important;
+}
+
+/* PC 표 맵이름 칸 자체를 기록칸처럼 변경 */
+#pcTableSection tbody tr td:first-child{
+  background:#fff3b0 !important;
+  color:#111827 !important;
+  border:1px solid #facc15 !important;
+  border-radius:6px !important;
+  text-align:center !important;
+  font-weight:800 !important;
+  box-shadow:none !important;
+}
+
+/* 맵이름 안쪽 글씨 */
+#pcTableSection tbody tr td:first-child,
+#pcTableSection tbody tr td:first-child .map{
+  color:#111827 !important;
+  text-align:center !important;
+  font-weight:800 !important;
+}
+
+/* ================================
+   맵 이름 칸 난이도별 색상
+================================ */
+
+/* 공통: 맵이름 칸 박스화 */
+#pcTableSection tbody tr td:first-child{
+  color:#111827 !important;
+  text-align:center !important;
+  font-weight:900 !important;
+  border-radius:6px !important;
+  border:1px solid transparent !important;
+}
+
+#pcTableSection tbody tr td:first-child .map{
+  color:#111827 !important;
+  text-align:center !important;
+  font-weight:900 !important;
+}
+
+/* 루키: 기록 노란색보다 살짝 진한 노란색 */
+#pcTableSection tbody tr.row-l-rookie td:first-child{
+  background:#fde68a !important;
+  border-color:#eab308 !important;
+}
+
+/* L3: 기록 녹색보다 살짝 진한 녹색 */
+#pcTableSection tbody tr.row-l-l3 td:first-child{
+  background:#86efac !important;
+  border-color:#16a34a !important;
+}
+
+/* L2: 기록 파란색보다 살짝 진한 파란색 */
+#pcTableSection tbody tr.row-l-l2 td:first-child{
+  background:#93c5fd !important;
+  border-color:#2563eb !important;
+}
+
+/* L1: 기록 붉은색보다 살짝 진한 빨간색 */
+#pcTableSection tbody tr.row-l-l1 td:first-child{
+  background:#fca5a5 !important;
+  border-color:#dc2626 !important;
+}
+
 .main-tabs{
   display:flex;
   gap:10px;
@@ -102,6 +848,7 @@ html,body{
   border:1px solid rgba(14,165,233,.25);
   box-shadow:0 4px 14px rgba(14,165,233,.12);
 }
+
 .main-tab{
   position:relative;
   flex:1;
@@ -111,11 +858,13 @@ html,body{
   border-radius:16px 16px 0 0;
   padding:15px 8px 16px;
   font-size:18px;
-  font-weight:1000;
+  font-weight:900;
   cursor:pointer;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
   transform:translateY(1px);
 }
+
+/* 책갈피 아래쪽 접힌 느낌 */
 .main-tab::after{
   content:"";
   position:absolute;
@@ -126,674 +875,3198 @@ html,body{
   height:14px;
   background:inherit;
   clip-path:polygon(0 0,100% 0,50% 100%);
+  border-left:1px solid rgba(14,165,233,.25);
+  border-right:1px solid rgba(14,165,233,.25);
 }
-.main-tab[data-tab="gunpyo"]{background:linear-gradient(135deg,#38bdf8,#0ea5e9)}
-.main-tab[data-tab="real"]{background:linear-gradient(135deg,#7dd3fc,#38bdf8)}
-.main-tab[data-tab="eventTournament"]{background:linear-gradient(135deg,#bae6fd,#7dd3fc)}
-.main-tab[data-tab="promo"]{background:linear-gradient(135deg,#dbeafe,#93c5fd)}
-.main-tab[data-tab="qna"]{background:linear-gradient(135deg,#e0f2fe,#a5f3fc)}
+
+/* 메뉴별 푸른색 계열 */
+.main-tab[data-tab="gunpyo"]{
+  background:linear-gradient(135deg,#38bdf8,#0ea5e9);
+}
+
+.main-tab[data-tab="real"]{
+  background:linear-gradient(135deg,#7dd3fc,#38bdf8);
+}
+
+.main-tab[data-tab="event"]{
+  background:linear-gradient(135deg,#bae6fd,#7dd3fc);
+}
+
+.main-tab[data-tab="tournament"]{
+  background:linear-gradient(135deg,#dbeafe,#93c5fd);
+}
+
+.main-tab[data-tab="promo"]{
+  background:linear-gradient(135deg,#e0f2fe,#a5f3fc);
+}
+
 .main-tab.active{
-  color:#fff;
+  color:#ffffff;
   border-color:#0284c7;
   transform:translateY(-4px);
-  box-shadow:0 8px 18px rgba(14,165,233,.28),inset 0 1px 0 rgba(255,255,255,.75);
+  box-shadow:
+    0 8px 18px rgba(14,165,233,.28),
+    inset 0 1px 0 rgba(255,255,255,.75);
   z-index:2;
 }
 
-/* ===== 군표 상단 패널 ===== */
-.panel{
-  background:var(--card);
-  border:1px solid rgba(30,80,120,.22);
-  border-radius:14px;
-  padding:12px 14px;
-  margin-top:8px;
-  box-shadow:0 8px 24px rgba(14,165,233,.12);
-}
-.controls{
-  display:flex;
-  align-items:flex-end;
-  flex-wrap:wrap;
-  gap:12px;
-}
-.input-wrap{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-}
-.input-wrap.nick{width:190px;flex:0 0 190px}
-.input-wrap.pin{width:126px;flex:0 0 126px}
-.input-wrap label{
-  font-size:13px;
-  color:#111827;
-  font-weight:700;
-}
-input{
-  width:100%;
-  height:50px;
-  background:#fff;
-  color:#111827;
-  border:1px solid rgba(14,165,233,.35);
-  border-radius:10px;
-  padding:12px 10px;
-  font-size:15px;
-}
-.rank-row{
-  display:flex;
-  gap:12px;
-  align-items:center;
-  margin-top:10px;
-}
-.big-rank{
-  flex:1;
-  height:58px;
-  padding:4px 10px;
-  border:2px solid #38bdf8;
-  border-radius:10px;
-  background:linear-gradient(135deg,#ffffff,#e0f7ff);
-  box-shadow:0 0 16px rgba(56,189,248,.25);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.big-rank .rank-text{
-  width:100%;
-  color:#0284c7;
-  font-size:30px;
-  line-height:1.1;
-  font-weight:1000;
-  text-align:center;
-}
-.rank-emph{
-  display:inline-block;
-  padding:1px 10px 2px;
-  margin:0 3px;
-  color:#1b1400;
-  font-size:1.05em;
-  font-weight:1000;
-  letter-spacing:.5px;
-  background:linear-gradient(135deg,#fff7cc,#ffd54f,#ffca28);
-  border-radius:999px;
-  box-shadow:0 1px 2px rgba(0,0,0,.25),0 0 8px rgba(255,213,79,.45);
+.main-tabs{
+  display:flex !important;
 }
 
-/* ===== 등급 막대 ===== */
-.rank-meter{
-  margin:18px 2px 0;
-  position:relative;
-  padding-top:0;
-}
-.meter-scale{
-  display:grid;
-  grid-template-columns:repeat(9,1fr);
-  height:38px;
-  border-radius:12px;
-  overflow:hidden;
-  background:linear-gradient(90deg,#38bdf8 0%,#7dd3fc 15%,#bae6fd 30%,#bbf7d0 45%,#fef9c3 60%,#fde68a 75%,#fdba74 90%,#fb7185 100%);
-  border:1px solid rgba(14,165,233,.25);
-}
-.meter-seg{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:#111827;
-  font-size:17px;
-  font-weight:1000;
-  letter-spacing:.5px;
-  text-shadow:0 1px 0 rgba(255,255,255,.6);
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.10);
-}
-.meter-marker{
-  position:absolute;
-  top:-9px;
-  left:var(--pos,94%);
-  transform:translateX(-50%);
-  width:8px;
-  height:56px;
-  transition:left .35s cubic-bezier(.22,.61,.36,1);
-  border-radius:999px;
-  background:linear-gradient(to bottom,#ff6b6b,#ff1744);
-  box-shadow:0 0 8px rgba(255,23,68,.9),0 0 18px rgba(255,23,68,.55);
-  z-index:5;
-}
-.meter-marker::after{
-  content:"";
-  position:absolute;
-  left:50%;
-  top:-4px;
-  transform:translateX(-50%);
-  width:15px;
-  height:15px;
-  border-radius:50%;
-  background:#ff1744;
-  box-shadow:0 0 12px rgba(255,23,68,.8);
-}
-
-.msg{
-  margin-top:14px;
-  white-space:pre-wrap;
-  background:rgba(255,255,255,.72);
-  border:1px solid rgba(14,165,233,.22);
-  border-radius:12px;
-  padding:12px 16px;
-  color:#0f172a;
-  font-size:14px;
-  line-height:1.45;
-}
-
-/* ===== 표 ===== */
-.table-wrap{
-  border-radius:14px;
-  border:1px solid rgba(14,165,233,.25);
-  margin-top:28px;
-  overflow:visible;
-  background:linear-gradient(135deg,#ffffff 0%,#e4f7ff 50%,#c7efff 100%);
-  padding:8px;
-  box-shadow:0 8px 24px rgba(14,165,233,.10);
-}
-table{
-  width:100%;
-  border-collapse:separate;
-  border-spacing:0;
-  table-layout:fixed;
-  color:#111827;
-}
-thead th{
-  position:sticky;
-  top:0;
-  z-index:100;
-  background:linear-gradient(135deg,#dff6ff,#9be3ff);
-  color:#111827;
-  font-size:20px;
-  font-weight:1000;
-  padding:12px 6px;
-  white-space:nowrap;
-  border-bottom:1px solid rgba(14,165,233,.3);
-  text-align:center;
-}
-thead th:first-child{border-radius:10px 0 0 0;width:300px}
-thead th:not(:first-child){width:110px}
-thead th:last-child{border-radius:0 10px 0 0}
-tbody td{
-  padding:3px 2px;
-  border-bottom:1px solid rgba(14,165,233,.16);
-  font-size:15px;
-  vertical-align:middle;
-  text-align:center;
-}
-tbody tr:hover{background:rgba(186,230,253,.25)}
-.map{
-  display:block;
-  width:100%;
-  padding:10px 6px;
-  background:#ffe98a;
-  border:1px solid #f5c400;
-  border-radius:7px;
-  color:#111827;
-  font-weight:1000;
-  font-size:20px;
-  text-align:center;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-.chip{
-  display:block;
-  width:100%;
-  min-height:44px;
-  padding:6px 4px;
-  border:1px solid #f5c400;
-  border-radius:7px;
-  background:#fff1a6;
-  color:#111827;
-  font-size:21px;
-  font-weight:1000;
-  line-height:1.2;
-  text-align:center;
-  cursor:pointer;
-  user-select:none;
-}
-.chip.disabled{
-  opacity:.45;
-  pointer-events:none;
-}
-.chip.selected{
-  background:#1d4ed8!important;
-  color:#ffffff!important;
-  border-color:#1e40af!important;
-  box-shadow:0 0 0 3px rgba(29,78,216,.25)!important;
-}
-
-/* ===== 난이도별 색상 복구 ===== */
-tr.diff-rookie .map,
-tr.diff-rookie .chip{
-  background:#fff3b0!important;
-  border-color:#facc15!important;
-}
-tr.diff-l3 .map,
-tr.diff-l3 .chip{
-  background:#bbf7d0!important;
-  border-color:#22c55e!important;
-}
-tr.diff-l2 .map,
-tr.diff-l2 .chip{
-  background:#bfdbfe!important;
-  border-color:#3b82f6!important;
-}
-tr.diff-l1 .map,
-tr.diff-l1 .chip{
-  background:#fecaca!important;
-  border-color:#ef4444!important;
-}
-tr.diff-rookie .map{background:#fde68a!important;border-color:#eab308!important}
-tr.diff-l3 .map{background:#86efac!important;border-color:#16a34a!important}
-tr.diff-l2 .map{background:#93c5fd!important;border-color:#2563eb!important}
-tr.diff-l1 .map{background:#fca5a5!important;border-color:#dc2626!important}
-.chip.selected{
-  background:#1d4ed8!important;
-  color:#ffffff!important;
-  border-color:#1e40af!important;
-  box-shadow:0 0 0 3px rgba(29,78,216,.25)!important;
-}
-
-.placeholder{
-  text-align:center;
-  padding:70px 15px;
-  font-size:22px;
-  font-weight:1000;
-  color:#2563eb;
-}
-.loading-overlay{
-  position:fixed;
-  inset:0;
-  z-index:999999;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:rgba(0,0,0,.30);
-}
 .loading-box{
-  background:rgba(15,23,42,.86);
-  color:#fff;
-  padding:18px 30px;
-  border-radius:14px;
+  background:transparent!important;
+  box-shadow:none!important;
+  padding:0!important;
+}
+
+.loading-gif{
+  width:min(360px,60vw);
+  height:auto;
+  display:block;
+  margin:0 auto;
+  border-radius:18px;
+}
+
+#realTopBtns{
+  display:none;
+}
+
+.board-panel h2{
+  margin:0 0 12px;
   font-size:24px;
   font-weight:900;
-  box-shadow:0 0 20px rgba(0,0,0,.45);
 }
+
+.board-write{
+  display:grid;
+  gap:8px;
+  margin-bottom:14px;
+}
+
+.board-textarea{
+  width:100%;
+  min-height:120px;
+  resize:vertical;
+  font-family:inherit;
+}
+
+.board-post{
+  background:#fff;
+  border:1px solid rgba(14,165,233,.25);
+  border-radius:14px;
+  padding:12px;
+  margin-bottom:10px;
+}
+
+.board-post-title{
+  font-size:18px;
+  font-weight:900;
+  margin-bottom:6px;
+}
+
+.board-post-meta{
+  font-size:13px;
+  color:#64748b;
+  margin-bottom:10px;
+}
+
+.board-post-content{
+  white-space:pre-wrap;
+  line-height:1.5;
+  margin-bottom:10px;
+}
+
+.board-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
+
+.board-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.board-title-item{
+  background:#ffffff;
+  border:1px solid rgba(14,165,233,.28);
+  border-radius:12px;
+  padding:14px;
+  font-size:18px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.board-title-item:hover{
+  background:#e0f7ff;
+}
+
+.board-post-open{
+  background:#ffffff;
+  border:1px solid rgba(14,165,233,.28);
+  border-radius:14px;
+  padding:16px;
+  margin-top:10px;
+}
+
+.board-post-open h3{
+  margin:0 0 8px;
+  font-size:22px;
+}
+
+.board-post-meta{
+  font-size:13px;
+  color:#64748b;
+  margin-bottom:12px;
+}
+
+.board-post-content{
+  white-space:pre-wrap;
+  line-height:1.6;
+  margin-bottom:12px;
+}
+
+.board-post-img{
+  max-width:100%;
+  border-radius:12px;
+  margin-top:10px;
+  border:1px solid rgba(14,165,233,.25);
+}
+
+.board-write-box{
+  margin-top:14px;
+  padding:14px;
+  border:1px solid rgba(14,165,233,.28);
+  border-radius:14px;
+  background:#ffffff;
+  display:grid;
+  gap:10px;
+}
+
+.board-write-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.board-textarea{
+  width:100%;
+  min-height:140px;
+  resize:vertical;
+  font-family:inherit;
+}
+
+/* 팝업창 글씨 검은색으로 변경 */
+.search-popup-box,
+.search-popup-box *,
+.auto-notice-box,
+.auto-notice-box *{
+  color:#111827 !important;
+}
+
+/* 자동 알림 팝업 메시지 */
+.auto-notice-msg{
+  color:#111827 !important;
+}
+
+/* 검색 결과/삭제 관련 팝업 내부 */
+#registerPopup,
+#memberSearchPopup,
+#autoNoticePopup{
+  color:#111827 !important;
+}
+
+/* prompt는 브라우저 기본창이라 CSS 적용 불가 */
+/* ===== 군실명제 맵이름 칸도 군표와 동일하게 테두리/색상 적용 ===== */
+#realPcTableSection tbody tr td:first-child{
+  color:#111827 !important;
+  text-align:center !important;
+  font-weight:900 !important;
+  border-radius:6px !important;
+  border:1px solid transparent !important;
+}
+
+#realPcTableSection tbody tr td:first-child .map{
+  color:#111827 !important;
+  text-align:center !important;
+  font-weight:900 !important;
+}
+
+/* 루키 */
+#realPcTableSection tbody tr.row-l-rookie td:first-child{
+  background:#fde68a !important;
+  border-color:#eab308 !important;
+}
+
+/* L3 */
+#realPcTableSection tbody tr.row-l-l3 td:first-child{
+  background:#86efac !important;
+  border-color:#16a34a !important;
+}
+
+/* L2 */
+#realPcTableSection tbody tr.row-l-l2 td:first-child{
+  background:#93c5fd !important;
+  border-color:#2563eb !important;
+}
+
+/* L1 */
+#realPcTableSection tbody tr.row-l-l1 td:first-child{
+  background:#fca5a5 !important;
+  border-color:#dc2626 !important;
+}
+
+/* 홍보/민원 게시판 목록 표 형식 */
+.promo-board-head,
+.promo-board-row{
+  display:grid;
+  grid-template-columns:90px 1fr 110px 120px 190px 70px;
+  align-items:center;
+  gap:10px;
+}
+
+/* 조회수 글씨 */
+.promo-board-row div:nth-child(5){
+  font-size:14px !important;
+  text-align:center !important;
+}
+
+.promo-board-head{
+  background:#dff6ff;
+  border:1px solid rgba(14,165,233,.35);
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:16px;
+  font-weight:700;
+  color:#111827;
+}
+
+.promo-board-row{
+  background:#ffffff;
+  border:1px solid rgba(14,165,233,.25);
+  border-radius:10px;
+  padding:11px 12px;
+  font-size:16px;
+  font-weight:400;
+  cursor:pointer;
+}
+
+.promo-board-row:hover{
+  background:#e0f7ff;
+}
+
+.promo-board-row div:nth-child(2){
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.board-title-item{
+  font-size:16px !important;
+  font-weight:400 !important;
+}
+
+#btnOpenBoardWrite{
+  font-size:16px !important;
+  font-weight:400 !important;
+  padding:11px 16px !important;
+}
+
+/* ===== 이벤트/대회 메인 ===== */
+.tournament-main-grid{
+  display:grid !important;
+  grid-template-columns:repeat(4, 1fr) !important;
+  gap:14px !important;
+  align-items:start !important;
+}
+
+.tournament-thumb-card{
+  background:#ffffff !important;
+  border:1px solid rgba(14,165,233,.28) !important;
+  border-radius:14px !important;
+  padding:10px !important;
+  cursor:pointer !important;
+  overflow:hidden !important;
+  box-shadow:0 6px 16px rgba(14,165,233,.12) !important;
+}
+
+.tournament-title{
+  font-size:15px !important;
+  font-weight:900 !important;
+  color:#0f172a !important;
+  text-align:center !important;
+  margin:0 0 8px !important;
+  line-height:1.25 !important;
+  min-height:38px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  writing-mode:horizontal-tb !important;
+  white-space:normal !important;
+}
+
+.tournament-thumb-img{
+  display:block !important;
+  width:100% !important;
+  height:260px !important;
+  object-fit:cover !important;
+  object-position:top center !important;
+  border-radius:10px !important;
+  border:1px solid rgba(14,165,233,.25) !important;
+}
+
+/* ===== 대회 포스터 크게보기 팝업 ===== */
+#tournamentPopup{
+  position:fixed !important;
+  inset:0 !important;
+  background:rgba(0,0,0,.65) !important;
+  z-index:99999999 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:20px !important;
+}
+
+#tournamentPopup.hidden{
+  display:none !important;
+}
+
+.tournament-popup-box{
+  width:min(900px,94vw) !important;
+  max-height:92vh !important;
+  background:#ffffff !important;
+  border-radius:18px !important;
+  padding:18px !important;
+  position:relative !important;
+  overflow:auto !important;
+}
+
+.tournament-close{
+  position:absolute !important;
+  top:12px !important;
+  right:12px !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+  border:0 !important;
+  border-radius:10px !important;
+  padding:8px 14px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+}
+
+.tournament-popup-title{
+  font-size:24px !important;
+  font-weight:900 !important;
+  text-align:center !important;
+  margin:10px 70px 16px !important;
+  color:#0f172a !important;
+  writing-mode:horizontal-tb !important;
+}
+
+.tournament-popup-slider{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:12px !important;
+}
+
+.tournament-popup-img{
+  display:block !important;
+  width:auto !important;
+  max-width:760px !important;
+  max-height:78vh !important;
+  object-fit:contain !important;
+  border-radius:12px !important;
+}
+
+.tournament-arrow{
+  width:48px !important;
+  height:48px !important;
+  border-radius:50% !important;
+  border:0 !important;
+  background:linear-gradient(135deg,#38bdf8,#2563eb) !important;
+  color:#ffffff !important;
+  font-size:28px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+.tournament-count{
+  text-align:center !important;
+  margin-top:10px !important;
+  font-size:16px !important;
+  font-weight:900 !important;
+  color:#2563eb !important;
+}
+
+/* 탭 색상 */
+.main-tab[data-tab="eventTournament"]{
+  background:linear-gradient(135deg,#bae6fd,#7dd3fc) !important;
+}
+
+.main-tab[data-tab="promo"]{
+  background:linear-gradient(135deg,#dbeafe,#93c5fd) !important;
+}
+
+.main-tab[data-tab="qna"]{
+  background:linear-gradient(135deg,#e0f2fe,#a5f3fc) !important;
+}
+
+/* 반응형 */
+@media(max-width:900px){
+  .tournament-main-grid{
+    grid-template-columns:repeat(2, 1fr) !important;
+  }
+}
+
+@media(max-width:520px){
+  .tournament-main-grid{
+    grid-template-columns:1fr !important;
+  }
+
+  .tournament-thumb-img{
+    height:380px !important;
+  }
+}
+
+.tournament-thumb-img{
+  display:block !important;
+  width:100% !important;
+  height:260px !important;
+  object-fit:contain !important;
+  object-position:top center !important;
+  background:#ffffff !important;
+  border-radius:10px !important;
+}
+
+.tournament-text-thumb{
+  height:260px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:#ffffff !important;
+  border-radius:10px !important;
+  border:1px solid rgba(14,165,233,.25) !important;
+  font-weight:900 !important;
+  color:#2563eb !important;
+  text-align:center !important;
+  line-height:1.5 !important;
+}
+
+/* 작성일자 글씨 2px 작게 */
+.promo-board-row div:nth-child(4){
+  font-size:14px !important;
+}
+
+/* 게시글 제목 박스 */
+.board-post-open h3{
+  font-size:22px !important;
+  font-weight:400 !important;
+  border:1px solid rgba(14,165,233,.35) !important;
+  border-radius:12px !important;
+  padding:12px 14px !important;
+  background:#f0fbff !important;
+  margin-bottom:10px !important;
+}
+
+/* 게시글 내용 얇은 글씨 */
+.board-post-content{
+  font-weight:400 !important;
+}
+
+/* 목록/수정/삭제 버튼 굵은 글씨 취소 */
+.board-post-open .btn{
+  font-weight:400 !important;
+}
+
+/* 본문 링크 */
+.board-post-content a{
+  color:#2563eb !important;
+  text-decoration:underline !important;
+  font-weight:500 !important;
+}
+
+.board-search-box{
+  display:flex !important;
+  gap:6px !important;
+  margin-top:10px !important;
+  justify-content:flex-end !important;
+  align-items:center !important;
+}
+
+.board-search-box.hidden{
+  display:none !important;
+}
+
+.board-search-input{
+  width:180px !important;
+  height:32px !important;
+  font-size:13px !important;
+  font-weight:400 !important;
+  padding:4px 8px !important;
+  border-radius:8px !important;
+  border:1px solid rgba(14,165,233,.35) !important;
+  background:#fff !important;
+  color:#111827 !important;
+}
+
+.board-search-btn{
+  height:32px !important;
+  padding:0 10px !important;
+  font-size:13px !important;
+  font-weight:400 !important;
+  border-radius:8px !important;
+  border:1px solid rgba(14,165,233,.35) !important;
+  background:#e0f7ff !important;
+  color:#111827 !important;
+  cursor:pointer !important;
+}
+
+.board-search-box{
+  display:flex !important;
+  gap:6px !important;
+  margin-top:10px !important;
+  justify-content:flex-end !important;
+}
+
+.board-search-box.hidden{
+  display:none !important;
+}
+
+.board-search-input,
+.board-search-btn{
+  height:30px !important;
+  font-size:13px !important;
+  font-weight:400 !important;
+}
+
+.admin-reply-box{
+  margin-top:18px !important;
+  padding:14px !important;
+  border:1px solid rgba(14,165,233,.35) !important;
+  border-radius:14px !important;
+  background:#f0fbff !important;
+}
+
+.admin-reply-title{
+  font-size:17px !important;
+  font-weight:900 !important;
+  color:#0284c7 !important;
+  margin-bottom:6px !important;
+}
+
+.admin-reply-meta{
+  font-size:13px !important;
+  color:#64748b !important;
+  margin-bottom:10px !important;
+  font-weight:700 !important;
+}
+
+.admin-reply-content{
+  white-space:pre-wrap !important;
+  line-height:1.6 !important;
+  font-size:15px !important;
+  color:#111827 !important;
+}
+
+.admin-reply-done{
+  display:inline-block !important;
+  margin-left:8px !important;
+  color:#ef4444 !important;
+  font-size:14px !important;
+  font-weight:900 !important;
+  vertical-align:middle !important;
+}
+
+.board-answer-status{
+  color:#ef4444 !important;
+  font-size:14px !important;
+  font-weight:900 !important;
+  text-align:center !important;
+  white-space:nowrap !important;
+}
+
+.main-tab::before{
+  margin-right:7px;
+  font-size:15px;
+  opacity:.28;
+  color:#0f172a;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.45),
+    0 -1px 0 rgba(0,0,0,.22);
+  filter:grayscale(1);
+}
+
+.main-tab[data-tab="gunpyo"]::before{
+  content:"⌕"; /* 돋보기 느낌 */
+}
+
+.main-tab[data-tab="real"]::before{
+  content:"▤"; /* 책자/문서 느낌 */
+}
+
+.main-tab[data-tab="eventTournament"]::before{
+  content:"♛"; /* 대회/왕관 느낌 */
+}
+
+.main-tab[data-tab="promo"]::before{
+  content:"◔"; /* 확성기 대신 은은한 포인트 */
+}
+
+.main-tab[data-tab="qna"]::before{
+  content:"◌"; /* 문의/대화 느낌 */
+}
+
+.main-tab.active::before{
+  opacity:.42;
+}
+
+.main-tab:hover::before{
+  opacity:.5;
+}
+
+.main-tab::before{
+  margin-right:8px;
+  font-size:22px;              /* ← 여기 키움 */
+  opacity:.28;
+  color:#0f172a;
+
+  display:inline-block;
+  transform:translateY(1px);   /* ← 살짝 내려서 정렬 맞춤 */
+
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.45),
+    0 -1px 0 rgba(0,0,0,.22);
+
+  filter:grayscale(1);
+}
+
+.main-tab.active::before{
+  opacity:.45;
+  transform:translateY(1px) scale(1.05);
+}
+
+#memberSearchPopup{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100vh!important;
+  z-index:99999999!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:90px 20px 30px!important;
+  background:rgba(0,0,0,.35)!important;
+}
+
+#memberSearchPopup.hidden{
+  display:none!important;
+}
+
+#memberSearchPopup .search-popup-box{
+  width:min(420px,90vw)!important;
+  max-height:calc(100vh - 140px)!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  margin:0!important;
+}
+
+.certified-badge{
+  display:inline-block !important;
+  margin-left:6px !important;
+  padding:2px 8px !important;
+  border-radius:999px !important;
+  background:#22c55e !important;
+  color:#ffffff !important;
+  border:1px solid #16a34a !important;
+  font-size:12px !important;
+  font-weight:400 !important;
+  vertical-align:middle !important;
+}
+
+.certified-row{
+  display:inline-block !important;
+  margin-left:4px !important;
+  padding:3px 10px !important;
+  border-radius:6px !important;
+  background:#16a34a !important;   /* 녹색 */
+  color:#ffffff !important;        /* 흰색 */
+  font-size:14px !important;
+  font-weight:400 !important;      /* 굵기 제거 */
+}
+
+select option.certified-option{
+  background:#16a34a !important;
+  color:#ffffff !important;
+  font-weight:400 !important;
+}
+.title-logo-badge{
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:8px !important;
+}
+
+.title-logo-img{
+  height:34px !important;
+  width:auto !important;
+  display:inline-block !important;
+  object-fit:contain !important;
+}
+
+.main-title-image{
+  height:50px !important;
+  width:auto !important;
+  display:block !important;
+  object-fit:contain !important;
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  border-radius:0 !important;
+}
+
+.title .badge,
+.badge:has(.main-title-image){
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+}
+
+.title{
+  display:flex;
+  align-items:center;
+  margin-bottom:2px !important;
+}
+
+.real-info-line{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  white-space:nowrap;
+}
+
+#realViews{
+  color:#2563eb !important;
+  font-size:16px;
+  font-weight:900;
+}
+
+.real-info-divider{
+  width:1px;
+  height:16px;
+  background:rgba(37,99,235,.45);
+}
+
+/* 조회 라인 */
+.real-info-line{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  white-space:nowrap;
+}
+
+.real-views-text{
+  color:#111827 !important;
+  font-weight:800;
+}
+
+.real-views-count{
+  display:inline-block;
+  margin-left:6px;
+  padding:2px 10px;
+  color:#111827;
+  font-size:1.05em;
+  font-weight:900;
+  background:linear-gradient(135deg,#ffe082,#ffd54f,#ffca28);
+  border-radius:999px;
+  border:1px solid #eab308;
+  box-shadow:0 1px 2px rgba(0,0,0,.25),0 0 6px rgba(255,213,79,.45);
+}
+
+/* 구분선 */
+.real-info-divider{
+  width:1px;
+  height:16px;
+  background:rgba(0,0,0,.25);
+}
+
+.real-views-text{
+  color:#111827 !important;
+  font-weight:800;
+}
+
+.real-views-count{
+  display:inline-block;
+  margin-left:6px;
+  padding:2px 10px;
+  color:#111827 !important;
+  font-size:1.05em;
+  font-weight:900;
+  background:linear-gradient(135deg,#ffe082,#ffd54f,#ffca28);
+  border-radius:999px;
+  border:1px solid #eab308;
+  box-shadow:0 1px 2px rgba(0,0,0,.25),0 0 6px rgba(255,213,79,.45);
+}
+
+/* ===== PC / 모바일 보기 전환 보정 ===== */
+body.mobile-view #pcTableSection{display:none!important;}
+body.mobile-view #mobileSection{display:block!important;}
+body.pc-view #pcTableSection{display:block!important;}
+body.pc-view #mobileSection{display:none!important;}
+body.mobile-view #goMobileBtn{box-shadow:0 0 0 3px rgba(239,68,68,.24),0 6px 16px rgba(239,68,68,.24)!important;transform:translateY(-1px);}
+body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(14,165,233,.18)!important;transform:translateY(-1px);}
+
 </style>
 </head>
 
 <body>
-<div id="loadingOverlay" class="loading-overlay hidden"><div class="loading-box">처리 중...</div></div>
-
-<div class="sticky-top">
-  <div class="sticky-inner">
-    <div class="topbar">
-      <img class="main-title-image" src="https://i.ibb.co/DgDzPPJB/44444.png" alt="루칭방 군 계산기">
-      <div class="row" style="gap:8px">
-        <button class="btn link" id="goPcBtn" type="button">PC로 보기</button>
-        <button class="btn red" id="goMobileBtn" type="button">모바일로 보기</button>
-      </div>
-    </div>
-
-    <div class="main-tabs">
-      <button class="main-tab active" data-tab="gunpyo" type="button">🔎 군표</button>
-      <button class="main-tab" data-tab="real" type="button">▤ 군 실명제</button>
-      <button class="main-tab" data-tab="eventTournament" type="button">♛ 이벤트/대회</button>
-      <button class="main-tab" data-tab="promo" type="button">◔ 홍 보</button>
-      <button class="main-tab" data-tab="qna" type="button">◌ 민원Q/A</button>
-    </div>
+<div id="loadingOverlay" class="hidden">
+  <div class="loading-box">
+    <img
+      src="https://i.ibb.co/4ZRCDsDs/animation-03s-no-shadow.gif"
+      class="loading-gif"
+      alt="로딩중"
+    />
   </div>
 </div>
 
 <div class="wrap">
-  <section id="gunpyoSection">
-    <div id="gunpyoTopPanel" class="panel">
-      <div class="controls">
-        <button class="btn gold" id="btnSave" type="button">저장하기</button>
 
-        <div class="input-wrap nick">
-          <label>닉네임</label>
-          <input id="nickname" placeholder="닉네임 입력"/>
+  <!-- ===== 상단 고정 ===== -->
+  <div class="sticky-top" id="stickyTop">
+    <div class="sticky-inner">
+
+      <!-- 타이틀 -->
+      <div class="topbar">
+        <div class="title">
+<img class="main-title-image" src="https://i.ibb.co/DgDzPPJB/44444.png" alt="루칭방 군 계산기">
         </div>
+<div class="row" style="gap:8px">
+  <div id="gunpyoTopBtns" style="display:flex;gap:8px;">
+    <button class="btn link" id="goPcBtn">PC로 보기</button>
+    <button class="btn red" id="goMobileBtn">모바일로 보기</button>
+  </div>
 
-        <div class="input-wrap pin">
-          <label>비밀번호(5자리)</label>
-          <input id="pin5" placeholder="예: 01234" maxlength="5" inputmode="numeric"/>
-        </div>
+  <div id="realTopBtns" style="display:none;gap:8px;">
 
-        <button class="btn" id="btnLoad" type="button">불러오기</button>
-        <button class="btn" id="btnReset" type="button">초기화</button>
-        <button class="btn" id="btnShot" type="button">스크린샷</button>
+  </div>
+</div>
       </div>
 
-      <div class="rank-row">
-        <div class="big-rank">
-          <div class="rank-text" id="rankText">당신은 <span class="rank-emph">6군</span> 입니다</div>
+<!-- ===== 상단 메뉴 탭 ===== -->
+<div class="main-tabs">
+  <button class="main-tab active" data-tab="gunpyo">군표</button>
+  <button class="main-tab" data-tab="real">군 실명제</button>
+  <button class="main-tab" data-tab="eventTournament">이벤트/대회</button>
+  <button class="main-tab" data-tab="promo">홍 보</button>
+  <button class="main-tab" data-tab="qna">민원Q/A</button>
+</div>
+
+<!-- ===== 군표 상단 패널 ===== -->
+<div id="gunpyoTopPanel" class="panel">
+        <div class="row" style="justify-content:space-between;">
+          <div class="controls">
+            <button class="btn gold" id="btnSave">저장하기</button>
+
+            <div class="input-wrap nick">
+              <label>닉네임</label>
+              <input id="nickname" placeholder="닉네임 입력"/>
+            </div>
+
+            <div class="input-wrap pin">
+              <label>비밀번호(5자리)</label>
+              <input id="pin5" type="password" maxlength="5" inputmode="numeric" placeholder="예: 01234" autocomplete="off" />
+            </div>
+
+            <button class="btn" id="btnLoad">불러오기</button>
+            <button class="btn" id="btnReset">초기화</button>
+            <button class="btn" id="btnJpg">스크린샷</button>
+
+            <!-- ✅ 버튼 하나 -->
+          </div>
+        </div>
+
+        <!-- 랭크 박스 -->
+        <div class="rank-row">
+<div class="big-rank" id="bigRank">
+  <div class="rank-text" id="bigRankText">당신은 6군입니다</div>
+</div>
+        </div>
+
+        <div class="rank-meter">
+          <div class="meter-scale" id="meterScale"></div>
+          <div class="meter-arrow" id="meterArrow"></div>
         </div>
       </div>
 
-      <div class="rank-meter">
-        <div class="meter-marker" id="meterMarker"></div>
-        <div class="meter-scale">
-          <div class="meter-seg">프로</div>
-          <div class="meter-seg">강주력</div>
-          <div class="meter-seg">주력</div>
-          <div class="meter-seg">1군</div>
-          <div class="meter-seg">2군</div>
-          <div class="meter-seg">3군</div>
-          <div class="meter-seg">4군</div>
-          <div class="meter-seg">5군</div>
-          <div class="meter-seg">6군</div>
-        </div>
-      </div>
+      <!-- ===== 실명제 상단 패널 ===== -->
+<div id="realTopPanel" class="panel hidden">
 
-      <div class="msg hidden" id="msg"></div>
+<div class="real-topline">
+  <div class="real-guide" style="margin-left:0;">
+      <div>• 군표에 <b>등록된 아이디 / 비번을 </b>이용하여 다시 등록하기</div>
+      <div>• 군기록을 수정하면 <b>자동으로 </b>군실명제도 실시간 반영됨</div>
+      <div>• 클럽 / 크루 <b>중복 등록가능</div>
     </div>
 
-    <div id="pcTableSection" class="table-wrap">
-      <table>
+    <div class="real-msg">
+      <div style="font-weight:900;color:#e8ecf5;">군 실명제</div>
+      <div>등록된 군표는 누구나 열람할 수 있습니다.</div>
+    </div>
+  </div>
+
+  <div class="big-rank real-rank-line" id="realBigRank" style="margin-top:14px">
+  <div class="rank-text" id="realRankText">선택된 멤버가 없습니다</div>
+<div class="real-info-line">
+<div id="realViews">
+  <span class="real-views-text">조회</span>
+  <span class="real-views-count">-</span>
+</div>
+  <div class="real-info-divider"></div>
+  <div id="realSavedAt">마지막 저장한 날짜 : -</div>
+</div>
+</div>
+
+<div class="rank-meter" id="realRankMeter">
+  <div class="meter-scale" id="realMeterScale"></div>
+  <div class="meter-arrow" id="realMeterArrow"></div>
+</div>
+
+<div id="manageOpenBox">
+  <button class="btn gold" id="btnOpenManageTab">
+    관리탭<br>열기
+  </button>
+</div>
+
+<div style="height:10px"></div>
+
+
+<div id="realScrollAwayArea">
+
+  <!-- 검색 + 관리 -->
+  <div class="real-row">
+    <div class="real-tag">검색</div>
+    <input id="memberSearchInput" class="text sm" placeholder="닉네임 검색"/>
+    <button class="btn gold" id="btnMemberSearch">검색</button>
+    <div id="memberSearchResult" style="color:#ffd54a;font-weight:900;"></div>
+
+    <div class="real-divider"></div>
+
+    <div class="real-tag">관리</div>
+    <button class="btn gold" id="btnOpenRegisterPopup">군실명제 등록</button>
+    <button class="btn" id="btnMemberSearchReset">초기화</button>
+    <button class="btn gold" id="btnRealJpg">스크린샷</button>
+  </div>
+
+  <!-- 검색 결과 팝업 -->
+  <div id="memberSearchPopup" class="hidden">
+    <div class="search-popup-box">
+      <div class="search-popup-head">
+        <b>검색 결과</b>
+        <button type="button" id="btnCloseMemberSearchPopup">닫기</button>
+      </div>
+      <div id="memberSearchPopupList"></div>
+    </div>
+  </div>
+
+  <!-- 등록 팝업 -->
+  <div id="registerPopup" class="hidden">
+    <div class="search-popup-box">
+      <div class="search-popup-head">
+        <b>군 실명제 등록</b>
+      </div>
+
+      <div class="real-row" style="margin-bottom:10px;">
+        <div class="real-tag">등록단체</div>
+        <select id="realTeam" class="select"></select>
+      </div>
+
+      <div class="real-row" style="margin-bottom:10px;">
+        <div class="real-tag">닉네임</div>
+        <input id="realNick" class="text sm" placeholder="인게임 닉네임"/>
+      </div>
+
+      <div class="real-row" style="margin-bottom:14px;">
+        <div class="real-tag">비번</div>
+        <input id="realPin" class="text pin" type="password" maxlength="5" inputmode="numeric" placeholder="군표비번(5자리)"/>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-start;">
+        <button class="btn gold" id="btnRealRegister">등록하기</button>
+        <button class="btn red" id="btnCloseRegisterPopup2">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:12px"></div>
+
+  <!-- 조회 -->
+  <div class="real-row">
+    <div class="real-tag">조회</div>
+
+    <select id="viewTeam" class="select"></select>
+    <select id="viewMember" class="select"></select>
+
+    <button class="btn red" id="btnViewDelete">삭제</button>
+
+    <span id="delPinWrap" class="hidden" style="display:flex;gap:8px;align-items:center;">
+      <input id="viewPin" class="text pin" type="password" maxlength="5" inputmode="numeric" placeholder="비밀번호"/>
+    </span>
+  </div>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+  <!-- 헤더 높이만큼 푸시 -->
+  <div class="sticky-push" id="stickyPush"></div>
+
+  <!-- ===== 군표 본문 ===== -->
+  <div id="gunpyoSection">
+    <div class="table-wrap panel" id="pcTableSection">
+      <table id="dataTable">
         <thead>
           <tr>
             <th>맵이름</th>
-            <th>프로</th>
-            <th>강주력</th>
-            <th>주력</th>
-            <th>1군</th>
-            <th>2군</th>
-            <th>3군</th>
-            <th>4군</th>
-            <th>5군</th>
+            <th>프로</th><th>강주력</th><th>주력</th>
+            <th>1군</th><th>2군</th><th>3군</th><th>4군</th><th>5군</th>
           </tr>
         </thead>
-        <tbody id="mapBody">
-          <tr><td colspan="9">맵 데이터를 불러오는 중입니다...</td></tr>
-        </tbody>
+        <tbody id="tbodyPc"></tbody>
       </table>
     </div>
-  </section>
 
-  <section id="realSection" class="hidden"><div class="panel placeholder">군 실명제 작업 대기 중입니다. 다음 단계에서 단체 등록/조회/검색을 연결합니다.</div></section>
-  <section id="eventTournamentSection" class="hidden"><div class="panel placeholder">이벤트/대회 작업 대기 중입니다. 포스터/이미지 목록 기능을 연결합니다.</div></section>
-  <section id="promoSection" class="hidden"><div class="panel placeholder">홍보 게시판 작업 대기 중입니다. 글쓰기/목록/수정/삭제를 연결합니다.</div></section>
-  <section id="qnaSection" class="hidden"><div class="panel placeholder">민원Q/A 작업 대기 중입니다. 질문/답변 게시판을 연결합니다.</div></section>
+    <div class="mobile-section" id="mobileSection">
+      <h2 style="margin:6px 0 10px;font-size:22px">모바일 확대 보기</h2>
+      <div id="mobileCards"></div>
+    </div>
+  </div>
+
+  <!-- ===== 실명제 본문(결과표) ===== -->
+  <div id="realSection" class="hidden">
+    <div class="member-box">
+
+
+      <div class="table-wrap panel" id="realPcTableSection" style="margin-top:14px">
+        <table id="realDataTable">
+          <thead>
+            <tr>
+              <th>맵이름</th>
+              <th>프로</th><th>강주력</th><th>주력</th>
+              <th>1군</th><th>2군</th><th>3군</th><th>4군</th><th>5군</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyRealPc"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 게시판 본문 ===== -->
+<div id="boardSection" class="hidden">
+  <div class="panel board-panel">
+
+    <div class="board-top">
+      <div></div>
+      <button class="btn gold" id="btnOpenBoardWrite">글쓰기</button>
+    </div>
+
+    <div id="boardList" class="board-list"></div>
+
+    <div id="boardWriteBox" class="hidden board-write-box">
+      <div class="board-write-head">
+        <b>글쓰기</b>
+        <button class="btn red" id="btnCloseBoardWrite">닫기</button>
+      </div>
+
+      <input id="boardWriter" class="text sm" placeholder="작성자"/>
+      <input id="boardTitleInput" class="text" placeholder="제목"/>
+      <textarea id="boardContentInput" class="text board-textarea" placeholder="내용"></textarea>
+
+<input id="boardImageInput" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"/>
+
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+  <input id="boardPinInput" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="비밀번호 4자리"/>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+      <button class="btn gold" id="btnBoardWrite">등록하기</button>
+    </div>
+    <div id="boardSearchBox" class="board-search-box hidden">
+      <input id="boardSearchInput" class="board-search-input" placeholder="제목+내용 검색">
+      <button id="btnBoardSearch" class="board-search-btn">검색</button>
+      <button id="btnBoardSearchReset" class="board-search-btn">초기화</button>
+    </div>
+  </div>
+</div>
+
+  <div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
-const SUPABASE_URL = "https://xyibdanmecakevhtdajl.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_uvYqwDymxodcSdpT1zAWyg_PeVHh_ZO";
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+/* =========================================================
+   카러플 군 계산기 - 정리본 SCRIPT
+   - 기존 기능 유지
+   - 중복 바인딩/중복 주석 정리
+   - 함수별 역할 구분
+========================================================= */
 
-const TIERS = [
-  {key:"pro", label:"프로", weight:128},
-  {key:"strong", label:"강주력", weight:64},
-  {key:"main", label:"주력", weight:32},
-  {key:"g1", label:"1군", weight:16},
-  {key:"g2", label:"2군", weight:8},
-  {key:"g3", label:"3군", weight:4},
-  {key:"g4", label:"4군", weight:2},
-  {key:"g5", label:"5군", weight:1}
+/* ========= 썸네일(옵션) ========= */
+const THUMBS = {
+  "빌리지 고가의 질주": "https://i.ibb.co/v6fvf3nr/image.jpg",
+  "빌리지 남산": "https://i.ibb.co/KxFjh0Dg/image.jpg",
+  "비치 해변 드라이브": "https://i.ibb.co/NdN8KrFT/image.jpg",
+  "WKC 싱가폴 서킷": "https://i.ibb.co/FkjHbBCm/WKC.jpg",
+  "차이나 라사": "https://i.ibb.co/fzw7qTwf/image.jpg",
+  "차이나 용의 운하": "https://i.ibb.co/BKfdhHDw/image.jpg",
+  "쥐라기 공룡 무덤": "https://i.ibb.co/Wv5HRp20/image.jpg",
+  "신화 차원의 관문": "https://i.ibb.co/6cn26C3V/image.jpg",
+  "더 월드": "https://i.ibb.co/R4tfWSds/image.jpg",
+  "코리아 서킷": "https://i.ibb.co/v6Mr2D9F/image.jpg",
+  "월드 두바이 다운 타운": "https://i.ibb.co/9HHWWbmn/image.jpg",
+  "도검 야외 수련장": "https://i.ibb.co/jkgrcT9M/image.jpg",
+  "월드 리오 다운힐": "https://i.ibb.co/Mxs5HK1J/image.jpg",
+  "쥐라기 공룡 결투장": "https://i.ibb.co/BVMbXv6R/image.jpg",
+  "문힐시티 폭우속의 질주": "https://i.ibb.co/sppzL5d2/image.jpg",
+  "메카닉 잊혀진 도시의 중심부": "https://i.ibb.co/My3BK106/image.jpg",
+  "빌리지 운명의 다리": "https://i.ibb.co/dscWTKCc/image.jpg",
+  "도검 용의 길": "https://i.ibb.co/G3P7XJ1G/image.jpg",
+  "네모 장난감 선물 공장": "https://i.ibb.co/V06s9t5s/image.jpg",
+  "브로디 비밀의 연구소": "https://i.ibb.co/nGPghS7/image.jpg",
+  "노르테유 전투 비행장": "https://i.ibb.co/tTq910X8/image.jpg",
+  "빌리지 익스트림 경기장": "https://i.ibb.co/h1mc5Nn4/image.jpg",
+  "월드 파리 에펠탑 드라이브": "https://i.ibb.co/m5bHnzsW/image.jpg",
+  "월드 뉴욕 대질주": "https://i.ibb.co/RkNdBSFM/image.jpg",
+  "차이나 청명한 하늘의 서호": "https://i.ibb.co/TMXzNnFb/image.jpg",
+  "신화 신들의 세계": "https://i.ibb.co/d4QbVbnQ/image.jpg",
+  "팩토리 부비트랩 공장 탐험": "https://i.ibb.co/m1sJyJn/image.jpg",
+  "R 해적 로비 절벽의 전투": "https://i.ibb.co/ZRVmN3Kn/R.jpg",
+  "동화 마녀의 성": "https://i.ibb.co/7JSGJXY6/image.jpg",
+  "문힐시티 지피의 시청광장": "https://i.ibb.co/xKJrTpf6/image.jpg",
+  "광산 아슬아슬 궤도 전차": "https://i.ibb.co/fVDz1W1t/image.jpg",
+  "사막 놀라운 공룡 유적지": "https://i.ibb.co/MkWv7LT6/image.jpg",
+  "네모 강철 바위 용광로": "https://i.ibb.co/G4Lm0yYt/image.jpg",
+  "동화 잠자는 숲속의 거인": "https://i.ibb.co/wNQkz1Gh/image.jpg",
+  "WKC 상해 서킷": "https://i.ibb.co/1YpXHxwc/WKC.jpg",
+  "노르테유 스카이웨이": "https://i.ibb.co/ym6Md5qV/image.jpg",
+  "카멜롯 팬드래건 캐슬": "https://i.ibb.co/wN4TQbxK/image.jpg",
+  "신화 오딘의 궁전": "https://i.ibb.co/TyWXNcY/image.jpg",
+  "올림포스 제우스 시티": "https://i.ibb.co/CsnghRbk/image.jpg",
+  "월드 이탈리아 여행": "https://i.ibb.co/mCQ8c9dP/image.jpg",
+  "카멜롯 외곽 순찰로": "https://i.ibb.co/hJ8BkVM6/image.jpg",
+  "어비스 바다 소용돌이": "https://i.ibb.co/N24xzBN1/image.jpg",
+  "차이나 서안 병마용": "https://i.ibb.co/p62NJ0Gd/image.jpg",
+  "빌리지 만리장성": "https://i.ibb.co/5hkb1Nwn/image.jpg",
+  "해적 로비 절벽의 전투": "https://i.ibb.co/0V6drFKc/image.jpg",
+  "님프 바다신전의 비밀": "https://i.ibb.co/gMf2yXTZ/image.jpg",
+  "포레스트 지그재그": "https://i.ibb.co/nNcdVzs6/image.jpg",
+  "WKC 브라질 서킷": "https://i.ibb.co/chPx8NXk/WKC.jpg",
+  "사막 빙글빙글 공사장": "https://i.ibb.co/XxhRFKgS/image.jpg",
+  "대저택 은밀한 지하실": "https://i.ibb.co/RGrc1Qrh/image.jpg",
+  "차이나 황산": "https://i.ibb.co/d0RHrPWy/image.jpg",
+  "해적 숨겨진 보물": "https://i.ibb.co/p6rN3Qt7/image.jpg",
+  "빌리지 붐힐 터널": "https://i.ibb.co/k65dHD8s/image.jpg",
+  "아이스 갈라진 빙산": "https://i.ibb.co/Z657PR1q/image.jpg",
+  "황금문명 비밀장치의 위협": "https://i.ibb.co/d0Mp0nR6/image.jpg",
+  "네모 산타의 비밀 공간": "https://i.ibb.co/KzrqTR9w/image.jpg",
+  "황금문명 오르에트 황금 좌표": "https://i.ibb.co/fz2sVdRb/image.jpg",
+  "차이나 골목길 대질주": "https://i.ibb.co/R4PtvS9W/image.jpg",
+  "해적 가파른 감시탑": "https://i.ibb.co/wZMkP8NQ/image.jpg",
+  "도검 구름의 협곡": "https://i.ibb.co/S4SQmDtd/image.jpg",
+  "팩토리 두개의 공장": "https://i.ibb.co/Wp0qSdZ9/image.jpg",
+  "해적 상어섬의 비밀": "https://i.ibb.co/LXym4302/image.jpg",
+  "포레스트 오싹한 공중다리": "https://i.ibb.co/bgQ7m1V7/image.jpg",
+  "포레스트 대관령": "https://i.ibb.co/LdJxttbD/image.jpg",
+  "광산 3개의 지름길": "https://i.ibb.co/99ZQKp3k/3.jpg",
+  "쥐라기 공룡섬 대모험": "https://i.ibb.co/ycDzpbpq/image.jpg",
+  "WKC 투어링 랠리": "https://i.ibb.co/3YCQYJPG/WKC.jpg",
+  "아이스 아찔한 헬기 점프": "https://i.ibb.co/fY5QmVYQ/image.jpg",
+  "어비스 숨겨진 바닷길": "https://i.ibb.co/d0gm235b/image.jpg",
+  "사막 오래된 송수관": "https://i.ibb.co/5hW5wDN1/image.jpg",
+  "공동묘지 해골성 대탐험": "https://i.ibb.co/spdsy9gt/image.jpg",
+  "올림포스 하늘의 신전": "https://i.ibb.co/m5sLYGmG/image.jpg",
+  "어비스 스카이라인": "https://i.ibb.co/QFv8JYZM/image.jpg",
+  "동화 이상한 나라의 문": "https://i.ibb.co/mC7xZGzf/image.jpg",
+  "노르테유 익스프레스": "https://i.ibb.co/W4H3yzW8/image.jpg",
+  "광산 꼬불꼬불 다운힐": "https://i.ibb.co/xqJws2z3/image.jpg",
+  "팩토리 미완성 5구역": "https://i.ibb.co/fVcYP4CG/5.jpg",
+  "포레스트 아찔한 다운힐": "https://i.ibb.co/673LRK8f/image.jpg",
+  "공동묘지 마왕의 초대": "https://i.ibb.co/SGJ9vHW/image.jpg",
+  "아이스 설산 다운힐": "https://i.ibb.co/XxmJSvJz/image.jpg",
+  "R 포레스트 지그재그": "https://i.ibb.co/pB3B7b0Q/R.jpg",
+  "문힐시티 숨겨진 지하터널": "https://i.ibb.co/WW82PCbM/image.jpg",
+  "광산 위험한 제련소": "https://i.ibb.co/rGz66XqK/image.jpg",
+  "차이나 용의 성지": "https://i.ibb.co/23dYMGBD/image.jpg",
+  "해적 대해적 로두마니": "https://i.ibb.co/yc23Zmtx/image.jpg",
+  "아이스 부서진 빙산": "https://i.ibb.co/whwmVkDd/image.jpg",
+  "코리아 다이나믹 서울": "https://i.ibb.co/ds12nvw5/image.jpg",
+  "코리아 부산의 밤": "https://i.ibb.co/CprpVq7x/image.jpg",
+  "사막 거대한 정유공장": "https://i.ibb.co/Kc50PLyP/image.jpg",
+  "공동묘지 절망의 카타콤": "https://i.ibb.co/hJGjJG21/image.jpg",
+  "빌리지 붐힐 드라이브": "https://i.ibb.co/s95xzv93/image.jpg",
+};
+
+/* ========= 전역 ========= */
+let SHEET_ROWS = [],
+  WEIGHTS = {},
+  RANKS = [];
+let ROW_BY_ID = {};
+const selections = {}; // { rowId: {tier:'프로', time:'1:23:456'} }
+let MEMBER_SEARCH_RESULTS = [];
+
+/* 등급 정의 */
+const TIERS_DESC = [
+  {
+    label: "프로",
+    min: 5760,
+    color: "linear-gradient(135deg,#ff1744,#ff6b6b)",
+  },
+  {
+    label: "강주력",
+    min: 2880,
+    color: "linear-gradient(135deg,#ff4fd8,#ff9de8)",
+  },
+  {
+    label: "주력",
+    min: 1440,
+    color: "linear-gradient(135deg,#7c4dff,#b388ff)",
+  },
+  { label: "1군", min: 720, color: "linear-gradient(135deg,#1e40af,#60a5fa)" },
+  { label: "2군", min: 360, color: "linear-gradient(135deg,#00bcd4,#67e8f9)" },
+  { label: "3군", min: 180, color: "linear-gradient(135deg,#00c896,#86efac)" },
+  { label: "4군", min: 90, color: "linear-gradient(135deg,#cddc39,#faff72)" },
+  { label: "5군", min: 45, color: "linear-gradient(135deg,#ff8a00,#ffc46b)" },
+  { label: "6군", min: 0, color: "linear-gradient(135deg,#ef4444,#fb7185)" },
 ];
 
-const RANKS = [
-  {min:5760,label:"프로군",pos:5.5},
-  {min:2880,label:"강주력",pos:16.6},
-  {min:1440,label:"주력",pos:27.7},
-  {min:720,label:"1군",pos:38.8},
-  {min:360,label:"2군",pos:50.0},
-  {min:180,label:"3군",pos:61.1},
-  {min:90,label:"4군",pos:72.2},
-  {min:45,label:"5군",pos:83.3},
-  {min:0,label:"6군",pos:94.4}
-];
+const MAX_SCORE = 9856;
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
-let MAPS = [];
-let selections = {};
-
-function $(id){return document.getElementById(id);}
-function showLoading(v){$("loadingOverlay").classList.toggle("hidden",!v);}
-function setMsg(t){
-  const el = $("msg");
-  el.textContent = t || "";
-  el.classList.toggle("hidden", !t);
+/* 유틸 */
+function esc(s) {
+  return String(s || "").replace(
+    /[&<>"']/g,
+    (m) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        m
+      ],
+  );
+}
+function normName(s) {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[^\p{Letter}\p{Number}]/gu, "");
+}
+function rowClassByDiff(d) {
+  const s = String(d || "")
+    .toLowerCase()
+    .replace(/\s|_/g, "");
+  if (s.includes("루키") || s.includes("rookie")) return "row-l-rookie";
+  if (s === "l3" || s === "lv3" || s === "l-3" || s === "l③" || s === "lⅲ")
+    return "row-l-l3";
+  if (s === "l2" || s === "lv2" || s === "l-2" || s === "l②" || s === "lⅱ")
+    return "row-l-l2";
+  if (s === "l1" || s === "lv1" || s === "l-1" || s === "l①" || s === "lⅰ")
+    return "row-l-l1";
+  return "";
+}
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  setTimeout(() => (t.style.display = "none"), 1500);
+}
+function rebuildRowMap() {
+  ROW_BY_ID = Object.fromEntries(
+    (SHEET_ROWS || []).map((r) => [String(r.id), r]),
+  );
+}
+function roundScore(value) {
+  return Math.round((Number(value) || 0) * 100) / 100;
+}
+function getSelectionTotal(selObj = selections) {
+  let total = 0;
+  Object.entries(selObj || {}).forEach(([rowId, picked]) => {
+    const row = ROW_BY_ID[String(rowId)] || {};
+    const bonusPercent = Number(String(row["추가점수"] || "").trim());
+    const bonus =
+      isFinite(bonusPercent) && bonusPercent > 0 ? 1 + bonusPercent / 100 : 1;
+    total += (WEIGHTS[picked?.tier] || 0) * bonus;
+  });
+  return roundScore(total);
 }
 
-async function loadMaps(){
-  const tbody = $("mapBody");
-  tbody.innerHTML = `<tr><td colspan="9">맵 데이터를 불러오는 중입니다...</td></tr>`;
+/* 헤더 offset */
+function headerHeight() {
+  return document.getElementById("stickyTop")?.offsetHeight || 0;
+}
+function refreshHeaderPush() {
+  const h = headerHeight();
+  document.documentElement.style.setProperty("--header-offset", h + "px");
+  const push = document.getElementById("stickyPush");
+  if (push) push.style.height = h + "px";
+}
+addEventListener("load", refreshHeaderPush);
+addEventListener("resize", refreshHeaderPush);
+addEventListener("orientationchange", refreshHeaderPush);
 
-  const {data, error} = await db
-    .from("map_records")
-    .select("*")
-    .order("sort_order",{ascending:true});
-
-  if(error){
-    tbody.innerHTML = `<tr><td colspan="9">맵 데이터 불러오기 실패: ${error.message}</td></tr>`;
-    setMsg("맵 데이터 불러오기 실패:\n" + error.message);
-    return;
-  }
-
-  MAPS = data || [];
-
-  if(MAPS.length === 0){
-    tbody.innerHTML = `<tr><td colspan="9">맵 데이터가 없습니다.</td></tr>`;
-    return;
-  }
-
-  renderMaps();
+/* 스크롤 이동 보정 */
+function scrollToWithOffset(el, extra = 8) {
+  if (!el) return;
+  const y =
+    el.getBoundingClientRect().top + window.scrollY - headerHeight() - extra;
+  window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+}
+function findPcRowByMap(map) {
+  const key = normName(map);
+  return document.querySelector(`tr[data-map="${key}"]`);
+}
+function findMobileCardByMap(map) {
+  const key = normName(map);
+  return document.querySelector(`.card[data-map="${key}"]`);
 }
 
-function renderMaps(){
-  const body = $("mapBody");
-  body.innerHTML = "";
+/* 등급 막대 */
+function buildMeter() {
+  const scale = document.getElementById("meterScale");
+  scale.innerHTML = TIERS_DESC.map(
+    (t) => `<div class="meter-seg">${t.label}</div>`,
+  ).join("");
+  updateMeter(0, true);
+}
 
-  MAPS.forEach(row => {
+function buildRealMeter() {
+  const scale = document.getElementById("realMeterScale");
+  if (!scale) return;
+
+  scale.innerHTML = TIERS_DESC.map(
+    (t) => `<div class="meter-seg">${t.label}</div>`,
+  ).join("");
+
+  updateRealMeter(0, true);
+}
+
+function meterPercentFromTotal(total) {
+  let idx = TIERS_DESC.findIndex((t) => total >= t.min);
+  if (idx < 0) idx = TIERS_DESC.length - 1;
+
+  const segW = 100 / TIERS_DESC.length;
+  const r = segmentRatio(total, idx);
+  return (idx + 1 - r) * segW;
+}
+
+function getMeterCurrentPercent(arrow) {
+  const saved = Number(arrow.dataset.pos);
+  if (Number.isFinite(saved)) return saved;
+
+  const raw = getComputedStyle(arrow).getPropertyValue("--pos").trim();
+  const parsed = Number(String(raw).replace("%", ""));
+  return Number.isFinite(parsed) ? parsed : 100;
+}
+
+function setMeterPos(arrow, value) {
+  const safe = Math.max(0, Math.min(100, Number(value) || 0));
+  arrow.dataset.pos = String(safe);
+  arrow.style.setProperty("--pos", safe + "%");
+}
+
+function animateMeterTo(arrow, targetPercent, duration = 720) {
+  if (!arrow) return;
+
+  const start = getMeterCurrentPercent(arrow);
+  const end = Math.max(0, Math.min(100, Number(targetPercent) || 0));
+
+  if (arrow._meterRaf) cancelAnimationFrame(arrow._meterRaf);
+
+  const startTime = performance.now();
+  const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+  function frame(now) {
+    const t = Math.min(1, (now - startTime) / duration);
+    const eased = easeOutCubic(t);
+    setMeterPos(arrow, start + (end - start) * eased);
+
+    if (t < 1) {
+      arrow._meterRaf = requestAnimationFrame(frame);
+    } else {
+      arrow._meterRaf = null;
+      setMeterPos(arrow, end);
+    }
+  }
+
+  arrow._meterRaf = requestAnimationFrame(frame);
+}
+
+function updateRealMeter(total, instant = false) {
+  const arrow = document.getElementById("realMeterArrow");
+  if (!arrow) return;
+
+  const leftPercent = meterPercentFromTotal(total);
+  if (instant) setMeterPos(arrow, leftPercent);
+  else animateMeterTo(arrow, leftPercent);
+}
+
+function formatSavedAt(v) {
+  if (!v) return "-";
+
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return String(v);
+
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+
+  return `${yyyy}/${mm}/${dd} ${hh}:${mi}`;
+}
+function segmentRatio(total, idx) {
+  const cur = TIERS_DESC[idx];
+  const next = TIERS_DESC[idx - 1];
+  if (!cur) return 0;
+  if (next) {
+    const span = next.min - cur.min;
+    return clamp01((total - cur.min) / (span || 1));
+  } else {
+    const span = MAX_SCORE - cur.min;
+    return clamp01((total - cur.min) / (span || 1));
+  }
+}
+function updateMeter(total, instant = false) {
+  const arrow = document.getElementById("meterArrow");
+  if (!arrow) return;
+
+  const leftPercent = meterPercentFromTotal(total);
+  if (instant) setMeterPos(arrow, leftPercent);
+  else animateMeterTo(arrow, leftPercent);
+}
+
+/* PC 표 */
+function chipHtml(rowId, tier, time) {
+  const cls = `chip${time ? "" : " disabled"}`;
+  return `<span class="${cls}" data-row="${rowId}" data-tier="${tier}" data-time="${time || ""}">${time || "-"}</span>`;
+}
+function renderPc() {
+  const tb = document.getElementById("tbodyPc");
+  tb.innerHTML = "";
+  for (const r of SHEET_ROWS) {
     const tr = document.createElement("tr");
-    const diffText = String(row.difficulty || "").trim().toLowerCase();
-    const diffClass = diffText.includes("루키") ? "diff-rookie" : diffText.includes("l3") ? "diff-l3" : diffText.includes("l2") ? "diff-l2" : diffText.includes("l1") ? "diff-l1" : "diff-rookie";
-    tr.className = diffClass;
+    tr.className = rowClassByDiff(r["난이도"]);
+    tr.dataset.map = normName(r["맵이름"]);
+    tr.innerHTML = `
+      <td class="map" title="${esc(r["맵이름"])}">${esc(r["맵이름"])}</td>
+      <td class="center">${chipHtml(r.id, "프로", r["프로"])}</td>
+      <td class="center">${chipHtml(r.id, "강주력", r["강주력"])}</td>
+      <td class="center">${chipHtml(r.id, "주력", r["주력"])}</td>
+      <td class="center">${chipHtml(r.id, "1군", r["_1군"])}</td>
+      <td class="center">${chipHtml(r.id, "2군", r["_2군"])}</td>
+      <td class="center">${chipHtml(r.id, "3군", r["_3군"])}</td>
+      <td class="center">${chipHtml(r.id, "4군", r["_4군"])}</td>
+      <td class="center">${chipHtml(r.id, "5군", r["_5군"])}</td>
+    `;
+    tb.appendChild(tr);
+  }
+}
 
-    const mapTd = document.createElement("td");
-    mapTd.innerHTML = `<span class="map">${row.map_name || ""}</span>`;
-    tr.appendChild(mapTd);
+function renderRealPc(selObj) {
+  const tb = document.getElementById("tbodyRealPc");
+  if (!tb) return;
 
-    TIERS.forEach(t => {
-      const td = document.createElement("td");
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "chip";
-      btn.dataset.rowId = String(row.id);
-      btn.dataset.tier = t.key;
-      btn.textContent = row[t.key] || "";
+  tb.innerHTML = "";
 
-      if(!row[t.key]) {
-        btn.classList.add("disabled");
-      } else {
-        btn.addEventListener("click", () => selectTier(row, t.key, t.label, row[t.key]));
+  for (const r of SHEET_ROWS) {
+    const chosen = selObj && selObj[String(r.id)] ? selObj[String(r.id)] : null;
+
+    const tr = document.createElement("tr");
+    tr.className = rowClassByDiff(r["난이도"]);
+    tr.dataset.map = normName(r["맵이름"]);
+
+    tr.innerHTML = `
+      <td class="map" title="${esc(r["맵이름"])}">${esc(r["맵이름"])}</td>
+      ${realChipCell(r.id, "프로", r["프로"], chosen)}
+      ${realChipCell(r.id, "강주력", r["강주력"], chosen)}
+      ${realChipCell(r.id, "주력", r["주력"], chosen)}
+      ${realChipCell(r.id, "1군", r["_1군"], chosen)}
+      ${realChipCell(r.id, "2군", r["_2군"], chosen)}
+      ${realChipCell(r.id, "3군", r["_3군"], chosen)}
+      ${realChipCell(r.id, "4군", r["_4군"], chosen)}
+      ${realChipCell(r.id, "5군", r["_5군"], chosen)}
+    `;
+    tb.appendChild(tr);
+  }
+}
+
+function realChipCell(rowId, tier, time, chosen) {
+  const hasTime = !!time;
+  const isSel = chosen && chosen.tier === tier;
+  const cls = `chip${hasTime ? "" : " disabled"}${isSel ? " selected" : ""}`;
+  return `<td class="center"><span class="${cls}" data-row="${rowId}" data-tier="${tier}" data-time="${time || ""}">${time || "-"}</span></td>`;
+}
+
+/* 모바일 카드 */
+function renderMobile() {
+  const box = document.getElementById("mobileCards");
+  box.innerHTML = "";
+  for (const r of SHEET_ROWS) {
+    const mapName = r["맵이름"] || "";
+    const imgUrl = THUMBS[mapName] || "";
+    const thumbStyle = imgUrl ? `background-image:url('${imgUrl}')` : "";
+    const diffCls = rowClassByDiff(r["난이도"] || "");
+    const key = normName(mapName);
+
+    const card = document.createElement("div");
+    card.className = `card ${diffCls}`;
+    card.dataset.map = key;
+    card.innerHTML = `
+      <div class="card-head">
+        <div class="diff-badge">${esc(r["난이도"] || "")}</div>
+        <div class="thumb" style="${thumbStyle}">${imgUrl ? "" : "📷"}</div>
+        <div class="map-big">${esc(mapName)}</div>
+      </div>
+      <div class="card-headers">
+        <div class="h">프로</div><div class="h">강주력</div><div class="h">주력</div><div class="h">1군</div>
+        <div class="h">2군</div><div class="h">3군</div><div class="h">4군</div><div class="h">5군</div>
+      </div>
+      <div class="card-times ${diffCls}">
+        ${chipHtml(r.id, "프로", r["프로"])}
+        ${chipHtml(r.id, "강주력", r["강주력"])}
+        ${chipHtml(r.id, "주력", r["주력"])}
+        ${chipHtml(r.id, "1군", r["_1군"])}
+        ${chipHtml(r.id, "2군", r["_2군"])}
+        ${chipHtml(r.id, "3군", r["_3군"])}
+        ${chipHtml(r.id, "4군", r["_4군"])}
+        ${chipHtml(r.id, "5군", r["_5군"])}
+      </div>
+    `;
+    box.appendChild(card);
+  }
+}
+
+/* 선택 동기화 */
+function syncRowVisual(rowId) {
+  const chosen = selections[rowId];
+  document
+    .querySelectorAll(`.chip[data-row="${rowId}"]`)
+    .forEach((el) => el.classList.remove("selected"));
+  if (chosen) {
+    document
+      .querySelectorAll(
+        `.chip[data-row="${rowId}"][data-tier="${chosen.tier}"]`,
+      )
+      .forEach((el) => el.classList.add("selected"));
+  }
+}
+
+function checkAiParking(selObj = selections) {
+  let count = {
+    프로: 0,
+    강주력: 0,
+    주력: 0,
+    "1군": 0,
+    "2군": 0,
+    "3군": 0,
+    "4군": 0,
+    "5군": 0,
+    미선택: 0,
+  };
+
+  SHEET_ROWS.forEach((r) => {
+    const picked = selObj[String(r.id)];
+
+    if (picked && picked.tier) {
+      count[picked.tier] = (count[picked.tier] || 0) + 1;
+    } else {
+      count["미선택"]++;
+    }
+  });
+
+  const sum = (arr) => arr.reduce((a, t) => a + (count[t] || 0), 0);
+
+  if (
+    sum(["프로", "강주력", "주력", "1군", "2군"]) >= 45 &&
+    sum(["4군", "5군", "미선택"]) >= 20
+  )
+    return true;
+
+  if (
+    sum(["프로", "강주력", "주력", "1군", "2군", "3군"]) >= 45 &&
+    sum(["5군", "미선택"]) >= 25
+  )
+    return true;
+
+  if (
+    sum(["프로", "강주력", "주력", "1군"]) >= 45 &&
+    sum(["3군", "4군", "5군", "미선택"]) >= 20
+  )
+    return true;
+
+  if (
+    sum(["프로", "강주력", "주력"]) >= 45 &&
+    sum(["2군", "3군", "4군", "5군", "미선택"]) >= 20
+  )
+    return true;
+
+  if (
+    sum(["프로", "강주력"]) >= 45 &&
+    sum(["1군", "2군", "3군", "4군", "5군", "미선택"]) >= 20
+  )
+    return true;
+
+  return false;
+}
+/* 계산 */
+function calc() {
+  const total = getSelectionTotal(selections);
+  let label = "당신은 6군입니다";
+  for (const r of RANKS) {
+    if (total >= r.min) {
+      label = r.label;
+      break;
+    }
+  }
+
+  const rankEl = document.getElementById("bigRankText");
+  let rankHtml = String(label).replace(
+    /(프로군|강주력|주력|[1-6]군)/g,
+    '<span class="rank-emph">$1</span>',
+  );
+
+  if (checkAiParking(selections)) {
+    rankHtml += ' <span class="ai-warning">⚠AI작동! 군기록 이상감지 됨</span>';
+  }
+
+  rankEl.innerHTML = rankHtml;
+  updateMeter(total);
+  return total;
+}
+
+/* 저장/불러오기 */
+function resetSel() {
+  document
+    .querySelectorAll(".chip.selected")
+    .forEach((x) => x.classList.remove("selected"));
+  for (const k in selections) delete selections[k];
+}
+function saveData() {
+  const n = document.getElementById("nickname").value.trim();
+  const p = document.getElementById("pin5").value.trim();
+  if (!n) return toast("닉네임을 입력하세요.");
+  if (!/^\d{5}$/.test(p)) return toast("비밀번호는 숫자 5자리입니다.");
+  const total = getSelectionTotal(selections);
+  google.script.run
+    .withSuccessHandler(() => toast("저장 완료"))
+    .withFailureHandler((e) => toast(e.message || "저장 실패"))
+    .saveProfile(n, p, selections, total);
+}
+function loadData() {
+  const n = document.getElementById("nickname").value.trim();
+  const p = document.getElementById("pin5").value.trim();
+
+  if (!n) return toast("닉네임을 입력하세요.");
+  if (!/^\d{5}$/.test(p)) return toast("비밀번호는 숫자 5자리입니다.");
+
+  showLoading("선수의 기록을 불러오는 중입니다");
+
+  google.script.run
+    .withSuccessHandler((d) => {
+      resetSel();
+
+      (d?.selections ? Object.entries(d.selections) : []).forEach(
+        ([rowId, val]) => {
+          selections[rowId] = val;
+          syncRowVisual(rowId);
+        },
+      );
+
+      calc();
+
+      hideLoading();
+
+      toast("불러오기 완료");
+    })
+    .withFailureHandler((e) => {
+      hideLoading();
+
+      toast(e.message || "불러오기 실패");
+    })
+    .loadProfile(n, p);
+}
+
+/* JPG */
+async function saveJpg() {
+  const headerEl = document.getElementById("stickyTop");
+  const tableEl = document.getElementById("pcTableSection");
+
+  if (!headerEl || !tableEl) {
+    toast("캡처 영역을 찾지 못했습니다.");
+    return;
+  }
+
+  document.body.classList.add("capture-mode");
+  window.scrollTo(0, 0);
+
+  await new Promise((r) => setTimeout(r, 300));
+
+  const option = {
+    scale: 1,
+    backgroundColor: "#eaf8ff",
+    useCORS: true,
+    allowTaint: true,
+    scrollX: 0,
+    scrollY: 0,
+    windowWidth: document.documentElement.scrollWidth,
+    windowHeight: document.documentElement.scrollHeight
+  };
+
+  const c1 = await html2canvas(headerEl, option);
+  const c2 = await html2canvas(tableEl, option);
+
+  document.body.classList.remove("capture-mode");
+
+  const out = document.createElement("canvas");
+  const w = Math.max(c1.width, c2.width);
+  const h = c1.height + c2.height;
+
+  out.width = w;
+  out.height = h;
+
+  const ctx = out.getContext("2d");
+  ctx.fillStyle = "#eaf8ff";
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.drawImage(c1, Math.floor((w - c1.width) / 2), 0);
+  ctx.drawImage(c2, Math.floor((w - c2.width) / 2), c1.height);
+
+  const a = document.createElement("a");
+  const nick = (document.getElementById("nickname")?.value || "카러플군계산기").trim();
+
+  a.href = out.toDataURL("image/jpeg", 0.95);
+  a.download = `${nick}_군계산기_상단+PC표.jpg`;
+  a.click();
+}
+
+
+async function saveRealJpg() {
+  const headerEl = document.getElementById("stickyTop");
+  const realEl = document.getElementById("realSection");
+  const hideArea = document.getElementById("realScrollAwayArea");
+
+  if (!headerEl || !realEl) {
+    toast("실명제 캡처 영역을 찾지 못했습니다.");
+    return;
+  }
+
+  const realTable = document.getElementById("realDataTable");
+  const realPcTableSection = document.getElementById("realPcTableSection");
+
+  const oldHideDisplay = hideArea ? hideArea.style.display : "";
+  const oldRealMarginTop = realPcTableSection ? realPcTableSection.style.marginTop : "";
+
+  if (hideArea) hideArea.style.display = "none";
+  if (realPcTableSection) realPcTableSection.style.marginTop = "4px";
+
+  document.body.classList.add("capture-mode");
+
+  // 핵심 수정: 캡처 전에 sticky를 완전히 해제
+  document.querySelectorAll("#realDataTable thead th").forEach(th => {
+    th.style.setProperty("position", "static", "important");
+    th.style.setProperty("top", "auto", "important");
+    th.style.setProperty("transform", "none", "important");
+    th.style.setProperty("z-index", "1", "important");
+  });
+
+  if (realTable) {
+    realTable.style.setProperty("border-collapse", "separate", "important");
+    realTable.style.setProperty("border-spacing", "0", "important");
+  }
+
+  window.scrollTo(0, 0);
+  await new Promise((r) => setTimeout(r, 400));
+
+  const option = {
+    scale: 1,
+    backgroundColor: "#eaf8ff",
+    useCORS: true,
+    allowTaint: true,
+    scrollX: 0,
+    scrollY: 0,
+    windowWidth: document.documentElement.scrollWidth,
+    windowHeight: document.documentElement.scrollHeight,
+    onclone: (doc) => {
+      doc.body.classList.add("capture-mode");
+
+      const clonedHideArea = doc.getElementById("realScrollAwayArea");
+      if (clonedHideArea) clonedHideArea.style.display = "none";
+
+      const clonedRealPcTableSection = doc.getElementById("realPcTableSection");
+      if (clonedRealPcTableSection) clonedRealPcTableSection.style.marginTop = "4px";
+
+      doc.querySelectorAll("#realDataTable thead th").forEach(th => {
+        th.style.setProperty("position", "static", "important");
+        th.style.setProperty("top", "auto", "important");
+        th.style.setProperty("transform", "none", "important");
+        th.style.setProperty("z-index", "1", "important");
+      });
+    }
+  };
+
+  const c1 = await html2canvas(headerEl, option);
+  const c2 = await html2canvas(realEl, option);
+
+  document.body.classList.remove("capture-mode");
+
+  document.querySelectorAll("#realDataTable thead th").forEach(th => {
+    th.style.removeProperty("position");
+    th.style.removeProperty("top");
+    th.style.removeProperty("transform");
+    th.style.removeProperty("z-index");
+  });
+
+  if (hideArea) hideArea.style.display = oldHideDisplay;
+  if (realPcTableSection) realPcTableSection.style.marginTop = oldRealMarginTop;
+
+  const out = document.createElement("canvas");
+  const w = Math.max(c1.width, c2.width);
+  const h = c1.height + c2.height;
+
+  out.width = w;
+  out.height = h;
+
+  const ctx = out.getContext("2d");
+  ctx.fillStyle = "#eaf8ff";
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.drawImage(c1, Math.floor((w - c1.width) / 2), 0);
+  ctx.drawImage(c2, Math.floor((w - c2.width) / 2), c1.height);
+
+  const team = document.getElementById("viewTeam")?.value || "단체";
+  const member = document.getElementById("viewMember")?.value || "멤버";
+
+  const a = document.createElement("a");
+  a.href = out.toDataURL("image/jpeg", 0.95);
+  a.download = `${team}_${member}_군실명제.jpg`;
+  a.click();
+
+  toast("실명제 스크린샷 저장 완료");
+}
+
+function setActiveTab(tabName){
+  document.querySelectorAll(".main-tab").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tab === tabName);
+  });
+}
+
+function showGunpyo() {
+  document.getElementById("gunpyoTopPanel").classList.remove("hidden");
+  document.getElementById("gunpyoSection").classList.remove("hidden");
+
+  document.getElementById("realTopPanel").classList.add("hidden");
+  document.getElementById("realSection").classList.add("hidden");
+
+  document.getElementById("gunpyoTopBtns").style.display = "flex";
+  document.getElementById("realTopBtns").style.display = "none";
+  document.getElementById("boardSection")?.classList.add("hidden");
+
+  document.body.classList.remove("real-mode");
+  document.body.classList.remove("real-scrolled");
+
+  setActiveTab("gunpyo");
+  refreshHeaderPush();
+}
+
+function showReal() {
+  showLoading("군 실명제 화면을 불러오는 중입니다");
+
+  try {
+    document.body.classList.add("real-mode");
+    document.body.classList.remove("real-scrolled");
+
+    document.getElementById("gunpyoTopPanel")?.classList.add("hidden");
+    document.getElementById("gunpyoSection")?.classList.add("hidden");
+    document.getElementById("realTopPanel")?.classList.remove("hidden");
+    document.getElementById("realSection")?.classList.remove("hidden");
+    document.getElementById("boardSection")?.classList.add("hidden");
+
+    document.getElementById("gunpyoTopBtns").style.display = "none";
+    document.getElementById("realTopBtns").style.display = "none";
+
+    setActiveTab("real");
+    refreshHeaderPush();
+
+    // 핵심: 들어올 때마다 단체 목록 새로 로딩
+    initRealUI();
+
+  } catch (err) {
+    console.error(err);
+    hideLoading();
+    toast("군실명제 화면 전환 중 오류가 발생했습니다.");
+  }
+}
+
+function fillSelect(sel, items, placeholder){
+  if(!sel) return;
+
+  sel.innerHTML = "";
+
+  const op0 = document.createElement("option");
+  op0.value = "";
+  op0.textContent = placeholder || "선택";
+  sel.appendChild(op0);
+
+  (items || []).forEach(item => {
+    const op = document.createElement("option");
+
+if(typeof item === "object"){
+  op.value = item.value;
+  op.textContent = item.label;
+
+  if(item.certified){
+    op.classList.add("certified-option");
+  }
+}else{
+  op.value = item;
+  op.textContent = item;
+}
+
+    sel.appendChild(op);
+  });
+}
+
+function ensureSelectOption(sel, value, text) {
+  if (!sel || !value) return;
+
+  const exists = Array.from(sel.options).some(op => op.value === value);
+
+  if (!exists) {
+    const op = document.createElement("option");
+    op.value = value;
+    op.textContent = text || value;
+    sel.appendChild(op);
+  }
+
+  sel.value = value;
+}
+
+function clearRealResult() {
+  document.getElementById("realRankText").textContent =
+    "선택된 멤버가 없습니다";
+  document.getElementById("realSavedAt").textContent = "마지막 저장한 날짜 : -";
+  updateRealMeter(0, true);
+
+  const tb = document.getElementById("tbodyRealPc");
+  if (tb)
+    tb.innerHTML = `<tr><td colspan="9" style="color:var(--muted)">멤버를 선택하면 군표가 표시됩니다.</td></tr>`;
+}
+
+function initRealUI() {
+  const realTeam = document.getElementById("realTeam");
+  const viewTeam = document.getElementById("viewTeam");
+  const viewMember = document.getElementById("viewMember");
+
+  fillSelect(realTeam, [], "단체 불러오는 중");
+  fillSelect(viewTeam, [], "단체 불러오는 중");
+  fillSelect(viewMember, [], "멤버 선택");
+
+  document.getElementById("btnRealRegister").onclick = onRealRegister;
+  document.getElementById("viewTeam").onchange = onViewTeamChanged;
+  document.getElementById("viewMember").onchange = onLoadMember;
+  document.getElementById("btnViewDelete").onclick = onDeleteBtnClicked;
+
+  google.script.run
+    .withSuccessHandler((res) => {
+      hideLoading();
+
+const teamObjs = (res && res.teams) || [];
+
+const teams = teamObjs.map(t => {
+  if(typeof t === "string") return t;
+
+  return {
+    value: t.name,
+label: t.certified ? `${t.name} 👍인증 크루` : t.name,
+certified: t.certified
+  };
+});
+
+fillSelect(realTeam, teams, "단체 선택");
+fillSelect(viewTeam, teams, "단체 선택");
+      fillSelect(viewMember, [], "멤버 선택");
+
+      if (!teams.length) {
+        toast("TEAM 시트에 등록된 단체가 없습니다.");
+      }
+    })
+    .withFailureHandler((e) => {
+      hideLoading();
+      toast(e?.message || "단체 목록 로딩 실패");
+    })
+    .getTeamList();
+}
+
+function onRealRegister() {
+  const team = document.getElementById("realTeam").value.trim();
+  const nick = document.getElementById("realNick").value.trim();
+  const pin = document.getElementById("realPin").value.trim();
+
+  showLoading("군실명제 등록 중입니다");
+
+  google.script.run
+    .withSuccessHandler(() => {
+      hideLoading();
+      toast("군실명제 등록 완료");
+
+      document.getElementById("registerPopup").classList.add("hidden");
+
+      document.getElementById("realNick").value = "";
+      document.getElementById("realPin").value = "";
+
+      initRealUI();
+    })
+    .withFailureHandler((e) => {
+      hideLoading();
+      toast(e.message || "군실명제 등록 실패");
+    })
+    .registerToTeam(team, nick, pin);
+}
+
+function onViewTeamChanged() {
+  const viewTeam = document.getElementById("viewTeam");
+  const viewMember = document.getElementById("viewMember");
+  const team = viewTeam.value.trim();
+
+  fillSelect(viewMember, [], "멤버 선택");
+  clearRealResult();
+  resetDeleteUI();
+
+  if (!team) return;
+
+  showLoading("멤버 목록을 불러오는 중입니다");
+
+  google.script.run
+    .withSuccessHandler((res) => {
+      hideLoading();
+
+      const members = (res && res.members) || [];
+      fillSelect(viewMember, members, "멤버 선택");
+
+      if (!members.length) {
+        toast("해당 단체에 등록된 멤버가 없습니다.");
+      }
+    })
+    .withFailureHandler((e) => {
+      hideLoading();
+      toast(e?.message || "멤버 목록 로딩 실패");
+    })
+    .getTeamMembers(team);
+}
+
+function onLoadMember() {
+  const team = document.getElementById("viewTeam").value.trim();
+  const mem = document.getElementById("viewMember").value.trim();
+
+  if (!team) return toast("단체명을 선택하세요.");
+  if (!mem) return toast("멤버를 선택하세요.");
+
+  resetDeleteUI();
+  showLoading("로딩중... 잠시만 기다려주세요");
+
+  google.script.run
+    .withSuccessHandler((d) => {
+      hideLoading();
+
+      renderRealProfile(d);
+
+      setTimeout(() => {
+        const box = document.getElementById("realBigRank");
+        if (!box) return;
+
+        const y =
+          box.getBoundingClientRect().top +
+          window.scrollY -
+          headerHeight() -
+          120;
+
+        window.scrollTo({
+          top: Math.max(0, y),
+          behavior: "smooth",
+        });
+      }, 150);
+    })
+    .withFailureHandler((e) => {
+      hideLoading();
+      toast(e?.message || "불러오기 실패");
+    })
+    .getTeamMemberProfile(team, mem);
+}
+
+/* 삭제 */
+let DELETE_ARMED = false;
+
+function onMemberSearch() {
+  const keyword = document.getElementById("memberSearchInput").value.trim();
+  const box = document.getElementById("memberSearchResult");
+
+  if (!keyword) {
+    box.innerHTML =
+      '<div style="color:var(--muted)">검색어를 입력하세요.</div>';
+    return;
+  }
+
+  box.innerHTML = "";
+  showLoading("선수를 검색중입니다");
+
+  google.script.run
+    .withSuccessHandler((res) => {
+      hideLoading();
+
+      MEMBER_SEARCH_RESULTS = (res && res.results) || [];
+
+      if (!MEMBER_SEARCH_RESULTS.length) {
+        box.innerHTML =
+          '<div style="color:var(--muted)">검색 결과가 없습니다.</div>';
+        return;
       }
 
-      td.appendChild(btn);
-      tr.appendChild(td);
-    });
-
-    body.appendChild(tr);
-  });
-
-  refreshSelected();
+      box.innerHTML = `
+        <div style="font-weight:900;color:#ef4444 !important;
+  font-weight:900;
+  text-shadow:0 0 6px rgba(239,68,68,.35);">
+          ${MEMBER_SEARCH_RESULTS.length}명이 검색되었습니다
+          <button type="button" id="btnOpenMemberSearchPopup" class="btn gold" style="padding:8px 12px;font-size:15px;margin-left:8px;">
+            확인하기
+          </button>
+        </div>
+      `;
+    })
+    .withFailureHandler((e) => {
+      hideLoading();
+      box.innerHTML = "";
+      toast(e?.message || "검색 실패");
+    })
+    .searchTeamMembers(keyword);
 }
 
-function selectTier(row, tierKey, tierLabel, time){
-  const key = String(row.id);
-
-  if(selections[key] && selections[key].tier === tierKey){
-    delete selections[key];
-  } else {
-    selections[key] = {
-      map: row.map_name,
-      tier: tierKey,
-      tierLabel: tierLabel,
-      time: time,
-      bonus: Number(row.bonus || 0)
-    };
-  }
-
-  refreshSelected();
-  updateRank();
-}
-
-function refreshSelected(){
-  document.querySelectorAll(".chip").forEach(btn => {
-    const rowId = btn.dataset.rowId;
-    const tier = btn.dataset.tier;
-    btn.classList.toggle("selected", !!(selections[rowId] && selections[rowId].tier === tier));
-  });
-}
-
-function calcTotal(){
-  let total = 0;
-  Object.values(selections).forEach(v => {
-    const tier = TIERS.find(t => t.key === v.tier);
-    const weight = tier ? tier.weight : 0;
-    const bonus = 1 + ((Number(v.bonus) || 0) / 100);
-    total += weight * bonus;
-  });
-  return Math.round(total * 100) / 100;
-}
-
-function rankFromTotal(total){
-  for(const r of RANKS){
-    if(total >= r.min) return r;
-  }
-  return RANKS[RANKS.length - 1];
-}
-
-function updateRank(){
-  const total = calcTotal();
-  const r = rankFromTotal(total);
-  $("rankText").innerHTML = `당신은 <span class="rank-emph">${r.label}</span> 입니다`;
-  $("meterMarker").style.setProperty("--pos", r.pos + "%");
-}
-
-function validateInput(){
-  const nickname = $("nickname").value.trim();
-  const pin5 = $("pin5").value.trim();
-
-  if(!nickname){
-    alert("닉네임을 입력하세요.");
-    return null;
-  }
-
-  if(!/^[0-9]{5}$/.test(pin5)){
-    alert("비밀번호는 숫자 5자리입니다.");
-    return null;
-  }
-
-  return {nickname, pin5};
-}
-
-async function saveProfile(){
-  const input = validateInput();
-  if(!input) return;
-
-  const total = calcTotal();
-
-  if(total <= 0){
-    alert("군표 기록을 하나 이상 선택하세요.");
+document.addEventListener("click", function (e) {
+  if (e.target.closest("#btnOpenMemberSearchPopup")) {
+    openMemberSearchPopup();
     return;
   }
 
-  showLoading(true);
-  setMsg("저장 중입니다...");
+  const item = e.target.closest(".search-member-item");
+  if (!item) return;
 
-  try{
-    const {error} = await db.from("profiles").insert([{
-      nickname: input.nickname,
-      pin5: input.pin5,
-      total: total,
-      selections: selections
-    }]);
+  const team = item.dataset.team;
+  const nick = item.dataset.nick;
 
-    if(error) throw error;
+  closeMemberSearchPopup();
 
-    const r = rankFromTotal(total);
-    setMsg(`저장 성공!\n닉네임: ${input.nickname}\n군: 당신은 ${r.label}입니다`);
-  }catch(err){
-    setMsg("저장 실패:\n" + (err.message || String(err)));
-  }finally{
-    showLoading(false);
-  }
+const viewTeam = document.getElementById("viewTeam");
+const viewMember = document.getElementById("viewMember");
+
+ensureSelectOption(viewTeam, team, team);
+
+fillSelect(viewMember, [nick], "멤버 선택");
+ensureSelectOption(viewMember, nick, nick);
+
+setTimeout(() => {
+  onLoadMember();
+}, 50);
+});
+
+function resetDeleteUI() {
+  DELETE_ARMED = false;
+  document.getElementById("delPinWrap").classList.add("hidden");
+  document.getElementById("viewPin").value = "";
+  document.getElementById("btnViewDelete").textContent = "삭제";
 }
 
-async function loadProfile(){
-  const input = validateInput();
-  if(!input) return;
+function onDeleteBtnClicked() {
+  const team = document.getElementById("viewTeam").value.trim();
+  const member = document.getElementById("viewMember").value.trim();
+  const pin = prompt("개인 비밀번호 5자리 또는 클럽 비밀번호 4자리를 입력하세요.");
 
-  showLoading(true);
-  setMsg("불러오는 중입니다...");
+  if (!pin) return;
 
-  try{
-    const {data, error} = await db
-      .from("profiles")
-      .select("*")
-      .eq("nickname", input.nickname)
-      .eq("pin5", input.pin5)
-      .order("id", {ascending:false})
-      .limit(1);
+  showLoading("군실명제 삭제 중입니다");
 
-    if(error) throw error;
+  google.script.run
+    .withSuccessHandler(() => {
+      hideLoading();
+      toast("삭제 완료");
 
-    if(!data || data.length === 0){
-      setMsg("일치하는 군표가 없습니다.");
+      clearRealResult();
+      resetDeleteUI();
+      initRealUI();
+    })
+    .withFailureHandler((e) => {
+      hideLoading();
+      toast(e.message || "삭제 실패");
+    })
+    .deleteTeamMember(team, member, pin);
+}
+
+function renderRealProfile(d) {
+  const total = Number(d && d.totalScore) || 0;
+  const sel = d && d.selections ? d.selections : {};
+
+  let rankName = "6군";
+
+  for (const r of RANKS) {
+    if (total >= r.min) {
+      rankName = String(r.label)
+        .replace("당신은", "")
+        .replace("입니다", "")
+        .trim();
+      break;
+    }
+  }
+
+  const rankText = document.getElementById("realRankText");
+  rankText.textContent = "";
+
+  const normalText = document.createTextNode(
+    String(d && d.team ? d.team : "") +
+      " - " +
+      String(d && d.nickname ? d.nickname : "") +
+      " - "
+  );
+
+  const rankSpan = document.createElement("span");
+  rankSpan.className = "rank-emph";
+  rankSpan.textContent = rankName;
+
+  rankText.appendChild(normalText);
+  rankText.appendChild(rankSpan);
+
+  if (checkAiParking(sel)) {
+    const aiSpan = document.createElement("span");
+    aiSpan.className = "ai-warning";
+    aiSpan.textContent = "⚠AI작동-군체크 이상감지됨";
+    rankText.appendChild(aiSpan);
+  }
+
+  document.getElementById("realSavedAt").textContent =
+    "마지막 저장한 날짜 : " +
+    formatSavedAt(d && d.updatedAt ? d.updatedAt : "");
+
+  const v = Number(d && d.views ? d.views : 0);
+  const realViewsEl = document.getElementById("realViews");
+  if (realViewsEl) {
+realViewsEl.innerHTML =
+  '<span class="real-views-text">조회</span>' +
+  '<span class="real-views-count">' + v + '</span>';
+  }
+
+  updateRealMeter(total);
+  renderRealPc(sel);
+}
+
+/* 공통 바인딩 */
+function bindCommon() {
+  function bindBtn(id, fn) {
+    const el = document.getElementById(id);
+    if (el) el.onclick = fn;
+  }
+
+document.querySelectorAll(".main-tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const tab = btn.dataset.tab;
+
+    if(tab === "gunpyo") showGunpyo();
+    else if(tab === "real") showReal();
+    else if(tab === "eventTournament") showBoard("eventTournament");
+    else if(tab === "promo") showBoard("promo");
+    else if(tab === "qna") showBoard("qna");
+  });
+});
+
+  document.body.addEventListener("click", (e) => {
+    if (e.target.closest("#realSection")) return;
+
+    const chip = e.target.closest(".chip");
+    if (!chip || !chip.dataset.time) return;
+
+    const rowId = chip.dataset.row;
+    const tier = chip.dataset.tier;
+
+    if (chip.classList.contains("selected")) {
+      chip.classList.remove("selected");
+      delete selections[rowId];
+      syncRowVisual(rowId);
+      calc();
       return;
     }
 
-    const prof = data[0];
-    selections = prof.selections || {};
+    document
+      .querySelectorAll(`.chip[data-row="${rowId}"]`)
+      .forEach((el) => el.classList.remove("selected"));
 
-    refreshSelected();
-    updateRank();
+    selections[rowId] = {
+      tier,
+      time: chip.dataset.time,
+    };
 
-    const total = Number(prof.total) || calcTotal();
-    const r = rankFromTotal(total);
-    setMsg(`불러오기 성공!\n닉네임: ${prof.nickname}\n군: 당신은 ${r.label}입니다`);
-  }catch(err){
-    setMsg("불러오기 실패:\n" + (err.message || String(err)));
-  }finally{
-    showLoading(false);
+    syncRowVisual(rowId);
+    calc();
+  });
+
+bindBtn("btnSave", saveData);
+bindBtn("btnLoad", loadData);
+
+// 닉네임/비밀번호 입력 후 Enter 누르면 자동 불러오기
+["nickname", "pin5"].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  el.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      loadData();
+    }
+  });
+});
+
+bindBtn("btnOpenRegisterPopup", openRegisterPopup);
+
+  bindBtn("btnCloseRegisterPopup2", closeRegisterPopup);
+  bindBtn("btnRealRegister", onRealRegister);
+
+  bindBtn("btnReset", () => {
+    resetSel();
+    calc();
+    toast("초기화 완료");
+  });
+
+  bindBtn("btnJpg", saveJpg);
+  bindBtn("btnMemberSearch", onMemberSearch);
+  bindBtn("btnMemberSearchReset", resetMemberSearch);
+  bindBtn("btnCloseMemberSearchPopup", closeMemberSearchPopup);
+  bindBtn("btnBackToGunpyo", showGunpyo);
+  bindBtn("btnBackToGunpyoTop", showGunpyo);
+
+  bindBtn("btnRealJpg", saveRealJpg);
+  bindBtn("btnRealJpgTop", saveRealJpg);
+
+  bindBtn("goMobileBtn", () => {
+    document.body.classList.remove("pc-view");
+    document.body.classList.add("mobile-view");
+
+    const el = document.getElementById("mobileSection");
+    if (el) scrollToWithOffset(el, 10);
+  });
+
+  bindBtn("goPcBtn", () => {
+    document.body.classList.remove("mobile-view");
+    document.body.classList.add("pc-view");
+
+    const el = document.getElementById("pcTableSection");
+    if (el) scrollToWithOffset(el, 40);
+  });
+}
+showLoading("");
+
+google.script.run
+  .withSuccessHandler((p) => {
+    SHEET_ROWS = p.rows || [];
+    WEIGHTS = p.weights || {};
+    RANKS = p.ranks || [];
+    document.body.classList.add("pc-view");
+    rebuildRowMap();
+    buildMeter();
+    buildRealMeter();
+    renderPc();
+    renderMobile();
+    bindCommon();
+    calc();
+    refreshHeaderPush();
+    showGunpyo();
+    hideLoading();
+  })
+  .withFailureHandler((e) => {
+    hideLoading();
+    toast(e?.message || "초기 로딩 실패");
+  })
+  .getSheetData();
+
+function showLoading(msg) {
+  const overlay = document.getElementById("loadingOverlay");
+  const text = document.getElementById("loadingText");
+
+  if (text) text.textContent = msg || "로딩중... 잠시만 기다려주세요";
+  if (overlay) overlay.classList.remove("hidden");
+}
+
+function hideLoading() {
+  const overlay = document.getElementById("loadingOverlay");
+  if (overlay) overlay.classList.add("hidden");
+}
+
+function resetMemberSearch() {
+  MEMBER_SEARCH_RESULTS = [];
+
+  document.getElementById("memberSearchInput").value = "";
+  document.getElementById("memberSearchResult").innerHTML = "";
+  document.getElementById("memberSearchPopupList").innerHTML = "";
+  document.getElementById("memberSearchPopup").classList.add("hidden");
+
+  document.getElementById("viewTeam").value = "";
+  fillSelect(document.getElementById("viewMember"), [], "멤버 선택");
+
+  clearRealResult();
+  resetDeleteUI();
+
+  toast("초기화 완료");
+}
+function openMemberSearchPopup() {
+  const popup = document.getElementById("memberSearchPopup");
+  const list = document.getElementById("memberSearchPopupList");
+
+  list.innerHTML = MEMBER_SEARCH_RESULTS.map(
+    (r) => `
+    <div class="search-member-item"
+         data-team="${esc(r.team)}"
+         data-nick="${esc(r.nickname)}">
+${
+  r.certified
+    ? `<span class="certified-row">${esc(r.team)} 👍인증 크루</span>`
+    : `${esc(r.team)}`
+}
+ - ${esc(r.nickname)}
+    </div>
+  `,
+  ).join("");
+
+  popup.classList.remove("hidden");
+}
+
+function closeMemberSearchPopup() {
+  document.getElementById("memberSearchPopup").classList.add("hidden");
+}
+
+function openRegisterPopup() {
+  document.getElementById("registerPopup").classList.remove("hidden");
+}
+
+function closeRegisterPopup() {
+  document.getElementById("registerPopup").classList.add("hidden");
+}
+
+/* ===== 실명제 관리탭 열기/닫기 ===== */
+let realManageClosed = false;
+let realManageManualOpen = false;
+
+function closeRealManageTab() {
+  if (realManageClosed) return;
+
+  realManageClosed = true;
+  realManageManualOpen = false;
+
+  document.body.classList.add("real-manage-closed");
+  refreshHeaderPush();
+}
+
+function openRealManageTab() {
+  realManageClosed = false;
+  realManageManualOpen = true;
+
+  const area = document.getElementById("realScrollAwayArea");
+  if (area) {
+    area.style.display = "";
+    area.style.maxHeight = "none";
+    area.style.opacity = "1";
+    area.style.transform = "none";
+    area.style.pointerEvents = "auto";
+  }
+
+  document.body.classList.remove("real-manage-closed");
+  refreshHeaderPush();
+
+  setTimeout(() => {
+    realManageManualOpen = false;
+  }, 800);
+}
+
+window.addEventListener("scroll", function () {
+  if (!document.body.classList.contains("real-mode")) return;
+  if (realManageClosed) return;
+  if (realManageManualOpen) return;
+
+  const y = window.scrollY || document.documentElement.scrollTop;
+
+  if (y > 20) {
+    closeRealManageTab();
+  }
+});
+
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest("#btnOpenManageTab");
+  if (!btn) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  openRealManageTab();
+});
+
+/* 검색창 엔터 검색 */
+document
+  .getElementById("memberSearchInput")
+  ?.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      document.getElementById("btnMemberSearch")?.click();
+    }
+  });
+
+function showAutoNotice(message, seconds = 5) {
+  let old = document.getElementById("autoNoticePopup");
+  if (old) old.remove();
+
+  const popup = document.createElement("div");
+  popup.id = "autoNoticePopup";
+  popup.innerHTML = `
+    <div class="auto-notice-box">
+      <div class="auto-notice-msg">${message}</div>
+      <button class="btn gold" id="btnCloseAutoNotice">확인</button>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+  const close = () => {
+    const el = document.getElementById("autoNoticePopup");
+    if (el) el.remove();
+  };
+
+  document.getElementById("btnCloseAutoNotice").onclick = close;
+  setTimeout(close, seconds * 1000);
+}
+
+let CURRENT_BOARD = "";
+let CURRENT_BOARD_POSTS = [];
+
+/* ===== 게시판 / 이벤트대회 화면 전환 ===== */
+function showBoard(board){
+  CURRENT_BOARD = board;
+
+  document.getElementById("gunpyoTopPanel")?.classList.add("hidden");
+  document.getElementById("gunpyoSection")?.classList.add("hidden");
+  document.getElementById("realTopPanel")?.classList.add("hidden");
+  document.getElementById("realSection")?.classList.add("hidden");
+  document.getElementById("boardSection")?.classList.remove("hidden");
+
+  document.getElementById("gunpyoTopBtns").style.display = "none";
+  document.getElementById("realTopBtns").style.display = "none";
+  document.getElementById("boardSearchBox")?.classList.remove("hidden");
+  document.getElementById("boardSearchBox")?.classList.add("hidden");
+
+  setActiveTab(board);
+  refreshHeaderPush();
+
+  const list = document.getElementById("boardList");
+  const writeBtn = document.getElementById("btnOpenBoardWrite");
+  const writeBox = document.getElementById("boardWriteBox");
+
+writeBox.classList.add("hidden");
+list.innerHTML = "";
+
+if(board === "eventTournament"){
+  writeBtn.style.display = "none";
+
+  list.innerHTML = `
+    <div class="tournament-main-grid">
+
+      <div class="tournament-thumb-card" onclick="openTournamentPoster('allstar')">
+        <div class="tournament-title">카러플 올스타전 - 5월17일</div>
+        <img class="tournament-thumb-img" src="https://i.ibb.co/PGMdzs2T/1111.png">
+      </div>
+
+      <div class="tournament-thumb-card" onclick="openTournamentPoster('critical')">
+        <div class="tournament-title">크리티컬 히트 아이템전 대회 - 5월 15일</div>
+        <img class="tournament-thumb-img" src="https://i.ibb.co/n8R1q5R2/11.jpg">
+      </div>
+
+    </div>
+  `;
+
+  return;
+}
+writeBtn.style.display = "none";
+if(board === "promo" || board === "qna"){
+  ensureBoardSearchBox()?.classList.remove("hidden");
+
+  showLoading(board === "promo" ? "홍보 게시판을 불러오는 중입니다" : "민원Q/A 게시판을 불러오는 중입니다");
+
+  writeBtn.style.display = "inline-block";
+  document.getElementById("boardWriter").classList.remove("hidden");
+  document.getElementById("boardPinInput").placeholder = "비밀번호 4자리";
+
+  loadBoardPosts();
+  return;
+}
+}
+
+/* ===== 대회 팝업 ===== */
+const TOURNAMENT_POSTERS = {
+  allstar: {
+    title: "카러플 올스타전 - 5월17일",
+    images: [
+      "https://i.ibb.co/PGMdzs2T/1111.png"
+    ]
+  },
+  critical: {
+    title: "크리티컬 히트 아이템전 대회 - 5월 15일",
+    images: [
+      "https://i.ibb.co/n8R1q5R2/11.jpg",
+      "https://i.ibb.co/YBfPfxPF/22.jpg",
+      "https://i.ibb.co/RkbdTrMw/33.jpg",
+      "https://i.ibb.co/DfyTG03X/44.jpg",
+      "https://i.ibb.co/Xk4NJfF7/66.jpg"
+    ]
+  }
+};
+
+let tournamentKey = "";
+let tournamentIndex = 0;
+
+function openTournamentPoster(key){
+  tournamentKey = key;
+  tournamentIndex = 0;
+
+  const oldPopup = document.getElementById("tournamentPopup");
+  if(oldPopup) oldPopup.remove();
+
+  const popup = document.createElement("div");
+  popup.id = "tournamentPopup";
+
+  popup.innerHTML = `
+    <div class="tournament-popup-box">
+      <button class="tournament-close" onclick="closeTournamentPoster()">닫기</button>
+      <div id="tournamentPopupTitle" class="tournament-popup-title"></div>
+
+      <div class="tournament-popup-slider">
+        <button id="tournamentPrevBtn" class="tournament-arrow" onclick="moveTournamentPoster(-1)">&lt;</button>
+        <img id="tournamentPopupImg" class="tournament-popup-img">
+        <button id="tournamentNextBtn" class="tournament-arrow" onclick="moveTournamentPoster(1)">&gt;</button>
+      </div>
+
+      <div id="tournamentPopupCount" class="tournament-count"></div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+  updateTournamentPoster();
+}
+
+function closeTournamentPoster(){
+  document.getElementById("tournamentPopup")?.remove();
+}
+
+function moveTournamentPoster(dir){
+  const data = TOURNAMENT_POSTERS[tournamentKey];
+  if(!data) return;
+
+  tournamentIndex += dir;
+
+  if(tournamentIndex < 0) tournamentIndex = data.images.length - 1;
+  if(tournamentIndex >= data.images.length) tournamentIndex = 0;
+
+  updateTournamentPoster();
+}
+
+function updateTournamentPoster(){
+  const data = TOURNAMENT_POSTERS[tournamentKey];
+  if(!data) return;
+
+  document.getElementById("tournamentPopupTitle").textContent = data.title;
+  document.getElementById("tournamentPopupImg").src = data.images[tournamentIndex];
+
+  const count = document.getElementById("tournamentPopupCount");
+  const prev = document.getElementById("tournamentPrevBtn");
+  const next = document.getElementById("tournamentNextBtn");
+
+  if(data.images.length > 1){
+    count.textContent = `${tournamentIndex + 1} / ${data.images.length}`;
+    prev.style.display = "inline-flex";
+    next.style.display = "inline-flex";
+  }else{
+    count.textContent = "";
+    prev.style.display = "none";
+    next.style.display = "none";
   }
 }
 
-function resetAll(){
-  if(!confirm("선택한 군표를 초기화할까요?")) return;
-  selections = {};
-  refreshSelected();
-  updateRank();
-  setMsg("");
+
+/* ===== 게시글 불러오기 ===== */
+function loadBoardPosts(){
+  google.script.run
+    .withSuccessHandler((res) => {
+      hideLoading();
+      CURRENT_BOARD_POSTS = res.posts || [];
+      renderBoardList();
+    })
+    .withFailureHandler(e => {
+      hideLoading();
+      toast(e.message || "게시글 불러오기 실패");
+    })
+    .getBoardPosts(CURRENT_BOARD);
 }
 
-function showTab(tab){
-  document.querySelectorAll(".main-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
-  $("gunpyoSection").classList.toggle("hidden", tab !== "gunpyo");
-  $("realSection").classList.toggle("hidden", tab !== "real");
-  $("eventTournamentSection").classList.toggle("hidden", tab !== "eventTournament");
-  $("promoSection").classList.toggle("hidden", tab !== "promo");
-  $("qnaSection").classList.toggle("hidden", tab !== "qna");
+/* ===== 게시글 목록 ===== */
+function renderBoardList(){
+  const list = document.getElementById("boardList");
+  const searchInput = document.getElementById("boardSearchInput");
+  const keyword = searchInput ? searchInput.value.trim().toLowerCase() : "";
+
+  let posts = CURRENT_BOARD_POSTS || [];
+
+  if(keyword){
+    posts = posts.filter(p => {
+      const title = String(p.title || "").toLowerCase();
+      const content = String(p.content || "").toLowerCase();
+      const writer = String(p.writer || "").toLowerCase();
+
+      return (
+        title.includes(keyword) ||
+        content.includes(keyword) ||
+        writer.includes(keyword)
+      );
+    });
+  }
+
+  if(!posts.length){
+    list.innerHTML = `<div class="board-title-item">검색 결과가 없습니다.</div>`;
+    return;
+  }
+
+  list.innerHTML = `
+    <div class="promo-board-head">
+<div>글번호</div>
+<div>글 제목</div>
+<div>답변여부</div>
+<div>작성자</div>
+<div>작성일자</div>
+<div>조회수</div>
+    </div>
+    ${posts.map((p) => {
+      const realIdx = CURRENT_BOARD_POSTS.indexOf(p);
+
+      return `
+        <div class="promo-board-row" onclick="openBoardPost(${realIdx})">
+<div>${esc(p.no || "")}</div>
+<div>${esc(p.title)}</div>
+<div class="board-answer-status">
+  ${CURRENT_BOARD === "qna" && p.adminReply ? "[답변완료]" : ""}
+</div>
+<div>${esc(p.writer || "-")}</div>
+<div>${esc(formatBoardDate(p.createdAt))}</div>
+<div>${esc(p.views || 0)}</div>
+        </div>
+      `;
+    }).join("")}
+  `;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  loadMaps();
-  updateRank();
+/* ===== 게시글 열기 ===== */
+function openBoardPost(idx){
+  
+  const p = CURRENT_BOARD_POSTS[idx];
 
-  $("btnSave").addEventListener("click", saveProfile);
-  $("btnLoad").addEventListener("click", loadProfile);
-  $("btnReset").addEventListener("click", resetAll);
-  $("btnShot").addEventListener("click", () => window.print());
+    google.script.run
+    .withSuccessHandler((res) => {
+      if(res && res.views !== undefined){
+        p.views = res.views;
+      }
+    })
+    .increaseBoardView(p.id);
 
-  document.querySelectorAll(".main-tab").forEach(btn => {
-    btn.addEventListener("click", () => showTab(btn.dataset.tab));
+  const list = document.getElementById("boardList");
+
+  list.innerHTML = `
+    <div class="board-post-open">
+      <h3>${esc(p.title)}</h3>
+
+      <div class="board-post-meta">
+        ${esc(p.writer || "작성자")} · ${esc(formatBoardDate(p.createdAt))}
+      </div>
+
+<div class="board-post-content">${linkifyText(p.content)}</div>
+${p.adminReply ? `
+  <div class="admin-reply-box">
+    <div class="admin-reply-title">운영진 답변</div>
+    <div class="admin-reply-meta">${esc(formatBoardDate(p.adminReplyAt))}</div>
+    <div class="admin-reply-content">${linkifyText(p.adminReply)}</div>
+  </div>
+` : ""}
+
+      ${p.imageUrl ? `<img class="board-post-img" src="${esc(p.imageUrl)}" alt="첨부 이미지">` : ""}
+
+<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center;">
+  <button class="btn" onclick="renderBoardList()">목록으로</button>
+
+  <input
+    id="boardActionPin"
+    type="password"
+    maxlength="4"
+    inputmode="numeric"
+    placeholder="비번 4자리"
+    class="text pin"
+    style="height:46px;"
+  />
+
+  <button class="btn gold" onclick="openBoardEdit(${idx})">수정</button>
+  <button class="btn red" onclick="deleteBoardPost('${p.id}')">삭제</button>
+
+  ${CURRENT_BOARD === "qna" ? `<button class="btn gold" onclick="openAdminReply(${idx})">운영진 답글달기</button>` : ""}
+</div>
+    </div>
+  `;
+}
+
+/* ===== 글쓰기 버튼 ===== */
+document.addEventListener("keydown", function(e){
+  if(e.target && e.target.id === "boardSearchInput" && e.key === "Enter"){
+    e.preventDefault();
+    renderBoardList();
+  }
+});
+
+document.addEventListener("click", function(e){
+  if(e.target.closest("#btnBoardSearch")){
+    e.preventDefault();
+    renderBoardList();
+  }
+
+  if(e.target.closest("#btnBoardSearchReset")){
+    e.preventDefault();
+    const input = document.getElementById("boardSearchInput");
+    if(input) input.value = "";
+    renderBoardList();
+  }
+});
+
+document.addEventListener("keydown", function(e){
+  if(e.target && e.target.id === "boardSearchInput" && e.key === "Enter"){
+    e.preventDefault();
+    renderBoardList();
+  }
+});
+
+document.addEventListener("click", async function(e){
+  const openBtn = e.target.closest("#btnOpenBoardWrite");
+  const closeBtn = e.target.closest("#btnCloseBoardWrite");
+  const writeBtn = e.target.closest("#btnBoardWrite");
+
+  if(openBtn){
+    e.preventDefault();
+    document.getElementById("boardWriteBox")?.classList.remove("hidden");
+    document.getElementById("boardWriteBox")?.scrollIntoView({
+      behavior:"smooth",
+      block:"start"
+    });
+    return;
+  }
+
+  if(closeBtn){
+    e.preventDefault();
+    document.getElementById("boardWriteBox")?.classList.add("hidden");
+    return;
+  }
+
+  if(writeBtn){
+    e.preventDefault();
+
+    const title = document.getElementById("boardTitleInput").value.trim();
+    const content = document.getElementById("boardContentInput").value.trim();
+    const writer = document.getElementById("boardWriter").value.trim();
+    const pin = document.getElementById("boardPinInput").value.trim();
+    const file = document.getElementById("boardImageInput").files[0];
+
+    let imageData = null;
+
+if(file){
+  const allowedTypes = ["image/jpeg", "image/png"];
+
+  if(!allowedTypes.includes(file.type)){
+    toast("JPG 또는 PNG 파일만 업로드할 수 있습니다.");
+    return;
+  }
+
+  imageData = await fileToBase64Data(file);
+}
+
+    showLoading("게시글 등록 중입니다");
+
+    google.script.run
+      .withSuccessHandler(() => {
+        hideLoading();
+        toast("작성 완료");
+
+        document.getElementById("boardTitleInput").value = "";
+        document.getElementById("boardContentInput").value = "";
+        document.getElementById("boardWriter").value = "";
+        document.getElementById("boardPinInput").value = "";
+        document.getElementById("boardImageInput").value = "";
+
+        document.getElementById("boardWriteBox").classList.add("hidden");
+
+        loadBoardPosts();
+      })
+      .withFailureHandler(e => {
+        hideLoading();
+        toast(e.message || "작성 실패");
+      })
+      .addBoardPost(CURRENT_BOARD, title, content, writer, pin, imageData);
+
+    return;
+  }
+});
+
+function fileToBase64Data(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      const base64 = result.split(",")[1];
+
+      resolve({
+        name: file.name,
+        mimeType: file.type,
+        base64
+      });
+    };
+
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
+}
+
+/* ===== 삭제 ===== */
+function deleteBoardPost(id){
+  const pin = document.getElementById("boardActionPin")?.value.trim();
+
+  if(!/^\d{4}$/.test(pin)){
+    toast("비밀번호 4자리를 입력하세요.");
+    return;
+  }
+
+  google.script.run
+    .withSuccessHandler(() => {
+      toast("삭제 완료");
+      loadBoardPosts();
+    })
+.withFailureHandler(e => {
+  alert("비번이 틀렸습니다");
+})
+    .deleteBoardPost(id, pin);
+}
+
+/* ===== 수정 ===== */
+function openBoardEdit(idx){
+  const p = CURRENT_BOARD_POSTS[idx];
+
+  const pin = document.getElementById("boardActionPin")?.value.trim();
+
+  if(!/^\d{4}$/.test(pin)){
+    toast("비밀번호 4자리를 입력하세요.");
+    return;
+  }
+
+  google.script.run
+    .withSuccessHandler(() => {
+      openBoardEditForm(idx, pin);
+    })
+    .withFailureHandler(e => {
+      alert("비번이 틀렸습니다");
+    })
+    .checkBoardPostPin(p.id, pin);
+}
+
+function openBoardEditForm(idx, pin){
+  const p = CURRENT_BOARD_POSTS[idx];
+  const list = document.getElementById("boardList");
+
+  list.innerHTML = `
+    <div class="board-post-open">
+      <h3>글 수정</h3>
+
+      <input id="editBoardWriter" class="text sm" placeholder="작성자" value="${esc(p.writer || "")}"/>
+      <input id="editBoardTitle" class="text" placeholder="제목" value="${esc(p.title || "")}"/>
+      <textarea id="editBoardContent" class="text board-textarea" placeholder="내용">${esc(p.content || "")}</textarea>
+
+      <div style="font-size:13px;color:#64748b;font-weight:800;">
+        새 JPG 파일을 선택하면 기존 이미지가 새 이미지로 변경됩니다.
+      </div>
+
+      <input id="editBoardImage" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"/>
+
+      ${p.imageUrl ? `<img class="board-post-img" src="${esc(p.imageUrl)}" alt="기존 이미지">` : ""}
+
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+        <button class="btn gold" onclick="submitBoardEdit('${p.id}', '${pin.replace(/'/g, "\\'")}')">수정 완료</button>
+        <button class="btn" onclick="openBoardPost(${idx})">취소</button>
+      </div>
+    </div>
+  `;
+}
+
+async function submitBoardEdit(id, pin){
+  const title = document.getElementById("editBoardTitle").value.trim();
+  const content = document.getElementById("editBoardContent").value.trim();
+  const writer = document.getElementById("editBoardWriter").value.trim();
+  const file = document.getElementById("editBoardImage").files[0];
+
+  let imageData = null;
+
+  if(file){
+    const allowedTypes = ["image/jpeg", "image/png"];
+
+    if(!allowedTypes.includes(file.type)){
+      toast("JPG 또는 PNG 파일만 업로드할 수 있습니다.");
+      return;
+    }
+
+    imageData = await fileToBase64Data(file);
+  }
+
+  showLoading("게시글 수정 중입니다");
+
+  google.script.run
+    .withSuccessHandler(() => {
+      hideLoading();
+      toast("수정 완료");
+      loadBoardPosts();
+    })
+.withFailureHandler(e => {
+  hideLoading();
+  alert("비번이 틀렸습니다");
+})
+    .updateBoardPost(id, title, content, writer, pin, imageData);
+}
+
+function openAdminReply(idx){
+  const p = CURRENT_BOARD_POSTS[idx];
+
+  const pin = prompt("운영진 비밀번호를 입력하세요.");
+  if(!pin) return;
+
+  if(pin !== "0523"){
+    toast("운영진 비밀번호가 일치하지 않습니다.");
+    return;
+  }
+
+  const list = document.getElementById("boardList");
+
+  list.innerHTML = `
+    <div class="board-post-open">
+      <h3>운영진 답글달기</h3>
+
+      <div style="font-size:15px;font-weight:800;margin-bottom:8px;">
+        원글 제목 : ${esc(p.title || "")}
+      </div>
+
+      <textarea id="adminReplyInput" class="text board-textarea" placeholder="운영진 답글 내용을 입력하세요.">${esc(p.adminReply || "")}</textarea>
+
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+        <button class="btn gold" onclick="submitAdminReply('${p.id}', '${pin}')">답글 등록</button>
+        <button class="btn" onclick="openBoardPost(${idx})">취소</button>
+      </div>
+    </div>
+  `;
+}
+
+function submitAdminReply(id, pin){
+  const reply = document.getElementById("adminReplyInput").value.trim();
+
+  if(!reply){
+    toast("답글 내용을 입력하세요.");
+    return;
+  }
+
+  showLoading("운영진 답글 등록 중입니다");
+
+  google.script.run
+    .withSuccessHandler(() => {
+      hideLoading();
+      toast("운영진 답글 등록 완료");
+      loadBoardPosts();
+    })
+    .withFailureHandler(e => {
+      hideLoading();
+      toast(e.message || "답글 등록 실패");
+    })
+    .addAdminReplyToBoard(id, pin, reply);
+}
+
+function ensureBoardSearchBox(){
+  let box = document.getElementById("boardSearchBox");
+  if(box) return box;
+
+  const boardPanel = document.querySelector("#boardSection .board-panel");
+  if(!boardPanel) return null;
+
+  box = document.createElement("div");
+  box.id = "boardSearchBox";
+  box.className = "board-search-box hidden";
+  box.innerHTML = `
+    <input id="boardSearchInput" class="board-search-input" placeholder="제목+내용 검색">
+    <button id="btnBoardSearch" class="board-search-btn">검색</button>
+    <button id="btnBoardSearchReset" class="board-search-btn">초기화</button>
+  `;
+
+  boardPanel.appendChild(box);
+  return box;
+}
+/* ===== 날짜 포맷 ===== */
+function formatBoardDate(v){
+  if(!v) return "";
+
+  const d = new Date(v);
+  if(isNaN(d.getTime())) return String(v);
+
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+
+  return `${yyyy}/${mm}/${dd} ${hh}:${mi}`;
+}
+
+function linkifyText(text){
+  const safe = esc(text || "");
+
+  return safe.replace(
+    /(https?:\/\/[^\s<]+)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+  );
+}
+
+document.addEventListener("click", function(e){
+  if(e.target.closest("#btnBoardSearch")){
+    e.preventDefault();
+    renderBoardList();
+  }
+
+  if(e.target.closest("#btnBoardSearchReset")){
+    e.preventDefault();
+    const input = document.getElementById("boardSearchInput");
+    if(input) input.value = "";
+    renderBoardList();
+  }
 });
 </script>
+<body>
 </body>
 </html>
