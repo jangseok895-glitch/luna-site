@@ -2321,11 +2321,38 @@ function toast(msg) {
   t.style.display = "block";
   setTimeout(() => (t.style.display = "none"), 1500);
 }
-function rebuildRowMap() {
-  ROW_BY_ID = Object.fromEntries(
-    (SHEET_ROWS || []).map((r) => [String(r.id), r]),
-  );
+function rowKey(r) {
+  return "map:" + normName(r && r["맵이름"] ? r["맵이름"] : "");
 }
+
+function rebuildRowMap() {
+  ROW_BY_ID = {};
+  (SHEET_ROWS || []).forEach((r) => {
+    if (!r) return;
+    ROW_BY_ID[String(r.id)] = r;          // 기존 저장값 호환용: 예전 숫자 id
+    ROW_BY_ID[rowKey(r)] = r;            // 신규 저장값: 맵 이름 기준
+  });
+}
+
+function getSelectionKeyForRow(r) {
+  return rowKey(r);
+}
+
+function getPickedForRow(selObj, r) {
+  if (!selObj || !r) return null;
+  return selObj[rowKey(r)] || selObj[String(r.id)] || null;
+}
+
+function normalizeSelectionKeys(selObj = {}) {
+  const out = {};
+  Object.entries(selObj || {}).forEach(([key, val]) => {
+    const row = ROW_BY_ID[String(key)] || null;
+    const newKey = row ? rowKey(row) : String(key);
+    out[newKey] = val;
+  });
+  return out;
+}
+
 function roundScore(value) {
   return Math.round((Number(value) || 0) * 100) / 100;
 }
@@ -2495,19 +2522,20 @@ function renderPc() {
   const tb = document.getElementById("tbodyPc");
   tb.innerHTML = "";
   for (const r of SHEET_ROWS) {
+    const key = getSelectionKeyForRow(r);
     const tr = document.createElement("tr");
     tr.className = rowClassByDiff(r["난이도"]);
     tr.dataset.map = normName(r["맵이름"]);
     tr.innerHTML = `
       <td class="map" title="${esc(r["맵이름"])}">${esc(r["맵이름"])}</td>
-      <td class="center">${chipHtml(r.id, "프로", r["프로"])}</td>
-      <td class="center">${chipHtml(r.id, "강주력", r["강주력"])}</td>
-      <td class="center">${chipHtml(r.id, "주력", r["주력"])}</td>
-      <td class="center">${chipHtml(r.id, "1군", r["_1군"])}</td>
-      <td class="center">${chipHtml(r.id, "2군", r["_2군"])}</td>
-      <td class="center">${chipHtml(r.id, "3군", r["_3군"])}</td>
-      <td class="center">${chipHtml(r.id, "4군", r["_4군"])}</td>
-      <td class="center">${chipHtml(r.id, "5군", r["_5군"])}</td>
+      <td class="center">${chipHtml(key, "프로", r["프로"])}</td>
+      <td class="center">${chipHtml(key, "강주력", r["강주력"])}</td>
+      <td class="center">${chipHtml(key, "주력", r["주력"])}</td>
+      <td class="center">${chipHtml(key, "1군", r["_1군"])}</td>
+      <td class="center">${chipHtml(key, "2군", r["_2군"])}</td>
+      <td class="center">${chipHtml(key, "3군", r["_3군"])}</td>
+      <td class="center">${chipHtml(key, "4군", r["_4군"])}</td>
+      <td class="center">${chipHtml(key, "5군", r["_5군"])}</td>
     `;
     tb.appendChild(tr);
   }
@@ -2520,7 +2548,8 @@ function renderRealPc(selObj) {
   tb.innerHTML = "";
 
   for (const r of SHEET_ROWS) {
-    const chosen = selObj && selObj[String(r.id)] ? selObj[String(r.id)] : null;
+    const key = getSelectionKeyForRow(r);
+    const chosen = getPickedForRow(selObj, r);
 
     const tr = document.createElement("tr");
     tr.className = rowClassByDiff(r["난이도"]);
@@ -2528,14 +2557,14 @@ function renderRealPc(selObj) {
 
     tr.innerHTML = `
       <td class="map" title="${esc(r["맵이름"])}">${esc(r["맵이름"])}</td>
-      ${realChipCell(r.id, "프로", r["프로"], chosen)}
-      ${realChipCell(r.id, "강주력", r["강주력"], chosen)}
-      ${realChipCell(r.id, "주력", r["주력"], chosen)}
-      ${realChipCell(r.id, "1군", r["_1군"], chosen)}
-      ${realChipCell(r.id, "2군", r["_2군"], chosen)}
-      ${realChipCell(r.id, "3군", r["_3군"], chosen)}
-      ${realChipCell(r.id, "4군", r["_4군"], chosen)}
-      ${realChipCell(r.id, "5군", r["_5군"], chosen)}
+      ${realChipCell(key, "프로", r["프로"], chosen)}
+      ${realChipCell(key, "강주력", r["강주력"], chosen)}
+      ${realChipCell(key, "주력", r["주력"], chosen)}
+      ${realChipCell(key, "1군", r["_1군"], chosen)}
+      ${realChipCell(key, "2군", r["_2군"], chosen)}
+      ${realChipCell(key, "3군", r["_3군"], chosen)}
+      ${realChipCell(key, "4군", r["_4군"], chosen)}
+      ${realChipCell(key, "5군", r["_5군"], chosen)}
     `;
     tb.appendChild(tr);
   }
@@ -2557,11 +2586,12 @@ function renderMobile() {
     const imgUrl = THUMBS[mapName] || "";
     const thumbStyle = imgUrl ? `background-image:url('${imgUrl}')` : "";
     const diffCls = rowClassByDiff(r["난이도"] || "");
-    const key = normName(mapName);
+    const key = getSelectionKeyForRow(r);
+    const mapDomKey = normName(mapName);
 
     const card = document.createElement("div");
     card.className = `card ${diffCls}`;
-    card.dataset.map = key;
+    card.dataset.map = mapDomKey;
     card.innerHTML = `
       <div class="card-head">
         <div class="diff-badge">${esc(r["난이도"] || "")}</div>
@@ -2573,14 +2603,14 @@ function renderMobile() {
         <div class="h">2군</div><div class="h">3군</div><div class="h">4군</div><div class="h">5군</div>
       </div>
       <div class="card-times ${diffCls}">
-        ${chipHtml(r.id, "프로", r["프로"])}
-        ${chipHtml(r.id, "강주력", r["강주력"])}
-        ${chipHtml(r.id, "주력", r["주력"])}
-        ${chipHtml(r.id, "1군", r["_1군"])}
-        ${chipHtml(r.id, "2군", r["_2군"])}
-        ${chipHtml(r.id, "3군", r["_3군"])}
-        ${chipHtml(r.id, "4군", r["_4군"])}
-        ${chipHtml(r.id, "5군", r["_5군"])}
+        ${chipHtml(key, "프로", r["프로"])}
+        ${chipHtml(key, "강주력", r["강주력"])}
+        ${chipHtml(key, "주력", r["주력"])}
+        ${chipHtml(key, "1군", r["_1군"])}
+        ${chipHtml(key, "2군", r["_2군"])}
+        ${chipHtml(key, "3군", r["_3군"])}
+        ${chipHtml(key, "4군", r["_4군"])}
+        ${chipHtml(key, "5군", r["_5군"])}
       </div>
     `;
     box.appendChild(card);
@@ -2616,7 +2646,7 @@ function checkAiParking(selObj = selections) {
   };
 
   SHEET_ROWS.forEach((r) => {
-    const picked = selObj[String(r.id)];
+    const picked = getPickedForRow(selObj, r);
 
     if (picked && picked.tier) {
       count[picked.tier] = (count[picked.tier] || 0) + 1;
@@ -2697,11 +2727,12 @@ function saveData() {
   const p = document.getElementById("pin5").value.trim();
   if (!n) return toast("닉네임을 입력하세요.");
   if (!/^\d{5}$/.test(p)) return toast("비밀번호는 숫자 5자리입니다.");
-  const total = getSelectionTotal(selections);
+  const safeSelections = normalizeSelectionKeys(selections);
+  const total = getSelectionTotal(safeSelections);
   google.script.run
     .withSuccessHandler(() => toast("저장 완료"))
     .withFailureHandler((e) => toast(e.message || "저장 실패"))
-    .saveProfile(n, p, selections, total);
+    .saveProfile(n, p, safeSelections, total);
 }
 function loadData() {
   const n = document.getElementById("nickname").value.trim();
@@ -2716,7 +2747,8 @@ function loadData() {
     .withSuccessHandler((d) => {
       resetSel();
 
-      (d?.selections ? Object.entries(d.selections) : []).forEach(
+      const loadedSelections = normalizeSelectionKeys(d?.selections || {});
+      Object.entries(loadedSelections).forEach(
         ([rowId, val]) => {
           selections[rowId] = val;
           syncRowVisual(rowId);
@@ -3474,7 +3506,7 @@ function bonusMultiplierFromBonus(v){
 function mapRecordToSheetRow(r, idx){
   const bonus = normalizeBonus(r.bonus ?? r["추가점수"] ?? r.bonus_percent ?? r.bonus_rate ?? 0);
   return {
-    id: String(r.sort_order ?? r.id ?? idx + 1),
+    id: String(r.id ?? r.sort_order ?? idx + 1),
     sort_order: Number(r.sort_order ?? idx + 1),
     "추가점수": String(bonus || ""),
     bonusMultiplier: bonusMultiplierFromBonus(bonus),
@@ -3495,6 +3527,7 @@ function calcTotalFromSelectionsSupabase(selections, rows){
   const rowMap = {};
   (rows || SHEET_ROWS || []).forEach(r => {
     rowMap[String(r.id)] = Number(r.bonusMultiplier || 1) || 1;
+    if (typeof rowKey === "function") rowMap[rowKey(r)] = Number(r.bonusMultiplier || 1) || 1;
   });
 
   let total = 0;
@@ -3554,7 +3587,8 @@ async function loadProfileSupabase(nickname, pin5){
   const r = data[0];
   const selections = typeof r.selections === "string" ? JSON.parse(r.selections || "{}") : (r.selections || {});
   const sheet = await getSheetDataSupabase();
-  return { totalScore: calcTotalFromSelectionsSupabase(selections, sheet.rows), selections };
+  const safeSelections = (typeof normalizeSelectionKeys === "function") ? normalizeSelectionKeys(selections) : selections;
+  return { totalScore: calcTotalFromSelectionsSupabase(safeSelections, sheet.rows), selections: safeSelections };
 }
 
 async function getCertifiedClubMapSupabase(){
@@ -3651,11 +3685,12 @@ async function getTeamMemberProfileSupabase(team, memberNickname){
   const r = rows[0];
   const selections = typeof r.selections === "string" ? JSON.parse(r.selections || "{}") : (r.selections || {});
   const sheet = await getSheetDataSupabase();
+  const safeSelections = (typeof normalizeSelectionKeys === "function") ? normalizeSelectionKeys(selections) : selections;
   return {
     team:t,
     nickname:n,
-    totalScore:calcTotalFromSelectionsSupabase(selections, sheet.rows),
-    selections,
+    totalScore:calcTotalFromSelectionsSupabase(safeSelections, sheet.rows),
+    selections:safeSelections,
     updatedAt:r.updated_at || r.updatedAt || r.created_at || "",
     views:newViews
   };
