@@ -1723,6 +1723,41 @@ body.pc-view #mobileSection{display:none!important;}
 body.mobile-view #goMobileBtn{box-shadow:0 0 0 3px rgba(239,68,68,.24),0 6px 16px rgba(239,68,68,.24)!important;transform:translateY(-1px);}
 body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(14,165,233,.18)!important;transform:translateY(-1px);}
 
+
+/* ===== 실제 휴대폰 접속 시에도 PC 화면과 같은 폭/구조로 보이게 고정 ===== */
+@media (max-width: 900px){
+  html, body{
+    min-width:1100px !important;
+    overflow-x:auto !important;
+  }
+  .wrap,
+  .sticky-inner{
+    width:1100px !important;
+    max-width:1100px !important;
+  }
+  .main-title-image{
+    height:50px !important;
+  }
+  .btn{
+    font-size:18px !important;
+    padding:14px 18px !important;
+  }
+  .main-tab{
+    font-size:18px !important;
+    padding:15px 8px 16px !important;
+  }
+  .input-wrap.nick{width:170px!important;flex:0 0 170px!important;}
+  .input-wrap.pin{width:100px!important;flex:0 0 100px!important;}
+  .big-rank .rank-text{font-size:26px!important;}
+  #pcTableSection table,
+  #realPcTableSection table{
+    min-width:1050px !important;
+  }
+  body.pc-view #mobileSection{
+    display:none !important;
+  }
+}
+
 </style>
 </head>
 
@@ -2011,6 +2046,7 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 
   <div id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
 /* =========================================================
@@ -3276,244 +3312,428 @@ bindBtn("btnOpenRegisterPopup", openRegisterPopup);
 
 
 /* =========================================================
-   GitHub/Cloudflare 실행용 Apps Script 호환 레이어
-   - google.script.run이 없는 환경에서도 로딩에서 멈추지 않게 함
-   - 저장/불러오기/군실명제/게시판은 브라우저 localStorage로 동작
-   - 나중에 Supabase를 붙여도 이 구조 위에 교체 가능
+   GitHub/Cloudflare + Supabase 실행용 Apps Script 호환 레이어
+   - 기존 index.html의 google.script.run 호출 방식은 그대로 유지
+   - 실제 데이터는 Supabase에서 읽고/저장
+   - Supabase 설정값은 아래 2개만 확인하면 됨
 ========================================================= */
+const SUPABASE_URL = "https://xyibdanmecakevhtdajl.supabase.co";
+
+/*
+  ⚠️ 중요
+  아래 SUPABASE_ANON_KEY에는 Supabase → Settings → API → anon public key 를 넣어주세요.
+  예: const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6...";
+*/
+const SUPABASE_ANON_KEY = "여기에_SUPABASE_ANON_PUBLIC_KEY_붙여넣기";
+
+const LUNA_WEIGHTS = {
+  "프로":128,
+  "강주력":64,
+  "주력":32,
+  "1군":16,
+  "2군":8,
+  "3군":4,
+  "4군":2,
+  "5군":1
+};
+
+const LUNA_RANKS = [
+  { min: 5760, label: "당신은 프로군입니다" },
+  { min: 2880, label: "당신은 강주력입니다" },
+  { min: 1440, label: "당신은 주력입니다" },
+  { min: 720, label: "당신은 1군입니다" },
+  { min: 360, label: "당신은 2군입니다" },
+  { min: 180, label: "당신은 3군입니다" },
+  { min: 90, label: "당신은 4군입니다" },
+  { min: 45, label: "당신은 5군입니다" },
+  { min: 0, label: "당신은 6군입니다" }
+];
+
+function makeSb(){
+  if(!window.supabase) return null;
+  if(!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes("여기에_")) return null;
+  return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+const sb = makeSb();
+
+function normalizeTimeValue(v){
+  if(v === null || v === undefined) return "";
+  return String(v).trim();
+}
+
+function normalizeBonus(v){
+  const n = Number(String(v ?? "").trim());
+  if(!Number.isFinite(n) || n <= 0) return 0;
+  return n;
+}
+
+function bonusMultiplierFromBonus(v){
+  const n = normalizeBonus(v);
+  return 1 + (n / 100);
+}
+
+function mapRecordToSheetRow(r, idx){
+  const bonus = normalizeBonus(r.bonus ?? r["추가점수"] ?? r.bonus_percent ?? r.bonus_rate ?? 0);
+  return {
+    id: String(r.sort_order ?? r.id ?? idx + 1),
+    sort_order: Number(r.sort_order ?? idx + 1),
+    "추가점수": String(bonus || ""),
+    bonusMultiplier: bonusMultiplierFromBonus(bonus),
+    "난이도": String(r.difficulty ?? r["난이도"] ?? ""),
+    "맵이름": String(r.map_name ?? r["맵이름"] ?? r.name ?? ""),
+    "프로": normalizeTimeValue(r.pro ?? r["프로"]),
+    "강주력": normalizeTimeValue(r.kj ?? r["강주력"]),
+    "주력": normalizeTimeValue(r.jr ?? r["주력"]),
+    "_1군": normalizeTimeValue(r.g1 ?? r["1군"] ?? r._1군),
+    "_2군": normalizeTimeValue(r.g2 ?? r["2군"] ?? r._2군),
+    "_3군": normalizeTimeValue(r.g3 ?? r["3군"] ?? r._3군),
+    "_4군": normalizeTimeValue(r.g4 ?? r["4군"] ?? r._4군),
+    "_5군": normalizeTimeValue(r.g5 ?? r["5군"] ?? r._5군)
+  };
+}
+
+function calcTotalFromSelectionsSupabase(selections, rows){
+  const rowMap = {};
+  (rows || SHEET_ROWS || []).forEach(r => {
+    rowMap[String(r.id)] = Number(r.bonusMultiplier || 1) || 1;
+  });
+
+  let total = 0;
+  Object.entries(selections || {}).forEach(([rowId, picked]) => {
+    const tier = picked && picked.tier;
+    const weight = Number(LUNA_WEIGHTS[tier] || 0);
+    const bonus = rowMap[String(rowId)] || 1;
+    total += weight * bonus;
+  });
+  return Math.round(total * 100) / 100;
+}
+
+async function sbSelect(table, queryFn){
+  if(!sb) throw new Error("Supabase anon key가 index.html에 입력되지 않았습니다.");
+  const q = queryFn(sb.from(table));
+  const { data, error } = await q;
+  if(error) throw error;
+  return data || [];
+}
+
+async function getSheetDataSupabase(){
+  const data = await sbSelect("map_records", q => q.select("*").order("sort_order", { ascending:true }));
+  const rows = (data || []).map(mapRecordToSheetRow).filter(r => r["맵이름"]);
+  return { rows, weights:LUNA_WEIGHTS, ranks:LUNA_RANKS };
+}
+
+async function saveProfileSupabase(nickname, pin5, selections, total){
+  const nick = String(nickname || "").trim();
+  const pin = String(pin5 || "").trim();
+  if(!nick) throw new Error("닉네임을 입력하세요.");
+  if(!/^\d{5}$/.test(pin)) throw new Error("비밀번호는 숫자 5자리여야 합니다.");
+
+  const sheet = await getSheetDataSupabase();
+  const computedTotal = calcTotalFromSelectionsSupabase(selections, sheet.rows);
+
+  const row = {
+    ts: new Date().toISOString(),
+    nickname: nick,
+    pin5: pin,
+    total: computedTotal,
+    selections: selections || {}
+  };
+
+  const { error } = await sb.from("profiles").insert(row);
+  if(error) throw error;
+
+  await syncTeamByNicknameSupabase(nick, pin, computedTotal, selections || {}).catch(() => {});
+  return { ok:true };
+}
+
+async function loadProfileSupabase(nickname, pin5){
+  const nick = String(nickname || "").trim();
+  const pin = String(pin5 || "").trim();
+  if(!/^\d{5}$/.test(pin)) throw new Error("비밀번호는 숫자 5자리여야 합니다.");
+
+  let data;
+  try{
+    data = await sbSelect("profiles", q => q.select("*").eq("nickname", nick).eq("pin5", pin).order("ts", { ascending:false }).limit(1));
+  }catch(e){
+    data = await sbSelect("profiles", q => q.select("*").eq("nickname", nick).eq("pin5", pin).order("created_at", { ascending:false }).limit(1));
+  }
+  if(!data.length) throw new Error("일치하는 닉네임/비밀번호가 없습니다.");
+  const r = data[0];
+  const selections = typeof r.selections === "string" ? JSON.parse(r.selections || "{}") : (r.selections || {});
+  const sheet = await getSheetDataSupabase();
+  return { totalScore: calcTotalFromSelectionsSupabase(selections, sheet.rows), selections };
+}
+
+async function getCertifiedClubMapSupabase(){
+  const map = {};
+  try{
+    const rows = await sbSelect("club_pw", q => q.select("*"));
+    rows.forEach(r => {
+      const club = String(r.club ?? r.CLUB ?? r.team ?? r.name ?? "").trim();
+      const certified = String(r.certified ?? r["인증"] ?? r.cert ?? "").trim();
+      if(club && (certified === "1" || certified === "true" || certified === "TRUE")) map[club] = true;
+    });
+  }catch(e){
+    // club_pw 테이블이 아직 없으면 인증 표시만 생략
+  }
+  return map;
+}
+
+async function getTeamListSupabase(){
+  const certifiedMap = await getCertifiedClubMapSupabase();
+  const rows = await sbSelect("team_members", q => q.select("team,nickname"));
+  const set = {};
+  rows.forEach(r => {
+    const t = String(r.team ?? r["단체명"] ?? "").trim();
+    if(t) set[t] = true;
+  });
+
+  const rank = (name) => {
+    name = String(name || "");
+    if(name.startsWith("[클럽]")) return 1;
+    if(name.startsWith("[크루]")) return 2;
+    return 3;
+  };
+
+  const teams = Object.keys(set).sort((a,b) => {
+    const ar = rank(a), br = rank(b);
+    if(ar !== br) return ar - br;
+    if(ar === 2 && br === 2){
+      const ac = !!certifiedMap[a], bc = !!certifiedMap[b];
+      if(ac !== bc) return ac ? -1 : 1;
+    }
+    return a.localeCompare(b, "ko");
+  }).map(name => ({ name, certified:!!certifiedMap[name] }));
+
+  return { teams };
+}
+
+async function registerToTeamSupabase(team, nickname, pin5){
+  const t = String(team || "").trim();
+  const n = String(nickname || "").trim();
+  const p = String(pin5 || "").trim();
+  if(!t) throw new Error("단체명을 선택하세요.");
+  if(!n) throw new Error("닉네임을 입력하세요.");
+  if(!/^\d{5}$/.test(p)) throw new Error("비밀번호는 숫자 5자리입니다.");
+
+  const prof = await loadProfileSupabase(n, p);
+  await sb.from("team_members").delete().eq("team", t).eq("nickname", n);
+
+  const row = {
+    team:t,
+    nickname:n,
+    pin5:p,
+    total:Number(prof.totalScore) || 0,
+    selections:prof.selections || {},
+    updated_at:new Date().toISOString(),
+    views:0
+  };
+  const { error } = await sb.from("team_members").insert(row);
+  if(error) throw error;
+  return { ok:true };
+}
+
+async function getTeamMembersSupabase(team){
+  const t = String(team || "").trim();
+  if(!t) return { members:[] };
+  const rows = await sbSelect("team_members", q => q.select("nickname").eq("team", t).order("nickname", { ascending:true }));
+  const members = [...new Set(rows.map(r => String(r.nickname || "").trim()).filter(Boolean))];
+  return { members };
+}
+
+async function getTeamMemberProfileSupabase(team, memberNickname){
+  const t = String(team || "").trim();
+  const n = String(memberNickname || "").trim();
+  if(!t || !n) throw new Error("단체/멤버를 선택하세요.");
+
+  const allNickRows = await sbSelect("team_members", q => q.select("id,views,nickname").eq("nickname", n));
+  const maxViews = Math.max(0, ...allNickRows.map(r => Number(r.views || 0)));
+  const newViews = maxViews + 1;
+  for(const r of allNickRows){
+    if(r.id !== undefined) await sb.from("team_members").update({views:newViews}).eq("id", r.id);
+  }
+
+  const rows = await sbSelect("team_members", q => q.select("*").eq("team", t).eq("nickname", n).limit(1));
+  if(!rows.length) throw new Error("해당 멤버의 등록정보를 찾지 못했습니다.");
+  const r = rows[0];
+  const selections = typeof r.selections === "string" ? JSON.parse(r.selections || "{}") : (r.selections || {});
+  const sheet = await getSheetDataSupabase();
+  return {
+    team:t,
+    nickname:n,
+    totalScore:calcTotalFromSelectionsSupabase(selections, sheet.rows),
+    selections,
+    updatedAt:r.updated_at || r.updatedAt || r.created_at || "",
+    views:newViews
+  };
+}
+
+async function searchTeamMembersSupabase(keyword){
+  const qText = String(keyword || "").trim();
+  if(!qText) return { results:[] };
+  const certifiedMap = await getCertifiedClubMapSupabase();
+  const rows = await sbSelect("team_members", q => q.select("team,nickname"));
+  const results = [];
+  rows.forEach(r => {
+    const team = String(r.team || "").trim();
+    const nickname = String(r.nickname || "").trim();
+    if(team.includes(qText) || nickname.includes(qText)){
+      results.push({team, nickname, certified:!!certifiedMap[team]});
+    }
+  });
+
+  const typeRank = (team) => team.startsWith("[클럽]") ? 1 : team.startsWith("[크루]") ? 2 : 3;
+  results.sort((a,b) => {
+    const td = typeRank(a.team) - typeRank(b.team);
+    if(td) return td;
+    const cd = String(a.team).localeCompare(String(b.team), "ko");
+    if(cd) return cd;
+    return String(a.nickname).localeCompare(String(b.nickname), "ko");
+  });
+  return { results };
+}
+
+async function deleteTeamMemberSupabase(team, memberNickname, pin){
+  const t = String(team || "").trim();
+  const n = String(memberNickname || "").trim();
+  const p = String(pin || "").trim();
+  if(!t || !n) throw new Error("단체/멤버를 선택하세요.");
+  if(!/^\d{4,5}$/.test(p)) throw new Error("비밀번호는 숫자 4자리 또는 5자리입니다.");
+
+  let clubPwOk = false;
+  if(/^\d{4}$/.test(p)){
+    try{
+      const rows = await sbSelect("club_pw", q => q.select("*").eq("club", t).eq("pw", p).limit(1));
+      clubPwOk = rows.length > 0;
+    }catch(e){ clubPwOk = false; }
+  }
+
+  const rows = await sbSelect("team_members", q => q.select("*").eq("team", t).eq("nickname", n).limit(1));
+  if(!rows.length) throw new Error("TEAM 데이터가 없습니다.");
+  const personalOk = String(rows[0].pin5 || rows[0].pin || "") === p;
+  if(!personalOk && !clubPwOk) throw new Error("일치하는 비밀번호가 아닙니다. 개인 비밀번호 또는 클럽 비밀번호를 확인해주세요.");
+
+  const { error } = await sb.from("team_members").delete().eq("team", t).eq("nickname", n);
+  if(error) throw error;
+  return { ok:true };
+}
+
+async function syncTeamByNicknameSupabase(nickname, pin5, total, selections){
+  const rows = await sbSelect("team_members", q => q.select("id,nickname,pin5").eq("nickname", nickname).eq("pin5", pin5));
+  for(const r of rows){
+    await sb.from("team_members").update({
+      total:Number(total) || 0,
+      selections:selections || {},
+      updated_at:new Date().toISOString()
+    }).eq("id", r.id);
+  }
+  return { ok:true, updated:rows.length };
+}
+
+async function getBoardPostsSupabase(board){
+  const b = String(board || "promo");
+  const rows = await sbSelect("board_posts", q => q.select("*").eq("board", b).order("created_at", { ascending:false }));
+  return { posts: rows.map((r, idx) => ({
+    id:r.id,
+    no:r.no || idx + 1,
+    board:r.board,
+    title:r.title || "",
+    content:r.content || "",
+    writer:r.writer || "",
+    pin:r.pin4 || r.pin || "",
+    createdAt:r.created_at || r.createdAt || "",
+    imageUrl:r.image_url || r.imageUrl || "",
+    views:Number(r.views || 0),
+    adminReply:r.admin_reply || r.adminReply || "",
+    adminReplyAt:r.admin_reply_at || r.adminReplyAt || ""
+  })) };
+}
+
+async function addBoardPostSupabase(board, title, content, writer, pin4, imageData){
+  let imageUrl = "";
+  // GitHub 정적 환경에서는 파일 업로드용 Storage 설정이 없으면 이미지 저장은 별도 작업 필요
+  // 임시로 data URL 저장 가능하지만 DB 용량 문제 때문에 작은 이미지만 권장
+  if(imageData && imageData.base64){
+    imageUrl = `data:${imageData.mimeType};base64,${imageData.base64}`;
+  }
+  const row = {
+    board:String(board || "promo"),
+    title:String(title || ""),
+    content:String(content || ""),
+    writer:String(writer || ""),
+    pin4:String(pin4 || ""),
+    image_url:imageUrl,
+    views:0,
+    created_at:new Date().toISOString()
+  };
+  const { error } = await sb.from("board_posts").insert(row);
+  if(error) throw error;
+  return { ok:true };
+}
+
+async function increaseBoardViewSupabase(id){
+  const rows = await sbSelect("board_posts", q => q.select("views").eq("id", id).limit(1));
+  const views = Number(rows[0]?.views || 0) + 1;
+  const { error } = await sb.from("board_posts").update({views}).eq("id", id);
+  if(error) throw error;
+  return { views };
+}
+
+async function checkBoardPostPinSupabase(id, pin){
+  const rows = await sbSelect("board_posts", q => q.select("pin4").eq("id", id).limit(1));
+  if(!rows.length || String(rows[0].pin4 || "") !== String(pin || "")) throw new Error("비밀번호가 일치하지 않습니다.");
+  return { ok:true };
+}
+
+async function deleteBoardPostSupabase(id, pin){
+  const rows = await sbSelect("board_posts", q => q.select("pin4").eq("id", id).limit(1));
+  if(rows.length && String(rows[0].pin4 || "") !== String(pin || "") && String(pin || "") !== "0523") throw new Error("비밀번호가 일치하지 않습니다.");
+  const { error } = await sb.from("board_posts").delete().eq("id", id);
+  if(error) throw error;
+  return { ok:true };
+}
+
+async function updateBoardPostSupabase(id, title, content, writer, pin, imageData){
+  const rows = await sbSelect("board_posts", q => q.select("pin4").eq("id", id).limit(1));
+  if(rows.length && String(rows[0].pin4 || "") !== String(pin || "") && String(pin || "") !== "0523") throw new Error("비밀번호가 일치하지 않습니다.");
+  const patch = { title:String(title||""), content:String(content||""), writer:String(writer||"") };
+  if(imageData && imageData.base64) patch.image_url = `data:${imageData.mimeType};base64,${imageData.base64}`;
+  const { error } = await sb.from("board_posts").update(patch).eq("id", id);
+  if(error) throw error;
+  return { ok:true };
+}
+
+async function addAdminReplyToBoardSupabase(id, pin, reply){
+  if(String(pin || "") !== "0523") throw new Error("운영진 비밀번호가 일치하지 않습니다.");
+  const { error } = await sb.from("board_posts").update({
+    admin_reply:String(reply || ""),
+    admin_reply_at:new Date().toISOString()
+  }).eq("id", id);
+  if(error) throw error;
+  return { ok:true };
+}
+
 (function(){
   if (window.google && window.google.script && window.google.script.run) return;
 
-  const LS = {
-    profiles: "luna_profiles_v2",
-    teams: "luna_real_teams_v2",
-    boards: "luna_boards_v2"
-  };
-
-  const read = (k, fb) => {
-    try { return JSON.parse(localStorage.getItem(k) || "") || fb; }
-    catch(e){ return fb; }
-  };
-  const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
-  const now = () => new Date().toISOString();
-  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-
-  function fmtTime(sec){
-    sec = Math.max(50, Math.round(sec * 100) / 100);
-    const m = Math.floor(sec / 60);
-    const rest = (sec - m * 60).toFixed(2).padStart(5, "0");
-    return `${m}.${rest}`;
-  }
-
-  function makeDefaultRows(){
-    const exact = {
-      "빌리지 고가의 질주": ["1.28.99","1.29.79","1.30.79","1.31.79","1.32.99","1.34.29","1.35.49","1.37.29"],
-      "빌리지 남산": ["1.24.29","1.24.99","1.25.99","1.26.79","1.27.99","1.29.29","1.30.49","1.31.79"],
-      "비치 해변 드라이브": ["1.40.79","1.41.79","1.42.79","1.43.99","1.45.29","1.46.79","1.48.29","1.49.99"],
-      "WKC 싱가폴 서킷": ["1.47.99","1.48.99","1.50.29","1.51.49","1.52.79","1.54.29","1.55.99","1.57.79"],
-      "차이나 라사": ["1.35.29","1.36.29","1.37.29","1.38.29","1.39.49","1.40.79","1.42.29","1.43.79"]
-    };
-    const names = Object.keys(THUMBS || {});
-    const diffs = ["루키","L3","L2","L1"];
-    return names.map((name, i) => {
-      const diff = diffs[Math.floor(i / Math.max(1, Math.ceil(names.length / 4))) % 4];
-      let arr = exact[name];
-      if(!arr){
-        const base = 82 + (i % 9) * 3.7 + Math.floor(i / 9) * 1.6;
-        arr = [0,1.0,2.1,3.2,4.5,5.9,7.4,9.0].map(x => fmtTime(base + x));
-      }
-      return {
-        id: String(i + 1),
-        "난이도": diff,
-        "맵이름": name,
-        "프로": arr[0], "강주력": arr[1], "주력": arr[2],
-        "_1군": arr[3], "_2군": arr[4], "_3군": arr[5], "_4군": arr[6], "_5군": arr[7],
-        "추가점수": ""
-      };
-    });
-  }
-
-  function defaultTeams(){
-    return [{name:"아시아클럽", certified:true}, {name:"레니교", certified:false}, {name:"일반크루", certified:false}];
-  }
-
-  function profileKey(n, p){ return `${String(n||"").trim()}__${String(p||"").trim()}`; }
-
-  function handle(name, args){
-    if(name === "getSheetData"){
-      return {
-        rows: makeDefaultRows(),
-        weights: {"프로":160,"강주력":120,"주력":90,"1군":60,"2군":38,"3군":24,"4군":13,"5군":6},
-        ranks: [
-          {label:"당신은 프로군입니다", min:5760},
-          {label:"당신은 강주력입니다", min:2880},
-          {label:"당신은 주력입니다", min:1440},
-          {label:"당신은 1군입니다", min:720},
-          {label:"당신은 2군입니다", min:360},
-          {label:"당신은 3군입니다", min:180},
-          {label:"당신은 4군입니다", min:90},
-          {label:"당신은 5군입니다", min:45},
-          {label:"당신은 6군입니다", min:0}
-        ]
-      };
-    }
-
-    if(name === "saveProfile"){
-      const [nick, pin, selections, totalScore] = args;
-      const db = read(LS.profiles, {});
-      db[profileKey(nick, pin)] = {nickname:nick, pin, selections, totalScore, updatedAt:now()};
-      write(LS.profiles, db);
-      return {ok:true};
-    }
-
-    if(name === "loadProfile"){
-      const [nick, pin] = args;
-      const db = read(LS.profiles, {});
-      const v = db[profileKey(nick, pin)];
-      if(!v) throw new Error("저장된 군표가 없습니다.");
-      return v;
-    }
-
-    if(name === "getTeamList"){
-      return {teams: read(LS.teams, defaultTeams())};
-    }
-
-    if(name === "registerToTeam"){
-      const [team, nick, pin] = args;
-      const profiles = read(LS.profiles, {});
-      const prof = profiles[profileKey(nick, pin)];
-      if(!prof) throw new Error("먼저 군표를 저장한 뒤 등록하세요.");
-      const teams = read(LS.teams, defaultTeams());
-      if(!teams.some(t => (typeof t === "string" ? t : t.name) === team)) teams.push({name:team, certified:false});
-      write(LS.teams, teams);
-      const members = read("luna_members_" + team, []);
-      const old = members.findIndex(m => m.nickname === nick);
-      const item = {team, nickname:nick, pin, selections:prof.selections, totalScore:prof.totalScore, updatedAt:now(), views:0};
-      if(old >= 0) members[old] = {...members[old], ...item};
-      else members.push(item);
-      write("luna_members_" + team, members);
-      return {ok:true};
-    }
-
-    if(name === "getTeamMembers"){
-      const [team] = args;
-      return {members: read("luna_members_" + team, []).map(m => m.nickname)};
-    }
-
-    if(name === "getTeamMemberProfile"){
-      const [team, member] = args;
-      const members = read("luna_members_" + team, []);
-      const m = members.find(x => x.nickname === member);
-      if(!m) throw new Error("멤버 정보가 없습니다.");
-      m.views = Number(m.views || 0) + 1;
-      write("luna_members_" + team, members);
-      return m;
-    }
-
-    if(name === "searchTeamMembers"){
-      const [keyword] = args;
-      const q = String(keyword || "").toLowerCase();
-      const teams = read(LS.teams, defaultTeams());
-      let results = [];
-      teams.forEach(t => {
-        const teamName = typeof t === "string" ? t : t.name;
-        const certified = !!(typeof t === "object" && t.certified);
-        read("luna_members_" + teamName, []).forEach(m => {
-          if(String(m.nickname || "").toLowerCase().includes(q)) results.push({team:teamName, nickname:m.nickname, certified});
-        });
-      });
-      return {results};
-    }
-
-    if(name === "deleteTeamMember"){
-      const [team, member, pin] = args;
-      const members = read("luna_members_" + team, []);
-      const idx = members.findIndex(m => m.nickname === member);
-      if(idx < 0) throw new Error("삭제할 멤버가 없습니다.");
-      if(String(pin) !== String(members[idx].pin) && String(pin) !== "0523") throw new Error("비밀번호가 일치하지 않습니다.");
-      members.splice(idx, 1);
-      write("luna_members_" + team, members);
-      return {ok:true};
-    }
-
-    if(name === "getBoardPosts"){
-      const [board] = args;
-      const all = read(LS.boards, {});
-      const posts = (all[board] || []).slice().sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-      return {posts};
-    }
-
-    if(name === "addBoardPost"){
-      const [board, title, content, writer, pin, imageData] = args;
-      const all = read(LS.boards, {});
-      all[board] = all[board] || [];
-      const no = all[board].length + 1;
-      const imageUrl = imageData && imageData.base64 ? `data:${imageData.mimeType};base64,${imageData.base64}` : "";
-      all[board].push({id:uid(), no, title, content, writer, pin, imageUrl, views:0, createdAt:now(), adminReply:"", adminReplyAt:""});
-      write(LS.boards, all);
-      return {ok:true};
-    }
-
-    if(name === "increaseBoardView"){
-      const [id] = args;
-      const all = read(LS.boards, {});
-      for(const board of Object.keys(all)){
-        const p = all[board].find(x => x.id === id);
-        if(p){ p.views = Number(p.views || 0) + 1; write(LS.boards, all); return {views:p.views}; }
-      }
-      return {views:0};
-    }
-
-    if(name === "checkBoardPostPin"){
-      const [id, pin] = args;
-      const all = read(LS.boards, {});
-      for(const board of Object.keys(all)){
-        const p = all[board].find(x => x.id === id);
-        if(p && String(p.pin) === String(pin)) return {ok:true};
-      }
-      throw new Error("비밀번호가 일치하지 않습니다.");
-    }
-
-    if(name === "deleteBoardPost"){
-      const [id, pin] = args;
-      const all = read(LS.boards, {});
-      for(const board of Object.keys(all)){
-        const idx = all[board].findIndex(x => x.id === id);
-        if(idx >= 0){
-          if(String(all[board][idx].pin) !== String(pin) && String(pin) !== "0523") throw new Error("비밀번호가 일치하지 않습니다.");
-          all[board].splice(idx,1); write(LS.boards, all); return {ok:true};
-        }
-      }
-      return {ok:true};
-    }
-
-    if(name === "updateBoardPost"){
-      const [id, title, content, writer, pin, imageData] = args;
-      const all = read(LS.boards, {});
-      for(const board of Object.keys(all)){
-        const p = all[board].find(x => x.id === id);
-        if(p){
-          if(String(p.pin) !== String(pin) && String(pin) !== "0523") throw new Error("비밀번호가 일치하지 않습니다.");
-          Object.assign(p, {title, content, writer});
-          if(imageData && imageData.base64) p.imageUrl = `data:${imageData.mimeType};base64,${imageData.base64}`;
-          write(LS.boards, all); return {ok:true};
-        }
-      }
-      return {ok:true};
-    }
-
-    if(name === "addAdminReplyToBoard"){
-      const [id, pin, reply] = args;
-      if(String(pin) !== "0523") throw new Error("운영진 비밀번호가 일치하지 않습니다.");
-      const all = read(LS.boards, {});
-      for(const board of Object.keys(all)){
-        const p = all[board].find(x => x.id === id);
-        if(p){ p.adminReply = reply; p.adminReplyAt = now(); write(LS.boards, all); return {ok:true}; }
-      }
-      return {ok:true};
-    }
-
-    return {ok:true};
+  async function handle(name, args){
+    if(name === "getSheetData") return await getSheetDataSupabase();
+    if(name === "saveProfile") return await saveProfileSupabase(...args);
+    if(name === "loadProfile") return await loadProfileSupabase(...args);
+    if(name === "getTeamList") return await getTeamListSupabase(...args);
+    if(name === "registerToTeam") return await registerToTeamSupabase(...args);
+    if(name === "getTeamMembers") return await getTeamMembersSupabase(...args);
+    if(name === "getTeamMemberProfile") return await getTeamMemberProfileSupabase(...args);
+    if(name === "searchTeamMembers") return await searchTeamMembersSupabase(...args);
+    if(name === "deleteTeamMember") return await deleteTeamMemberSupabase(...args);
+    if(name === "getBoardPosts") return await getBoardPostsSupabase(...args);
+    if(name === "addBoardPost") return await addBoardPostSupabase(...args);
+    if(name === "increaseBoardView") return await increaseBoardViewSupabase(...args);
+    if(name === "checkBoardPostPin") return await checkBoardPostPinSupabase(...args);
+    if(name === "deleteBoardPost") return await deleteBoardPostSupabase(...args);
+    if(name === "updateBoardPost") return await updateBoardPostSupabase(...args);
+    if(name === "addAdminReplyToBoard") return await addAdminReplyToBoardSupabase(...args);
+    return { ok:true };
   }
 
   function runner(){
@@ -3526,6 +3746,7 @@ bindBtn("btnOpenRegisterPopup", openRegisterPopup);
       }
     });
   }
+
   function runnerWithState(state){
     return new Proxy({}, {
       get(_, prop){
@@ -3535,11 +3756,15 @@ bindBtn("btnOpenRegisterPopup", openRegisterPopup);
       }
     });
   }
-  function run(prop, args, state){
-    setTimeout(() => {
-      try { const res = handle(String(prop), args); state.success && state.success(res); }
-      catch(e){ state.failure ? state.failure(e) : console.error(e); }
-    }, 120);
+
+  async function run(prop, args, state){
+    try{
+      const res = await handle(String(prop), args);
+      state.success && state.success(res);
+    }catch(e){
+      console.error(e);
+      state.failure ? state.failure(e) : alert(e.message || e);
+    }
   }
 
   window.google = {script:{run:runner()}};
