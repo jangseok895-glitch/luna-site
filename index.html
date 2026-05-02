@@ -75,74 +75,67 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <script>
-    const SUPABASE_URL = "luna-site.jangseok7.workers.dev";
-    const SUPABASE_ANON_KEY = "sb_publishable_uvYqwDymxodcSdpT1zAWyg_PeVHh_ZO";
+<script>
+  const SUPABASE_URL = "https://xyibdanmecakevhtdajl.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_uvYqwDymxodcSdpT1zAWyg_PeVHh_ZO";
 
-    const supabaseClient = supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY
-    );
+  const db = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
 
-async function saveUser() {
-  const nickname = document.getElementById("nickname").value.trim();
-  const team = document.getElementById("team").value.trim();
-  const result = document.getElementById("result");
+  async function saveUser() {
+    const nickname = document.getElementById("nickname").value.trim();
+    const team = document.getElementById("team").value.trim();
+    const result = document.getElementById("result");
 
-  try {
-    if (!nickname) {
-      alert("닉네임을 입력하세요.");
-      return;
+    try {
+      if (!nickname) {
+        alert("닉네임을 입력하세요.");
+        return;
+      }
+
+      if (!team) {
+        alert("단체명을 입력하세요.");
+        return;
+      }
+
+      result.textContent = "저장 중입니다...";
+
+      const { data, error } = await db
+        .from("users")
+        .insert([
+          {
+            nickname: nickname,
+            team: team
+          }
+        ])
+        .select();
+
+      if (error) {
+        result.textContent = "저장 실패:\n" + error.message;
+        return;
+      }
+
+      result.textContent = "저장 성공!\n" + JSON.stringify(data, null, 2);
+
+    } catch (err) {
+      result.textContent = "오류 발생:\n" + err.message;
     }
-
-    if (!team) {
-      alert("단체명을 입력하세요.");
-      return;
-    }
-
-    result.textContent = "저장 중입니다...";
-
-    if (!supabaseClient) {
-      result.textContent = "Supabase 연결 객체가 없습니다.";
-      return;
-    }
-
-    const { data, error } = await supabaseClient
-      .from("users")
-      .insert([
-        {
-          nickname: nickname,
-          team: team
-        }
-      ])
-      .select();
-
-    if (error) {
-      console.error(error);
-      result.textContent = "저장 실패:\n" + error.message;
-      return;
-    }
-
-    console.log(data);
-    result.textContent = "저장 성공!\n" + JSON.stringify(data, null, 2);
-
-  } catch (err) {
-    console.error(err);
-    result.textContent = "오류 발생:\n" + err.message;
   }
-}
 
-    async function loadUsers() {
-      const result = document.getElementById("result");
+  async function loadUsers() {
+    const result = document.getElementById("result");
+
+    try {
       result.textContent = "불러오는 중입니다...";
 
-      const { data, error } = await supabaseClient
+      const { data, error } = await db
         .from("users")
         .select("*")
         .order("id", { ascending: false });
 
       if (error) {
-        console.error(error);
         result.textContent = "불러오기 실패:\n" + error.message;
         return;
       }
@@ -155,7 +148,11 @@ async function saveUser() {
       result.textContent = data
         .map(row => `[${row.id}] ${row.team} - ${row.nickname}`)
         .join("\n");
+
+    } catch (err) {
+      result.textContent = "오류 발생:\n" + err.message;
     }
-  </script>
+  }
+</script>
 </body>
 </html>
