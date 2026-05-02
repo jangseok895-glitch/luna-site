@@ -3324,7 +3324,7 @@ const SUPABASE_URL = "https://xyibdanmecakevhtdajl.supabase.co";
   아래 SUPABASE_ANON_KEY에는 Supabase → Settings → API → anon public key 를 넣어주세요.
   예: const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6...";
 */
-const SUPABASE_ANON_KEY = "여기에_SUPABASE_ANON_PUBLIC_KEY_붙여넣기";
+const SUPABASE_ANON_KEY = "sb_publishable_uvYqwDymxodcSdpT1zAWyg_PeVHh_ZO";
 
 const LUNA_WEIGHTS = {
   "프로":128,
@@ -3432,7 +3432,6 @@ async function saveProfileSupabase(nickname, pin5, selections, total){
   const computedTotal = calcTotalFromSelectionsSupabase(selections, sheet.rows);
 
   const row = {
-    ts: new Date().toISOString(),
     nickname: nick,
     pin5: pin,
     total: computedTotal,
@@ -3451,12 +3450,7 @@ async function loadProfileSupabase(nickname, pin5){
   const pin = String(pin5 || "").trim();
   if(!/^\d{5}$/.test(pin)) throw new Error("비밀번호는 숫자 5자리여야 합니다.");
 
-  let data;
-  try{
-    data = await sbSelect("profiles", q => q.select("*").eq("nickname", nick).eq("pin5", pin).order("ts", { ascending:false }).limit(1));
-  }catch(e){
-    data = await sbSelect("profiles", q => q.select("*").eq("nickname", nick).eq("pin5", pin).order("created_at", { ascending:false }).limit(1));
-  }
+  const data = await sbSelect("profiles", q => q.select("*").eq("nickname", nick).eq("pin5", pin).order("created_at", { ascending:false }).limit(1));
   if(!data.length) throw new Error("일치하는 닉네임/비밀번호가 없습니다.");
   const r = data[0];
   const selections = typeof r.selections === "string" ? JSON.parse(r.selections || "{}") : (r.selections || {});
@@ -3470,7 +3464,7 @@ async function getCertifiedClubMapSupabase(){
     const rows = await sbSelect("club_pw", q => q.select("*"));
     rows.forEach(r => {
       const club = String(r.club ?? r.CLUB ?? r.team ?? r.name ?? "").trim();
-      const certified = String(r.certified ?? r["인증"] ?? r.cert ?? "").trim();
+      const certified = String(r.is_certified ?? r.certified ?? r["인증"] ?? r.cert ?? "").trim();
       if(club && (certified === "1" || certified === "true" || certified === "TRUE")) map[club] = true;
     });
   }catch(e){
@@ -3481,10 +3475,10 @@ async function getCertifiedClubMapSupabase(){
 
 async function getTeamListSupabase(){
   const certifiedMap = await getCertifiedClubMapSupabase();
-  const rows = await sbSelect("team_members", q => q.select("team,nickname"));
+  const rows = await sbSelect("team_members", q => q.select("team_name,nickname"));
   const set = {};
   rows.forEach(r => {
-    const t = String(r.team ?? r["단체명"] ?? "").trim();
+    const t = String(r.team_name ?? r.team ?? r["단체명"] ?? "").trim();
     if(t) set[t] = true;
   });
 
@@ -3517,10 +3511,10 @@ async function registerToTeamSupabase(team, nickname, pin5){
   if(!/^\d{5}$/.test(p)) throw new Error("비밀번호는 숫자 5자리입니다.");
 
   const prof = await loadProfileSupabase(n, p);
-  await sb.from("team_members").delete().eq("team", t).eq("nickname", n);
+  await sb.from("team_members").delete().eq("team_name", t).eq("nickname", n);
 
   const row = {
-    team:t,
+    team_name:t,
     nickname:n,
     pin5:p,
     total:Number(prof.totalScore) || 0,
@@ -3536,7 +3530,7 @@ async function registerToTeamSupabase(team, nickname, pin5){
 async function getTeamMembersSupabase(team){
   const t = String(team || "").trim();
   if(!t) return { members:[] };
-  const rows = await sbSelect("team_members", q => q.select("nickname").eq("team", t).order("nickname", { ascending:true }));
+  const rows = await sbSelect("team_members", q => q.select("nickname").eq("team_name", t).order("nickname", { ascending:true }));
   const members = [...new Set(rows.map(r => String(r.nickname || "").trim()).filter(Boolean))];
   return { members };
 }
@@ -3553,7 +3547,7 @@ async function getTeamMemberProfileSupabase(team, memberNickname){
     if(r.id !== undefined) await sb.from("team_members").update({views:newViews}).eq("id", r.id);
   }
 
-  const rows = await sbSelect("team_members", q => q.select("*").eq("team", t).eq("nickname", n).limit(1));
+  const rows = await sbSelect("team_members", q => q.select("*").eq("team_name", t).eq("nickname", n).limit(1));
   if(!rows.length) throw new Error("해당 멤버의 등록정보를 찾지 못했습니다.");
   const r = rows[0];
   const selections = typeof r.selections === "string" ? JSON.parse(r.selections || "{}") : (r.selections || {});
@@ -3572,10 +3566,10 @@ async function searchTeamMembersSupabase(keyword){
   const qText = String(keyword || "").trim();
   if(!qText) return { results:[] };
   const certifiedMap = await getCertifiedClubMapSupabase();
-  const rows = await sbSelect("team_members", q => q.select("team,nickname"));
+  const rows = await sbSelect("team_members", q => q.select("team_name,nickname"));
   const results = [];
   rows.forEach(r => {
-    const team = String(r.team || "").trim();
+    const team = String(r.team_name ?? r.team ?? "").trim();
     const nickname = String(r.nickname || "").trim();
     if(team.includes(qText) || nickname.includes(qText)){
       results.push({team, nickname, certified:!!certifiedMap[team]});
@@ -3608,12 +3602,12 @@ async function deleteTeamMemberSupabase(team, memberNickname, pin){
     }catch(e){ clubPwOk = false; }
   }
 
-  const rows = await sbSelect("team_members", q => q.select("*").eq("team", t).eq("nickname", n).limit(1));
+  const rows = await sbSelect("team_members", q => q.select("*").eq("team_name", t).eq("nickname", n).limit(1));
   if(!rows.length) throw new Error("TEAM 데이터가 없습니다.");
   const personalOk = String(rows[0].pin5 || rows[0].pin || "") === p;
   if(!personalOk && !clubPwOk) throw new Error("일치하는 비밀번호가 아닙니다. 개인 비밀번호 또는 클럽 비밀번호를 확인해주세요.");
 
-  const { error } = await sb.from("team_members").delete().eq("team", t).eq("nickname", n);
+  const { error } = await sb.from("team_members").delete().eq("team_name", t).eq("nickname", n);
   if(error) throw error;
   return { ok:true };
 }
@@ -3706,8 +3700,7 @@ async function updateBoardPostSupabase(id, title, content, writer, pin, imageDat
 async function addAdminReplyToBoardSupabase(id, pin, reply){
   if(String(pin || "") !== "0523") throw new Error("운영진 비밀번호가 일치하지 않습니다.");
   const { error } = await sb.from("board_posts").update({
-    admin_reply:String(reply || ""),
-    admin_reply_at:new Date().toISOString()
+    admin_reply:String(reply || "")
   }).eq("id", id);
   if(error) throw error;
   return { ok:true };
