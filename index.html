@@ -4601,7 +4601,7 @@ function loadBoardPosts(){
 }
 
 /* ===== 게시글 목록 ===== */
-function renderBoardList(){
+async function renderBoardList(){
   const list = document.getElementById("boardList");
   const searchInput = document.getElementById("boardSearchInput");
   const keyword = searchInput ? searchInput.value.trim().toLowerCase() : "";
@@ -4627,28 +4627,35 @@ function renderBoardList(){
     return;
   }
 
+  const commentCountMap = await getBoardCommentCountMap(
+    posts.map(p => p.id).filter(Boolean)
+  );
+
   list.innerHTML = `
     <div class="promo-board-head">
-<div>글번호</div>
-<div>글 제목</div>
-<div>답변여부</div>
-<div>작성자</div>
-<div>작성일자</div>
-<div>조회수</div>
+      <div>글번호</div>
+      <div>글 제목</div>
+      <div>답변여부</div>
+      <div>작성자</div>
+      <div>작성일자</div>
+      <div>조회수</div>
     </div>
+
     ${posts.map((p) => {
       const realIdx = CURRENT_BOARD_POSTS.indexOf(p);
+      const commentCount = commentCountMap[p.id] || 0;
+      const commentBadge = commentCount > 0 ? ` <span style="color:#ef4444;font-weight:900;">[${commentCount}]</span>` : "";
 
       return `
         <div class="promo-board-row" onclick="openBoardPost(${realIdx})">
-<div>${esc(p.no || "")}</div>
-<div>${esc(p.title)}</div>
-<div class="board-answer-status">
-  ${CURRENT_BOARD === "qna" && p.adminReply ? "[답변완료]" : ""}
-</div>
-<div>${esc(p.writer || "-")}</div>
-<div>${esc(formatBoardDate(p.createdAt))}</div>
-<div>${esc(p.views || 0)}</div>
+          <div>${esc(p.no || "")}</div>
+          <div>${esc(p.title)}${commentBadge}</div>
+          <div class="board-answer-status">
+            ${CURRENT_BOARD === "qna" && p.adminReply ? "[답변완료]" : ""}
+          </div>
+          <div>${esc(p.writer || "-")}</div>
+          <div>${esc(formatBoardDate(p.createdAt))}</div>
+          <div>${esc(p.views || 0)}</div>
         </div>
       `;
     }).join("")}
@@ -5580,6 +5587,27 @@ async function deleteBoardComment(commentId, postId){
     console.error(e);
     alert("댓글 삭제 실패: " + (e.message || e));
   }
+}
+
+  async function getBoardCommentCountMap(postIds){
+  const map = {};
+
+  postIds.forEach(id => {
+    map[id] = 0;
+  });
+
+  if(!postIds.length) return map;
+
+  const rows = await sbSelect("board_comments", q =>
+    q.select("post_id").in("post_id", postIds)
+  );
+
+  rows.forEach(r => {
+    const id = r.post_id;
+    map[id] = (map[id] || 0) + 1;
+  });
+
+  return map;
 }
 </script>
 <body>
