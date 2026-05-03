@@ -5811,7 +5811,7 @@ const memberRows = await sbSelect("team_members", q =>
     .not("nickname", "is", null)
     .neq("nickname", "")
     .order("created_at", { ascending:false })
-    .limit(10)
+    .limit(20)
 );
 
     const logs = [];
