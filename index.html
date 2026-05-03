@@ -5798,13 +5798,13 @@ setInterval(refreshOnlineUI, 10000);
 async function getRecentLiveLogs(){
   try{
     const profileRows = await sbSelect("profiles", q =>
-      q.select("nickname,created_at,updated_at")
-        .order("updated_at", { ascending:false })
+      q.select("nickname,created_at")
+        .order("created_at", { ascending:false })
         .limit(10)
     );
 
     const memberRows = await sbSelect("team_members", q =>
-      q.select("nickname,created_at,updated_at")
+      q.select("nickname,updated_at")
         .order("updated_at", { ascending:false })
         .limit(10)
     );
