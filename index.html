@@ -3582,14 +3582,9 @@ function onDeleteBtnClicked() {
   const team = document.getElementById("viewTeam").value.trim();
   const member = document.getElementById("viewMember").value.trim();
 
-  if (!team) return toast("단체명을 선택하세요.");
-  if (!member) return toast("멤버를 선택하세요.");
+  const pin = prompt("개인 비밀번호 5자리 / 클럽 비밀번호 4자리 / 운영진 비밀번호 4자리를 입력하세요.");
 
-  if (!checkAdminPw()) return;
-
-  if (!confirm(`${team} - ${member} 님을 군실명제에서 삭제하시겠습니까?`)) {
-    return;
-  }
+  if (!pin) return;
 
   showLoading("군실명제 삭제 중입니다");
 
@@ -3604,9 +3599,9 @@ function onDeleteBtnClicked() {
     })
     .withFailureHandler((e) => {
       hideLoading();
-      toast(e.message || "삭제 실패");
+      alert(e.message || "삭제 실패");
     })
-    .deleteTeamMember(team, member, "0523");
+    .deleteTeamMember(team, member, pin);
 }
 
 function renderRealProfile(d) {
@@ -4052,24 +4047,55 @@ async function deleteTeamMemberSupabase(team, memberNickname, pin){
   const t = String(team || "").trim();
   const n = String(memberNickname || "").trim();
   const p = String(pin || "").trim();
-  if(!t || !n) throw new Error("단체/멤버를 선택하세요.");
-  if(!/^\d{4,5}$/.test(p)) throw new Error("비밀번호는 숫자 4자리 또는 5자리입니다.");
 
-  let clubPwOk = false;
-  if(/^\d{4}$/.test(p)){
-    try{
-      const rows = await sbSelect("club_pw", q => q.select("*").eq("club", t).eq("pw", p).limit(1));
-      clubPwOk = rows.length > 0;
-    }catch(e){ clubPwOk = false; }
+  if(!t || !n) throw new Error("단체/멤버를 선택하세요.");
+  if(!/^\d{4,5}$/.test(p)) {
+    throw new Error("비밀번호는 숫자 4자리 또는 5자리입니다.");
   }
 
-  const rows = await sbSelect("team_members", q => q.select("*").eq("team_name", t).eq("nickname", n).limit(1));
-  if(!rows.length) throw new Error("TEAM 데이터가 없습니다.");
-  const personalOk = String(rows[0].pin5 || rows[0].pin || "") === p;
-  if(!personalOk && !clubPwOk) throw new Error("일치하는 비밀번호가 아닙니다. 개인 비밀번호 또는 클럽 비밀번호를 확인해주세요.");
+  // 1) 운영진 비밀번호 0523
+  const adminOk = (p === "0523");
 
-  const { error } = await sb.from("team_members").delete().eq("team_name", t).eq("nickname", n);
+  // 2) 해당 단체의 클럽/크루 비밀번호 4자리
+  let clubPwOk = false;
+  if(!adminOk && /^\d{4}$/.test(p)){
+    const clubRows = await sbSelect("club_pw", q =>
+      q.select("*")
+        .eq("club", t)
+        .eq("pw", p)
+        .limit(1)
+    );
+
+    clubPwOk = clubRows.length > 0;
+  }
+
+  // 3) 해당 단체 + 해당 닉네임의 개인 비밀번호 5자리
+  const memberRows = await sbSelect("team_members", q =>
+    q.select("*")
+      .eq("team_name", t)
+      .eq("nickname", n)
+      .limit(1)
+  );
+
+  if(!memberRows.length){
+    throw new Error("해당 단체에서 멤버를 찾을 수 없습니다.");
+  }
+
+  const member = memberRows[0];
+  const personalOk = String(member.pin5 || member.pin || "").trim() === p;
+
+  if(!adminOk && !clubPwOk && !personalOk){
+    throw new Error("비밀번호가 일치하지 않습니다.");
+  }
+
+  const { error } = await sb
+    .from("team_members")
+    .delete()
+    .eq("team_name", t)
+    .eq("nickname", n);
+
   if(error) throw error;
+
   return { ok:true };
 }
 
