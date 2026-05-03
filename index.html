@@ -2114,6 +2114,25 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   font-size:16px;
   font-weight:900;
 }
+
+  .tournament-apply-btn{
+  width:100% !important;
+  margin-top:10px !important;
+  padding:12px 10px !important;
+  border:0 !important;
+  border-radius:12px !important;
+  background:linear-gradient(135deg,#38bdf8,#2563eb) !important;
+  color:#ffffff !important;
+  font-size:17px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+  box-shadow:0 5px 14px rgba(37,99,235,.25) !important;
+}
+
+.tournament-apply-btn:hover{
+  transform:translateY(-1px);
+  filter:brightness(1.05);
+}
 </style>
 </head>
 
@@ -4513,10 +4532,18 @@ if(board === "eventTournament"){
         <img class="tournament-thumb-img" src="https://i.ibb.co/PGMdzs2T/1111.png">
       </div>
 
-      <div class="tournament-thumb-card" onclick="openTournamentPoster('critical')">
-        <div class="tournament-title">크리티컬 히트 아이템전 대회 - 5월 15일</div>
-        <img class="tournament-thumb-img" src="https://i.ibb.co/n8R1q5R2/11.jpg">
-      </div>
+<div class="tournament-thumb-card" onclick="openTournamentPoster('critical')">
+  <div class="tournament-title">크리티컬 히트 아이템전 대회 - 5월 15일</div>
+  <img class="tournament-thumb-img" src="https://i.ibb.co/n8R1q5R2/11.jpg">
+
+  <button
+    type="button"
+    class="tournament-apply-btn"
+    onclick="event.stopPropagation(); window.open('https://open.kakao.com/o/gbBgWCpi', '_blank');"
+  >
+    신청하러 가기
+  </button>
+</div>
 
     </div>
   `;
