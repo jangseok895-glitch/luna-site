@@ -2227,11 +2227,6 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
         <button type="button" id="btnCloseTeamRequestPopup">닫기</button>
       </div>
 
-<label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-weight:800;">
-  <input type="checkbox" id="skipScreenshotCheck">
-  소통방 스크린샷 제외
-</label>
-
       <div class="team-request-form-row">
         <b>구분</b>
         <select id="reqTeamType" class="select">
@@ -2252,6 +2247,11 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;align-items:center;">
         <button class="btn blue" id="btnOpenScreenshotUpload" type="button">소통방 스크린샷 올리기</button>
+        
+        <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-weight:800;">
+  <input type="checkbox" id="skipScreenshotCheck">
+  소통방 스크린샷 제외
+</label>
         <span id="reqScreenshotFileName" class="team-pending-sub">선택된 사진 없음</span>
         <input id="reqScreenshotFile" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden">
       </div>
@@ -5217,6 +5217,17 @@ document.getElementById("reqScreenshotFile")?.addEventListener("change", functio
 // 군실명제 탭 진입 전에도 요청 숫자만 미리 갱신
 setTimeout(loadTeamRequests, 800);
 
+  const skipCheck = document.getElementById("skipScreenshotCheck");
+
+if (skipCheck) {
+  skipCheck.addEventListener("change", function () {
+    const btn = document.getElementById("btnUploadScreenshot");
+    if (!btn) return;
+
+    btn.disabled = this.checked;
+    btn.style.opacity = this.checked ? 0.5 : 1;
+  });
+}
 </script>
 <body>
 </body>
