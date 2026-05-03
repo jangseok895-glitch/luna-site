@@ -2223,32 +2223,6 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   animation:logScroll 10s linear infinite;
 }
 
-  /* ===== 화면 폭 원상복구 ===== */
-.wrap,
-.sticky-inner{
-  max-width:1100px !important;
-  margin:0 auto !important;
-}
-
-.topbar{
-  display:flex !important;
-  align-items:center !important;
-  justify-content:space-between !important;
-  gap:10px !important;
-}
-
-.title{
-  display:flex !important;
-  align-items:center !important;
-  gap:10px !important;
-  flex:0 0 auto !important;
-}
-
-.main-title-image{
-  height:50px !important;
-  width:auto !important;
-  max-width:430px !important;
-}
 
 /* 접속자 + 로그 한 줄 */
 .top-inline{
@@ -2279,6 +2253,28 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 /* 오른쪽 버튼 영역 */
 .topbar > .row{
   flex:0 0 auto !important;
+}
+
+  /* ===== 원상복구 ===== */
+.wrap{
+  max-width:1100px !important;
+  margin:0 auto !important;
+}
+
+.sticky-inner{
+  max-width:1100px !important;
+  margin:0 auto !important;
+}
+
+/* 테이블 폭 복구 */
+#pcTableSection table{
+  width:100% !important;
+  table-layout:auto !important;
+}
+
+/* 잘못 늘어난 부분 방지 */
+.table-wrap{
+  overflow:hidden !important;
 }
 </style>
 </head>
