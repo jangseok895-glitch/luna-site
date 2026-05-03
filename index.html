@@ -2133,6 +2133,34 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   transform:translateY(-1px);
   filter:brightness(1.05);
 }
+
+  #liveLogBox{
+  width:260px;
+  height:36px;
+  overflow:hidden;
+  border-radius:12px;
+  border:2px solid #38bdf8;
+  background:#ffffff;
+  display:flex;
+  align-items:center;
+  padding:0 10px;
+}
+
+#liveLogTrack{
+  white-space:nowrap;
+  font-weight:900;
+  color:#0f172a;
+  animation:logScroll 10s linear infinite;
+}
+
+@keyframes logScroll{
+  0%{
+    transform:translateX(100%);
+  }
+  100%{
+    transform:translateX(-100%);
+  }
+}
 </style>
 </head>
 
@@ -2161,6 +2189,10 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 <div id="onlineBox">
   <span class="online-label">접속자</span>
   <span id="onlineCount" class="online-count">-</span>
+</div>
+  
+  <div id="liveLogBox">
+  <div id="liveLogTrack"></div>
 </div>
 </div>
 <div class="row" style="gap:8px">
@@ -5746,6 +5778,39 @@ refreshOnlineUI();
 
 setInterval(updateOnlineUser, 10000);
 setInterval(refreshOnlineUI, 10000);
+
+  const logMessages = [
+  "홍길동님이 실명제를 등록하셨습니다.",
+  "철수님이 군표를 저장하셨습니다."
+];
+
+function randomLog(){
+  const names = ["루나", "카붕이", "고수", "유저1", "아시아"];
+  const name = names[Math.floor(Math.random() * names.length)];
+
+  const type = Math.random() > 0.5
+    ? `${name}님이 실명제를 등록하셨습니다.`
+    : `${name}님이 군표를 저장하셨습니다.`;
+
+  return type;
+}
+
+function startLiveLog(){
+  const track = document.getElementById("liveLogTrack");
+
+  function update(){
+    track.style.animation = "none"; // 초기화
+    void track.offsetWidth;
+
+    track.textContent = randomLog();
+    track.style.animation = "logScroll 10s linear infinite";
+  }
+
+  update();
+  setInterval(update, 10000); // 10초마다 변경
+}
+
+startLiveLog();
 </script>
 <body>
 </body>
