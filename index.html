@@ -2081,6 +2081,39 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   font-weight:900;
   cursor:pointer;
 }
+
+  #onlineBox{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-left:12px;
+  padding:7px 10px;
+  border:2px solid #38bdf8;
+  border-radius:14px;
+  background:#ffffff;
+  box-shadow:0 4px 10px rgba(14,165,233,.18);
+  font-weight:900;
+}
+
+.online-label{
+  color:#0284c7;
+  font-size:15px;
+}
+
+.online-count{
+  min-width:28px;
+  height:28px;
+  padding:0 8px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:2px solid #38bdf8;
+  border-radius:999px;
+  background:#e0f7ff;
+  color:#111827;
+  font-size:16px;
+  font-weight:900;
+}
 </style>
 </head>
 
@@ -2106,9 +2139,10 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 <div class="title">
   <img class="main-title-image" src="https://i.ibb.co/DgDzPPJB/44444.png">
 
-  <div id="onlineCount" style="margin-left:12px;font-weight:900;">
-    접속자: -
-  </div>
+<div id="onlineBox">
+  <span class="online-label">접속자</span>
+  <span id="onlineCount" class="online-count">-</span>
+</div>
 </div>
 <div class="row" style="gap:8px">
   <div id="gunpyoTopBtns" style="display:flex;gap:8px;">
@@ -5675,7 +5709,7 @@ setInterval(updateOnlineUser, 10000);
   const cnt = await getOnlineCount();
   const el = document.getElementById("onlineCount");
   if(el){
-    el.textContent = "접속자: " + cnt;
+el.textContent = cnt;
   }
 }
 
