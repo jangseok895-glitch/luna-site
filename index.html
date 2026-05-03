@@ -2175,6 +2175,9 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     <div class="real-tag">관리</div>
     <button class="btn gold" id="btnOpenRegisterPopup">군실명제등록</button>
     <button class="btn gold" id="btnOpenTeamRequestPopup">단체 등록요청 <span class="team-request-badge" id="teamRequestCountBadge">0</span></button>
+    <button class="btn red" id="btnOpenTeamAdminPopup" type="button">
+  운영진 패널
+</button>
   </div>
 
   <!-- 검색 결과 팝업 -->
@@ -2272,6 +2275,30 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
       <div id="pendingTeamList"></div>
     </div>
   </div>
+  <!-- 운영진 패널 팝업 -->
+<div id="teamAdminPopup" class="hidden">
+  <div class="search-popup-box team-request-box">
+    <div class="search-popup-head">
+      <b>운영진 패널</b>
+      <button type="button" id="btnCloseTeamAdminPopup">닫기</button>
+    </div>
+
+    <div class="team-request-help">
+      삭제할 단체를 선택하면 club_pw 와 team_members 에서 해당 단체가 전체 삭제됩니다.
+    </div>
+
+    <div class="team-request-form-row">
+      <b>단체명</b>
+      <select id="adminDeleteTeamSelect" class="select" style="width:100%;">
+        <option value="">단체 선택</option>
+      </select>
+    </div>
+
+    <button class="btn red" id="btnDeleteTeamAll" type="button">
+      삭제하기
+    </button>
+  </div>
+</div>
 
   <!-- 단체 등록요청 사진보기 팝업 -->
   <div id="teamRequestPhotoPopup" class="hidden">
@@ -5260,6 +5287,91 @@ updateSkipScreenshotUI();
 
 // 군실명제 탭 진입 전에도 요청 숫자만 미리 갱신
 setTimeout(loadTeamRequests, 800);
+
+  async function loadAdminDeleteTeams(){
+  const sel = document.getElementById("adminDeleteTeamSelect");
+  if(!sel) return;
+
+  sel.innerHTML = `<option value="">단체 선택</option>`;
+
+  const rows = await sbSelect("club_pw", q =>
+    q.select("club").order("club", { ascending:true })
+  );
+
+  rows.forEach(r => {
+    const club = String(r.club || "").trim();
+    if(!club) return;
+
+    const opt = document.createElement("option");
+    opt.value = club;
+    opt.textContent = club;
+    sel.appendChild(opt);
+  });
+}
+
+async function deleteSelectedTeamAll(){
+  try{
+    const teamName = String(document.getElementById("adminDeleteTeamSelect")?.value || "").trim();
+    if(!teamName){
+      alert("삭제할 단체를 선택해주세요.");
+      return;
+    }
+
+    if(!confirm(`[${teamName}] 단체를 정말 삭제하시겠습니까?\nclub_pw 와 team_members 에서 전체 삭제됩니다.`)){
+      return;
+    }
+
+    const { error: memberError } = await sb
+      .from("team_members")
+      .delete()
+      .eq("team_name", teamName);
+
+    if(memberError) throw memberError;
+
+    const { error: clubError } = await sb
+      .from("club_pw")
+      .delete()
+      .eq("club", teamName);
+
+    if(clubError) throw clubError;
+
+    alert("단체 삭제가 완료되었습니다.");
+
+    await loadAdminDeleteTeams();
+
+    if(typeof initRealUI === "function"){
+      initRealUI();
+    }
+
+  }catch(e){
+    console.error(e);
+    alert(e.message || "단체 삭제 실패");
+  }
+}
+
+document.addEventListener("click", async function(e){
+  if(e.target.closest("#btnOpenTeamAdminPopup")){
+    e.preventDefault();
+
+    if(!checkAdminPw()) return;
+
+    document.getElementById("teamAdminPopup")?.classList.remove("hidden");
+    await loadAdminDeleteTeams();
+    return;
+  }
+
+  if(e.target.closest("#btnCloseTeamAdminPopup")){
+    e.preventDefault();
+    document.getElementById("teamAdminPopup")?.classList.add("hidden");
+    return;
+  }
+
+  if(e.target.closest("#btnDeleteTeamAll")){
+    e.preventDefault();
+    await deleteSelectedTeamAll();
+    return;
+  }
+});
 </script>
 <body>
 </body>
