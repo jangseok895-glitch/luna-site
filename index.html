@@ -3569,9 +3569,15 @@ function resetDeleteUI() {
 function onDeleteBtnClicked() {
   const team = document.getElementById("viewTeam").value.trim();
   const member = document.getElementById("viewMember").value.trim();
-  const pin = prompt("개인 비밀번호 5자리 또는 클럽 비밀번호 4자리를 입력하세요.");
 
-  if (!pin) return;
+  if (!team) return toast("단체명을 선택하세요.");
+  if (!member) return toast("멤버를 선택하세요.");
+
+  if (!checkAdminPw()) return;
+
+  if (!confirm(`${team} - ${member} 님을 군실명제에서 삭제하시겠습니까?`)) {
+    return;
+  }
 
   showLoading("군실명제 삭제 중입니다");
 
@@ -3588,7 +3594,7 @@ function onDeleteBtnClicked() {
       hideLoading();
       toast(e.message || "삭제 실패");
     })
-    .deleteTeamMember(team, member, pin);
+    .deleteTeamMember(team, member, "0523");
 }
 
 function renderRealProfile(d) {
@@ -5481,6 +5487,70 @@ async function addBoardComment(postId){
   document.getElementById("commentContent").value = "";
 
   await loadBoardComments(postId);
+}
+
+  async function deleteRealMember(memberId){
+  if(!checkAdminPw()) return;
+
+  if(!confirm("해당 멤버를 군실명제에서 삭제하시겠습니까?")){
+    return;
+  }
+
+  try{
+    const { error } = await sb
+      .from("team_members")
+      .delete()
+      .eq("id", memberId);
+
+    if(error) throw error;
+
+    alert("삭제 완료");
+
+    // 목록 새로고침
+    if(typeof loadTeamMembers === "function"){
+      loadTeamMembers();
+    }
+
+  }catch(e){
+    console.error(e);
+    alert("삭제 실패: " + e.message);
+  }
+}
+
+  async function deleteRealMemberByTeam(teamName, nickname){
+  if(!checkAdminPw()) return;
+
+  teamName = String(teamName || "").trim();
+  nickname = String(nickname || "").trim();
+
+  if(!teamName || !nickname){
+    alert("삭제할 단체명과 닉네임을 확인할 수 없습니다.");
+    return;
+  }
+
+  if(!confirm(`[${teamName}] 단체에서 ${nickname} 님을 군실명제에서 삭제하시겠습니까?`)){
+    return;
+  }
+
+  try{
+    const { error } = await sb
+      .from("team_members")
+      .delete()
+      .eq("team_name", teamName)
+      .eq("nickname", nickname);
+
+    if(error) throw error;
+
+    alert("삭제 완료");
+
+    if(typeof initRealUI === "function"){
+      initRealUI();
+    }
+
+  }catch(e){
+    console.error(e);
+    alert("삭제 실패: " + e.message);
+  }
 }
 </script>
 <body>
