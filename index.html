@@ -4113,21 +4113,30 @@ async function syncTeamByNicknameSupabase(nickname, pin5, total, selections){
 
 async function getBoardPostsSupabase(board){
   const b = String(board || "promo");
-  const rows = await sbSelect("board_posts", q => q.select("*").eq("board", b).order("created_at", { ascending:false }));
-  return { posts: rows.map((r, idx) => ({
-    id:r.id,
-    no:r.no || idx + 1,
-    board:r.board,
-    title:r.title || "",
-    content:r.content || "",
-    writer:r.writer || "",
-    pin:r.pin4 || r.pin || "",
-    createdAt:r.created_at || r.createdAt || "",
-    imageUrl:r.image_url || r.imageUrl || "",
-    views:Number(r.views || 0),
-    adminReply:r.admin_reply || r.adminReply || "",
-    adminReplyAt:r.admin_reply_at || r.adminReplyAt || ""
-  })) };
+
+  const rows = await sbSelect("board_posts", q =>
+    q.select("*")
+      .eq("board", b)
+      .order("created_at", { ascending:false })
+      .order("id", { ascending:false })
+  );
+
+  return {
+    posts: rows.map((r, idx) => ({
+      id: r.id,
+      no: r.no || idx + 1,
+      board: r.board,
+      title: r.title || "",
+      content: r.content || "",
+      writer: r.writer || "",
+      pin: r.pin4 || r.pin || "",
+      createdAt: r.created_at || r.createdAt || "",
+      imageUrl: r.image_url || r.imageUrl || "",
+      views: Number(r.views || 0),
+      adminReply: r.admin_reply || r.adminReply || "",
+      adminReplyAt: r.admin_reply_at || r.adminReplyAt || ""
+    }))
+  };
 }
 
 async function addBoardPostSupabase(board, title, content, writer, pin4, imageData){
