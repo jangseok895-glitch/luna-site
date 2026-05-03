@@ -2134,148 +2134,7 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   filter:brightness(1.05);
 }
 
-  #liveLogBox{
-  width:260px;
-  height:36px;
-  overflow:hidden;
-  border-radius:12px;
-  border:2px solid #38bdf8;
-  background:#ffffff;
-  display:flex;
-  align-items:center;
-  padding:0 10px;
-}
 
-#liveLogTrack{
-  white-space:nowrap;
-  font-weight:900;
-  color:#0f172a;
-  animation:logScroll 10s linear infinite;
-}
-
-@keyframes logScroll{
-  0%{
-    transform:translateX(100%);
-  }
-  100%{
-    transform:translateX(-100%);
-  }
-}
-
-/* 로그 박스 */
-
-
-/* 네온 텍스트 */
-#liveLogTrack{
-  white-space:nowrap;
-  font-weight:900;
-  font-size:16px;
-  color:#67e8f9;
-
-  text-shadow:
-    0 0 4px #22d3ee,
-    0 0 8px #22d3ee,
-    0 0 14px #38bdf8,
-    0 0 22px #0ea5e9;
-
-  animation:logScroll 10s linear infinite;
-}
-
-/* 흐르는 애니메이션 */
-@keyframes logScroll{
-  0%{ transform:translateX(100%); }
-  100%{ transform:translateX(-100%); }
-}
-
-
-/* 접속자 한줄 유지 */
-#onlineBox{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  padding:6px 10px;
-}
-
-/* 🔥 네온 박스 줄이기 */
-#liveLogBox{
-  width:200px;   /* ← 줄임 */
-  height:30px;
-  overflow:hidden;
-  border-radius:10px;
-  background:#0f172a;
-  border:1.5px solid #38bdf8;
-  display:flex;
-  align-items:center;
-  padding:0 8px;
-}
-
-/* 🔥 네온 약하게 */
-#liveLogTrack{
-  white-space:nowrap;
-  font-size:14px;
-  font-weight:800;
-  color:#67e8f9;
-
-  text-shadow:
-    0 0 3px #22d3ee,
-    0 0 6px #38bdf8;
-
-  animation:logScroll 10s linear infinite;
-}
-
-
-/* 접속자 + 로그 한 줄 */
-.top-inline{
-  display:flex !important;
-  align-items:center !important;
-  gap:8px !important;
-  flex:0 0 auto !important;
-}
-
-/* 접속자 박스 한 줄 */
-#onlineBox{
-  display:inline-flex !important;
-  align-items:center !important;
-  gap:6px !important;
-  white-space:nowrap !important;
-  width:auto !important;
-  height:40px !important;
-  flex:0 0 auto !important;
-}
-
-/* 네온 로그 크기 줄이기 */
-#liveLogBox{
-  width:180px !important;
-  height:30px !important;
-  flex:0 0 180px !important;
-}
-
-/* 오른쪽 버튼 영역 */
-.topbar > .row{
-  flex:0 0 auto !important;
-}
-
-  /* ===== 원상복구 ===== */
-.wrap{
-  max-width:1100px !important;
-  margin:0 auto !important;
-}
-
-.sticky-inner{
-  max-width:1100px !important;
-  margin:0 auto !important;
-}
-
-/* 테이블 폭 복구 */
-#pcTableSection table{
-  width:100% !important;
-  table-layout:auto !important;
-}
-
-/* 잘못 늘어난 부분 방지 */
-.table-wrap{
-  overflow:hidden !important;
-}
 </style>
 </head>
 
@@ -2297,33 +2156,26 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     <div class="sticky-inner">
 
       <!-- 타이틀 -->
-<div class="topbar">
+      <div class="topbar">
+<div class="title">
+  <img class="main-title-image" src="https://i.ibb.co/DgDzPPJB/44444.png">
 
-  <div class="title">
-    <img class="main-title-image" src="https://i.ibb.co/DgDzPPJB/44444.png">
-
-    <!-- 🔥 접속자 + 로그를 한줄로 -->
-    <div class="top-inline">
-      <div id="onlineBox">
-        <span class="online-label">접속자</span>
-        <span id="onlineCount" class="online-count">-</span>
-      </div>
-
-      <div id="liveLogBox">
-        <div id="liveLogTrack"></div>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="row" style="gap:8px">
+<div id="onlineBox">
+  <span class="online-label">접속자</span>
+  <span id="onlineCount" class="online-count">-</span>
+</div>
+</div>
+<div class="row" style="gap:8px">
+  <div id="gunpyoTopBtns" style="display:flex;gap:8px;">
     <button class="btn link" id="goPcBtn">PC로 보기</button>
     <button class="btn red" id="goMobileBtn">모바일로 보기</button>
   </div>
 
-</div>
+  <div id="realTopBtns" style="display:none;gap:8px;">
 
+  </div>
 </div>
+      </div>
 
 <!-- ===== 상단 메뉴 탭 ===== -->
 <div class="main-tabs">
@@ -5897,93 +5749,6 @@ refreshOnlineUI();
 setInterval(updateOnlineUser, 10000);
 setInterval(refreshOnlineUI, 10000);
 
-  const logMessages = [
-  "홍길동님이 실명제를 등록하셨습니다.",
-  "철수님이 군표를 저장하셨습니다."
-];
-
-function randomLog(){
-  const names = ["루나", "카붕이", "고수", "유저1", "아시아"];
-  const name = names[Math.floor(Math.random() * names.length)];
-
-  const type = Math.random() > 0.5
-    ? `${name}님이 실명제를 등록하셨습니다.`
-    : `${name}님이 군표를 저장하셨습니다.`;
-
-  return type;
-}
-
-function startLiveLog(){
-  const track = document.getElementById("liveLogTrack");
-
-  function update(){
-    track.style.animation = "none"; // 초기화
-    void track.offsetWidth;
-
-    track.textContent = randomLog();
-    track.style.animation = "logScroll 10s linear infinite";
-  }
-
-  update();
-  setInterval(update, 10000); // 10초마다 변경
-}
-
-startLiveLog();
-
-  async function fetchRecentLogs(){
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-
-  // profiles (군표 저장)
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("nickname, updated_at")
-    .gte("updated_at", oneHourAgo);
-
-  // team_members (실명제)
-  const { data: members } = await supabase
-    .from("team_members")
-    .select("nickname, updated_at")
-    .gte("updated_at", oneHourAgo);
-
-  let logs = [];
-
-  (profiles || []).forEach(p => {
-    logs.push(`${p.nickname}님이 군표를 저장하셨습니다.`);
-  });
-
-  (members || []).forEach(m => {
-    logs.push(`${m.nickname}님이 실명제를 등록하셨습니다.`);
-  });
-
-  return logs;
-}
-
-  async function startLiveLog(){
-  const track = document.getElementById("liveLogTrack");
-
-  async function update(){
-    const logs = await fetchRecentLogs();
-
-    if(!logs || logs.length === 0){
-      track.textContent = "최근 활동이 없습니다.";
-      return;
-    }
-
-    const msg = logs[Math.floor(Math.random() * logs.length)];
-
-    track.style.animation = "none";
-    void track.offsetWidth;
-
-    track.textContent = msg;
-    track.style.animation = "logScroll 10s linear infinite";
-  }
-
-  update();
-  setInterval(update, 10000);
-}
-
-startLiveLog();
 </script>
-<body>
 </body>
 </html>
