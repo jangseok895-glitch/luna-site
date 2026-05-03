@@ -5803,7 +5803,7 @@ async function getRecentLiveLogs(){
     const profileRows = await sbSelect("profiles", q =>
       q.select("nickname,created_at")
         .order("created_at", { ascending:false })
-        .limit(10)
+        .limit(20)
     );
 
 const memberRows = await sbSelect("team_members", q =>
