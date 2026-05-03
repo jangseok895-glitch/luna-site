@@ -2035,6 +2035,40 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   margin-top:8px!important;
 }
 
+  .comment-box{
+  margin-top:18px;
+  padding:14px;
+  border:1px solid rgba(14,165,233,.35);
+  border-radius:14px;
+  background:#f8fdff;
+}
+
+.comment-title{
+  font-size:17px;
+  font-weight:900;
+  margin-bottom:10px;
+  color:#0284c7;
+}
+
+.comment-item{
+  padding:10px;
+  margin:8px 0;
+  border-radius:10px;
+  background:#ffffff;
+  border:1px solid rgba(14,165,233,.25);
+}
+
+.comment-meta{
+  font-size:13px;
+  color:#64748b;
+  font-weight:800;
+  margin-bottom:5px;
+}
+
+.comment-content{
+  white-space:pre-wrap;
+  line-height:1.5;
+}
 </style>
 </head>
 
@@ -4579,10 +4613,10 @@ function renderBoardList(){
 
 /* ===== 게시글 열기 ===== */
 function openBoardPost(idx){
-  
   const p = CURRENT_BOARD_POSTS[idx];
+  if(!p) return;
 
-    google.script.run
+  google.script.run
     .withSuccessHandler((res) => {
       if(res && res.views !== undefined){
         p.views = res.views;
@@ -4600,37 +4634,58 @@ function openBoardPost(idx){
         ${esc(p.writer || "작성자")} · ${esc(formatBoardDate(p.createdAt))}
       </div>
 
-<div class="board-post-content">${linkifyText(p.content)}</div>
-${p.adminReply ? `
-  <div class="admin-reply-box">
-    <div class="admin-reply-title">운영진 답변</div>
-    <div class="admin-reply-meta">${esc(formatBoardDate(p.adminReplyAt))}</div>
-    <div class="admin-reply-content">${linkifyText(p.adminReply)}</div>
-  </div>
-` : ""}
+      <div class="board-post-content">${linkifyText(p.content)}</div>
+
+      ${p.adminReply ? `
+        <div class="admin-reply-box">
+          <div class="admin-reply-title">운영진 답변</div>
+          <div class="admin-reply-meta">${esc(formatBoardDate(p.adminReplyAt))}</div>
+          <div class="admin-reply-content">${linkifyText(p.adminReply)}</div>
+        </div>
+      ` : ""}
 
       ${p.imageUrl ? `<img class="board-post-img" src="${esc(p.imageUrl)}" alt="첨부 이미지">` : ""}
 
-<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center;">
-  <button class="btn" onclick="renderBoardList()">목록으로</button>
+      <div class="comment-box">
+        <div class="comment-title">댓글</div>
 
-  <input
-    id="boardActionPin"
-    type="password"
-    maxlength="4"
-    inputmode="numeric"
-    placeholder="비번 4자리"
-    class="text pin"
-    style="height:46px;"
-  />
+        <div id="boardCommentList">
+          댓글을 불러오는 중입니다.
+        </div>
 
-  <button class="btn gold" onclick="openBoardEdit(${idx})">수정</button>
-  <button class="btn red" onclick="deleteBoardPost('${p.id}')">삭제</button>
+        <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;">
+          <b>작성자</b>
+          <input id="commentWriter" class="text sm" placeholder="작성자">
 
-  ${CURRENT_BOARD === "qna" ? `<button class="btn gold" onclick="openAdminReply(${idx})">운영진 답글달기</button>` : ""}
-</div>
+          <b>댓글</b>
+          <input id="commentContent" class="text" style="flex:1;min-width:260px;" placeholder="댓글 입력">
+
+          <button class="btn gold" onclick="addBoardComment('${p.id}')">등록</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center;">
+        <button class="btn" onclick="renderBoardList()">목록으로</button>
+
+        <input
+          id="boardActionPin"
+          type="password"
+          maxlength="4"
+          inputmode="numeric"
+          placeholder="비번 4자리"
+          class="text pin"
+          style="height:46px;"
+        />
+
+        <button class="btn gold" onclick="openBoardEdit(${idx})">수정</button>
+        <button class="btn red" onclick="deleteBoardPost('${p.id}')">삭제</button>
+
+        ${CURRENT_BOARD === "qna" ? `<button class="btn gold" onclick="openAdminReply(${idx})">운영진 답글달기</button>` : ""}
+      </div>
     </div>
   `;
+
+  loadBoardComments(p.id);
 }
 
 /* ===== 글쓰기 버튼 ===== */
@@ -5372,6 +5427,61 @@ document.addEventListener("click", async function(e){
     return;
   }
 });
+
+  async function loadBoardComments(postId){
+  const rows = await sbSelect("board_comments", q =>
+    q.select("*").eq("post_id", postId).order("created_at", { ascending:true })
+  );
+
+  const box = document.getElementById("boardCommentList");
+  if(!box) return;
+
+  if(!rows.length){
+    box.innerHTML = `<div class="comment-item">아직 댓글이 없습니다.</div>`;
+    return;
+  }
+
+  box.innerHTML = rows.map(c => `
+    <div class="comment-item">
+      <div class="comment-meta">
+        ${esc(c.writer || "익명")} · ${esc(formatBoardDate(c.created_at))}
+      </div>
+      <div class="comment-content">${linkifyText(c.content || "")}</div>
+    </div>
+  `).join("");
+}
+
+async function addBoardComment(postId){
+  const writer = document.getElementById("commentWriter")?.value.trim();
+  const content = document.getElementById("commentContent")?.value.trim();
+
+  if(!writer){
+    toast("작성자를 입력해주세요.");
+    return;
+  }
+
+  if(!content){
+    toast("댓글을 입력해주세요.");
+    return;
+  }
+
+  const { error } = await sb.from("board_comments").insert({
+    post_id: postId,
+    writer,
+    content,
+    created_at: new Date().toISOString()
+  });
+
+  if(error){
+    alert(error.message || "댓글 등록 실패");
+    return;
+  }
+
+  document.getElementById("commentWriter").value = "";
+  document.getElementById("commentContent").value = "";
+
+  await loadBoardComments(postId);
+}
 </script>
 <body>
 </body>
