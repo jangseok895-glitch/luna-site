@@ -2103,9 +2103,13 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 
       <!-- 타이틀 -->
       <div class="topbar">
-        <div class="title">
-<img class="main-title-image" src="https://i.ibb.co/DgDzPPJB/44444.png" alt="루칭방 군 계산기">
-        </div>
+<div class="title">
+  <img class="main-title-image" src="https://i.ibb.co/DgDzPPJB/44444.png">
+
+  <div id="onlineCount" style="margin-left:12px;font-weight:900;">
+    접속자: -
+  </div>
+</div>
 <div class="row" style="gap:8px">
   <div id="gunpyoTopBtns" style="display:flex;gap:8px;">
     <button class="btn link" id="goPcBtn">PC로 보기</button>
@@ -5622,6 +5626,63 @@ async function deleteBoardComment(commentId, postId){
 
   return map;
 }
+
+  let mySessionId = null;
+
+async function updateOnlineUser(){
+  try{
+    if(!mySessionId){
+      const { data, error } = await sb
+        .from("online_users")
+        .insert({ last_seen: new Date().toISOString() })
+        .select()
+        .single();
+
+      if(error) throw error;
+      mySessionId = data.id;
+    }else{
+      await sb
+        .from("online_users")
+        .update({ last_seen: new Date().toISOString() })
+        .eq("id", mySessionId);
+    }
+  }catch(e){
+    console.error(e);
+  }
+}
+
+// 10초마다 갱신
+setInterval(updateOnlineUser, 10000);
+
+  async function getOnlineCount(){
+  const now = new Date();
+  const limit = new Date(now.getTime() - 60 * 1000); // 최근 1분
+
+  const { data, error } = await sb
+    .from("online_users")
+    .select("id")
+    .gte("last_seen", limit.toISOString());
+
+  if(error){
+    console.error(error);
+    return 0;
+  }
+
+  return data.length;
+}
+
+  async function refreshOnlineUI(){
+  const cnt = await getOnlineCount();
+  const el = document.getElementById("onlineCount");
+  if(el){
+    el.textContent = "접속자: " + cnt;
+  }
+}
+
+// 처음 + 10초마다
+setInterval(refreshOnlineUI, 10000);
+refreshOnlineUI();
+updateOnlineUser();
 </script>
 <body>
 </body>
