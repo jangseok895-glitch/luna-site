@@ -1983,6 +1983,11 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   padding:20px!important;
 }
 #teamRequestPopup.hidden{display:none!important;}
+#teamRequestPhotoPopup{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:1000000;padding:18px;}
+#teamRequestPhotoPopup.hidden{display:none!important;}
+.team-photo-box{width:min(820px,94vw)!important;max-height:90vh!important;overflow:auto!important;}
+.team-request-photo-img{display:block;width:100%;max-height:72vh;object-fit:contain;border-radius:12px;border:1px solid rgba(14,165,233,.25);background:#fff;}
+.team-file-ok{color:#2563eb!important;font-weight:900!important;}
 .team-request-box{width:min(520px,94vw)!important;}
 .team-request-help{
   font-size:14px!important;
@@ -2237,16 +2242,15 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
         <input id="reqTeamPw" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="4자리">
       </div>
 
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;">
-        <button class="btn blue" id="btnOpenScreenshotDrive" type="button">소통방 스크린샷 올리기</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;align-items:center;">
+        <button class="btn blue" id="btnOpenScreenshotUpload" type="button">소통방 스크린샷 올리기</button>
+        <span id="reqScreenshotFileName" class="team-pending-sub">선택된 사진 없음</span>
+        <input id="reqScreenshotFile" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden">
       </div>
 
       <div class="team-request-help">
-        *소통방의 인원을 감지하여 운영진이 승인합니다.<br>
-        스크린샷은 구글드라이브에 올린 뒤, 아래에 공유 링크를 붙여넣어주세요.
+        *소통방의 인원을 감지하여 운영진이 승인합니다.
       </div>
-
-      <input id="reqScreenshotUrl" class="text" style="width:100%;margin-bottom:10px;" placeholder="스크린샷 공유 링크 붙여넣기">
 
       <button class="btn gold" id="btnSubmitTeamRequest" type="button">등록 요청</button>
 
@@ -2256,6 +2260,17 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
       </div>
 
       <div id="pendingTeamList"></div>
+    </div>
+  </div>
+
+  <!-- 단체 등록요청 사진보기 팝업 -->
+  <div id="teamRequestPhotoPopup" class="hidden">
+    <div class="search-popup-box team-photo-box">
+      <div class="search-popup-head">
+        <b>소통방 스크린샷</b>
+        <button type="button" id="btnCloseTeamRequestPhotoPopup">닫기</button>
+      </div>
+      <img id="teamRequestPhotoImg" class="team-request-photo-img" alt="소통방 스크린샷">
     </div>
   </div>
 
@@ -4917,7 +4932,8 @@ document.addEventListener("click", function(e){
 
 
 /* ===== 단체 등록요청 / 운영진 승인 ===== */
-const TEAM_REQUEST_DRIVE_URL = "https://drive.google.com/drive/folders/1kVlpr7gwHqIQI8brGYEZUsuENuxpvAFZ?usp=drive_link";
+let TEAM_REQUEST_SCREENSHOT_DATA = "";
+let TEAM_REQUEST_SCREENSHOT_NAME = "";
 
 function getTeamRequestName(){
   const club = String(document.getElementById("reqClubName")?.value || "").trim();
@@ -4926,6 +4942,63 @@ function getTeamRequestName(){
   if(club) return "[클럽]" + club.replace(/^\[클럽\]/, "").trim();
   if(crew) return "[크루]" + crew.replace(/^\[크루\]/, "").trim();
   throw new Error("클럽명 또는 크루명을 입력해주세요.");
+}
+
+function checkAdminPw(){
+  const adminPw = prompt("운영진 비밀번호를 입력하세요.");
+  if(adminPw === null) return false;
+  if(String(adminPw).trim() !== "0523"){
+    alert("운영진 비밀번호가 틀렸습니다.");
+    return false;
+  }
+  return true;
+}
+
+function fileToDataUrl(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("사진을 읽지 못했습니다."));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleTeamScreenshotFile(file){
+  if(!file) return;
+  if(!/^image\/(jpeg|png)$/.test(file.type)){
+    alert("JPG 또는 PNG 사진만 업로드할 수 있습니다.");
+    return;
+  }
+  if(file.size > 5 * 1024 * 1024){
+    alert("사진 용량은 5MB 이하로 올려주세요.");
+    return;
+  }
+  TEAM_REQUEST_SCREENSHOT_DATA = await fileToDataUrl(file);
+  TEAM_REQUEST_SCREENSHOT_NAME = file.name || "소통방 스크린샷";
+  const label = document.getElementById("reqScreenshotFileName");
+  if(label){
+    label.textContent = "선택됨: " + TEAM_REQUEST_SCREENSHOT_NAME;
+    label.classList.add("team-file-ok");
+  }
+}
+
+async function viewTeamRequestPhotoById(requestId){
+  try{
+    if(!checkAdminPw()) return;
+    const rows = await sbSelect("team_register_requests", q =>
+      q.select("screenshot_url").eq("id", requestId).limit(1)
+    );
+    if(!rows.length) throw new Error("사진 정보를 찾지 못했습니다.");
+    const imgData = String(rows[0].screenshot_url || "").trim();
+    if(!imgData) throw new Error("등록된 사진이 없습니다.");
+    const img = document.getElementById("teamRequestPhotoImg");
+    const pop = document.getElementById("teamRequestPhotoPopup");
+    if(img) img.src = imgData;
+    if(pop) pop.classList.remove("hidden");
+  }catch(e){
+    console.error(e);
+    alert(e.message || "사진보기 실패");
+  }
 }
 
 async function ensureTeamRequestTableReady(){
@@ -4954,15 +5027,16 @@ async function loadTeamRequests(){
 
     list.innerHTML = rows.map(r => {
       const name = esc(r.team_name || "");
-      const url = String(r.screenshot_url || "").trim();
-      const link = url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">스크린샷 확인</a>` : "스크린샷 링크 없음";
       return `
         <div class="team-pending-item" data-team-request-id="${r.id}">
           <div>
             <div class="team-pending-name">${name}</div>
-            <div class="team-pending-sub">${link}</div>
+            <div class="team-pending-sub">운영진 비밀번호 확인 후 사진보기/승인 가능</div>
           </div>
-          <button class="btn red team-approve-btn" type="button" data-approve-team-request="${r.id}">운영진승인</button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+            <button class="btn blue team-photo-btn" type="button" data-view-team-request-photo="${r.id}">사진보기</button>
+            <button class="btn red team-approve-btn" type="button" data-approve-team-request="${r.id}">운영진승인</button>
+          </div>
         </div>
       `;
     }).join("");
@@ -4978,10 +5052,10 @@ async function submitTeamRequest(){
     await ensureTeamRequestTableReady();
     const teamName = getTeamRequestName();
     const pw = String(document.getElementById("reqTeamPw")?.value || "").trim();
-    const screenshotUrl = String(document.getElementById("reqScreenshotUrl")?.value || "").trim();
+    const screenshotData = String(TEAM_REQUEST_SCREENSHOT_DATA || "").trim();
 
     if(!/^\d{4}$/.test(pw)) throw new Error("비밀번호는 숫자 4자리로 입력해주세요.");
-    if(!screenshotUrl) throw new Error("스크린샷 공유 링크를 입력해주세요.");
+    if(!screenshotData) throw new Error("소통방 스크린샷을 올려주세요.");
 
     const exists = await sbSelect("team_register_requests", q =>
       q.select("id").eq("team_name", teamName).eq("status", "대기").limit(1)
@@ -4991,7 +5065,7 @@ async function submitTeamRequest(){
     const { error } = await sb.from("team_register_requests").insert({
       team_name: teamName,
       pw: pw,
-      screenshot_url: screenshotUrl,
+      screenshot_url: screenshotData,
       status: "대기"
     });
     if(error) throw error;
@@ -4999,7 +5073,15 @@ async function submitTeamRequest(){
     document.getElementById("reqClubName").value = "";
     document.getElementById("reqCrewName").value = "";
     document.getElementById("reqTeamPw").value = "";
-    document.getElementById("reqScreenshotUrl").value = "";
+    TEAM_REQUEST_SCREENSHOT_DATA = "";
+    TEAM_REQUEST_SCREENSHOT_NAME = "";
+    const fileInput = document.getElementById("reqScreenshotFile");
+    if(fileInput) fileInput.value = "";
+    const fileLabel = document.getElementById("reqScreenshotFileName");
+    if(fileLabel){
+      fileLabel.textContent = "선택된 사진 없음";
+      fileLabel.classList.remove("team-file-ok");
+    }
 
     alert("등록요청이 완료되었습니다");
     await loadTeamRequests();
@@ -5012,9 +5094,7 @@ async function submitTeamRequest(){
 async function approveTeamRequestById(requestId){
   try{
     await ensureTeamRequestTableReady();
-    const adminPw = prompt("운영진 비밀번호를 입력하세요.");
-    if(adminPw === null) return;
-    if(String(adminPw).trim() !== "0523") throw new Error("운영진 비밀번호가 틀렸습니다.");
+    if(!checkAdminPw()) return;
 
     const rows = await sbSelect("team_register_requests", q =>
       q.select("*").eq("id", requestId).eq("status", "대기").limit(1)
@@ -5077,9 +5157,17 @@ document.addEventListener("click", function(e){
     return;
   }
 
-  if(e.target.closest("#btnOpenScreenshotDrive")){
+  if(e.target.closest("#btnOpenScreenshotUpload")){
     e.preventDefault();
-    window.open(TEAM_REQUEST_DRIVE_URL, "_blank", "noopener,noreferrer");
+    document.getElementById("reqScreenshotFile")?.click();
+    return;
+  }
+
+  if(e.target.closest("#btnCloseTeamRequestPhotoPopup")){
+    e.preventDefault();
+    document.getElementById("teamRequestPhotoPopup")?.classList.add("hidden");
+    const img = document.getElementById("teamRequestPhotoImg");
+    if(img) img.src = "";
     return;
   }
 
@@ -5089,12 +5177,23 @@ document.addEventListener("click", function(e){
     return;
   }
 
+  const photoBtn = e.target.closest("[data-view-team-request-photo]");
+  if(photoBtn){
+    e.preventDefault();
+    viewTeamRequestPhotoById(photoBtn.dataset.viewTeamRequestPhoto);
+    return;
+  }
+
   const approveBtn = e.target.closest("[data-approve-team-request]");
   if(approveBtn){
     e.preventDefault();
     approveTeamRequestById(approveBtn.dataset.approveTeamRequest);
     return;
   }
+});
+
+document.getElementById("reqScreenshotFile")?.addEventListener("change", function(){
+  handleTeamScreenshotFile(this.files && this.files[0]);
 });
 
 // 군실명제 탭 진입 전에도 요청 숫자만 미리 갱신
