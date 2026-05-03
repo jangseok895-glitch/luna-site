@@ -5517,9 +5517,7 @@ async function addBoardComment(postId){
   }
 }
 
-  async function deleteRealMemberByTeam(teamName, nickname){
-  if(!checkAdminPw()) return;
-
+async function deleteRealMemberByTeam(teamName, nickname){
   teamName = String(teamName || "").trim();
   nickname = String(nickname || "").trim();
 
@@ -5528,11 +5526,55 @@ async function addBoardComment(postId){
     return;
   }
 
-  if(!confirm(`[${teamName}] 단체에서 ${nickname} 님을 군실명제에서 삭제하시겠습니까?`)){
-    return;
-  }
+  const inputPw = prompt("개인 비밀번호 5자리 / 단체 비밀번호 4자리 / 운영진 비밀번호를 입력하세요.");
+  if(inputPw === null) return;
+
+  const pw = String(inputPw).trim();
 
   try{
+    // 1) 운영진 비번 허용
+    let ok = (pw === "0523");
+
+    // 2) 개인 비밀번호 5자리 확인
+    if(!ok){
+      const memberRows = await sbSelect("team_members", q =>
+        q.select("*")
+          .eq("team_name", teamName)
+          .eq("nickname", nickname)
+          .limit(1)
+      );
+
+      const member = memberRows && memberRows[0];
+
+      if(member && String(member.pin5 || "").trim() === pw){
+        ok = true;
+      }
+    }
+
+    // 3) 단체 비밀번호 4자리 확인
+    if(!ok){
+      const clubRows = await sbSelect("club_pw", q =>
+        q.select("*")
+          .eq("club", teamName)
+          .limit(1)
+      );
+
+      const club = clubRows && clubRows[0];
+
+      if(club && String(club.pw || "").trim() === pw){
+        ok = true;
+      }
+    }
+
+    if(!ok){
+      alert("비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    if(!confirm(`[${teamName}] 단체에서 ${nickname} 님을 삭제하시겠습니까?`)){
+      return;
+    }
+
     const { error } = await sb
       .from("team_members")
       .delete()
@@ -5549,7 +5591,7 @@ async function addBoardComment(postId){
 
   }catch(e){
     console.error(e);
-    alert("삭제 실패: " + e.message);
+    alert("삭제 실패: " + (e.message || e));
   }
 }
 </script>
