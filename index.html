@@ -5680,9 +5680,11 @@ setInterval(updateOnlineUser, 10000);
 }
 
 // 처음 + 10초마다
-setInterval(refreshOnlineUI, 10000);
-refreshOnlineUI();
 updateOnlineUser();
+refreshOnlineUI();
+
+setInterval(updateOnlineUser, 10000);
+setInterval(refreshOnlineUI, 10000);
 </script>
 <body>
 </body>
