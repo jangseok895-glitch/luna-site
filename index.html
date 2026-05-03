@@ -5795,16 +5795,16 @@ refreshOnlineUI();
 setInterval(updateOnlineUser, 10000);
 setInterval(refreshOnlineUI, 10000);
 
-  async function getRecentLiveLogs(){
+async function getRecentLiveLogs(){
   try{
     const profileRows = await sbSelect("profiles", q =>
       q.select("nickname,created_at,updated_at")
-        .order("created_at", { ascending:false })
+        .order("updated_at", { ascending:false })
         .limit(10)
     );
 
     const memberRows = await sbSelect("team_members", q =>
-      q.select("nickname,team_name,created_at,updated_at")
+      q.select("nickname,created_at,updated_at")
         .order("updated_at", { ascending:false })
         .limit(10)
     );
@@ -5823,7 +5823,7 @@ setInterval(refreshOnlineUI, 10000);
 
     return logs;
   }catch(e){
-    console.warn("최근 활동 로그 불러오기 실패:", e);
+    console.warn("네온 로그 불러오기 실패:", e);
     return [];
   }
 }
@@ -5836,9 +5836,10 @@ async function startLiveLogNeon(){
 
   function showRandomLog(){
     if(!logs.length){
-      track.textContent = "최근 등록된 활동이 없습니다.";
+      track.textContent = "루칭방에 오신 것을 환영합니다.";
     }else{
-      track.textContent = logs[Math.floor(Math.random() * logs.length)];
+      const msg = logs[Math.floor(Math.random() * logs.length)];
+      track.textContent = msg;
     }
 
     track.style.animation = "none";
@@ -5848,10 +5849,13 @@ async function startLiveLogNeon(){
 
   showRandomLog();
 
-  setInterval(async () => {
-    logs = await getRecentLiveLogs();
+  setInterval(() => {
     showRandomLog();
   }, 11000);
+
+  setInterval(async () => {
+    logs = await getRecentLiveLogs();
+  }, 60000);
 }
 
 setTimeout(startLiveLogNeon, 1200);
