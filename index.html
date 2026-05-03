@@ -4601,6 +4601,7 @@ function loadBoardPosts(){
 }
 
 /* ===== 게시글 목록 ===== */
+/* ===== 게시글 목록 ===== */
 async function renderBoardList(){
   const list = document.getElementById("boardList");
   const searchInput = document.getElementById("boardSearchInput");
@@ -4641,25 +4642,29 @@ async function renderBoardList(){
       <div>조회수</div>
     </div>
 
-${posts.map((p) => {
-  const realIdx = CURRENT_BOARD_POSTS.indexOf(p);
-  const originalNo = CURRENT_BOARD_POSTS.length - realIdx;
-  const commentCount = commentCountMap[p.id] || 0;
-  const commentBadge = commentCount > 0 ? ` <span style="color:#ef4444;font-weight:900;">[${commentCount}]</span>` : "";
+    ${posts.map((p) => {
+      const realIdx = CURRENT_BOARD_POSTS.indexOf(p);
+      const originalNo = CURRENT_BOARD_POSTS.length - realIdx;
+      const commentCount = commentCountMap[p.id] || 0;
+      const commentBadge = commentCount > 0
+        ? ` <span style="color:#ef4444;font-weight:900;">[${commentCount}]</span>`
+        : "";
 
-  return `
-    <div class="promo-board-row" onclick="openBoardPost(${realIdx})">
-      <div>${originalNo}</div>
-      <div>${esc(p.title)}${commentBadge}</div>
-      <div class="board-answer-status">
-        ${CURRENT_BOARD === "qna" && p.adminReply ? "[답변완료]" : ""}
-      </div>
-      <div>${esc(p.writer || "-")}</div>
-      <div>${esc(formatBoardDate(p.createdAt))}</div>
-      <div>${esc(p.views || 0)}</div>
-    </div>
+      return `
+        <div class="promo-board-row" onclick="openBoardPost(${realIdx})">
+          <div>${originalNo}</div>
+          <div>${esc(p.title)}${commentBadge}</div>
+          <div class="board-answer-status">
+            ${CURRENT_BOARD === "qna" && p.adminReply ? "[답변완료]" : ""}
+          </div>
+          <div>${esc(p.writer || "-")}</div>
+          <div>${esc(formatBoardDate(p.createdAt))}</div>
+          <div>${esc(p.views || 0)}</div>
+        </div>
+      `;
+    }).join("")}
   `;
-}).join("")}
+}
 
 /* ===== 게시글 열기 ===== */
 function openBoardPost(idx){
