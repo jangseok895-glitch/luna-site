@@ -2161,6 +2161,62 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     transform:translateX(-100%);
   }
 }
+
+  .topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+/* 중앙 로그 */
+.top-center{
+  flex:1;
+  display:flex;
+  justify-content:center;
+}
+
+/* 오른쪽 묶음 */
+.top-right{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+/* 로그 박스 */
+#liveLogBox{
+  width:320px;
+  height:36px;
+  overflow:hidden;
+  border-radius:14px;
+  background:#0f172a;
+  border:2px solid #38bdf8;
+  display:flex;
+  align-items:center;
+  padding:0 12px;
+  box-shadow:0 0 10px rgba(56,189,248,.5);
+}
+
+/* 네온 텍스트 */
+#liveLogTrack{
+  white-space:nowrap;
+  font-weight:900;
+  font-size:16px;
+  color:#67e8f9;
+
+  text-shadow:
+    0 0 4px #22d3ee,
+    0 0 8px #22d3ee,
+    0 0 14px #38bdf8,
+    0 0 22px #0ea5e9;
+
+  animation:logScroll 10s linear infinite;
+}
+
+/* 흐르는 애니메이션 */
+@keyframes logScroll{
+  0%{ transform:translateX(100%); }
+  100%{ transform:translateX(-100%); }
+}
 </style>
 </head>
 
@@ -2182,30 +2238,33 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     <div class="sticky-inner">
 
       <!-- 타이틀 -->
-      <div class="topbar">
-<div class="title">
-  <img class="main-title-image" src="https://i.ibb.co/DgDzPPJB/44444.png">
+<div class="topbar">
 
-<div id="onlineBox">
-  <span class="online-label">접속자</span>
-  <span id="onlineCount" class="online-count">-</span>
-</div>
-  
-  <div id="liveLogBox">
-  <div id="liveLogTrack"></div>
-</div>
-</div>
-<div class="row" style="gap:8px">
-  <div id="gunpyoTopBtns" style="display:flex;gap:8px;">
-    <button class="btn link" id="goPcBtn">PC로 보기</button>
-    <button class="btn red" id="goMobileBtn">모바일로 보기</button>
+  <div class="title">
+    <img class="main-title-image" src="https://i.ibb.co/DgDzPPJB/44444.png">
   </div>
 
-  <div id="realTopBtns" style="display:none;gap:8px;">
-
+  <!-- 🔥 가운데 영역 추가 -->
+  <div class="top-center">
+    <div id="liveLogBox">
+      <div id="liveLogTrack"></div>
+    </div>
   </div>
+
+  <!-- 🔥 오른쪽 묶음 -->
+  <div class="top-right">
+    <div id="onlineBox">
+      <span class="online-label">접속자</span>
+      <span id="onlineCount" class="online-count">-</span>
+    </div>
+
+    <div class="row" style="gap:8px">
+      <button class="btn link" id="goPcBtn">PC로 보기</button>
+      <button class="btn red" id="goMobileBtn">모바일로 보기</button>
+    </div>
+  </div>
+
 </div>
-      </div>
 
 <!-- ===== 상단 메뉴 탭 ===== -->
 <div class="main-tabs">
