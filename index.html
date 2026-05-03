@@ -2150,27 +2150,30 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   margin-left:8px !important;
   overflow:hidden !important;
   border-radius:12px !important;
-  background:#07111f !important;
-  border:2px solid #38bdf8 !important;
+
+  background:#ffffff !important;          /* 흰색 배경 */
+  border:2px solid #38bdf8 !important;     /* 하늘색 테두리 */
+
   display:inline-flex !important;
   align-items:center !important;
   padding:0 10px !important;
   flex:0 0 230px !important;
-  box-shadow:
-    0 0 8px rgba(56,189,248,.65),
-    inset 0 0 10px rgba(56,189,248,.25) !important;
 }
 
+/* 전체 텍스트 */
 #liveLogTrack{
   white-space:nowrap !important;
   font-size:14px !important;
-  font-weight:900 !important;
-  color:#67e8f9 !important;
-  text-shadow:
-    0 0 4px #22d3ee,
-    0 0 8px #38bdf8,
-    0 0 14px #0ea5e9 !important;
+  font-weight:400 !important;   /* 기본 얇게 */
+  color:#111827 !important;
+
   animation:liveLogScroll 11s linear infinite !important;
+}
+
+/* 아이디만 강조 */
+.live-nick{
+  color:#2563eb;
+  font-weight:900;
 }
 
 @keyframes liveLogScroll{
@@ -5836,25 +5839,31 @@ async function startLiveLogNeon(){
 
   let logs = await getRecentLiveLogs();
 
+  function makeHTML(msg){
+    // "홍길동님이 ~~~" 분리
+    const nick = msg.split("님")[0];
+    const rest = msg.replace(nick, "");
+
+    return `<span class="live-nick">${nick}</span>${rest}`;
+  }
+
   function showRandomLog(){
     if(!logs.length){
-      track.textContent = "루칭방에 오신 것을 환영합니다.";
+      track.innerHTML = "데이터 없음";
     }else{
       const msg = logs[Math.floor(Math.random() * logs.length)];
-      track.textContent = msg;
+      track.innerHTML = makeHTML(msg);
     }
-
-    track.style.animation = "none";
-    void track.offsetWidth;
-    track.style.animation = "liveLogScroll 11s linear infinite";
   }
+
+  // 🔥 애니메이션 끝날 때만 교체 (버그 해결 핵심)
+  track.addEventListener("animationiteration", () => {
+    showRandomLog();
+  });
 
   showRandomLog();
 
-  setInterval(() => {
-    showRandomLog();
-  }, 11000);
-
+  // 1분마다 데이터 갱신
   setInterval(async () => {
     logs = await getRecentLiveLogs();
   }, 60000);
