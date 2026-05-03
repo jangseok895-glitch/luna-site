@@ -2134,7 +2134,49 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   filter:brightness(1.05);
 }
 
+/* ===== 접속자 우측 네온 로그 - 폭 깨짐 방지 버전 ===== */
+.title{
+  flex-wrap:nowrap !important;
+}
 
+#onlineBox{
+  white-space:nowrap !important;
+  flex:0 0 auto !important;
+}
+
+#liveLogBox{
+  width:230px !important;
+  height:34px !important;
+  margin-left:8px !important;
+  overflow:hidden !important;
+  border-radius:12px !important;
+  background:#07111f !important;
+  border:2px solid #38bdf8 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  padding:0 10px !important;
+  flex:0 0 230px !important;
+  box-shadow:
+    0 0 8px rgba(56,189,248,.65),
+    inset 0 0 10px rgba(56,189,248,.25) !important;
+}
+
+#liveLogTrack{
+  white-space:nowrap !important;
+  font-size:14px !important;
+  font-weight:900 !important;
+  color:#67e8f9 !important;
+  text-shadow:
+    0 0 4px #22d3ee,
+    0 0 8px #38bdf8,
+    0 0 14px #0ea5e9 !important;
+  animation:liveLogScroll 11s linear infinite !important;
+}
+
+@keyframes liveLogScroll{
+  0%{ transform:translateX(230px); }
+  100%{ transform:translateX(-100%); }
+}
 </style>
 </head>
 
@@ -2163,6 +2205,10 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 <div id="onlineBox">
   <span class="online-label">접속자</span>
   <span id="onlineCount" class="online-count">-</span>
+</div>
+
+  <div id="liveLogBox">
+  <div id="liveLogTrack">최근 활동을 불러오는 중...</div>
 </div>
 </div>
 <div class="row" style="gap:8px">
@@ -5749,6 +5795,66 @@ refreshOnlineUI();
 setInterval(updateOnlineUser, 10000);
 setInterval(refreshOnlineUI, 10000);
 
+  async function getRecentLiveLogs(){
+  try{
+    const profileRows = await sbSelect("profiles", q =>
+      q.select("nickname,created_at,updated_at")
+        .order("created_at", { ascending:false })
+        .limit(10)
+    );
+
+    const memberRows = await sbSelect("team_members", q =>
+      q.select("nickname,team_name,created_at,updated_at")
+        .order("updated_at", { ascending:false })
+        .limit(10)
+    );
+
+    const logs = [];
+
+    (profileRows || []).forEach(r => {
+      const nick = String(r.nickname || "").trim();
+      if(nick) logs.push(`${nick}님이 군표를 저장하셨습니다.`);
+    });
+
+    (memberRows || []).forEach(r => {
+      const nick = String(r.nickname || "").trim();
+      if(nick) logs.push(`${nick}님이 군실명제를 등록하셨습니다.`);
+    });
+
+    return logs;
+  }catch(e){
+    console.warn("최근 활동 로그 불러오기 실패:", e);
+    return [];
+  }
+}
+
+async function startLiveLogNeon(){
+  const track = document.getElementById("liveLogTrack");
+  if(!track) return;
+
+  let logs = await getRecentLiveLogs();
+
+  function showRandomLog(){
+    if(!logs.length){
+      track.textContent = "최근 등록된 활동이 없습니다.";
+    }else{
+      track.textContent = logs[Math.floor(Math.random() * logs.length)];
+    }
+
+    track.style.animation = "none";
+    void track.offsetWidth;
+    track.style.animation = "liveLogScroll 11s linear infinite";
+  }
+
+  showRandomLog();
+
+  setInterval(async () => {
+    logs = await getRecentLiveLogs();
+    showRandomLog();
+  }, 11000);
+}
+
+setTimeout(startLiveLogNeon, 1200);
 </script>
 </body>
 </html>
