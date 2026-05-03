@@ -2069,6 +2069,18 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   white-space:pre-wrap;
   line-height:1.5;
 }
+
+  .comment-delete-btn{
+  width:28px;
+  height:28px;
+  border:0;
+  border-radius:50%;
+  background:#ef4444;
+  color:#ffffff;
+  font-size:15px;
+  font-weight:900;
+  cursor:pointer;
+}
 </style>
 </head>
 
@@ -4659,15 +4671,18 @@ function openBoardPost(idx){
           댓글을 불러오는 중입니다.
         </div>
 
-        <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;">
-          <b>작성자</b>
-          <input id="commentWriter" class="text sm" placeholder="작성자">
+<div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;">
+  <b>작성자</b>
+  <input id="commentWriter" class="text sm" placeholder="작성자">
 
-          <b>댓글</b>
-          <input id="commentContent" class="text" style="flex:1;min-width:260px;" placeholder="댓글 입력">
+  <b>댓글</b>
+  <input id="commentContent" class="text" style="flex:1;min-width:260px;" placeholder="댓글 입력">
 
-          <button class="btn gold" onclick="addBoardComment('${p.id}')">등록</button>
-        </div>
+  <b>비번</b>
+  <input id="commentPin4" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="4자리">
+
+  <button class="btn gold" onclick="addBoardComment('${p.id}')">등록</button>
+</div>
       </div>
 
       <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center;">
@@ -5434,7 +5449,7 @@ document.addEventListener("click", async function(e){
   }
 });
 
-  async function loadBoardComments(postId){
+async function loadBoardComments(postId){
   const rows = await sbSelect("board_comments", q =>
     q.select("*").eq("post_id", postId).order("created_at", { ascending:true })
   );
@@ -5449,8 +5464,9 @@ document.addEventListener("click", async function(e){
 
   box.innerHTML = rows.map(c => `
     <div class="comment-item">
-      <div class="comment-meta">
-        ${esc(c.writer || "익명")} · ${esc(formatBoardDate(c.created_at))}
+      <div class="comment-meta" style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+        <span>${esc(c.writer || "익명")} · ${esc(formatBoardDate(c.created_at))}</span>
+        <button type="button" class="comment-delete-btn" onclick="deleteBoardComment('${c.id}', '${postId}')">X</button>
       </div>
       <div class="comment-content">${linkifyText(c.content || "")}</div>
     </div>
@@ -5460,6 +5476,7 @@ document.addEventListener("click", async function(e){
 async function addBoardComment(postId){
   const writer = document.getElementById("commentWriter")?.value.trim();
   const content = document.getElementById("commentContent")?.value.trim();
+  const pin4 = document.getElementById("commentPin4")?.value.trim();
 
   if(!writer){
     toast("작성자를 입력해주세요.");
@@ -5471,10 +5488,16 @@ async function addBoardComment(postId){
     return;
   }
 
+  if(!/^\d{4}$/.test(pin4)){
+    toast("댓글 비밀번호 4자리를 입력해주세요.");
+    return;
+  }
+
   const { error } = await sb.from("board_comments").insert({
     post_id: postId,
     writer,
     content,
+    pin4: String(pin4),
     created_at: new Date().toISOString()
   });
 
@@ -5485,113 +5508,51 @@ async function addBoardComment(postId){
 
   document.getElementById("commentWriter").value = "";
   document.getElementById("commentContent").value = "";
+  document.getElementById("commentPin4").value = "";
 
   await loadBoardComments(postId);
 }
 
-  async function deleteRealMember(memberId){
-  if(!checkAdminPw()) return;
+async function deleteBoardComment(commentId, postId){
+  const pw = prompt("댓글 비밀번호 4자리 또는 운영진 비밀번호를 입력하세요.");
+  if(pw === null) return;
 
-  if(!confirm("해당 멤버를 군실명제에서 삭제하시겠습니까?")){
-    return;
-  }
-
-  try{
-    const { error } = await sb
-      .from("team_members")
-      .delete()
-      .eq("id", memberId);
-
-    if(error) throw error;
-
-    alert("삭제 완료");
-
-    // 목록 새로고침
-    if(typeof loadTeamMembers === "function"){
-      loadTeamMembers();
-    }
-
-  }catch(e){
-    console.error(e);
-    alert("삭제 실패: " + e.message);
-  }
-}
-
-async function deleteRealMemberByTeam(teamName, nickname){
-  teamName = String(teamName || "").trim();
-  nickname = String(nickname || "").trim();
-
-  if(!teamName || !nickname){
-    alert("삭제할 단체명과 닉네임을 확인할 수 없습니다.");
-    return;
-  }
-
-  const inputPw = prompt("개인 비밀번호 5자리 / 단체 비밀번호 4자리 / 운영진 비밀번호를 입력하세요.");
-  if(inputPw === null) return;
-
-  const pw = String(inputPw).trim();
+  const inputPw = String(pw).trim();
 
   try{
-    // 1) 운영진 비번 허용
-    let ok = (pw === "0523");
+    const rows = await sbSelect("board_comments", q =>
+      q.select("*").eq("id", commentId).limit(1)
+    );
 
-    // 2) 개인 비밀번호 5자리 확인
-    if(!ok){
-      const memberRows = await sbSelect("team_members", q =>
-        q.select("*")
-          .eq("team_name", teamName)
-          .eq("nickname", nickname)
-          .limit(1)
-      );
+    const c = rows && rows[0];
 
-      const member = memberRows && memberRows[0];
-
-      if(member && String(member.pin5 || "").trim() === pw){
-        ok = true;
-      }
+    if(!c){
+      alert("댓글을 찾을 수 없습니다.");
+      return;
     }
 
-    // 3) 단체 비밀번호 4자리 확인
-    if(!ok){
-      const clubRows = await sbSelect("club_pw", q =>
-        q.select("*")
-          .eq("club", teamName)
-          .limit(1)
-      );
-
-      const club = clubRows && clubRows[0];
-
-      if(club && String(club.pw || "").trim() === pw){
-        ok = true;
-      }
-    }
-
-    if(!ok){
+    if(inputPw !== "0523" && String(c.pin4 || "").trim() !== inputPw){
       alert("비밀번호가 일치하지 않습니다.");
       return;
     }
 
-    if(!confirm(`[${teamName}] 단체에서 ${nickname} 님을 삭제하시겠습니까?`)){
+    if(!confirm("댓글을 삭제하시겠습니까?")){
       return;
     }
 
     const { error } = await sb
-      .from("team_members")
+      .from("board_comments")
       .delete()
-      .eq("team_name", teamName)
-      .eq("nickname", nickname);
+      .eq("id", commentId);
 
     if(error) throw error;
 
-    alert("삭제 완료");
-
-    if(typeof initRealUI === "function"){
-      initRealUI();
-    }
+    alert("댓글 삭제 완료");
+    await loadBoardComments(postId);
 
   }catch(e){
     console.error(e);
-    alert("삭제 실패: " + (e.message || e));
+    alert("댓글 삭제 실패: " + (e.message || e));
   }
 }
 </script>
