@@ -397,7 +397,8 @@ body.real-manage-closed #manageOpenBox{
 #loadingOverlay,
 #registerPopup,
 #memberSearchPopup,
-#autoNoticePopup{
+#autoNoticePopup,
+#teamRequestPopup{
   position:fixed!important;
   inset:0!important;
   display:flex;
@@ -405,9 +406,9 @@ body.real-manage-closed #manageOpenBox{
   justify-content:center;
 }
 #loadingOverlay{width:100vw!important;height:100vh!important;background:rgba(0,0,0,.45)!important;z-index:9999999!important;padding:0!important;margin:0!important;transform:none!important}
-#registerPopup,#memberSearchPopup{background:rgba(0,0,0,.35);z-index:999999!important}
+#registerPopup,#memberSearchPopup,#teamRequestPopup{background:rgba(0,0,0,.35);z-index:999999!important}
 #autoNoticePopup{background:rgba(0,0,0,.45);z-index:99999999}
-#loadingOverlay.hidden,#registerPopup.hidden,#memberSearchPopup.hidden,#autoNoticePopup.hidden{display:none!important}
+#loadingOverlay.hidden,#registerPopup.hidden,#memberSearchPopup.hidden,#autoNoticePopup.hidden,#teamRequestPopup.hidden{display:none!important}
 
 #loadingText,.loading-box{
   position:static!important;
@@ -1075,7 +1076,8 @@ tbody tr:hover{
 /* 검색 결과/삭제 관련 팝업 내부 */
 #registerPopup,
 #memberSearchPopup,
-#autoNoticePopup{
+#autoNoticePopup,
+#teamRequestPopup{
   color:#111827 !important;
 }
 
@@ -1951,6 +1953,39 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   text-align:center !important;
   margin:0 !important;
 }
+
+
+/* ===== 단체 등록요청 팝업 ===== */
+#teamRequestPopup{
+  position:fixed!important;
+  inset:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:rgba(0,0,0,.4)!important;
+  z-index:99999999!important;
+  padding:20px!important;
+}
+#teamRequestPopup.hidden{display:none!important;}
+.team-request-help{
+  font-size:14px!important;
+  line-height:1.6!important;
+  margin-bottom:10px!important;
+  color:#111827!important;
+}
+.team-request-help b{color:#ef4444!important;}
+.team-request-link{
+  display:inline-block!important;
+  margin-top:6px!important;
+  color:#2563eb!important;
+  font-weight:900!important;
+  text-decoration:underline!important;
+}
+.team-request-selected{
+  border:3px solid #ef4444!important;
+  background:#fff7ed!important;
+}
+
 </style>
 </head>
 
@@ -2133,6 +2168,56 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     </div>
   </div>
 
+
+
+  <!-- 단체 등록요청 팝업 -->
+  <div id="teamRequestPopup" class="hidden">
+    <div class="search-popup-box">
+      <div class="search-popup-head">
+        <b>단체 등록요청</b>
+        <button type="button" id="btnCloseTeamRequestPopup">닫기</button>
+      </div>
+
+      <div class="team-request-help">
+        단체명은 클럽일 경우 <b>[클럽]아무개</b><br>
+        크루일 경우 <b>[크루]아무개</b> 형식으로 입력해주세요.
+      </div>
+
+      <div class="real-row" style="margin-bottom:10px;">
+        <div class="real-tag">단체명</div>
+        <input id="reqTeamName" class="text sm" placeholder="[클럽]아무개 또는 [크루]아무개"/>
+      </div>
+
+      <div class="real-row" style="margin-bottom:10px;">
+        <div class="real-tag">비번</div>
+        <input id="reqPw" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="4자리" autocomplete="off"/>
+      </div>
+
+      <div class="team-request-help">
+        설명 : 단체 카카오톡 오픈방 인원수 스크린샷을 업로드해주세요.<br>
+        아래 구글드라이브 폴더에 사진을 먼저 올린 뒤, 공유 링크를 붙여넣어주세요.<br>
+        <a class="team-request-link" href="https://drive.google.com/drive/folders/1kVlpr7gwHqIQI8brGYEZUsuENuxpvAFZ?usp=drive_link" target="_blank">구글드라이브 업로드 폴더 열기</a>
+      </div>
+
+      <input id="reqScreenshotUrl" class="text" style="width:100%;margin-bottom:10px;" placeholder="업로드한 사진 공유 링크 붙여넣기"/>
+
+      <button class="btn gold" id="btnSubmitTeamRequest">단체 등록요청</button>
+
+      <hr style="margin:14px 0;border:0;border-top:1px solid rgba(14,165,233,.25);">
+
+      <div style="font-weight:900;margin-bottom:8px;">
+        현재 요청대기중인 단체 <span id="pendingTeamCount">0</span>
+      </div>
+
+      <div class="real-row" style="margin-bottom:10px;">
+        <input id="adminPw" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="운영진 비번" autocomplete="off"/>
+        <button class="btn red" id="btnAdminApprove">운영진승인</button>
+      </div>
+
+      <div id="pendingTeamList" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
   <div style="height:12px"></div>
 
   <!-- 조회 -->
@@ -2143,6 +2228,7 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     <select id="viewMember" class="select"></select>
 
     <button class="btn red" id="btnViewDelete">삭제</button>
+    <button class="btn gold" id="btnOpenTeamRequestPopup">단체 등록요청</button>
 
     <span id="delPinWrap" class="hidden" style="display:flex;gap:8px;align-items:center;">
       <input id="viewPin" class="text pin" type="password" maxlength="5" inputmode="numeric" placeholder="비밀번호"/>
@@ -2239,7 +2325,167 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 
   <div id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+
+/* ===== 단체 등록요청 / 운영진 승인 기능 ===== */
+let SELECTED_TEAM_REQUEST_ID = null;
+
+async function loadTeamRequests(){
+  const countEl = document.getElementById("pendingTeamCount");
+  const listEl = document.getElementById("pendingTeamList");
+  if(!countEl || !listEl) return;
+
+  try{
+    if(!sb) throw new Error("Supabase 연결 정보가 없습니다.");
+    const rows = await sbSelect("team_register_requests", q =>
+      q.select("*").eq("status", "대기").order("created_at", { ascending:false })
+    );
+
+    countEl.textContent = rows.length;
+
+    if(!rows.length){
+      listEl.innerHTML = `<div style="color:#64748b;font-weight:700;">대기중인 요청이 없습니다.</div>`;
+      SELECTED_TEAM_REQUEST_ID = null;
+      return;
+    }
+
+    listEl.innerHTML = rows.map(r => {
+      const url = String(r.screenshot_url || "").trim();
+      return `
+        <div class="search-member-item" data-request-id="${r.id}">
+          <b>${String(r.team_name || "")}</b><br>
+          비번 : ${String(r.pw || "")}<br>
+          스샷 : ${url ? `<a href="${url}" target="_blank">확인하기</a>` : "없음"}
+        </div>
+      `;
+    }).join("");
+  }catch(e){
+    console.error(e);
+    countEl.textContent = "0";
+    listEl.innerHTML = `<div style="color:#ef4444;font-weight:900;">요청 목록을 불러오지 못했습니다.<br>${e.message || e}</div>`;
+  }
+}
+
+async function submitTeamRequest(){
+  const teamName = document.getElementById("reqTeamName")?.value.trim() || "";
+  const pw = document.getElementById("reqPw")?.value.trim() || "";
+  const screenshotUrl = document.getElementById("reqScreenshotUrl")?.value.trim() || "";
+
+  if(!teamName) return toast("단체명을 입력하세요.");
+  if(!teamName.startsWith("[클럽]") && !teamName.startsWith("[크루]")){
+    return toast("단체명은 [클럽] 또는 [크루]로 시작해야 합니다.");
+  }
+  if(!/^\d{4}$/.test(pw)) return toast("비밀번호는 숫자 4자리입니다.");
+  if(!screenshotUrl) return toast("스크린샷 공유 링크를 입력하세요.");
+
+  try{
+    const { error } = await sb.from("team_register_requests").insert({
+      team_name: teamName,
+      pw: String(pw),
+      screenshot_url: screenshotUrl,
+      status: "대기"
+    });
+    if(error) throw error;
+
+    toast("단체 등록요청 완료");
+    document.getElementById("reqTeamName").value = "";
+    document.getElementById("reqPw").value = "";
+    document.getElementById("reqScreenshotUrl").value = "";
+    await loadTeamRequests();
+  }catch(e){
+    console.error(e);
+    toast(e.message || "단체 등록요청 실패");
+  }
+}
+
+async function approveTeamRequest(){
+  const adminPw = document.getElementById("adminPw")?.value.trim() || "";
+  if(adminPw !== "0523") return toast("운영진 비밀번호가 틀렸습니다.");
+  if(!SELECTED_TEAM_REQUEST_ID) return toast("승인할 단체를 먼저 선택하세요.");
+
+  try{
+    const rows = await sbSelect("team_register_requests", q =>
+      q.select("*").eq("id", SELECTED_TEAM_REQUEST_ID).limit(1)
+    );
+    if(!rows.length) throw new Error("요청 정보를 찾지 못했습니다.");
+
+    const r = rows[0];
+    const teamName = String(r.team_name || "").trim();
+    const pw = String(r.pw || "").trim();
+    if(!teamName || !/^\d{4}$/.test(pw)) throw new Error("요청 데이터의 단체명 또는 비밀번호가 올바르지 않습니다.");
+
+    const existsClub = await sbSelect("club_pw", q => q.select("club,pw").eq("club", teamName).limit(1));
+    if(!existsClub.length){
+      const { error: pwError } = await sb.from("club_pw").insert({
+        club: teamName,
+        pw: pw
+      });
+      if(pwError) throw pwError;
+    }
+
+    const existsTeam = await sbSelect("team_members", q => q.select("id").eq("team_name", teamName).limit(1));
+    if(!existsTeam.length){
+      const { error: memberError } = await sb.from("team_members").insert({
+        team_name: teamName,
+        nickname: "",
+        pin5: "",
+        total: 0,
+        selections: {},
+        views: 0,
+        updated_at: new Date().toISOString()
+      });
+      if(memberError) throw memberError;
+    }
+
+    const { error: updateError } = await sb
+      .from("team_register_requests")
+      .update({ status:"승인" })
+      .eq("id", SELECTED_TEAM_REQUEST_ID);
+    if(updateError) throw updateError;
+
+    toast("운영진 승인 완료");
+    SELECTED_TEAM_REQUEST_ID = null;
+    document.getElementById("adminPw").value = "";
+    await loadTeamRequests();
+    if(typeof initRealUI === "function") initRealUI();
+  }catch(e){
+    console.error(e);
+    toast(e.message || "운영진 승인 실패");
+  }
+}
+
+document.addEventListener("click", function(e){
+  if(e.target.closest("#btnOpenTeamRequestPopup")){
+    document.getElementById("teamRequestPopup")?.classList.remove("hidden");
+    loadTeamRequests();
+    return;
+  }
+
+  if(e.target.closest("#btnCloseTeamRequestPopup")){
+    document.getElementById("teamRequestPopup")?.classList.add("hidden");
+    return;
+  }
+
+  if(e.target.closest("#btnSubmitTeamRequest")){
+    submitTeamRequest();
+    return;
+  }
+
+  if(e.target.closest("#btnAdminApprove")){
+    approveTeamRequest();
+    return;
+  }
+
+  const item = e.target.closest("[data-request-id]");
+  if(item){
+    SELECTED_TEAM_REQUEST_ID = item.dataset.requestId;
+    document.querySelectorAll("[data-request-id]").forEach(el => el.classList.remove("team-request-selected"));
+    item.classList.add("team-request-selected");
+    toast("승인할 단체가 선택되었습니다.");
+  }
+});
+
+</script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
 /* =========================================================
