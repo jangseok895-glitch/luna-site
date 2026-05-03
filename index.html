@@ -2227,6 +2227,11 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
         <button type="button" id="btnCloseTeamRequestPopup">닫기</button>
       </div>
 
+<label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-weight:800;">
+  <input type="checkbox" id="skipScreenshotCheck">
+  소통방 스크린샷 제외
+</label>
+
       <div class="team-request-form-row">
         <b>구분</b>
         <select id="reqTeamType" class="select">
@@ -5064,7 +5069,11 @@ async function submitTeamRequest(){
     const screenshotData = String(TEAM_REQUEST_SCREENSHOT_DATA || "").trim();
 
     if(!/^\d{4}$/.test(pw)) throw new Error("비밀번호는 숫자 4자리로 입력해주세요.");
-    if(!screenshotData) throw new Error("소통방 스크린샷을 올려주세요.");
+const skipScreenshot = document.getElementById("skipScreenshotCheck").checked;
+
+if (!skipScreenshot && !screenshotData) {
+  throw new Error("소통방 스크린샷을 올려주세요.");
+}
 
     const exists = await sbSelect("team_register_requests", q =>
       q.select("id").eq("team_name", teamName).eq("status", "대기").limit(1)
@@ -5074,7 +5083,7 @@ async function submitTeamRequest(){
     const { error } = await sb.from("team_register_requests").insert({
       team_name: teamName,
       pw: pw,
-      screenshot_url: screenshotData,
+screenshot_url: skipScreenshot ? "스크린샷 제외" : screenshotData,
       status: "대기"
     });
     if(error) throw error;
