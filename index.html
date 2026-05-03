@@ -2228,13 +2228,16 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
       </div>
 
       <div class="team-request-form-row">
-        <b>[클럽]</b>
-        <input id="reqClubName" class="text" placeholder="클럽명 입력">
+        <b>구분</b>
+        <select id="reqTeamType" class="select">
+          <option value="club">[클럽]</option>
+          <option value="crew">[크루]</option>
+        </select>
       </div>
 
       <div class="team-request-form-row">
-        <b>[크루]</b>
-        <input id="reqCrewName" class="text" placeholder="크루명 입력">
+        <b>단체명</b>
+        <input id="reqTeamRawName" class="text" placeholder="단체명 입력">
       </div>
 
       <div class="team-request-form-row">
@@ -4936,12 +4939,18 @@ let TEAM_REQUEST_SCREENSHOT_DATA = "";
 let TEAM_REQUEST_SCREENSHOT_NAME = "";
 
 function getTeamRequestName(){
-  const club = String(document.getElementById("reqClubName")?.value || "").trim();
-  const crew = String(document.getElementById("reqCrewName")?.value || "").trim();
-  if(club && crew) throw new Error("클럽 또는 크루 중 하나만 입력해주세요.");
-  if(club) return "[클럽]" + club.replace(/^\[클럽\]/, "").trim();
-  if(crew) return "[크루]" + crew.replace(/^\[크루\]/, "").trim();
-  throw new Error("클럽명 또는 크루명을 입력해주세요.");
+  const type = String(document.getElementById("reqTeamType")?.value || "club").trim();
+  let rawName = String(document.getElementById("reqTeamRawName")?.value || "").trim();
+
+  rawName = rawName
+    .replace(/^\[클럽\]/, "")
+    .replace(/^\[크루\]/, "")
+    .trim();
+
+  if(!rawName) throw new Error("단체명을 입력해주세요.");
+
+  if(type === "crew") return "[크루]" + rawName;
+  return "[클럽]" + rawName;
 }
 
 function checkAdminPw(){
@@ -5070,8 +5079,8 @@ async function submitTeamRequest(){
     });
     if(error) throw error;
 
-    document.getElementById("reqClubName").value = "";
-    document.getElementById("reqCrewName").value = "";
+    document.getElementById("reqTeamType").value = "club";
+    document.getElementById("reqTeamRawName").value = "";
     document.getElementById("reqTeamPw").value = "";
     TEAM_REQUEST_SCREENSHOT_DATA = "";
     TEAM_REQUEST_SCREENSHOT_NAME = "";
