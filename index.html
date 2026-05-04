@@ -6637,9 +6637,13 @@ function drawRankGraphAnimated(dataBlue, dataRed){
   const W = canvas.width;
   const H = canvas.height;
 
-  const padding = 40;
-  const barWidth = 20;
-  const gap = 18;
+  const labels = ["프로","강주력","주력","1군","2군","3군","4군","5군","6군"];
+
+  const padding = 30;
+  const bottom = 40;
+
+  const groupWidth = (W - padding*2) / labels.length;
+  const barWidth = groupWidth * 0.3;
 
   const maxVal = Math.max(
     ...dataBlue.map(d => Number(d.percent) || 0),
@@ -6660,33 +6664,44 @@ function drawRankGraphAnimated(dataBlue, dataRed){
 
     ctx.clearRect(0,0,W,H);
 
-    dataBlue.forEach((v,i)=>{
-      const blueP = Number(v.percent) || 0;
+    labels.forEach((label,i)=>{
+      const blueP = Number(dataBlue[i]?.percent) || 0;
       const redP = Number(dataRed[i]?.percent) || 0;
 
-      const x = padding + i * (barWidth*2 + gap);
+      const centerX = padding + groupWidth * i + groupWidth/2;
 
       const hBlue = (H-80)*(blueP/maxVal)*rate;
       const hRed  = (H-80)*(redP/maxVal)*rate;
 
+      const xBlue = centerX - barWidth - 3;
+      const xRed  = centerX + 3;
+
+      // 파랑
       ctx.fillStyle = "#3b82f6";
-      ctx.fillRect(x, H-40-hBlue, barWidth, hBlue);
+      ctx.fillRect(xBlue, H-bottom-hBlue, barWidth, hBlue);
 
+      // 빨강
       ctx.fillStyle = "#ef4444";
-      ctx.fillRect(x+barWidth+4, H-40-hRed, barWidth, hRed);
+      ctx.fillRect(xRed, H-bottom-hRed, barWidth, hRed);
 
-      // 퍼센트 텍스트 (80% 이후 표시)
+      // 퍼센트 (나중에 등장)
       if(progress > 0.8){
         ctx.fillStyle="#111827";
         ctx.font="12px Pretendard";
         ctx.textAlign="center";
 
-        ctx.fillText(blueP+"%", x+barWidth/2, H-45-hBlue);
-        ctx.fillText(redP+"%", x+barWidth+4+barWidth/2, H-45-hRed);
+        ctx.fillText(blueP+"%", xBlue + barWidth/2, H-bottom-hBlue-6);
+        ctx.fillText(redP+"%", xRed + barWidth/2, H-bottom-hRed-6);
       }
+
+      // 🔥 아래 라벨 (핵심 복구)
+      ctx.fillStyle="#111827";
+      ctx.font="13px Pretendard";
+      ctx.textAlign="center";
+
+      ctx.fillText(label, centerX, H - 10);
     });
 
-    // 🔥 계속 애니메이션
     if(progress < 1){
       requestAnimationFrame(frame);
     }
