@@ -6192,8 +6192,18 @@ async function openRankGraphPopup(){
       q.select("total").not("total", "is", null)
     );
 
-const saveData = percentMapFromRows(saveRows);
-const realData = realPercentByRank(saveRows, realRows);
+    const saveData = percentMapFromRows(saveRows);
+    const realData = percentMapFromRows(realRows);
+
+    const overallRate = Math.max(
+      0.1,
+      Math.round((realRows.length / (saveRows.length || 1)) * 1000) / 10
+    );
+
+    const rateEl = document.getElementById("overallRealRate");
+    if(rateEl){
+      rateEl.textContent = "전체 실명제 참여율 : " + overallRate + "%";
+    }
 
     document.getElementById("rankGraphPopup").classList.remove("hidden");
     drawRankGraph(saveData, realData);
@@ -6276,58 +6286,7 @@ const realH = graphH * realP / scaleMax;
 
 document.getElementById("btnRankGraph")?.addEventListener("click", openRankGraphPopup);
 
-function realPercentByRank(saveRows, realRows){
-  const saveCounts = {};
-  const realCounts = {};
 
-  RANK_GRAPH_LABELS.forEach(r => {
-    saveCounts[r] = 0;
-    realCounts[r] = 0;
-  });
-
-// 저장자 기준 Set 만들기
-const saveKeySet = new Set(
-  saveRows.map(r => r.nickname + "_" + r.pin5)
-);
-
-realRows.forEach(row => {
-  const key = row.nickname + "_" + row.pin5;
-
-  if(!saveKeySet.has(key)) return;
-
-  const rank = getRankFromTotal(row.total);
-
-  if(realCounts[rank] !== undefined){
-    realCounts[rank]++;
-  }
-});
-
-  realRows.forEach(row => {
-    const rank = getRankFromTotal(row.total);
-    if(realCounts[rank] !== undefined) realCounts[rank]++;
-  });
-
-  const totalSave = saveRows.length || 1;
-
-  return RANK_GRAPH_LABELS.map(r => {
-    const saveCount = saveCounts[r] || 0;
-    const realCount = realCounts[r] || 0;
-
-    const savePercent = (saveCount / totalSave) * 100;
-    const realRateInRank = saveCount > 0 ? realCount / saveCount : 0;
-
-    let percent = savePercent * realRateInRank;
-
-    percent = Math.round(percent * 10) / 10;
-    if(percent === 0) percent = 0.1;
-
-    return {
-      rank:r,
-      count:realCount,
-      percent:percent
-    };
-  });
-}
 </script>
   <div id="rankGraphPopup" class="hidden">
   <div class="rank-graph-box">
