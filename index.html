@@ -6736,11 +6736,27 @@ function drawRankGraphAnimated(dataBlue, dataRed){
       }
 
       // 🔥 아래 라벨 (핵심 복구)
-      ctx.fillStyle="#111827";
-      ctx.font="13px Pretendard";
-      ctx.textAlign="center";
+const rankColor = {
+  "프로":"#ef4444",
+  "강주력":"#f97316",
+  "주력":"#22c55e",
+  "1군":"#3b82f6",
+  "2군":"#06b6d4",
+  "3군":"#84cc16",
+  "4군":"#eab308",
+  "5군":"#f59e0b",
+  "6군":"#9ca3af"
+};
 
-      ctx.fillText(label, centerX, H - 10);
+ctx.textAlign = "center";
+ctx.font = "bold 14px Pretendard";
+ctx.fillStyle = rankColor[label] || "#2563eb";
+ctx.shadowColor = "rgba(37,99,235,0.35)";
+ctx.shadowBlur = 6;
+
+ctx.fillText(label, centerX, H - 10);
+
+ctx.shadowBlur = 0;
     });
 
     if(progress < 1){
