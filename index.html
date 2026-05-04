@@ -6398,37 +6398,27 @@ function drawSimpleBarChart(canvasId, titleData, color){
 
   titleData.forEach((d, i) => {
     const y = top + i * rowH;
-    const label = String(d.label || "");
-    const text = String(d.text || "");
     const barW = Math.max(2, (graphW * d.value) / maxVal);
 
     ctx.fillStyle = "#111827";
     ctx.textAlign = "right";
-    ctx.font = "12px Pretendard, Arial";
-    ctx.fillText(label.slice(0, 8), left - 8, y + 14);
+    ctx.font = "12px Pretendard";
+    ctx.fillText(d.label, left - 8, y + 14);
 
     ctx.fillStyle = color;
     ctx.fillRect(left, y, barW, barH);
 
-if(canvasId === "clubHighRankCanvas"){
-  ctx.fillStyle = "#ffffff";
-  ctx.textAlign = "left";
-  ctx.font = "11px Pretendard, Arial";
-  ctx.fillText(text, left + 6, y + 14);
+    // 내부 텍스트 (분포)
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "left";
+    ctx.font = "11px Pretendard";
+    ctx.fillText(d.text, left + 6, y + 14);
 
-  ctx.fillStyle = "#111827";
-  ctx.textAlign = "left";
-  ctx.font = "12px Pretendard, Arial";
-  ctx.fillText(d.scoreText || "", Math.min(left + barW + 6, W - 40), y + 14);
-}
-    }else{
-      ctx.fillStyle = "#111827";
-      ctx.textAlign = "left";
-      ctx.font = "12px Pretendard, Arial";
-
-      const textX = Math.min(left + barW + 5, W - 45);
-      ctx.fillText(text, textX, y + 14);
-    }
+    // 👉 오른쪽 퍼센트
+    ctx.fillStyle = "#111827";
+    ctx.textAlign = "left";
+    ctx.font = "12px Pretendard";
+    ctx.fillText(d.scoreText || "", Math.min(left + barW + 6, W - 40), y + 14);
   });
 }
 
