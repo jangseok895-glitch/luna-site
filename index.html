@@ -6311,7 +6311,7 @@ async function openRankGraphPopup(){
     }
 
     document.getElementById("rankGraphPopup").classList.remove("hidden");
-drawRankGraphAnimated(blueData, redData)
+drawRankGraphAnimated(saveData, realData);
 
   }catch(e){
     console.error(e);
@@ -6700,7 +6700,11 @@ if(title) title.textContent = "루칭방 그래프";
   const barWidth = 20;
   const gap = 18;
 
-const maxVal = Math.max(...dataBlue, ...dataRed, 1);
+const maxVal = Math.max(
+  ...dataBlue.map(d => Number(d.percent) || 0),
+  ...dataRed.map(d => Number(d.percent) || 0),
+  1
+);
 
   const duration = 700;
   const start = performance.now();
