@@ -6162,8 +6162,9 @@ function getRankFromTotal(total){
   return "6군";
 }
 
-function percentMapFromRows(rows, baseTotal){
+function percentMapFromRows(rows){
   const counts = {};
+
   RANK_GRAPH_LABELS.forEach(r => counts[r] = 0);
 
   rows.forEach(row => {
@@ -6173,13 +6174,20 @@ function percentMapFromRows(rows, baseTotal){
     }
   });
 
-  const total = baseTotal || rows.length || 1;
+  const total = rows.length || 1;
 
-  return RANK_GRAPH_LABELS.map(r => ({
-    rank:r,
-    count:counts[r],
-percent: counts[r] === 0 ? 0.1 : Math.round((counts[r] / total) * 1000) / 10
-  }));
+  return RANK_GRAPH_LABELS.map(r => {
+    let percent = Math.round((counts[r] / total) * 1000) / 10;
+
+    // 0% 방지
+    if(percent === 0) percent = 0.1;
+
+    return {
+      rank:r,
+      count:counts[r],
+      percent:percent
+    };
+  });
 }
 
 async function openRankGraphPopup(){
@@ -6192,9 +6200,13 @@ async function openRankGraphPopup(){
       q.select("total").not("total", "is", null)
     );
 
+    // 🔵 군표 저장 분포
     const saveData = percentMapFromRows(saveRows);
+
+    // 🔴 실명제 등록 분포
     const realData = percentMapFromRows(realRows);
 
+    // 전체 참여율 (참고용)
     const overallRate = Math.max(
       0.1,
       Math.round((realRows.length / (saveRows.length || 1)) * 1000) / 10
@@ -6206,6 +6218,7 @@ async function openRankGraphPopup(){
     }
 
     document.getElementById("rankGraphPopup").classList.remove("hidden");
+
     drawRankGraph(saveData, realData);
 
   }catch(e){
