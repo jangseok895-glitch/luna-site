@@ -6606,26 +6606,26 @@ async function openClubActivityGraph(){
 }
 
 function showGraphTab(type){
-  const rankSection = document.getElementById("rankGraphSection");
-  const clubSection = document.getElementById("clubActivityGraphSection");
-  const title = document.getElementById("rankGraphTitle");
+  const rankPanel = document.getElementById("rankGraphPanel");
+  const clubPanel = document.getElementById("clubGraphPanel");
 
-  const btnRank = document.getElementById("btnGraphTabRank");
-  const btnClub = document.getElementById("btnGraphTabClub");
+  document.getElementById("btnGraphTabRank")?.classList.toggle("active", type === "rank");
+  document.getElementById("btnGraphTabClub")?.classList.toggle("active", type === "club");
+
+  if(type === "rank"){
+    rankPanel.style.display = "block";
+    clubPanel.style.display = "none";
+
+    drawRankGraphAnimated(window.rankSaveData || saveData, window.rankRealData || realData);
+  }
 
   if(type === "club"){
-    rankSection?.classList.add("hidden");
-    clubSection?.classList.remove("hidden");
-    btnRank?.classList.remove("active");
-    btnClub?.classList.add("active");
-if(title) title.textContent = "루칭방 그래프";
-    openClubActivityGraph();
-  }else{
-    clubSection?.classList.add("hidden");
-    rankSection?.classList.remove("hidden");
-    btnClub?.classList.remove("active");
-    btnRank?.classList.add("active");
-if(title) title.textContent = "루칭방 그래프";
+    rankPanel.style.display = "none";
+    clubPanel.style.display = "block";
+
+    drawSimpleBarChart("clubRegisterRateCanvas", window.clubRegisterData || []);
+    drawSimpleBarChart("clubHighRankCanvas", window.clubHighRankData || []);
+    drawSimpleBarChart("clubGrowthCanvas", window.clubGrowthData || []);
   }
 }
 
