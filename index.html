@@ -6329,72 +6329,7 @@ function closeRankGraphPopup(){
   document.getElementById("rankGraphPopup").classList.add("hidden");
 }
 
-function drawRankGraph(saveData, realData){
-  const canvas = document.getElementById("rankGraphCanvas");
-  const ctx = canvas.getContext("2d");
 
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  const W = canvas.width;
-  const H = canvas.height;
-
-  const left = 35;
-  const bottom = 50;
-  const top = 5;
-  const graphH = H - top - bottom;
-  const groupW = (W - left - 20) / RANK_GRAPH_LABELS.length;
-  const barW = 30;
-
-  ctx.font = "14px Pretendard, Arial";
-  ctx.strokeStyle = "#e5e7eb";
-  ctx.lineWidth = 1;
-
-  // 가로 기준선만 표시, 왼쪽 % 숫자는 표시 안 함
-  for(let i=0;i<=5;i++){
-    const y = top + graphH - (graphH * i / 5);
-    ctx.beginPath();
-    ctx.moveTo(left, y);
-    ctx.lineTo(W - 20, y);
-    ctx.stroke();
-  }
-
-  RANK_GRAPH_LABELS.forEach((label, i) => {
-    const x = left + groupW * i + groupW / 2;
-
-    const saveP = saveData[i].percent;
-    const realP = realData[i].percent;
-
-const maxPercent = Math.max(
-  ...saveData.map(d => Number(d.percent) || 0),
-  ...realData.map(d => Number(d.percent) || 0),
-  1
-);
-
-const scaleMax = Math.ceil(maxPercent / 10) * 10;
-const saveH = graphH * saveP / scaleMax;
-const realH = graphH * realP / scaleMax;
-
-    const baseY = top + graphH;
-
-    ctx.fillStyle = "#2563eb";
-    ctx.fillRect(x - barW - 4, baseY - saveH, barW, saveH);
-
-    ctx.fillStyle = "#ef4444";
-    ctx.fillRect(x + 4, baseY - realH, barW, realH);
-
-    ctx.fillStyle = "#111827";
-    ctx.textAlign = "center";
-
-    ctx.font = "12px Pretendard, Arial";
-    ctx.fillText(saveP + "%", x - barW / 2 - 4, baseY - saveH - 6);
-    ctx.fillText(realP + "%", x + barW / 2 + 4, baseY - realH - 6);
-
-    ctx.font = "14px Pretendard, Arial";
-    ctx.fillText(label, x, H - 20);
-  });
-
-  ctx.textAlign = "left";
-}
 
 document.getElementById("btnRankGraph")?.addEventListener("click", openRankGraphPopup);
 
