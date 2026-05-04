@@ -2341,6 +2341,30 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 .table-wrap{
   z-index:1 !important;
 }
+
+  /* 사진보기 팝업을 단체 등록요청 팝업보다 위로 */
+#teamRequestPhotoPopup{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  z-index:2147483646 !important;
+  background:rgba(0,0,0,.65) !important;
+
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:18px !important;
+}
+
+#teamRequestPhotoPopup.hidden{
+  display:none !important;
+}
+
+#teamRequestPhotoPopup .team-photo-box{
+  position:relative !important;
+  z-index:2147483647 !important;
+}
 </style>
 </head>
 
