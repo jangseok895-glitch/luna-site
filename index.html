@@ -6466,13 +6466,18 @@ function drawSimpleBarChart(canvasId, titleData, color){
         ctx.font = "11px Pretendard";
         ctx.fillText(String(d.text || ""), left + 6, y + 14);
 
-        ctx.fillStyle = "#111827";
-        ctx.font = "12px Pretendard";
-        ctx.fillText(
-          String(d.scoreText || ""),
-          Math.min(left + fullBarW + 6, W - 42),
-          y + 14
-        );
+if(canvasId === "clubRegisterRateCanvas" || canvasId === "clubGrowthCanvas"){
+  ctx.fillStyle = "#ffffff";  // 🔥 흰색
+}else{
+  ctx.fillStyle = "#111827";  // 기존 색
+}
+
+ctx.font = "12px Pretendard";
+ctx.fillText(
+  String(d.scoreText || ""),
+  Math.min(left + fullBarW + 6, W - 42),
+  y + 14
+);
       }
     });
 
