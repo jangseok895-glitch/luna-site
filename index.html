@@ -6285,10 +6285,23 @@ function realPercentByRank(saveRows, realRows){
     realCounts[r] = 0;
   });
 
-  saveRows.forEach(row => {
-    const rank = getRankFromTotal(row.total);
-    if(saveCounts[rank] !== undefined) saveCounts[rank]++;
-  });
+// 저장자 기준 Set 만들기
+const saveKeySet = new Set(
+  saveRows.map(r => r.nickname + "_" + r.pin)
+);
+
+// 실명제는 저장자에 있는 사람만 인정
+realRows.forEach(row => {
+  const key = row.nickname + "_" + row.pin;
+
+  if(!saveKeySet.has(key)) return; // ❗ 여기 핵심
+
+  const rank = getRankFromTotal(row.total);
+
+  if(realCounts[rank] !== undefined){
+    realCounts[rank]++;
+  }
+});
 
   realRows.forEach(row => {
     const rank = getRankFromTotal(row.total);
