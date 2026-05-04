@@ -6387,42 +6387,42 @@ function drawSimpleBarChart(canvasId, titleData, color){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   const W = canvas.width;
-  const H = canvas.height;
-  const left = 95;
-  const right = 20;
+  const left = 105;
+  const right = 55;
   const top = 20;
   const rowH = 34;
   const barH = 18;
 
   const maxVal = Math.max(...titleData.map(d => d.value), 1);
-
-  ctx.font = "12px Pretendard, Arial";
-  ctx.textAlign = "right";
-  ctx.fillStyle = "#111827";
+  const graphW = W - left - right;
 
   titleData.forEach((d, i) => {
     const y = top + i * rowH;
-const label = String(d.label || "");
-    const barW = ((W - left - right) * d.value) / maxVal;
+    const label = String(d.label || "");
+    const text = String(d.text || "");
+    const barW = Math.max(2, (graphW * d.value) / maxVal);
 
     ctx.fillStyle = "#111827";
     ctx.textAlign = "right";
+    ctx.font = "12px Pretendard, Arial";
     ctx.fillText(label.slice(0, 8), left - 8, y + 14);
 
     ctx.fillStyle = color;
     ctx.fillRect(left, y, barW, barH);
 
-if(canvasId === "clubHighRankCanvas"){
-  ctx.fillStyle = "#ffffff";
-  ctx.textAlign = "left";
-  ctx.font = "11px Pretendard, Arial";
-  ctx.fillText(d.text, left + 6, y + 14);
-}else{
-  ctx.fillStyle = "#111827";
-  ctx.textAlign = "left";
-  ctx.font = "12px Pretendard, Arial";
-  ctx.fillText(d.text, left + barW + 5, y + 14);
-}
+    if(canvasId === "clubHighRankCanvas"){
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "left";
+      ctx.font = "11px Pretendard, Arial";
+      ctx.fillText(text, left + 6, y + 14);
+    }else{
+      ctx.fillStyle = "#111827";
+      ctx.textAlign = "left";
+      ctx.font = "12px Pretendard, Arial";
+
+      const textX = Math.min(left + barW + 5, W - 45);
+      ctx.fillText(text, textX, y + 14);
+    }
   });
 }
 
@@ -6588,14 +6588,14 @@ function showGraphTab(type){
     clubSection?.classList.remove("hidden");
     btnRank?.classList.remove("active");
     btnClub?.classList.add("active");
-    if(title) title.textContent = "단체별 활동성 그래프";
+if(title) title.textContent = "루칭방 그래프";
     openClubActivityGraph();
   }else{
     clubSection?.classList.add("hidden");
     rankSection?.classList.remove("hidden");
     btnClub?.classList.remove("active");
     btnRank?.classList.add("active");
-    if(title) title.textContent = "군별 그래프";
+if(title) title.textContent = "루칭방 그래프";
   }
 }
 
@@ -6604,7 +6604,7 @@ function showGraphTab(type){
   <div class="rank-graph-box">
     <button class="rank-graph-close" onclick="closeRankGraphPopup()">닫기</button>
 <div class="graph-title-row">
-  <h2 id="rankGraphTitle">군별 그래프</h2>
+<h2 id="rankGraphTitle">루칭방 그래프</h2>
 
   <div class="graph-tab-buttons">
 <button class="graph-tab-btn active" id="btnGraphTabRank" onclick="showGraphTab('rank')">
@@ -6630,17 +6630,17 @@ function showGraphTab(type){
   <div class="club-graph-grid">
     <div class="club-graph-card">
       <h3>1. 군실명제 등록비율 TOP 10</h3>
-      <canvas id="clubRegisterRateCanvas" width="360" height="420"></canvas>
+<canvas id="clubRegisterRateCanvas" width="390" height="420"></canvas>
     </div>
 
     <div class="club-graph-card">
       <h3>2. 단체별 높은군 비율 TOP 10</h3>
-      <canvas id="clubHighRankCanvas" width="360" height="420"></canvas>
+<canvas id="clubHighRankCanvas" width="390" height="420"></canvas>
     </div>
 
     <div class="club-graph-card">
       <h3>3. 단체 실력 발전가능성 TOP 10</h3>
-      <canvas id="clubGrowthCanvas" width="360" height="420"></canvas>
+<canvas id="clubGrowthCanvas" width="390" height="420"></canvas>
     </div>
   </div>
 </div>
