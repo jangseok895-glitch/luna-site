@@ -6415,7 +6415,6 @@ function drawSimpleBarChart(canvasId, titleData, color){
   if(!canvas) return;
 
   const ctx = canvas.getContext("2d");
-
   const W = canvas.width;
   const left = 105;
   const right = 55;
@@ -6430,12 +6429,12 @@ function drawSimpleBarChart(canvasId, titleData, color){
 
   titleData.forEach((d, i) => {
     const y = top + i * rowH;
-    const barW = (graphW * d.value) / maxVal;
+    const barW = Math.max(2, (graphW * (Number(d.value) || 0)) / maxVal);
 
     ctx.fillStyle = "#111827";
     ctx.textAlign = "right";
     ctx.font = "12px Pretendard";
-    ctx.fillText(d.label, left - 8, y + 14);
+    ctx.fillText(String(d.label || "").slice(0, 8), left - 8, y + 14);
 
     ctx.fillStyle = color;
     ctx.fillRect(left, y, barW, barH);
@@ -6443,75 +6442,17 @@ function drawSimpleBarChart(canvasId, titleData, color){
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "left";
     ctx.font = "11px Pretendard";
-    ctx.fillText(d.text, left + 6, y + 14);
+    ctx.fillText(String(d.text || ""), left + 6, y + 14);
 
     ctx.fillStyle = "#111827";
+    ctx.textAlign = "left";
     ctx.font = "12px Pretendard";
     ctx.fillText(
-      d.scoreText || "",
+      String(d.scoreText || ""),
       Math.min(left + barW + 6, W - 40),
       y + 14
     );
   });
-}
-
-  function easeOut(t){
-    return 1 - Math.pow(1 - t, 3);
-  }
-
-  function draw(progress){
-    ctx.clearRect(0, 0, W, H);
-
-    const rate = easeOut(progress);
-
-    titleData.forEach((d, i) => {
-      const y = top + i * rowH;
-      const value = Number(d.value) || 0;
-      const fullBarW = Math.max(2, (graphW * value) / maxVal);
-      const barW = fullBarW * rate;
-
-      ctx.fillStyle = "#111827";
-      ctx.textAlign = "right";
-      ctx.font = "12px Pretendard";
-      ctx.fillText(String(d.label || "").slice(0, 8), left - 8, y + 14);
-
-      ctx.fillStyle = color;
-      ctx.fillRect(left, y, barW, barH);
-
-      ctx.fillStyle = "#ffffff";
-      ctx.textAlign = "left";
-      ctx.font = "11px Pretendard";
-
-      if(barW > 45){
-        ctx.fillText(String(d.text || ""), left + 6, y + 14);
-      }
-
-      ctx.fillStyle = "#111827";
-      ctx.textAlign = "left";
-      ctx.font = "12px Pretendard";
-
-      if(progress >= 0.75){
-        ctx.fillText(
-          d.scoreText || d.text || "",
-          Math.min(left + fullBarW + 6, W - 42),
-          y + 14
-        );
-      }
-    });
-  }
-
-  function frame(now){
-    const progress = Math.min((now - start) / duration, 1);
-    draw(progress);
-
-    if(progress < 1){
-      graphAnimId = requestAnimationFrame(frame);
-    }else{
-      graphAnimId = null;
-    }
-  }
-
-  graphAnimId = requestAnimationFrame(frame);
 }
 
 function top10ClubRegisterRate(teamRows){
