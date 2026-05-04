@@ -6379,47 +6379,90 @@ function userKey(row){
   return String(row.nickname || "").trim() + "_" + String(row.pin5 || row.pin || "").trim();
 }
 
+let graphAnimId = null;
+
 function drawSimpleBarChart(canvasId, titleData, color){
   const canvas = document.getElementById(canvasId);
   if(!canvas) return;
 
   const ctx = canvas.getContext("2d");
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if(graphAnimId){
+    cancelAnimationFrame(graphAnimId);
+    graphAnimId = null;
+  }
 
   const W = canvas.width;
+  const H = canvas.height;
   const left = 105;
   const right = 55;
   const top = 20;
   const rowH = 34;
   const barH = 18;
 
-  const maxVal = Math.max(...titleData.map(d => d.value), 1);
+  const maxVal = Math.max(...titleData.map(d => Number(d.value) || 0), 1);
   const graphW = W - left - right;
 
-  titleData.forEach((d, i) => {
-    const y = top + i * rowH;
-    const barW = Math.max(2, (graphW * d.value) / maxVal);
+  const duration = 700;
+  const start = performance.now();
 
-    ctx.fillStyle = "#111827";
-    ctx.textAlign = "right";
-    ctx.font = "12px Pretendard";
-    ctx.fillText(d.label, left - 8, y + 14);
+  function easeOut(t){
+    return 1 - Math.pow(1 - t, 3);
+  }
 
-    ctx.fillStyle = color;
-    ctx.fillRect(left, y, barW, barH);
+  function draw(progress){
+    ctx.clearRect(0, 0, W, H);
 
-    // 내부 텍스트 (분포)
-    ctx.fillStyle = "#ffffff";
-    ctx.textAlign = "left";
-    ctx.font = "11px Pretendard";
-    ctx.fillText(d.text, left + 6, y + 14);
+    const rate = easeOut(progress);
 
-    // 👉 오른쪽 퍼센트
-    ctx.fillStyle = "#111827";
-    ctx.textAlign = "left";
-    ctx.font = "12px Pretendard";
-    ctx.fillText(d.scoreText || "", Math.min(left + barW + 6, W - 40), y + 14);
-  });
+    titleData.forEach((d, i) => {
+      const y = top + i * rowH;
+      const value = Number(d.value) || 0;
+      const fullBarW = Math.max(2, (graphW * value) / maxVal);
+      const barW = fullBarW * rate;
+
+      ctx.fillStyle = "#111827";
+      ctx.textAlign = "right";
+      ctx.font = "12px Pretendard";
+      ctx.fillText(String(d.label || "").slice(0, 8), left - 8, y + 14);
+
+      ctx.fillStyle = color;
+      ctx.fillRect(left, y, barW, barH);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "left";
+      ctx.font = "11px Pretendard";
+
+      if(barW > 45){
+        ctx.fillText(String(d.text || ""), left + 6, y + 14);
+      }
+
+      ctx.fillStyle = "#111827";
+      ctx.textAlign = "left";
+      ctx.font = "12px Pretendard";
+
+      if(progress >= 0.75){
+        ctx.fillText(
+          d.scoreText || d.text || "",
+          Math.min(left + fullBarW + 6, W - 42),
+          y + 14
+        );
+      }
+    });
+  }
+
+  function frame(now){
+    const progress = Math.min((now - start) / duration, 1);
+    draw(progress);
+
+    if(progress < 1){
+      graphAnimId = requestAnimationFrame(frame);
+    }else{
+      graphAnimId = null;
+    }
+  }
+
+  graphAnimId = requestAnimationFrame(frame);
 }
 
 function top10ClubRegisterRate(teamRows){
