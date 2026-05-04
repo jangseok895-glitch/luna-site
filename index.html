@@ -6422,6 +6422,8 @@ function drawSimpleBarChart(canvasId, titleData, color){
 
   const ctx = canvas.getContext("2d");
   const W = canvas.width;
+  const H = canvas.height;
+
   const left = 105;
   const right = 55;
   const top = 20;
@@ -6431,34 +6433,55 @@ function drawSimpleBarChart(canvasId, titleData, color){
   const maxVal = Math.max(...titleData.map(d => Number(d.value) || 0), 1);
   const graphW = W - left - right;
 
-  ctx.clearRect(0,0,W,canvas.height);
+  const duration = 650;
+  const start = performance.now();
 
-  titleData.forEach((d, i) => {
-    const y = top + i * rowH;
-    const barW = Math.max(2, (graphW * (Number(d.value) || 0)) / maxVal);
+  function easeOut(t){
+    return 1 - Math.pow(1 - t, 3);
+  }
 
-    ctx.fillStyle = "#111827";
-    ctx.textAlign = "right";
-    ctx.font = "12px Pretendard";
-    ctx.fillText(String(d.label || "").slice(0, 8), left - 8, y + 14);
+  function frame(now){
+    const progress = Math.min((now - start) / duration, 1);
+    const rate = easeOut(progress);
 
-    ctx.fillStyle = color;
-    ctx.fillRect(left, y, barW, barH);
+    ctx.clearRect(0, 0, W, H);
 
-    ctx.fillStyle = "#ffffff";
-    ctx.textAlign = "left";
-    ctx.font = "11px Pretendard";
-    ctx.fillText(String(d.text || ""), left + 6, y + 14);
+    titleData.forEach((d, i) => {
+      const y = top + i * rowH;
+      const value = Number(d.value) || 0;
+      const fullBarW = Math.max(2, (graphW * value) / maxVal);
+      const barW = fullBarW * rate;
 
-    ctx.fillStyle = "#111827";
-    ctx.textAlign = "left";
-    ctx.font = "12px Pretendard";
-    ctx.fillText(
-      String(d.scoreText || ""),
-      Math.min(left + barW + 6, W - 40),
-      y + 14
-    );
-  });
+      ctx.fillStyle = "#111827";
+      ctx.textAlign = "right";
+      ctx.font = "12px Pretendard";
+      ctx.fillText(String(d.label || "").slice(0, 8), left - 8, y + 14);
+
+      ctx.fillStyle = color;
+      ctx.fillRect(left, y, barW, barH);
+
+      if(progress > 0.75){
+        ctx.fillStyle = canvasId === "clubHighRankCanvas" ? "#ffffff" : "#111827";
+        ctx.textAlign = "left";
+        ctx.font = "11px Pretendard";
+        ctx.fillText(String(d.text || ""), left + 6, y + 14);
+
+        ctx.fillStyle = "#111827";
+        ctx.font = "12px Pretendard";
+        ctx.fillText(
+          String(d.scoreText || ""),
+          Math.min(left + fullBarW + 6, W - 42),
+          y + 14
+        );
+      }
+    });
+
+    if(progress < 1){
+      requestAnimationFrame(frame);
+    }
+  }
+
+  requestAnimationFrame(frame);
 }
 
 function top10ClubRegisterRate(teamRows){
