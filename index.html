@@ -2433,6 +2433,59 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   width:100% !important;
   max-height:420px !important;
 }
+
+  .graph-title-row{
+  display:flex !important;
+  align-items:center !important;
+  gap:16px !important;
+  margin-bottom:10px !important;
+}
+
+.graph-title-row h2{
+  margin:0 !important;
+  white-space:nowrap !important;
+}
+
+.graph-tab-buttons{
+  display:flex !important;
+  gap:8px !important;
+}
+
+.graph-tab-btn{
+  padding:8px 14px !important;
+  border-radius:10px !important;
+  border:1px solid #38bdf8 !important;
+  background:#e0f7ff !important;
+  color:#111827 !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+}
+
+.graph-tab-btn.active{
+  background:linear-gradient(135deg,#38bdf8,#2563eb) !important;
+  color:#ffffff !important;
+}
+
+.club-graph-grid{
+  display:grid !important;
+  grid-template-columns:repeat(3, 1fr) !important;
+  gap:14px !important;
+  margin-top:10px !important;
+}
+
+.club-graph-card{
+  background:#ffffff !important;
+  border:1px solid rgba(14,165,233,.25) !important;
+  border-radius:14px !important;
+  padding:12px !important;
+}
+
+.club-graph-card h3{
+  margin:0 0 8px !important;
+  font-size:15px !important;
+  text-align:center !important;
+  color:#111827 !important;
+}
 </style>
 </head>
 
@@ -6293,19 +6346,261 @@ const realH = graphH * realP / scaleMax;
 
 document.getElementById("btnRankGraph")?.addEventListener("click", openRankGraphPopup);
 
+const RANK_POWER_SCORE = {
+  "프로":9,
+  "강주력":8,
+  "주력":7,
+  "1군":6,
+  "2군":5,
+  "3군":4,
+  "4군":3,
+  "5군":2,
+  "6군":1
+};
 
+function userKey(row){
+  return String(row.nickname || "").trim() + "_" + String(row.pin5 || row.pin || "").trim();
+}
+
+function drawSimpleBarChart(canvasId, titleData, color){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const W = canvas.width;
+  const H = canvas.height;
+  const left = 95;
+  const right = 20;
+  const top = 20;
+  const rowH = 34;
+  const barH = 18;
+
+  const maxVal = Math.max(...titleData.map(d => d.value), 1);
+
+  ctx.font = "12px Pretendard, Arial";
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#111827";
+
+  titleData.forEach((d, i) => {
+    const y = top + i * rowH;
+    const label = String(d.label || "").replace("[클럽]", "").replace("[크루]", "");
+    const barW = ((W - left - right) * d.value) / maxVal;
+
+    ctx.fillStyle = "#111827";
+    ctx.textAlign = "right";
+    ctx.fillText(label.slice(0, 8), left - 8, y + 14);
+
+    ctx.fillStyle = color;
+    ctx.fillRect(left, y, barW, barH);
+
+    ctx.fillStyle = "#111827";
+    ctx.textAlign = "left";
+    ctx.fillText(d.text, left + barW + 5, y + 14);
+  });
+}
+
+function top10ClubRegisterRate(teamRows){
+  const counts = {};
+
+  teamRows.forEach(r => {
+    const team = String(r.team_name || "").trim();
+    const key = team + "_" + userKey(r);
+    if(!team || key.endsWith("_")) return;
+
+    if(!counts[team]) counts[team] = new Set();
+    counts[team].add(userKey(r));
+  });
+
+  return Object.entries(counts)
+    .map(([team, set]) => {
+      const count = set.size;
+      const percent = Math.round((count / 100) * 1000) / 10;
+
+      return {
+        label:team,
+        value:percent,
+        text:percent + "%"
+      };
+    })
+    .sort((a,b) => b.value - a.value)
+    .slice(0,10);
+}
+
+function top10ClubHighRank(teamRows){
+  const teams = {};
+
+  teamRows.forEach(r => {
+    const team = String(r.team_name || "").trim();
+    if(!team) return;
+
+    const rank = getRankFromTotal(r.total);
+    const score = RANK_POWER_SCORE[rank] || 1;
+
+    if(!teams[team]) teams[team] = [];
+    teams[team].push(score);
+  });
+
+  return Object.entries(teams)
+    .map(([team, arr]) => {
+      const avg = arr.reduce((a,b) => a + b, 0) / (arr.length || 1);
+      const percent = Math.round((avg / 9) * 1000) / 10;
+
+      return {
+        label:team,
+        value:percent,
+        text:percent + "%"
+      };
+    })
+    .sort((a,b) => b.value - a.value)
+    .slice(0,10);
+}
+
+function top10ClubGrowth(teamRows, profileRows){
+  const memberMap = {};
+  const profileMap = {};
+
+  teamRows.forEach(r => {
+    const key = userKey(r);
+    const team = String(r.team_name || "").trim();
+    if(!key || key === "_" || !team) return;
+
+    if(!memberMap[key]) memberMap[key] = new Set();
+    memberMap[key].add(team);
+  });
+
+  profileRows.forEach(r => {
+    const key = userKey(r);
+    if(!key || key === "_") return;
+
+    if(!profileMap[key]) profileMap[key] = [];
+    profileMap[key].push(r);
+  });
+
+  const growthCounts = {};
+
+  Object.keys(memberMap).forEach(key => {
+    const list = profileMap[key] || [];
+    if(list.length < 2) return;
+
+    list.sort((a,b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+
+    const first = Number(list[0].total) || 0;
+    const last = Number(list[list.length - 1].total) || 0;
+
+    if(last <= first) return;
+
+    memberMap[key].forEach(team => {
+      growthCounts[team] = (growthCounts[team] || 0) + 1;
+    });
+  });
+
+  return Object.entries(growthCounts)
+    .map(([team, count]) => ({
+      label:team,
+      value:count,
+      text:count + "명"
+    }))
+    .sort((a,b) => b.value - a.value)
+    .slice(0,10);
+}
+
+async function openClubActivityGraph(){
+  try{
+    const teamRows = await sbSelect("team_members", q =>
+      q.select("team_name,nickname,pin5,total,updated_at,created_at")
+        .not("team_name", "is", null)
+    );
+
+    const profileRows = await sbSelect("profiles", q =>
+      q.select("nickname,pin5,total,created_at")
+        .not("nickname", "is", null)
+    );
+
+    const registerData = top10ClubRegisterRate(teamRows);
+    const highRankData = top10ClubHighRank(teamRows);
+    const growthData = top10ClubGrowth(teamRows, profileRows);
+
+    drawSimpleBarChart("clubRegisterRateCanvas", registerData, "#2563eb");
+    drawSimpleBarChart("clubHighRankCanvas", highRankData, "#ef4444");
+    drawSimpleBarChart("clubGrowthCanvas", growthData, "#f59e0b");
+
+  }catch(e){
+    console.error(e);
+    alert("클럽별 활동성 그래프를 불러오지 못했습니다.");
+  }
+}
+
+function showGraphTab(type){
+  const rankSection = document.getElementById("rankGraphSection");
+  const clubSection = document.getElementById("clubActivityGraphSection");
+  const title = document.getElementById("rankGraphTitle");
+
+  const btnRank = document.getElementById("btnGraphTabRank");
+  const btnClub = document.getElementById("btnGraphTabClub");
+
+  if(type === "club"){
+    rankSection?.classList.add("hidden");
+    clubSection?.classList.remove("hidden");
+    btnRank?.classList.remove("active");
+    btnClub?.classList.add("active");
+    if(title) title.textContent = "클럽별 활동성 그래프";
+    openClubActivityGraph();
+  }else{
+    clubSection?.classList.add("hidden");
+    rankSection?.classList.remove("hidden");
+    btnClub?.classList.remove("active");
+    btnRank?.classList.add("active");
+    if(title) title.textContent = "군별 그래프";
+  }
+}
+
+document.getElementById("btnGraphTabRank")?.addEventListener("click", () => {
+  showGraphTab("rank");
+});
+
+document.getElementById("btnGraphTabClub")?.addEventListener("click", () => {
+  showGraphTab("club");
+});
 </script>
   <div id="rankGraphPopup" class="hidden">
   <div class="rank-graph-box">
     <button class="rank-graph-close" onclick="closeRankGraphPopup()">닫기</button>
-    <h2>군별 그래프</h2>
+<div class="graph-title-row">
+  <h2 id="rankGraphTitle">군별 그래프</h2>
 
-    <div class="rank-graph-legend">
-      <span class="save-bar"></span> 군별 저장
-      <span class="real-bar"></span> 실명제 등록
+  <div class="graph-tab-buttons">
+    <button class="graph-tab-btn active" id="btnGraphTabRank">군별 그래프</button>
+    <button class="graph-tab-btn" id="btnGraphTabClub">클럽별 활동성 그래프</button>
+  </div>
+</div>
+
+<div id="rankGraphSection">
+  <div class="rank-graph-legend">
+    <span class="save-bar"></span> 군별 저장
+    <span class="real-bar"></span> 실명제 등록
+  </div>
+
+  <canvas id="rankGraphCanvas" width="900" height="520"></canvas>
+</div>
+
+<div id="clubActivityGraphSection" class="hidden">
+  <div class="club-graph-grid">
+    <div class="club-graph-card">
+      <h3>1. 군실명제 등록비율 TOP 10</h3>
+      <canvas id="clubRegisterRateCanvas" width="360" height="420"></canvas>
     </div>
 
-    <canvas id="rankGraphCanvas" width="900" height="420"></canvas>
+    <div class="club-graph-card">
+      <h3>2. 클럽별 높은군 비율 TOP 10</h3>
+      <canvas id="clubHighRankCanvas" width="360" height="420"></canvas>
+    </div>
+
+    <div class="club-graph-card">
+      <h3>3. 클럽 실력 발전가능성 TOP 10</h3>
+      <canvas id="clubGrowthCanvas" width="360" height="420"></canvas>
+    </div>
   </div>
 </div>
 </body>
