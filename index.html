@@ -6452,51 +6452,39 @@ function drawSimpleBarChart(canvasId, titleData, color){
       const fullBarW = Math.max(2, (graphW * value) / maxVal);
       const barW = fullBarW * rate;
 
+      // 왼쪽 단체명
       ctx.fillStyle = "#111827";
       ctx.textAlign = "right";
       ctx.font = "12px Pretendard";
       ctx.fillText(String(d.label || "").slice(0, 8), left - 8, y + 14);
 
+      // 막대
       ctx.fillStyle = color;
       ctx.fillRect(left, y, barW, barH);
 
       if(progress > 0.75){
-if(
-  canvasId === "clubRegisterRateCanvas" ||
-  canvasId === "clubHighRankCanvas" ||
-  canvasId === "clubGrowthCanvas"
-){
-  ctx.fillStyle = "#ffffff";
-  ctx.shadowColor = "rgba(0,0,0,0.35)";
-  ctx.shadowBlur = 3;
-}else{
-  ctx.fillStyle = "#111827";
-  ctx.shadowBlur = 0;
-}
+        // 막대 안쪽 글씨/퍼센트: 흰색
+        ctx.fillStyle = "#ffffff";
+        ctx.shadowColor = "rgba(0,0,0,0.45)";
+        ctx.shadowBlur = 4;
+        ctx.textAlign = "left";
+        ctx.font = "bold 11px Pretendard";
 
-ctx.textAlign = "left";
-ctx.font = "bold 11px Pretendard";
-ctx.fillText(String(d.text || ""), left + 6, y + 14);
-
-ctx.shadowBlur = 0;
-
-        if(canvasId === "clubRegisterRateCanvas" || canvasId === "clubGrowthCanvas"){
-          ctx.fillStyle = "#ffffff";
-          ctx.shadowColor = "rgba(0,0,0,0.4)";
-          ctx.shadowBlur = 4;
-        }else{
-          ctx.fillStyle = "#111827";
-          ctx.shadowBlur = 0;
-        }
-
-        ctx.font = "12px Pretendard";
-        ctx.fillText(
-          String(d.scoreText || ""),
-          Math.min(left + fullBarW + 6, W - 42),
-          y + 14
-        );
+        ctx.fillText(String(d.text || ""), left + 6, y + 14);
 
         ctx.shadowBlur = 0;
+
+        // 2번 그래프만 오른쪽 점수 표시
+        if(canvasId === "clubHighRankCanvas"){
+          ctx.fillStyle = "#111827";
+          ctx.textAlign = "left";
+          ctx.font = "12px Pretendard";
+          ctx.fillText(
+            String(d.scoreText || ""),
+            Math.min(left + fullBarW + 6, W - 42),
+            y + 14
+          );
+        }
       }
     });
 
@@ -6507,7 +6495,6 @@ ctx.shadowBlur = 0;
 
   requestAnimationFrame(frame);
 }
-
 function top10ClubRegisterRate(teamRows){
   const counts = {};
 
