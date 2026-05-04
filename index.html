@@ -6461,10 +6461,24 @@ function drawSimpleBarChart(canvasId, titleData, color){
       ctx.fillRect(left, y, barW, barH);
 
       if(progress > 0.75){
-        ctx.fillStyle = canvasId === "clubHighRankCanvas" ? "#ffffff" : "#111827";
-        ctx.textAlign = "left";
-        ctx.font = "11px Pretendard";
-        ctx.fillText(String(d.text || ""), left + 6, y + 14);
+if(
+  canvasId === "clubRegisterRateCanvas" ||
+  canvasId === "clubHighRankCanvas" ||
+  canvasId === "clubGrowthCanvas"
+){
+  ctx.fillStyle = "#ffffff";
+  ctx.shadowColor = "rgba(0,0,0,0.35)";
+  ctx.shadowBlur = 3;
+}else{
+  ctx.fillStyle = "#111827";
+  ctx.shadowBlur = 0;
+}
+
+ctx.textAlign = "left";
+ctx.font = "bold 11px Pretendard";
+ctx.fillText(String(d.text || ""), left + 6, y + 14);
+
+ctx.shadowBlur = 0;
 
         if(canvasId === "clubRegisterRateCanvas" || canvasId === "clubGrowthCanvas"){
           ctx.fillStyle = "#ffffff";
@@ -6759,13 +6773,16 @@ const rankColor = {
 };
 
 ctx.textAlign = "center";
-ctx.font = "bold 14px Pretendard";
+ctx.font = "900 18px Pretendard";
+
+ctx.lineWidth = 5;
+ctx.strokeStyle = "#ffffff";
+ctx.strokeText(label, centerX, H - 8);
+
 ctx.fillStyle = rankColor[label] || "#2563eb";
-ctx.shadowColor = "rgba(37,99,235,0.35)";
-ctx.shadowBlur = 6;
+ctx.fillText(label, centerX, H - 8);
 
-ctx.fillText(label, centerX, H - 10);
-
+ctx.lineWidth = 1;
 ctx.shadowBlur = 0;
     });
 
