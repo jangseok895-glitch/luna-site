@@ -6287,14 +6287,13 @@ function realPercentByRank(saveRows, realRows){
 
 // 저장자 기준 Set 만들기
 const saveKeySet = new Set(
-  saveRows.map(r => r.nickname + "_" + r.pin)
+  saveRows.map(r => r.nickname + "_" + r.pin5)
 );
 
-// 실명제는 저장자에 있는 사람만 인정
 realRows.forEach(row => {
-  const key = row.nickname + "_" + row.pin;
+  const key = row.nickname + "_" + row.pin5;
 
-  if(!saveKeySet.has(key)) return; // ❗ 여기 핵심
+  if(!saveKeySet.has(key)) return;
 
   const rank = getRankFromTotal(row.total);
 
