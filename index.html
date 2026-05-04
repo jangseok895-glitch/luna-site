@@ -6651,6 +6651,43 @@ function drawRankGraphAnimated(dataBlue, dataRed){
 
     ctx.clearRect(0,0,W,H);
 
+    // ===== 그래프 테두리 / 구분선 =====
+const graphTop = 18;
+const graphBottom = H - bottom;
+const graphLeft = padding;
+const graphRight = W - padding;
+
+// 바깥 테두리
+ctx.save();
+ctx.strokeStyle = "#cbd5e1";
+ctx.lineWidth = 2;
+ctx.strokeRect(graphLeft, graphTop, graphRight - graphLeft, graphBottom - graphTop);
+
+// 프로~6군 라벨 영역과 그래프 영역 구분선
+ctx.beginPath();
+ctx.moveTo(graphLeft, graphBottom);
+ctx.lineTo(graphRight, graphBottom);
+ctx.strokeStyle = "#94a3b8";
+ctx.lineWidth = 2;
+ctx.stroke();
+
+// 군마다 세로 점선 구분선
+ctx.setLineDash([6, 6]);
+ctx.strokeStyle = "rgba(148, 163, 184, 0.75)";
+ctx.lineWidth = 1;
+
+for(let i = 1; i < labels.length; i++){
+  const x = padding + groupWidth * i;
+
+  ctx.beginPath();
+  ctx.moveTo(x, graphTop);
+  ctx.lineTo(x, graphBottom);
+  ctx.stroke();
+}
+
+ctx.setLineDash([]);
+ctx.restore();
+    
     labels.forEach((label,i)=>{
       const blueP = Number(dataBlue[i]?.percent) || 0;
       const redP = Number(dataRed[i]?.percent) || 0;
