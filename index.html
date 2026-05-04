@@ -6162,7 +6162,7 @@ function getRankFromTotal(total){
   return "6군";
 }
 
-function percentMapFromRows(rows){
+function percentMapFromRows(rows, baseTotal){
   const counts = {};
   RANK_GRAPH_LABELS.forEach(r => counts[r] = 0);
 
@@ -6173,7 +6173,7 @@ function percentMapFromRows(rows){
     }
   });
 
-  const total = rows.length || 1;
+  const total = baseTotal || rows.length || 1;
 
   return RANK_GRAPH_LABELS.map(r => ({
     rank:r,
@@ -6192,8 +6192,10 @@ async function openRankGraphPopup(){
       q.select("total").not("total", "is", null)
     );
 
-    const saveData = percentMapFromRows(saveRows);
-    const realData = percentMapFromRows(realRows);
+const baseTotal = saveRows.length || 1;
+
+const saveData = percentMapFromRows(saveRows, baseTotal);
+const realData = percentMapFromRows(realRows, baseTotal);
 
     document.getElementById("rankGraphPopup").classList.remove("hidden");
     drawRankGraph(saveData, realData);
