@@ -2365,6 +2365,74 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   position:relative !important;
   z-index:2147483647 !important;
 }
+
+  #rankGraphPopup{
+  position:fixed !important;
+  inset:0 !important;
+  background:rgba(0,0,0,.55) !important;
+  z-index:2147483640 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+#rankGraphPopup.hidden{
+  display:none !important;
+}
+
+.rank-graph-box{
+  width:min(980px,94vw) !important;
+  background:#ffffff !important;
+  border-radius:18px !important;
+  padding:22px !important;
+  position:relative !important;
+  box-shadow:0 12px 40px rgba(0,0,0,.35) !important;
+}
+
+.rank-graph-box h2{
+  margin:0 0 14px !important;
+  color:#111827 !important;
+}
+
+.rank-graph-close{
+  position:absolute !important;
+  top:14px !important;
+  right:14px !important;
+  background:#ef4444 !important;
+  color:#fff !important;
+  border:0 !important;
+  border-radius:10px !important;
+  padding:8px 14px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+}
+
+.rank-graph-legend{
+  margin-bottom:12px !important;
+  color:#111827 !important;
+  font-weight:900 !important;
+}
+
+.rank-graph-legend span{
+  display:inline-block !important;
+  width:18px !important;
+  height:12px !important;
+  border-radius:3px !important;
+  margin:0 6px 0 14px !important;
+}
+
+.rank-graph-legend .save-bar{
+  background:#2563eb !important;
+}
+
+.rank-graph-legend .real-bar{
+  background:#ef4444 !important;
+}
+
+#rankGraphCanvas{
+  width:100% !important;
+  max-height:420px !important;
+}
 </style>
 </head>
 
@@ -2439,6 +2507,7 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
             <button class="btn" id="btnLoad">불러오기</button>
             <button class="btn" id="btnReset">초기화</button>
             <button class="btn" id="btnJpg">스크린샷</button>
+            <button class="btn blue" id="btnRankGraph">군별 그래프</button>
 
             <!-- ✅ 버튼 하나 -->
           </div>
@@ -6075,6 +6144,147 @@ async function startLiveLogNeon(){
 }
 
 setTimeout(startLiveLogNeon, 1200);
+
+  const RANK_GRAPH_LABELS = ["프로","강주력","주력","1군","2군","3군","4군","5군","6군"];
+
+function getRankFromTotal(total){
+  total = Number(total) || 0;
+
+  for(const r of RANKS){
+    if(total >= r.min){
+      return String(r.label)
+        .replace("당신은", "")
+        .replace("입니다", "")
+        .trim();
+    }
+  }
+
+  return "6군";
+}
+
+function percentMapFromRows(rows){
+  const counts = {};
+  RANK_GRAPH_LABELS.forEach(r => counts[r] = 0);
+
+  rows.forEach(row => {
+    const rank = getRankFromTotal(row.total);
+    if(counts[rank] !== undefined){
+      counts[rank]++;
+    }
+  });
+
+  const total = rows.length || 1;
+
+  return RANK_GRAPH_LABELS.map(r => ({
+    rank:r,
+    count:counts[r],
+    percent:Math.round((counts[r] / total) * 1000) / 10
+  }));
+}
+
+async function openRankGraphPopup(){
+  try{
+    const saveRows = await sbSelect("profiles", q =>
+      q.select("total").not("total", "is", null)
+    );
+
+    const realRows = await sbSelect("team_members", q =>
+      q.select("total").not("total", "is", null)
+    );
+
+    const saveData = percentMapFromRows(saveRows);
+    const realData = percentMapFromRows(realRows);
+
+    document.getElementById("rankGraphPopup").classList.remove("hidden");
+    drawRankGraph(saveData, realData);
+
+  }catch(e){
+    console.error(e);
+    alert("군별 그래프를 불러오지 못했습니다.");
+  }
+}
+
+function closeRankGraphPopup(){
+  document.getElementById("rankGraphPopup").classList.add("hidden");
+}
+
+function drawRankGraph(saveData, realData){
+  const canvas = document.getElementById("rankGraphCanvas");
+  const ctx = canvas.getContext("2d");
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const W = canvas.width;
+  const H = canvas.height;
+
+  const left = 70;
+  const bottom = 60;
+  const top = 30;
+  const graphH = H - top - bottom;
+  const groupW = (W - left - 30) / RANK_GRAPH_LABELS.length;
+  const barW = 26;
+
+  ctx.font = "14px Pretendard, Arial";
+  ctx.fillStyle = "#111827";
+  ctx.strokeStyle = "#d1d5db";
+  ctx.lineWidth = 1;
+
+  for(let i=0;i<=5;i++){
+    const y = top + graphH - (graphH * i / 5);
+    const val = i * 20;
+
+    ctx.beginPath();
+    ctx.moveTo(left, y);
+    ctx.lineTo(W - 20, y);
+    ctx.stroke();
+
+    ctx.fillText(val + "%", 20, y + 5);
+  }
+
+  RANK_GRAPH_LABELS.forEach((label, i) => {
+    const x = left + groupW * i + groupW / 2;
+
+    const saveP = saveData[i].percent;
+    const realP = realData[i].percent;
+
+    const saveH = graphH * saveP / 100;
+    const realH = graphH * realP / 100;
+
+    const baseY = top + graphH;
+
+    ctx.fillStyle = "#2563eb";
+    ctx.fillRect(x - barW - 3, baseY - saveH, barW, saveH);
+
+    ctx.fillStyle = "#ef4444";
+    ctx.fillRect(x + 3, baseY - realH, barW, realH);
+
+    ctx.fillStyle = "#111827";
+    ctx.textAlign = "center";
+    ctx.fillText(label, x, H - 25);
+
+    ctx.font = "12px Pretendard, Arial";
+    ctx.fillText(saveP + "%", x - barW / 2 - 3, baseY - saveH - 6);
+    ctx.fillText(realP + "%", x + barW / 2 + 3, baseY - realH - 6);
+    ctx.font = "14px Pretendard, Arial";
+  });
+
+  ctx.textAlign = "left";
+}
+
+document.getElementById("btnRankGraph")?.addEventListener("click", openRankGraphPopup);
 </script>
+  <div id="rankGraphPopup" class="hidden">
+  <div class="rank-graph-box">
+    <button class="rank-graph-close" onclick="closeRankGraphPopup()">닫기</button>
+    <h2>군별 그래프</h2>
+
+    <div class="rank-graph-legend">
+      <span class="save-bar"></span> 군별 저장
+      <span class="real-bar"></span> 실명제 등록
+    </div>
+
+    <canvas id="rankGraphCanvas" width="900" height="420"></canvas>
+  </div>
+</div>
 </body>
 </html>
