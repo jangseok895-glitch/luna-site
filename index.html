@@ -2248,7 +2248,7 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 
   /* 단체명/단체대표 입력칸 폭 조정 */
 .team-name-leader-row{
-  grid-template-columns:72px 255px 90px 1fr !important;
+  grid-template-columns:72px 150px 90px 1fr !important;
 }
 
 #reqTeamRawName{
@@ -5346,20 +5346,29 @@ async function handleTeamScreenshotFile(file){
 
 async function viewTeamRequestPhotoById(requestId){
   try{
-    if(!checkAdminPw()) return;
     const rows = await sbSelect("team_register_requests", q =>
       q.select("screenshot_url").eq("id", requestId).limit(1)
     );
+
     if(!rows.length) throw new Error("사진 정보를 찾지 못했습니다.");
+
     const imgData = String(rows[0].screenshot_url || "").trim();
+
+    // 사진이 없으면 운영진 비번 입력 전에 먼저 안내
     if(!imgData || imgData === "스크린샷 제외"){
-      alert("업로드한 사진이 없습니다.");
+      alert("등록된 사진이 없습니다.");
       return;
     }
+
+    // 사진이 있을 때만 운영진 비번 확인
+    if(!checkAdminPw()) return;
+
     const img = document.getElementById("teamRequestPhotoImg");
     const pop = document.getElementById("teamRequestPhotoPopup");
+
     if(img) img.src = imgData;
     if(pop) pop.classList.remove("hidden");
+
   }catch(e){
     console.error(e);
     alert(e.message || "사진보기 실패");
