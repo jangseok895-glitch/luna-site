@@ -6461,7 +6461,7 @@ function top10ClubHighRank(teamRows){
     if(!team) return;
 
     const rank = getRankFromTotal(r.total);
-    const score = RANK_POWER_SCORE[rank] || 1;
+    const score = RANK_POWER_SCORE[rank] || 2;
 
     if(!teams[team]){
       teams[team] = {
@@ -6477,7 +6477,7 @@ function top10ClubHighRank(teamRows){
   return Object.entries(teams)
     .map(([team, data]) => {
       const avg = data.scores.reduce((a,b) => a + b, 0) / (data.scores.length || 1);
-      const percent = Math.round((avg / 9) * 1000) / 10;
+      const finalScore = Math.round(avg * 10) / 10;
 
       const topRanks = Object.entries(data.ranks)
         .sort((a,b) => b[1] - a[1])
@@ -6487,8 +6487,8 @@ function top10ClubHighRank(teamRows){
 
       return {
         label:team,
-        value:percent,
-        text:`${topRanks} 분포 ${team.includes("[크루]") ? "크루" : "클럽"}`
+        value:finalScore,
+        text:`${topRanks} / ${finalScore}점`
       };
     })
     .sort((a,b) => b.value - a.value)
