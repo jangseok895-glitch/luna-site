@@ -6358,9 +6358,9 @@ function drawRankGraph(saveData, realData){
     const saveP = saveData[i].percent;
     const realP = realData[i].percent;
 
-    const maxPercent = Math.max(
-  ...saveData.map(d => d.percent),
-  ...realData.map(d => d.percent),
+const maxPercent = Math.max(
+  ...saveData.map(d => Number(d.percent) || 0),
+  ...realData.map(d => Number(d.percent) || 0),
   1
 );
 
@@ -6629,7 +6629,7 @@ if(title) title.textContent = "루칭방 그래프";
   }
 }
 
-  function drawRankGraphAnimated(dataBlue, dataRed){
+function drawRankGraphAnimated(dataBlue, dataRed){
   const canvas = document.getElementById("rankGraphCanvas");
   if(!canvas) return;
 
@@ -6641,11 +6641,11 @@ if(title) title.textContent = "루칭방 그래프";
   const barWidth = 20;
   const gap = 18;
 
-const maxVal = Math.max(
-  ...dataBlue.map(d => Number(d.percent) || 0),
-  ...dataRed.map(d => Number(d.percent) || 0),
-  1
-);
+  const maxVal = Math.max(
+    ...dataBlue.map(d => Number(d.percent) || 0),
+    ...dataRed.map(d => Number(d.percent) || 0),
+    1
+  );
 
   const duration = 700;
   const start = performance.now();
@@ -6660,31 +6660,33 @@ const maxVal = Math.max(
 
     ctx.clearRect(0,0,W,H);
 
-dataBlue.forEach((v,i)=>{
-  const blueP = Number(v.percent) || 0;
-  const redP = Number(dataRed[i]?.percent) || 0;
+    dataBlue.forEach((v,i)=>{
+      const blueP = Number(v.percent) || 0;
+      const redP = Number(dataRed[i]?.percent) || 0;
 
-  const x = padding + i * (barWidth*2 + gap);
+      const x = padding + i * (barWidth*2 + gap);
 
-  const hBlue = (H-80)*(blueP/maxVal)*rate;
-  const hRed  = (H-80)*(redP/maxVal)*rate;
+      const hBlue = (H-80)*(blueP/maxVal)*rate;
+      const hRed  = (H-80)*(redP/maxVal)*rate;
 
-  ctx.fillStyle = "#3b82f6";
-  ctx.fillRect(x, H-40-hBlue, barWidth, hBlue);
+      ctx.fillStyle = "#3b82f6";
+      ctx.fillRect(x, H-40-hBlue, barWidth, hBlue);
 
-  ctx.fillStyle = "#ef4444";
-  ctx.fillRect(x+barWidth+4, H-40-hRed, barWidth, hRed);
+      ctx.fillStyle = "#ef4444";
+      ctx.fillRect(x+barWidth+4, H-40-hRed, barWidth, hRed);
 
-  if(progress > 0.7){
-    ctx.fillStyle="#111827";
-    ctx.font="12px Pretendard";
-    ctx.textAlign="center";
+      // 퍼센트 텍스트 (80% 이후 표시)
+      if(progress > 0.8){
+        ctx.fillStyle="#111827";
+        ctx.font="12px Pretendard";
+        ctx.textAlign="center";
 
-    ctx.fillText(blueP+"%", x+barWidth/2, H-45-hBlue);
-    ctx.fillText(redP+"%", x+barWidth+4+barWidth/2, H-45-hRed);
-  }
-});
+        ctx.fillText(blueP+"%", x+barWidth/2, H-45-hBlue);
+        ctx.fillText(redP+"%", x+barWidth+4+barWidth/2, H-45-hRed);
+      }
+    });
 
+    // 🔥 계속 애니메이션
     if(progress < 1){
       requestAnimationFrame(frame);
     }
@@ -6692,6 +6694,7 @@ dataBlue.forEach((v,i)=>{
 
   requestAnimationFrame(frame);
 }
+  
 </script>
   <div id="rankGraphPopup" class="hidden">
   <div class="rank-graph-box">
