@@ -6466,24 +6466,24 @@ function drawSimpleBarChart(canvasId, titleData, color){
         ctx.font = "11px Pretendard";
         ctx.fillText(String(d.text || ""), left + 6, y + 14);
 
-if(canvasId === "clubRegisterRateCanvas" || canvasId === "clubGrowthCanvas"){
-  ctx.fillStyle = "#ffffff";
-  ctx.shadowColor = "rgba(0,0,0,0.4)";
-  ctx.shadowBlur = 4;
-}else{
-  ctx.fillStyle = "#111827";
-  ctx.shadowBlur = 0;
-}
+        if(canvasId === "clubRegisterRateCanvas" || canvasId === "clubGrowthCanvas"){
+          ctx.fillStyle = "#ffffff";
+          ctx.shadowColor = "rgba(0,0,0,0.4)";
+          ctx.shadowBlur = 4;
+        }else{
+          ctx.fillStyle = "#111827";
+          ctx.shadowBlur = 0;
+        }
 
-ctx.font = "12px Pretendard";
-ctx.fillText(
-  String(d.scoreText || ""),
-  Math.min(left + fullBarW + 6, W - 42),
-  y + 14
-);
+        ctx.font = "12px Pretendard";
+        ctx.fillText(
+          String(d.scoreText || ""),
+          Math.min(left + fullBarW + 6, W - 42),
+          y + 14
+        );
 
-// 그림자 초기화
-ctx.shadowBlur = 0;
+        ctx.shadowBlur = 0;
+      }
     });
 
     if(progress < 1){
