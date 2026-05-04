@@ -2308,6 +2308,39 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   position:relative !important;
   z-index:1000000003 !important;
 }
+
+  /* 단체 등록요청 팝업 최상단 고정 */
+#teamRequestPopup{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  z-index:2147483000 !important;
+  background:rgba(0,0,0,.45) !important;
+
+  display:flex !important;
+  align-items:flex-start !important;
+  justify-content:center !important;
+
+  padding-top:30px !important;
+  overflow-y:auto !important;
+}
+
+#teamRequestPopup .team-request-box,
+#teamRequestPopup .search-popup-box{
+  position:relative !important;
+  z-index:2147483001 !important;
+  max-height:none !important;
+  height:auto !important;
+  overflow:visible !important;
+}
+
+/* 아래 군표 표가 팝업보다 위로 올라오지 못하게 */
+#realPcTableSection,
+#pcTableSection,
+.table-wrap{
+  z-index:1 !important;
+}
 </style>
 </head>
 
