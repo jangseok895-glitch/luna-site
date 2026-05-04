@@ -6301,6 +6301,10 @@ async function openRankGraphPopup(){
     const saveData = percentMapFromRows(saveRows, baseTotal);
     const realData = percentMapFromRows(realRows, baseTotal);
 
+    // 탭 다시 누를 때 모션 재실행용 저장
+    window.lastSaveData = saveData;
+    window.lastRealData = realData;
+
     const rateEl = document.getElementById("overallRealRate");
     if(rateEl){
       const overallRate = Math.max(
@@ -6310,8 +6314,10 @@ async function openRankGraphPopup(){
       rateEl.textContent = "전체 실명제 참여율 : " + overallRate + "%";
     }
 
-    document.getElementById("rankGraphPopup").classList.remove("hidden");
-drawRankGraphAnimated(saveData, realData);
+    const popup = document.getElementById("rankGraphPopup");
+    popup?.classList.remove("hidden");
+
+    showGraphTab("rank");
 
   }catch(e){
     console.error(e);
@@ -6606,26 +6612,38 @@ async function openClubActivityGraph(){
 }
 
 function showGraphTab(type){
-  const rankPanel = document.getElementById("rankGraphPanel");
-  const clubPanel = document.getElementById("clubGraphPanel");
+  const rankSection = document.getElementById("rankGraphSection");
+  const clubSection = document.getElementById("clubActivityGraphSection");
+  const title = document.getElementById("rankGraphTitle");
 
-  document.getElementById("btnGraphTabRank")?.classList.toggle("active", type === "rank");
-  document.getElementById("btnGraphTabClub")?.classList.toggle("active", type === "club");
-
-  if(type === "rank"){
-    rankPanel.style.display = "block";
-    clubPanel.style.display = "none";
-
-    drawRankGraphAnimated(window.rankSaveData || saveData, window.rankRealData || realData);
-  }
+  const btnRank = document.getElementById("btnGraphTabRank");
+  const btnClub = document.getElementById("btnGraphTabClub");
 
   if(type === "club"){
-    rankPanel.style.display = "none";
-    clubPanel.style.display = "block";
+    rankSection?.classList.add("hidden");
+    clubSection?.classList.remove("hidden");
 
-    drawSimpleBarChart("clubRegisterRateCanvas", window.clubRegisterData || []);
-    drawSimpleBarChart("clubHighRankCanvas", window.clubHighRankData || []);
-    drawSimpleBarChart("clubGrowthCanvas", window.clubGrowthData || []);
+    btnRank?.classList.remove("active");
+    btnClub?.classList.add("active");
+
+    if(title) title.textContent = "루칭방 그래프";
+
+    setTimeout(() => {
+      openClubActivityGraph();
+    }, 50);
+
+  }else{
+    clubSection?.classList.add("hidden");
+    rankSection?.classList.remove("hidden");
+
+    btnClub?.classList.remove("active");
+    btnRank?.classList.add("active");
+
+    if(title) title.textContent = "루칭방 그래프";
+
+    if(window.lastSaveData && window.lastRealData){
+      drawRankGraphAnimated(window.lastSaveData, window.lastRealData);
+    }
   }
 }
 
