@@ -2288,6 +2288,26 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 #reqTeamLeaderName{
   width:210px !important;
 }
+
+  /* 단체 등록요청 팝업을 모든 화면보다 위로 */
+#teamRequestPopup{
+  z-index:1000000000 !important;
+}
+
+#teamRequestPopup .team-request-box,
+#teamRequestPopup .search-popup-box{
+  position:relative !important;
+  z-index:1000000001 !important;
+}
+
+  #teamRequestPhotoPopup{
+  z-index:1000000002 !important;
+}
+
+#teamRequestPhotoPopup .team-photo-box{
+  position:relative !important;
+  z-index:1000000003 !important;
+}
 </style>
 </head>
 
