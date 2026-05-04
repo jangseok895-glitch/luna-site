@@ -6467,9 +6467,12 @@ function drawSimpleBarChart(canvasId, titleData, color){
         ctx.fillText(String(d.text || ""), left + 6, y + 14);
 
 if(canvasId === "clubRegisterRateCanvas" || canvasId === "clubGrowthCanvas"){
-  ctx.fillStyle = "#ffffff";  // 🔥 흰색
+  ctx.fillStyle = "#ffffff";
+  ctx.shadowColor = "rgba(0,0,0,0.4)";
+  ctx.shadowBlur = 4;
 }else{
-  ctx.fillStyle = "#111827";  // 기존 색
+  ctx.fillStyle = "#111827";
+  ctx.shadowBlur = 0;
 }
 
 ctx.font = "12px Pretendard";
@@ -6478,7 +6481,9 @@ ctx.fillText(
   Math.min(left + fullBarW + 6, W - 42),
   y + 14
 );
-      }
+
+// 그림자 초기화
+ctx.shadowBlur = 0;
     });
 
     if(progress < 1){
