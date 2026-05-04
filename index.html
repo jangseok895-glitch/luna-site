@@ -6410,11 +6410,17 @@ function drawSimpleBarChart(canvasId, titleData, color){
     ctx.fillStyle = color;
     ctx.fillRect(left, y, barW, barH);
 
-    if(canvasId === "clubHighRankCanvas"){
-      ctx.fillStyle = "#ffffff";
-      ctx.textAlign = "left";
-      ctx.font = "11px Pretendard, Arial";
-      ctx.fillText(text, left + 6, y + 14);
+if(canvasId === "clubHighRankCanvas"){
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "left";
+  ctx.font = "11px Pretendard, Arial";
+  ctx.fillText(text, left + 6, y + 14);
+
+  ctx.fillStyle = "#111827";
+  ctx.textAlign = "left";
+  ctx.font = "12px Pretendard, Arial";
+  ctx.fillText(d.scoreText || "", Math.min(left + barW + 6, W - 40), y + 14);
+}
     }else{
       ctx.fillStyle = "#111827";
       ctx.textAlign = "left";
@@ -6485,11 +6491,12 @@ function top10ClubHighRank(teamRows){
         .map(([rank]) => rank)
         .join(",");
 
-      return {
-        label:team,
-        value:finalScore,
-        text:`${topRanks} / ${finalScore}점`
-      };
+return {
+  label:team,
+  value:finalScore,
+  text:`${topRanks} 분포 크루`,
+  scoreText:`${finalScore}%`
+};
     })
     .sort((a,b) => b.value - a.value)
     .slice(0,10);
