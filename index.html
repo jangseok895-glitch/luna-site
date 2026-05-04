@@ -2486,6 +2486,23 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   text-align:center !important;
   color:#111827 !important;
 }
+
+  .club-graph-grid{
+  grid-template-columns:repeat(3, 1fr) !important;
+  gap:10px !important;
+  width:100% !important;
+}
+
+.club-graph-card{
+  min-width:0 !important;
+  padding:10px !important;
+  overflow:hidden !important;
+}
+
+.club-graph-card canvas{
+  width:100% !important;
+  height:390px !important;
+}
 </style>
 </head>
 
@@ -6385,7 +6402,7 @@ function drawSimpleBarChart(canvasId, titleData, color){
 
   titleData.forEach((d, i) => {
     const y = top + i * rowH;
-    const label = String(d.label || "").replace("[클럽]", "").replace("[크루]", "");
+const label = String(d.label || "");
     const barW = ((W - left - right) * d.value) / maxVal;
 
     ctx.fillStyle = "#111827";
@@ -6395,9 +6412,17 @@ function drawSimpleBarChart(canvasId, titleData, color){
     ctx.fillStyle = color;
     ctx.fillRect(left, y, barW, barH);
 
-    ctx.fillStyle = "#111827";
-    ctx.textAlign = "left";
-    ctx.fillText(d.text, left + barW + 5, y + 14);
+if(canvasId === "clubHighRankCanvas"){
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "left";
+  ctx.font = "11px Pretendard, Arial";
+  ctx.fillText(d.text, left + 6, y + 14);
+}else{
+  ctx.fillStyle = "#111827";
+  ctx.textAlign = "left";
+  ctx.font = "12px Pretendard, Arial";
+  ctx.fillText(d.text, left + barW + 5, y + 14);
+}
   });
 }
 
@@ -6438,19 +6463,32 @@ function top10ClubHighRank(teamRows){
     const rank = getRankFromTotal(r.total);
     const score = RANK_POWER_SCORE[rank] || 1;
 
-    if(!teams[team]) teams[team] = [];
-    teams[team].push(score);
+    if(!teams[team]){
+      teams[team] = {
+        scores:[],
+        ranks:{}
+      };
+    }
+
+    teams[team].scores.push(score);
+    teams[team].ranks[rank] = (teams[team].ranks[rank] || 0) + 1;
   });
 
   return Object.entries(teams)
-    .map(([team, arr]) => {
-      const avg = arr.reduce((a,b) => a + b, 0) / (arr.length || 1);
+    .map(([team, data]) => {
+      const avg = data.scores.reduce((a,b) => a + b, 0) / (data.scores.length || 1);
       const percent = Math.round((avg / 9) * 1000) / 10;
+
+      const topRanks = Object.entries(data.ranks)
+        .sort((a,b) => b[1] - a[1])
+        .slice(0,3)
+        .map(([rank]) => rank)
+        .join(",");
 
       return {
         label:team,
         value:percent,
-        text:percent + "%"
+        text:`${topRanks} 분포 ${team.includes("[크루]") ? "크루" : "클럽"}`
       };
     })
     .sort((a,b) => b.value - a.value)
@@ -6497,11 +6535,16 @@ function top10ClubGrowth(teamRows, profileRows){
   });
 
   return Object.entries(growthCounts)
-    .map(([team, count]) => ({
-      label:team,
-      value:count,
-      text:count + "명"
-    }))
+    .map(([team, count]) => {
+      // 10명 = 100% 기준
+      const percent = Math.round((count / 10) * 1000) / 10;
+
+      return {
+        label:team,
+        value:percent,
+        text:percent + "%"
+      };
+    })
     .sort((a,b) => b.value - a.value)
     .slice(0,10);
 }
@@ -6528,7 +6571,7 @@ async function openClubActivityGraph(){
 
   }catch(e){
     console.error(e);
-    alert("클럽별 활동성 그래프를 불러오지 못했습니다.");
+    alert("단체별 활동성 그래프를 불러오지 못했습니다.");
   }
 }
 
@@ -6545,7 +6588,7 @@ function showGraphTab(type){
     clubSection?.classList.remove("hidden");
     btnRank?.classList.remove("active");
     btnClub?.classList.add("active");
-    if(title) title.textContent = "클럽별 활동성 그래프";
+    if(title) title.textContent = "단체별 활동성 그래프";
     openClubActivityGraph();
   }else{
     clubSection?.classList.add("hidden");
@@ -6569,7 +6612,7 @@ function showGraphTab(type){
 </button>
 
 <button class="graph-tab-btn" id="btnGraphTabClub" onclick="showGraphTab('club')">
-  클럽별 활동성 그래프
+  단체별 활동성 그래프
 </button>
   </div>
 </div>
@@ -6591,12 +6634,12 @@ function showGraphTab(type){
     </div>
 
     <div class="club-graph-card">
-      <h3>2. 클럽별 높은군 비율 TOP 10</h3>
+      <h3>2. 단체별 높은군 비율 TOP 10</h3>
       <canvas id="clubHighRankCanvas" width="360" height="420"></canvas>
     </div>
 
     <div class="club-graph-card">
-      <h3>3. 클럽 실력 발전가능성 TOP 10</h3>
+      <h3>3. 단체 실력 발전가능성 TOP 10</h3>
       <canvas id="clubGrowthCanvas" width="360" height="420"></canvas>
     </div>
   </div>
