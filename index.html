@@ -2260,6 +2260,34 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 #reqTeamLeaderName{
   width:180px !important;
 }
+
+  /* 단체 등록요청 팝업 스크롤 제거 + 아래로 길게 */
+#teamRequestPopup{
+  align-items:flex-start !important;
+  overflow-y:auto !important;
+  padding-top:20px !important;
+}
+
+#teamRequestPopup .search-popup-box,
+#teamRequestPopup .team-request-box{
+  max-height:none !important;
+  height:auto !important;
+  overflow:visible !important;
+}
+
+/* 단체명/단체대표 입력칸 폭 재조정 */
+.team-name-leader-row{
+  grid-template-columns:72px 130px 70px 210px !important;
+  gap:4px !important;
+}
+
+#reqTeamRawName{
+  width:130px !important;
+}
+
+#reqTeamLeaderName{
+  width:210px !important;
+}
 </style>
 </head>
 
