@@ -2503,6 +2503,32 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   width:100% !important;
   height:390px !important;
 }
+
+  .new-badge-wrap{
+  position:relative;
+  display:inline-block;
+}
+
+.new-badge{
+  position:absolute;
+  top:-10px;
+  right:-12px;
+
+  background:#ef4444;
+  color:#fff;
+
+  font-size:12px;
+  font-weight:900;
+
+  padding:4px 8px;
+  border-radius:6px;
+
+  transform:rotate(18deg);
+
+  box-shadow:0 2px 8px rgba(0,0,0,.25);
+
+  letter-spacing:.5px;
+}
 </style>
 </head>
 
@@ -2577,7 +2603,10 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
             <button class="btn" id="btnLoad">불러오기</button>
             <button class="btn" id="btnReset">초기화</button>
             <button class="btn" id="btnJpg">스크린샷</button>
-            <button class="btn blue" id="btnRankGraph">루칭방 그래프</button>
+<div class="new-badge-wrap">
+  <button class="btn blue">루칭방 그래프</button>
+  <span class="new-badge">신규</span>
+</div>
 
             <!-- ✅ 버튼 하나 -->
           </div>
@@ -6282,7 +6311,7 @@ async function openRankGraphPopup(){
     }
 
     document.getElementById("rankGraphPopup").classList.remove("hidden");
-    drawRankGraph(saveData, realData);
+drawRankGraphAnimated(blueData, redData)
 
   }catch(e){
     console.error(e);
@@ -6387,13 +6416,7 @@ function drawSimpleBarChart(canvasId, titleData, color){
 
   const ctx = canvas.getContext("2d");
 
-  if(graphAnimId){
-    cancelAnimationFrame(graphAnimId);
-    graphAnimId = null;
-  }
-
   const W = canvas.width;
-  const H = canvas.height;
   const left = 105;
   const right = 55;
   const top = 20;
@@ -6403,8 +6426,34 @@ function drawSimpleBarChart(canvasId, titleData, color){
   const maxVal = Math.max(...titleData.map(d => Number(d.value) || 0), 1);
   const graphW = W - left - right;
 
-  const duration = 700;
-  const start = performance.now();
+  ctx.clearRect(0,0,W,canvas.height);
+
+  titleData.forEach((d, i) => {
+    const y = top + i * rowH;
+    const barW = (graphW * d.value) / maxVal;
+
+    ctx.fillStyle = "#111827";
+    ctx.textAlign = "right";
+    ctx.font = "12px Pretendard";
+    ctx.fillText(d.label, left - 8, y + 14);
+
+    ctx.fillStyle = color;
+    ctx.fillRect(left, y, barW, barH);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "left";
+    ctx.font = "11px Pretendard";
+    ctx.fillText(d.text, left + 6, y + 14);
+
+    ctx.fillStyle = "#111827";
+    ctx.font = "12px Pretendard";
+    ctx.fillText(
+      d.scoreText || "",
+      Math.min(left + barW + 6, W - 40),
+      y + 14
+    );
+  });
+}
 
   function easeOut(t){
     return 1 - Math.pow(1 - t, 3);
@@ -6639,6 +6688,63 @@ if(title) title.textContent = "루칭방 그래프";
   }
 }
 
+  function drawRankGraphAnimated(dataBlue, dataRed){
+  const canvas = document.getElementById("rankGraphCanvas");
+  if(!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width;
+  const H = canvas.height;
+
+  const padding = 40;
+  const barWidth = 20;
+  const gap = 18;
+
+  const maxVal = Math.max(...dataBlue, ...dataRed, 1);
+
+  const duration = 700;
+  const start = performance.now();
+
+  function easeOut(t){
+    return 1 - Math.pow(1 - t, 3);
+  }
+
+  function frame(now){
+    const progress = Math.min((now - start)/duration, 1);
+    const rate = easeOut(progress);
+
+    ctx.clearRect(0,0,W,H);
+
+    dataBlue.forEach((v,i)=>{
+      const x = padding + i * (barWidth*2 + gap);
+
+      const hBlue = (H-80)*(v/maxVal)*rate;
+      const hRed  = (H-80)*(dataRed[i]/maxVal)*rate;
+
+      ctx.fillStyle = "#3b82f6";
+      ctx.fillRect(x, H-40-hBlue, barWidth, hBlue);
+
+      ctx.fillStyle = "#ef4444";
+      ctx.fillRect(x+barWidth+4, H-40-hRed, barWidth, hRed);
+
+      // 퍼센트 표시
+      if(progress > 0.7){
+        ctx.fillStyle="#111827";
+        ctx.font="12px Pretendard";
+        ctx.textAlign="center";
+
+        ctx.fillText(v+"%", x+barWidth/2, H-45-hBlue);
+        ctx.fillText(dataRed[i]+"%", x+barWidth+4+barWidth/2, H-45-hRed);
+      }
+    });
+
+    if(progress < 1){
+      requestAnimationFrame(frame);
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
 </script>
   <div id="rankGraphPopup" class="hidden">
   <div class="rank-graph-box">
