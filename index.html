@@ -6719,28 +6719,30 @@ const maxVal = Math.max(
 
     ctx.clearRect(0,0,W,H);
 
-    dataBlue.forEach((v,i)=>{
-      const x = padding + i * (barWidth*2 + gap);
+dataBlue.forEach((v,i)=>{
+  const blueP = Number(v.percent) || 0;
+  const redP = Number(dataRed[i]?.percent) || 0;
 
-      const hBlue = (H-80)*(v/maxVal)*rate;
-      const hRed  = (H-80)*(dataRed[i]/maxVal)*rate;
+  const x = padding + i * (barWidth*2 + gap);
 
-      ctx.fillStyle = "#3b82f6";
-      ctx.fillRect(x, H-40-hBlue, barWidth, hBlue);
+  const hBlue = (H-80)*(blueP/maxVal)*rate;
+  const hRed  = (H-80)*(redP/maxVal)*rate;
 
-      ctx.fillStyle = "#ef4444";
-      ctx.fillRect(x+barWidth+4, H-40-hRed, barWidth, hRed);
+  ctx.fillStyle = "#3b82f6";
+  ctx.fillRect(x, H-40-hBlue, barWidth, hBlue);
 
-      // 퍼센트 표시
-      if(progress > 0.7){
-        ctx.fillStyle="#111827";
-        ctx.font="12px Pretendard";
-        ctx.textAlign="center";
+  ctx.fillStyle = "#ef4444";
+  ctx.fillRect(x+barWidth+4, H-40-hRed, barWidth, hRed);
 
-        ctx.fillText(v+"%", x+barWidth/2, H-45-hBlue);
-        ctx.fillText(dataRed[i]+"%", x+barWidth+4+barWidth/2, H-45-hRed);
-      }
-    });
+  if(progress > 0.7){
+    ctx.fillStyle="#111827";
+    ctx.font="12px Pretendard";
+    ctx.textAlign="center";
+
+    ctx.fillText(blueP+"%", x+barWidth/2, H-45-hBlue);
+    ctx.fillText(redP+"%", x+barWidth+4+barWidth/2, H-45-hRed);
+  }
+});
 
     if(progress < 1){
       requestAnimationFrame(frame);
