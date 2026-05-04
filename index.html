@@ -2229,6 +2229,22 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 .promo-board-row div:nth-child(2){
   text-align:left !important;
 }
+
+  .team-name-leader-row{
+  grid-template-columns:72px 1fr 90px 1fr !important;
+}
+
+  .team-leader-name{
+  display:inline-block !important;
+  margin-left:10px !important;
+  padding:3px 8px !important;
+  border-radius:999px !important;
+  background:#e0f7ff !important;
+  border:1px solid #38bdf8 !important;
+  color:#2563eb !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+}
 </style>
 </head>
 
@@ -2441,10 +2457,13 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
         </select>
       </div>
 
-      <div class="team-request-form-row">
-        <b>단체명</b>
-        <input id="reqTeamRawName" class="text" placeholder="단체명 입력">
-      </div>
+<div class="team-request-form-row team-name-leader-row">
+  <b>단체명</b>
+  <input id="reqTeamRawName" class="text" placeholder="단체명 입력">
+
+  <b>단체대표</b>
+  <input id="reqTeamLeaderName" class="text" placeholder="대표자 아이디">
+</div>
 
       <div class="team-request-form-row">
         <b>비밀번호</b>
@@ -5359,11 +5378,15 @@ async function loadTeamRequests(){
     }
 
     list.innerHTML = rows.map(r => {
-      const name = esc(r.team_name || "");
+const name = esc(r.team_name || "");
+const leader = esc(r.leader_name || "");
       return `
         <div class="team-pending-item" data-team-request-id="${r.id}">
           <div>
-            <div class="team-pending-name">${name}</div>
+<div class="team-pending-name">
+  ${name}
+  ${leader ? `<span class="team-leader-name">대표자 : ${leader}</span>` : ""}
+</div>
             <div class="team-pending-sub">운영진 비밀번호 확인 후 사진보기/승인 가능</div>
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
@@ -5383,8 +5406,11 @@ async function loadTeamRequests(){
 async function submitTeamRequest(){
   try{
     await ensureTeamRequestTableReady();
-    const teamName = getTeamRequestName();
-    const pw = String(document.getElementById("reqTeamPw")?.value || "").trim();
+const teamName = getTeamRequestName();
+const leaderName = String(document.getElementById("reqTeamLeaderName")?.value || "").trim();
+const pw = String(document.getElementById("reqTeamPw")?.value || "").trim();
+
+if(!leaderName) throw new Error("단체대표 아이디를 입력해주세요.");
     const screenshotData = String(TEAM_REQUEST_SCREENSHOT_DATA || "").trim();
 
     if(!/^\d{4}$/.test(pw)) throw new Error("비밀번호는 숫자 4자리로 입력해주세요.");
@@ -5401,6 +5427,7 @@ async function submitTeamRequest(){
 
     const { error } = await sb.from("team_register_requests").insert({
       team_name: teamName,
+ leader_name: leaderName,
       pw: pw,
       screenshot_url: skipScreenshot ? "스크린샷 제외" : screenshotData,
       status: "대기"
