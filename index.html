@@ -6556,13 +6556,6 @@ function showGraphTab(type){
   }
 }
 
-document.getElementById("btnGraphTabRank")?.addEventListener("click", () => {
-  showGraphTab("rank");
-});
-
-document.getElementById("btnGraphTabClub")?.addEventListener("click", () => {
-  showGraphTab("club");
-});
 </script>
   <div id="rankGraphPopup" class="hidden">
   <div class="rank-graph-box">
@@ -6571,14 +6564,19 @@ document.getElementById("btnGraphTabClub")?.addEventListener("click", () => {
   <h2 id="rankGraphTitle">군별 그래프</h2>
 
   <div class="graph-tab-buttons">
-    <button class="graph-tab-btn active" id="btnGraphTabRank">군별 그래프</button>
-    <button class="graph-tab-btn" id="btnGraphTabClub">클럽별 활동성 그래프</button>
+<button class="graph-tab-btn active" id="btnGraphTabRank" onclick="showGraphTab('rank')">
+  군별 그래프
+</button>
+
+<button class="graph-tab-btn" id="btnGraphTabClub" onclick="showGraphTab('club')">
+  클럽별 활동성 그래프
+</button>
   </div>
 </div>
 
 <div id="rankGraphSection">
   <div class="rank-graph-legend">
-    <span class="save-bar"></span> 군별 저장
+    <span class="save-bar"></span> 군별 비율
     <span class="real-bar"></span> 실명제 등록
   </div>
 
