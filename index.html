@@ -6245,8 +6245,14 @@ function drawRankGraph(saveData, realData){
     const saveP = saveData[i].percent;
     const realP = realData[i].percent;
 
-    const saveH = graphH * saveP / 100;
-    const realH = graphH * realP / 100;
+    const maxPercent = Math.max(
+  ...saveData.map(d => d.percent),
+  ...realData.map(d => d.percent),
+  1
+);
+const scaleMax = Math.ceil(maxPercent / 10) * 10;
+const saveH = graphH * saveP / scaleMax;
+const realH = graphH * realP / scaleMax;
 
     const baseY = top + graphH;
 
@@ -6282,7 +6288,7 @@ document.getElementById("btnRankGraph")?.addEventListener("click", openRankGraph
       <span class="real-bar"></span> 실명제 등록
     </div>
 
-    <canvas id="rankGraphCanvas" width="900" height="800"></canvas>
+    <canvas id="rankGraphCanvas" width="900" height="420"></canvas>
   </div>
 </div>
 </body>
