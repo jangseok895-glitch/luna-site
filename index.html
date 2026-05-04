@@ -2204,6 +2204,21 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   justify-content:flex-start !important;
   padding-left:300px !important;
 }
+
+  /* 검색 결과 팝업 내부 스크롤 제거 + 아래로 길게 표시 */
+#memberSearchPopup{
+  align-items:flex-start !important;
+  justify-content:flex-start !important;
+  padding-top:120px !important;
+  padding-left:90px !important;
+  overflow-y:auto !important;
+}
+
+#memberSearchPopup .search-popup-box{
+  max-height:none !important;
+  height:auto !important;
+  overflow:visible !important;
+}
 </style>
 </head>
 
