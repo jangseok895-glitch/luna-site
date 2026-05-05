@@ -6503,7 +6503,9 @@ return {
 function top10ClubGrowth(teamRows, profileRows){
   const memberMap = {};
   const profileMap = {};
+  const teamMembers = {};
 
+  // 단체별 멤버 정리
   teamRows.forEach(r => {
     const key = userKey(r);
     const team = String(r.team_name || "").trim();
@@ -6511,8 +6513,12 @@ function top10ClubGrowth(teamRows, profileRows){
 
     if(!memberMap[key]) memberMap[key] = new Set();
     memberMap[key].add(team);
+
+    if(!teamMembers[team]) teamMembers[team] = new Set();
+    teamMembers[team].add(key);
   });
 
+  // 개인별 기록 이력 정리
   profileRows.forEach(r => {
     const key = userKey(r);
     if(!key || key === "_") return;
@@ -6521,7 +6527,7 @@ function top10ClubGrowth(teamRows, profileRows){
     profileMap[key].push(r);
   });
 
-  const growthCounts = {};
+  const teamGrowth = {};
 
   Object.keys(memberMap).forEach(key => {
     const list = profileMap[key] || [];
@@ -6531,23 +6537,51 @@ function top10ClubGrowth(teamRows, profileRows){
 
     const first = Number(list[0].total) || 0;
     const last = Number(list[list.length - 1].total) || 0;
+    const diff = last - first;
 
-    if(last <= first) return;
+    // 성장하지 않았으면 제외
+    if(diff <= 0) return;
 
     memberMap[key].forEach(team => {
-      growthCounts[team] = (growthCounts[team] || 0) + 1;
+      if(!teamGrowth[team]){
+        teamGrowth[team] = {
+          growCount: 0,
+          growSum: 0
+        };
+      }
+
+      teamGrowth[team].growCount += 1; // 성장한 인원 수
+      teamGrowth[team].growSum += diff; // 성장한 점수 총합
     });
   });
 
-  return Object.entries(growthCounts)
-    .map(([team, count]) => {
-      // 10명 = 100% 기준
-      const percent = Math.round((count / 10) * 1000) / 10;
+  return Object.entries(teamGrowth)
+    .map(([team, data]) => {
+      const totalMembers = teamMembers[team] ? teamMembers[team].size : 1;
+
+      const growCount = data.growCount;
+      const growRate = growCount / totalMembers; // 단체 인원 대비 성장률
+      const avgGrowth = data.growSum / growCount; // 성장한 사람들의 평균 성장폭
+
+      /*
+        최종 점수 기준
+        - 성장률 60%
+        - 평균 성장폭 30%
+        - 성장 인원 수 10%
+      */
+      const score =
+        (growRate * 60) +
+        (Math.min(avgGrowth, 100) / 100 * 30) +
+        (Math.min(growCount, 10) / 10 * 10);
+
+      const finalScore = Math.round(score * 10) / 10;
+      const rateText = Math.round(growRate * 1000) / 10;
 
       return {
-        label:team,
-        value:percent,
-        text:percent + "%"
+        label: team,
+        value: finalScore,
+        text: `${finalScore}%`,
+        scoreText: `성장 ${growCount}명 / ${rateText}%`
       };
     })
     .sort((a,b) => b.value - a.value)
