@@ -3076,7 +3076,7 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
       <input id="boardTitleInput" class="text" placeholder="제목"/>
       <textarea id="boardContentInput" class="text board-textarea" placeholder="내용"></textarea>
 
-<input id="boardImageInput" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" multiple/>
+<input id="boardImageInput" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"/>
 
 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
   <input id="boardPinInput" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="비밀번호 4자리"/>
@@ -4769,30 +4769,21 @@ imageUrls: r.image_urls || [],
   };
 }
 
-async function addBoardPostSupabase(board, title, content, writer, pin4, imageDataList){
-  const imageUrls = [];
-
-  const list = Array.isArray(imageDataList)
-    ? imageDataList
-    : (imageDataList ? [imageDataList] : []);
-
-  list.forEach(img => {
-    if(img && img.base64){
-      imageUrls.push(`data:${img.mimeType};base64,${img.base64}`);
-    }
-  });
-
+async function addBoardPostSupabase(board, title, content, writer, pin4, imageData){
   const row = {
     board:String(board || "promo"),
     title:String(title || ""),
     content:String(content || ""),
     writer:String(writer || ""),
     pin4:String(pin4 || ""),
-    image_url:imageUrls[0] || "",
-    image_urls:imageUrls,
+    image_url:"",
     views:0,
     created_at:new Date().toISOString()
   };
+
+  if(imageData && imageData.base64){
+    row.image_url = `data:${imageData.mimeType};base64,${imageData.base64}`;
+  }
 
   const { error } = await sb.from("board_posts").insert(row);
   if(error) throw error;
@@ -5468,17 +5459,11 @@ document.addEventListener("click", async function(e){
     const content = document.getElementById("boardContentInput").value.trim();
     const writer = document.getElementById("boardWriter").value.trim();
     const pin = document.getElementById("boardPinInput").value.trim();
-const imageInput = document.getElementById("boardImageInput");
-const files = Array.from(imageInput.files || []);
+const file = document.getElementById("boardImageInput").files[0];
 
-if(files.length > 3){
-  alert("사진은 최대 3장까지만 업로드할 수 있습니다.");
-  return;
-}
+let imageData = null;
 
-let imageDataList = [];
-
-for(const file of files){
+if(file){
   const allowedTypes = ["image/jpeg", "image/png"];
 
   if(!allowedTypes.includes(file.type)){
@@ -5486,7 +5471,7 @@ for(const file of files){
     return;
   }
 
-  imageDataList.push(await fileToBase64Data(file));
+  imageData = await fileToBase64Data(file);
 }
 
     showLoading("게시글 등록 중입니다");
@@ -5510,7 +5495,7 @@ for(const file of files){
         hideLoading();
         toast(e.message || "작성 실패");
       })
-.addBoardPost(CURRENT_BOARD, title, content, writer, pin, imageDataList);
+.addBoardPost(CURRENT_BOARD, title, content, writer, pin, imageData);
 
     return;
   }
@@ -5621,7 +5606,9 @@ function openBoardEditForm(idx, pin){
 
       <input id="editBoardImage" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"/>
 
-      ${p.imageUrl ? `<img class="board-post-img" src="${esc(p.imageUrl)}" alt="기존 이미지">` : ""}
+${p.imageUrl ? `
+  <img class="board-post-img" src="${esc(p.imageUrl)}" alt="첨부 이미지">
+` : ""}
 
       <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
         <button class="btn gold" onclick="submitBoardEdit('${p.id}', '${pin.replace(/'/g, "\\'")}')">수정 완료</button>
