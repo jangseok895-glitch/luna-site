@@ -2622,6 +2622,39 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   height:520px !important;
   display:block !important;
 }
+
+  /* 선호맵 난이도별 2x2 바둑판 */
+#preferMapGraphSection{
+  width:100% !important;
+}
+
+.prefer-diff-grid{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:14px !important;
+  width:100% !important;
+}
+
+.prefer-diff-card{
+  border:1px solid #bae6fd !important;
+  border-radius:14px !important;
+  background:#ffffff !important;
+  padding:10px 12px !important;
+  min-height:300px !important;
+}
+
+.prefer-diff-card h3{
+  margin:0 0 8px !important;
+  text-align:center !important;
+  font-size:17px !important;
+  font-weight:900 !important;
+}
+
+.prefer-diff-card canvas{
+  width:100% !important;
+  height:250px !important;
+  display:block !important;
+}
 </style>
 </head>
 
@@ -6647,13 +6680,17 @@ function drawSimpleBarChart(canvasId, titleData, color){
   const W = canvas.width;
   const H = canvas.height;
 
-  const isPrefer = canvasId === "preferMapCanvas";
+  const isPrefer =
+    canvasId === "preferRookieCanvas" ||
+    canvasId === "preferL3Canvas" ||
+    canvasId === "preferL2Canvas" ||
+    canvasId === "preferL1Canvas";
 
-  const left = isPrefer ? 110 : 105;
-  const right = isPrefer ? 100 : 75;
-  const top = isPrefer ? 60 : 20;
-  const rowH = isPrefer ? 48 : 34;
-  const barH = isPrefer ? 26 : 18;
+  const left = isPrefer ? 90 : 105;
+  const right = isPrefer ? 62 : 75;
+  const top = isPrefer ? 18 : 20;
+  const rowH = isPrefer ? 42 : 34;
+  const barH = isPrefer ? 22 : 18;
 
   const maxVal = Math.max(...titleData.map(d => Number(d.value) || 0), 1);
   const graphW = W - left - right;
@@ -6663,6 +6700,31 @@ function drawSimpleBarChart(canvasId, titleData, color){
 
   function easeOut(t){
     return 1 - Math.pow(1 - t, 3);
+  }
+
+  function drawTextBadge(text, x, y, font, fillColor){
+    ctx.save();
+    ctx.font = font;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+
+    const paddingX = 5;
+    const paddingY = 3;
+    const w = ctx.measureText(text).width + paddingX * 2;
+    const h = 18;
+
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.strokeStyle = "rgba(15,23,42,0.25)";
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.roundRect(x - paddingX, y - h / 2, w, h, 5);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = fillColor;
+    ctx.fillText(text, x, y + 0.5);
+    ctx.restore();
   }
 
   function frame(now){
@@ -6676,52 +6738,45 @@ function drawSimpleBarChart(canvasId, titleData, color){
       const value = Number(d.value) || 0;
       const fullBarW = Math.max(2, (graphW * value) / maxVal);
       const barW = fullBarW * rate;
+      const midY = y + barH / 2;
 
-if(isPrefer){
-  ctx.fillStyle = "#111827";
-  ctx.textAlign = "right";
-  ctx.font = "bold 16px Pretendard";
+      ctx.fillStyle = "#111827";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.font = isPrefer ? "bold 13px Pretendard" : "12px Pretendard";
 
-  const labelRank = d.groupTitle
-    ? `${d.groupTitle} ${d.groupRank}위`
-    : `${i + 1}위`;
-
-  ctx.fillText(labelRank, left - 12, y + 20);
-}else{
-        ctx.fillStyle = "#111827";
-        ctx.textAlign = "right";
-        ctx.font = "12px Pretendard";
-        ctx.fillText(String(d.label || "").slice(0, 8), left - 8, y + 14);
-      }
+      const leftLabel = isPrefer ? `${i + 1}위` : String(d.label || "").slice(0, 8);
+      ctx.fillText(leftLabel, left - 8, midY);
 
       ctx.fillStyle = color;
       ctx.fillRect(left, y, barW, barH);
 
       if(progress > 0.75){
-        ctx.fillStyle = "#ffffff";
-        ctx.shadowColor = "rgba(0,0,0,0.45)";
-        ctx.shadowBlur = 4;
-        ctx.textAlign = "left";
-        ctx.font = isPrefer ? "bold 15px Pretendard" : "bold 11px Pretendard";
-
         const insideText = isPrefer ? String(d.label || "") : String(d.text || "");
-        ctx.fillText(insideText, left + 10, y + 19);
 
-        ctx.shadowBlur = 0;
+        if(insideText){
+          drawTextBadge(
+            insideText,
+            left + 7,
+            midY,
+            isPrefer ? "bold 12px Pretendard" : "bold 10px Pretendard",
+            "#111827"
+          );
+        }
 
-        if(canvasId === "clubHighRankCanvas" || canvasId === "preferMapCanvas"){
-          ctx.fillStyle = "#111827";
-          ctx.textAlign = "left";
-          ctx.font = isPrefer ? "bold 15px Pretendard" : "12px Pretendard";
-
-          ctx.fillText(
+        if(canvasId === "clubHighRankCanvas" || isPrefer){
+          drawTextBadge(
             String(d.scoreText || d.value || ""),
-            Math.min(left + fullBarW + 10, W - 80),
-            y + 19
+            Math.min(left + fullBarW + 8, W - 55),
+            midY,
+            isPrefer ? "bold 12px Pretendard" : "bold 10px Pretendard",
+            "#111827"
           );
         }
       }
     });
+
+    ctx.textBaseline = "alphabetic";
 
     if(progress < 1){
       requestAnimationFrame(frame);
@@ -6813,7 +6868,12 @@ function top10PreferMaps(teamRows, mapRows){
     }
   });
 
-  const mapScores = {};
+  const mapScores = {
+    "루키":{},
+    "L3":{},
+    "L2":{},
+    "L1":{}
+  };
 
   teamRows.forEach(r => {
     let selected = r.selections || r.selected;
@@ -6833,7 +6893,6 @@ function top10PreferMaps(teamRows, mapRows){
       if(!info) return;
 
       let rank = "";
-
       if(typeof data === "string"){
         rank = data;
       }else{
@@ -6843,18 +6902,15 @@ function top10PreferMaps(teamRows, mapRows){
       const score = RANK_POWER_SCORE[rank] || 0;
       if(!score) return;
 
-      const mapName = info.name;
       const difficulty = info.difficulty;
+      if(!mapScores[difficulty]) return;
 
-      if(!mapScores[difficulty]){
-        mapScores[difficulty] = {};
-      }
+      const mapName = info.name;
 
       if(!mapScores[difficulty][mapName]){
         mapScores[difficulty][mapName] = {
           score:0,
-          count:0,
-          difficulty
+          count:0
         };
       }
 
@@ -6863,38 +6919,27 @@ function top10PreferMaps(teamRows, mapRows){
     });
   });
 
-  const result = [];
-
-  const groups = [
-    { key:"루키", title:"루키맵", limit:3 },
-    { key:"L3", title:"L3맵", limit:5 },
-    { key:"L2", title:"L2맵", limit:5 },
-    { key:"L1", title:"L1맵", limit:3 }
-  ];
-
-  groups.forEach(group => {
-    const rows = Object.entries(mapScores[group.key] || {})
-      .sort((a,b) => b[1].score - a[1].score)
-      .slice(0, group.limit);
-
-    const totalScore = Object.values(mapScores[group.key] || {})
+  function makeList(diff, limit){
+    const totalScore = Object.values(mapScores[diff] || {})
       .reduce((sum, data) => sum + data.score, 0) || 1;
 
-    rows.forEach(([mapName, data], index) => {
-      const percent = ((data.score / totalScore) * 100).toFixed(2);
-
-      result.push({
+    return Object.entries(mapScores[diff] || {})
+      .map(([mapName, data]) => ({
         label: mapName,
         value: data.score,
         text: mapName,
-        scoreText: `${percent}%`,
-        groupTitle: group.title,
-        groupRank: index + 1
-      });
-    });
-  });
+        scoreText: `${((data.score / totalScore) * 100).toFixed(2)}%`
+      }))
+      .sort((a,b) => b.value - a.value)
+      .slice(0, limit);
+  }
 
-  return result;
+  return {
+    rookie: makeList("루키", 3),
+    l3: makeList("L3", 5),
+    l2: makeList("L2", 5),
+    l1: makeList("L1", 3)
+  };
 }
 
 function top10ClubGrowth(teamRows, profileRows){
@@ -6997,9 +7042,9 @@ async function openClubActivityGraph(){
         .not("nickname", "is", null)
     );
 
-const mapRows = await sbSelect("map_records", q =>
-  q.select("id,map_name,difficulty")
-);
+    const mapRows = await sbSelect("map_records", q =>
+      q.select("id,map_name,difficulty")
+    );
 
     const registerData = top10ClubRegisterRate(teamRows);
     const highRankData = top10ClubHighRank(teamRows);
@@ -7009,7 +7054,11 @@ const mapRows = await sbSelect("map_records", q =>
     drawSimpleBarChart("clubRegisterRateCanvas", registerData, "#2563eb");
     drawSimpleBarChart("clubHighRankCanvas", highRankData, "#ef4444");
     drawSimpleBarChart("clubGrowthCanvas", growthData, "#f59e0b");
-    drawSimpleBarChart("preferMapCanvas", preferMapData, "#2563eb");
+
+    drawSimpleBarChart("preferRookieCanvas", preferMapData.rookie, "#2563eb");
+    drawSimpleBarChart("preferL3Canvas", preferMapData.l3, "#2563eb");
+    drawSimpleBarChart("preferL2Canvas", preferMapData.l2, "#2563eb");
+    drawSimpleBarChart("preferL1Canvas", preferMapData.l1, "#2563eb");
 
   }catch(e){
     console.error(e);
@@ -7267,13 +7316,29 @@ ctx.shadowBlur = 0;
   </div>
 </div>
 
-    <div id="preferMapGraphSection" class="hidden">
-  <div class="club-graph-grid">
-    <div class="club-graph-card">
-      <h3>선호맵 TOP 10</h3>
-<canvas id="preferMapCanvas" width="1150" height="520"></canvas>
+<div id="preferMapGraphSection" class="hidden">
+  <div class="prefer-diff-grid">
+    <div class="prefer-diff-card">
+      <h3>루키맵 TOP 3</h3>
+      <canvas id="preferRookieCanvas" width="520" height="250"></canvas>
+    </div>
+
+    <div class="prefer-diff-card">
+      <h3>L3맵 TOP 5</h3>
+      <canvas id="preferL3Canvas" width="520" height="250"></canvas>
+    </div>
+
+    <div class="prefer-diff-card">
+      <h3>L2맵 TOP 5</h3>
+      <canvas id="preferL2Canvas" width="520" height="250"></canvas>
+    </div>
+
+    <div class="prefer-diff-card">
+      <h3>L1맵 TOP 3</h3>
+      <canvas id="preferL1Canvas" width="520" height="250"></canvas>
     </div>
   </div>
+</div>
 </div>
 </body>
 </html>
