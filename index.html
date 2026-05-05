@@ -2652,7 +2652,7 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 
 .prefer-diff-card canvas{
   width:100% !important;
-  height:250px !important;
+  height:270px !important;
   display:block !important;
 }
 </style>
@@ -6934,12 +6934,12 @@ function top10PreferMaps(teamRows, mapRows){
       .slice(0, limit);
   }
 
-  return {
-    rookie: makeList("루키", 3),
-    l3: makeList("L3", 5),
-    l2: makeList("L2", 5),
-    l1: makeList("L1", 3)
-  };
+return {
+  rookie: makeList("루키", 5),
+  l3: makeList("L3", 5),
+  l2: makeList("L2", 5),
+  l1: makeList("L1", 5)
+};
 }
 
 function top10ClubGrowth(teamRows, profileRows){
@@ -7055,10 +7055,10 @@ async function openClubActivityGraph(){
     drawSimpleBarChart("clubHighRankCanvas", highRankData, "#ef4444");
     drawSimpleBarChart("clubGrowthCanvas", growthData, "#f59e0b");
 
-    drawSimpleBarChart("preferRookieCanvas", preferMapData.rookie, "#2563eb");
-    drawSimpleBarChart("preferL3Canvas", preferMapData.l3, "#2563eb");
-    drawSimpleBarChart("preferL2Canvas", preferMapData.l2, "#2563eb");
-    drawSimpleBarChart("preferL1Canvas", preferMapData.l1, "#2563eb");
+drawSimpleBarChart("preferRookieCanvas", preferMapData.rookie, "#d4a017");
+drawSimpleBarChart("preferL3Canvas", preferMapData.l3, "#22c55e");
+drawSimpleBarChart("preferL2Canvas", preferMapData.l2, "#2563eb");
+drawSimpleBarChart("preferL1Canvas", preferMapData.l1, "#ef4444");
 
   }catch(e){
     console.error(e);
