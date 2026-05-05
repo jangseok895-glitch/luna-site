@@ -2603,21 +2603,33 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 </head>
 
 <body>
-<audio id="bgm" autoplay loop playsinline preload="auto">
+<audio id="bgm" loop playsinline preload="auto">
   <source src="https://xyibdanmecakevhtdajl.supabase.co/storage/v1/object/sign/bgm/kartmusic.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yYTViYzBjYS04YWY4LTQ2OGItOTczYi1iMTRmM2E3OTMxOWUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJiZ20va2FydG11c2ljLm1wMyIsImlhdCI6MTc3Nzk3Mzc2NiwiZXhwIjoxODA5NTA5NzY2fQ.4M-WbrEqR230y4WrxetX8ewbFhLbU0ZcSXCwNJPcwsk" type="audio/mpeg">
 </audio>
 
+<button id="bgmBtn" onclick="toggleBGM()" style="position:fixed; bottom:15px; right:15px; z-index:999999;">
+  🎵 음악 켜기
+</button>
+
 <script>
-window.addEventListener("load", () => {
+function toggleBGM(){
   const bgm = document.getElementById("bgm");
+  const btn = document.getElementById("bgmBtn");
+
   bgm.volume = 0.35;
 
-  bgm.play().catch(() => {
-    console.log("자동재생 차단됨 (브라우저 정책)");
-  });
-});
+  if(bgm.paused){
+    bgm.play().then(() => {
+      btn.innerText = "🔇 음악 끄기";
+    }).catch(() => {
+      alert("브라우저 정책상 버튼을 한 번 더 눌러주세요.");
+    });
+  }else{
+    bgm.pause();
+    btn.innerText = "🎵 음악 켜기";
+  }
+}
 </script>
-
   
 <div id="imagePopup" class="image-popup hidden" onclick="closeImagePopup()">
   <div class="image-popup-box" onclick="event.stopPropagation()">
