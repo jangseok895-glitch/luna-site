@@ -6913,7 +6913,7 @@ function top10ClubGrowth(teamRows, profileRows){
 async function openClubActivityGraph(){
   try{
     const teamRows = await sbSelect("team_members", q =>
-      q.select("team_name,nickname,pin5,total,selected,updated_at,created_at")
+q.select("team_name,nickname,pin5,total,selections,updated_at,created_at")
         .not("team_name", "is", null)
     );
 
