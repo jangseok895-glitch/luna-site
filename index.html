@@ -6649,11 +6649,11 @@ function drawSimpleBarChart(canvasId, titleData, color){
 
   const isPrefer = canvasId === "preferMapCanvas";
 
-  const left = isPrefer ? 300 : 105;
-  const right = isPrefer ? 95 : 75;
-  const top = isPrefer ? 35 : 20;
-  const rowH = isPrefer ? 44 : 34;
-  const barH = isPrefer ? 22 : 18;
+  const left = isPrefer ? 110 : 105;
+  const right = isPrefer ? 100 : 75;
+  const top = isPrefer ? 60 : 20;
+  const rowH = isPrefer ? 48 : 34;
+  const barH = isPrefer ? 26 : 18;
 
   const maxVal = Math.max(...titleData.map(d => Number(d.value) || 0), 1);
   const graphW = W - left - right;
@@ -6677,37 +6677,33 @@ function drawSimpleBarChart(canvasId, titleData, color){
       const fullBarW = Math.max(2, (graphW * value) / maxVal);
       const barW = fullBarW * rate;
 
-      const rankText = isPrefer ? `${i + 1}위 : ` : "";
-      const labelText = String(d.label || "");
+      if(isPrefer){
+        ctx.fillStyle = "#111827";
+        ctx.textAlign = "right";
+        ctx.font = "bold 16px Pretendard";
+        ctx.fillText(`${i + 1}위`, left - 12, y + 20);
+      }else{
+        ctx.fillStyle = "#111827";
+        ctx.textAlign = "right";
+        ctx.font = "12px Pretendard";
+        ctx.fillText(String(d.label || "").slice(0, 8), left - 8, y + 14);
+      }
 
-      // 왼쪽 이름
-      ctx.fillStyle = "#111827";
-      ctx.textAlign = "right";
-      ctx.font = isPrefer ? "bold 15px Pretendard" : "12px Pretendard";
-
-      ctx.fillText(
-        rankText + labelText,
-        left - 12,
-        y + 17
-      );
-
-      // 그래프 막대
       ctx.fillStyle = color;
       ctx.fillRect(left, y, barW, barH);
 
       if(progress > 0.75){
-        // 막대 안쪽 글씨
-        if(!isPrefer){
-          ctx.fillStyle = "#ffffff";
-          ctx.shadowColor = "rgba(0,0,0,0.45)";
-          ctx.shadowBlur = 4;
-          ctx.textAlign = "left";
-          ctx.font = "bold 11px Pretendard";
-          ctx.fillText(String(d.text || ""), left + 6, y + 14);
-          ctx.shadowBlur = 0;
-        }
+        ctx.fillStyle = "#ffffff";
+        ctx.shadowColor = "rgba(0,0,0,0.45)";
+        ctx.shadowBlur = 4;
+        ctx.textAlign = "left";
+        ctx.font = isPrefer ? "bold 15px Pretendard" : "bold 11px Pretendard";
 
-        // 오른쪽 퍼센트/점수
+        const insideText = isPrefer ? String(d.label || "") : String(d.text || "");
+        ctx.fillText(insideText, left + 10, y + 19);
+
+        ctx.shadowBlur = 0;
+
         if(canvasId === "clubHighRankCanvas" || canvasId === "preferMapCanvas"){
           ctx.fillStyle = "#111827";
           ctx.textAlign = "left";
@@ -6716,7 +6712,7 @@ function drawSimpleBarChart(canvasId, titleData, color){
           ctx.fillText(
             String(d.scoreText || d.value || ""),
             Math.min(left + fullBarW + 10, W - 80),
-            y + 17
+            y + 19
           );
         }
       }
@@ -6803,7 +6799,7 @@ function top10PreferMaps(teamRows){
   const mapScores = {};
 
   teamRows.forEach(r => {
-let selected = r.selections;
+    let selected = r.selections || r.selected;
     if(!selected) return;
 
     if(typeof selected === "string"){
@@ -6814,7 +6810,18 @@ let selected = r.selections;
       }
     }
 
-    Object.entries(selected || {}).forEach(([mapName, data]) => {
+    Object.entries(selected || {}).forEach(([rowId, data]) => {
+      const row = ROW_BY_ID?.[rowId] || {};
+
+      const mapName =
+        row.map ||
+        row.map_name ||
+        row.name ||
+        data?.map ||
+        data?.mapName ||
+        data?.map_name ||
+        rowId;
+
       let rank = "";
 
       if(typeof data === "string"){
@@ -6845,15 +6852,12 @@ let selected = r.selections;
 
   return Object.entries(mapScores)
     .map(([mapName, data]) => {
-      const topRank = Object.entries(data.ranks)
-        .sort((a,b) => b[1] - a[1])[0]?.[0] || "";
-
       const percent = ((data.score / totalScore) * 100).toFixed(2);
 
       return {
         label: mapName,
         value: data.score,
-        text: `${topRank} 체크 많음`,
+        text: mapName,
         scoreText: `${percent}%`
       };
     })
