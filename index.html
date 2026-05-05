@@ -6795,7 +6795,15 @@ return {
     .slice(0,10);
 }
 
-function top10PreferMaps(teamRows){
+function top10PreferMaps(teamRows, mapRows){
+  const mapNameById = {};
+
+  (mapRows || []).forEach(r => {
+    const id = String(r.id || "").trim();
+    const name = String(r.map_name || r["맵이름"] || "").trim();
+    if(id && name) mapNameById[id] = name;
+  });
+
   const mapScores = {};
 
   teamRows.forEach(r => {
@@ -6811,19 +6819,16 @@ function top10PreferMaps(teamRows){
     }
 
     Object.entries(selected || {}).forEach(([rowId, data]) => {
-      const row = ROW_BY_ID?.[rowId] || {};
+      const key = String(rowId).trim();
 
       const mapName =
-        row.map ||
-        row.map_name ||
-        row.name ||
-        data?.map ||
-        data?.mapName ||
+        mapNameById[key] ||
         data?.map_name ||
-        rowId;
+        data?.mapName ||
+        data?.map ||
+        key;
 
       let rank = "";
-
       if(typeof data === "string"){
         rank = data;
       }else{
@@ -6834,16 +6839,11 @@ function top10PreferMaps(teamRows){
       if(!mapName || !score) return;
 
       if(!mapScores[mapName]){
-        mapScores[mapName] = {
-          score:0,
-          count:0,
-          ranks:{}
-        };
+        mapScores[mapName] = { score:0, count:0 };
       }
 
       mapScores[mapName].score += score;
       mapScores[mapName].count += 1;
-      mapScores[mapName].ranks[rank] = (mapScores[mapName].ranks[rank] || 0) + 1;
     });
   });
 
@@ -6956,7 +6956,7 @@ function top10ClubGrowth(teamRows, profileRows){
 async function openClubActivityGraph(){
   try{
     const teamRows = await sbSelect("team_members", q =>
-q.select("team_name,nickname,pin5,total,selections,updated_at,created_at")
+      q.select("team_name,nickname,pin5,total,selections,updated_at,created_at")
         .not("team_name", "is", null)
     );
 
@@ -6965,10 +6965,14 @@ q.select("team_name,nickname,pin5,total,selections,updated_at,created_at")
         .not("nickname", "is", null)
     );
 
+    const mapRows = await sbSelect("map_records", q =>
+      q.select("id,map_name")
+    );
+
     const registerData = top10ClubRegisterRate(teamRows);
     const highRankData = top10ClubHighRank(teamRows);
     const growthData = top10ClubGrowth(teamRows, profileRows);
-    const preferMapData = top10PreferMaps(teamRows);
+    const preferMapData = top10PreferMaps(teamRows, mapRows);
 
     drawSimpleBarChart("clubRegisterRateCanvas", registerData, "#2563eb");
     drawSimpleBarChart("clubHighRankCanvas", highRankData, "#ef4444");
