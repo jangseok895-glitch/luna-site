@@ -2600,7 +2600,7 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   cursor:pointer !important;
 }
 
-  /* 선호맵 TOP 10 그래프 넓게 사용 */
+  /* 선호맵 그래프 넓게 사용 */
 #preferMapGraphSection{
   width:100% !important;
 }
@@ -7104,7 +7104,7 @@ function showGraphTab(type){
     btnClub?.classList.remove("active");
     btnPrefer?.classList.add("active");
 
-    if(title) title.textContent = "선호맵 TOP 10";
+    if(title) title.textContent = "선호맵 그래프";
 
     setTimeout(() => {
       openClubActivityGraph();
@@ -7283,7 +7283,7 @@ ctx.shadowBlur = 0;
 </button>
 
 <button class="graph-tab-btn" id="btnGraphTabPrefer" onclick="showGraphTab('prefer')">
-  선호맵 TOP 10
+  선호맵 그래프
 </button>
 </div>
 </div>
