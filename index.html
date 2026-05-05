@@ -5309,18 +5309,12 @@ function openBoardPost(idx){
 ${p.imageUrls && p.imageUrls.length ? `
   <div class="board-post-images">
     ${p.imageUrls.map(url => `
-<img class="board-post-img"
-     src="${esc(url)}"
-     alt="첨부 이미지"
-     onclick="window.open('${esc(url)}', '_blank')">
+<img class="board-post-img" src="${esc(url)}" alt="첨부 이미지" onclick="openBoardImagePopup('${esc(url)}')">
     `).join("")}
   </div>
 ` : p.imageUrl ? `
   <div class="board-post-images">
-<img class="board-post-img"
-     src="${esc(p.imageUrl)}"
-     alt="첨부 이미지"
-     onclick="window.open('${esc(p.imageUrl)}', '_blank')">
+<img class="board-post-img" src="${esc(p.imageUrl)}" alt="첨부 이미지" onclick="openBoardImagePopup('${esc(p.imageUrl)}')">
   </div>
 ` : ""}
 
