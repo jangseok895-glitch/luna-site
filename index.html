@@ -6624,11 +6624,13 @@ function drawSimpleBarChart(canvasId, titleData, color){
   const W = canvas.width;
   const H = canvas.height;
 
-  const left = 105;
-  const right = 75;
-  const top = 20;
-  const rowH = 34;
-  const barH = 18;
+  const isPrefer = canvasId === "preferMapCanvas";
+
+  const left = isPrefer ? 300 : 105;
+  const right = isPrefer ? 95 : 75;
+  const top = isPrefer ? 35 : 20;
+  const rowH = isPrefer ? 44 : 34;
+  const barH = isPrefer ? 22 : 18;
 
   const maxVal = Math.max(...titleData.map(d => Number(d.value) || 0), 1);
   const graphW = W - left - right;
@@ -6652,32 +6654,46 @@ function drawSimpleBarChart(canvasId, titleData, color){
       const fullBarW = Math.max(2, (graphW * value) / maxVal);
       const barW = fullBarW * rate;
 
+      const rankText = isPrefer ? `${i + 1}위 : ` : "";
+      const labelText = String(d.label || "");
+
+      // 왼쪽 이름
       ctx.fillStyle = "#111827";
       ctx.textAlign = "right";
-      ctx.font = "12px Pretendard";
-      ctx.fillText(String(d.label || "").slice(0, 8), left - 8, y + 14);
+      ctx.font = isPrefer ? "bold 15px Pretendard" : "12px Pretendard";
 
+      ctx.fillText(
+        rankText + labelText,
+        left - 12,
+        y + 17
+      );
+
+      // 그래프 막대
       ctx.fillStyle = color;
       ctx.fillRect(left, y, barW, barH);
 
       if(progress > 0.75){
-        ctx.fillStyle = "#ffffff";
-        ctx.shadowColor = "rgba(0,0,0,0.45)";
-        ctx.shadowBlur = 4;
-        ctx.textAlign = "left";
-        ctx.font = "bold 11px Pretendard";
-        ctx.fillText(String(d.text || ""), left + 6, y + 14);
+        // 막대 안쪽 글씨
+        if(!isPrefer){
+          ctx.fillStyle = "#ffffff";
+          ctx.shadowColor = "rgba(0,0,0,0.45)";
+          ctx.shadowBlur = 4;
+          ctx.textAlign = "left";
+          ctx.font = "bold 11px Pretendard";
+          ctx.fillText(String(d.text || ""), left + 6, y + 14);
+          ctx.shadowBlur = 0;
+        }
 
-        ctx.shadowBlur = 0;
-
+        // 오른쪽 퍼센트/점수
         if(canvasId === "clubHighRankCanvas" || canvasId === "preferMapCanvas"){
           ctx.fillStyle = "#111827";
           ctx.textAlign = "left";
-          ctx.font = "12px Pretendard";
+          ctx.font = isPrefer ? "bold 15px Pretendard" : "12px Pretendard";
+
           ctx.fillText(
             String(d.scoreText || d.value || ""),
-            Math.min(left + fullBarW + 6, W - 70),
-            y + 14
+            Math.min(left + fullBarW + 10, W - 80),
+            y + 17
           );
         }
       }
@@ -7192,7 +7208,7 @@ ctx.shadowBlur = 0;
   <div class="club-graph-grid">
     <div class="club-graph-card">
       <h3>선호맵 TOP 10</h3>
-      <canvas id="preferMapCanvas" width="900" height="420"></canvas>
+<canvas id="preferMapCanvas" width="1000" height="520"></canvas>
     </div>
   </div>
 </div>
