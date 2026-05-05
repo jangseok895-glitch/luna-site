@@ -1030,13 +1030,10 @@ tbody tr:hover{
 }
 
 .board-post-img{
-  width:25% !important;
-  max-width:300px !important;
-  height:auto !important;
-  display:block !important;
-  margin-top:10px !important;
-  border-radius:12px !important;
-  border:1px solid rgba(14,165,233,.25) !important;
+  max-width:100%;
+  border-radius:12px;
+  margin-top:10px;
+  border:1px solid rgba(14,165,233,.25);
 }
 
 .board-write-box{
@@ -2531,168 +2528,6 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   box-shadow:0 2px 8px rgba(0,0,0,.25);
 
   letter-spacing:.5px;
-}
-
-  .board-post-images{
-  display:grid !important;
-  grid-template-columns:repeat(3, 1fr) !important;
-  gap:10px !important;
-  margin-top:10px !important;
-  max-width:760px !important;
-}
-
-.board-post-img{
-  width:100% !important;
-  height:220px !important;
-  object-fit:contain !important;
-  display:block !important;
-  border-radius:12px !important;
-  border:1px solid rgba(14,165,233,.25) !important;
-  background:#ffffff !important;
-}
-
-  .board-post-img{
-  cursor:pointer !important;
-}
-
-#boardImagePopup{
-  position:fixed !important;
-  inset:0 !important;
-  background:rgba(0,0,0,.75) !important;
-  z-index:999999999 !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  padding:20px !important;
-}
-
-#boardImagePopup.hidden{
-  display:none !important;
-}
-
-.board-image-popup-box{
-  position:relative !important;
-  max-width:96vw !important;
-  max-height:92vh !important;
-}
-
-.board-image-popup-img{
-  max-width:96vw !important;
-  max-height:92vh !important;
-  object-fit:contain !important;
-  border-radius:12px !important;
-  background:#fff !important;
-}
-
-.board-image-popup-close{
-  position:absolute !important;
-  top:-14px !important;
-  right:-14px !important;
-  width:42px !important;
-  height:42px !important;
-  border:0 !important;
-  border-radius:50% !important;
-  background:#ef4444 !important;
-  color:#fff !important;
-  font-size:18px !important;
-  font-weight:900 !important;
-  cursor:pointer !important;
-}
-
-  .board-post-img{
-  cursor:pointer !important;
-}
-
-#boardImagePopup{
-  position:fixed !important;
-  inset:0 !important;
-  background:rgba(0,0,0,.75) !important;
-  z-index:999999999 !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  padding:20px !important;
-}
-
-#boardImagePopup.hidden{
-  display:none !important;
-}
-
-.board-image-popup-box{
-  position:relative !important;
-  max-width:96vw !important;
-  max-height:92vh !important;
-}
-
-.board-image-popup-img{
-  max-width:96vw !important;
-  max-height:92vh !important;
-  object-fit:contain !important;
-  border-radius:12px !important;
-  background:#fff !important;
-}
-
-.board-image-popup-close{
-  position:absolute !important;
-  top:-14px !important;
-  right:-14px !important;
-  width:42px !important;
-  height:42px !important;
-  border:0 !important;
-  border-radius:50% !important;
-  background:#ef4444 !important;
-  color:#fff !important;
-  font-size:18px !important;
-  font-weight:900 !important;
-  cursor:pointer !important;
-}
-
-  .board-post-img{
-  cursor:pointer !important;
-}
-
-#boardImagePopup{
-  position:fixed !important;
-  inset:0 !important;
-  background:rgba(0,0,0,.75) !important;
-  z-index:999999999 !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  padding:20px !important;
-}
-
-#boardImagePopup.hidden{
-  display:none !important;
-}
-
-.board-image-popup-box{
-  position:relative !important;
-  max-width:96vw !important;
-  max-height:92vh !important;
-}
-
-.board-image-popup-img{
-  max-width:96vw !important;
-  max-height:92vh !important;
-  object-fit:contain !important;
-  border-radius:12px !important;
-  background:#fff !important;
-}
-
-.board-image-popup-close{
-  position:absolute !important;
-  top:-14px !important;
-  right:-14px !important;
-  width:42px !important;
-  height:42px !important;
-  border:0 !important;
-  border-radius:50% !important;
-  background:#ef4444 !important;
-  color:#fff !important;
-  font-size:18px !important;
-  font-weight:900 !important;
-  cursor:pointer !important;
 }
 </style>
 </head>
@@ -4744,7 +4579,7 @@ async function getBoardPostsSupabase(board){
   const b = String(board || "promo");
 
   const rows = await sbSelect("board_posts", q =>
-    q.select("id,no,board,title,content,writer,pin4,created_at,views,admin_reply,admin_reply_at")
+    q.select("*")
       .eq("board", b)
       .order("created_at", { ascending:false })
       .order("id", { ascending:false })
@@ -4758,32 +4593,33 @@ async function getBoardPostsSupabase(board){
       title: r.title || "",
       content: r.content || "",
       writer: r.writer || "",
-      pin: r.pin4 || "",
-      createdAt: r.created_at || "",
-      imageUrl: "",
+      pin: r.pin4 || r.pin || "",
+      createdAt: r.created_at || r.createdAt || "",
+      imageUrl: r.image_url || r.imageUrl || "",
       views: Number(r.views || 0),
-      adminReply: r.admin_reply || "",
-      adminReplyAt: r.admin_reply_at || ""
+      adminReply: r.admin_reply || r.adminReply || "",
+      adminReplyAt: r.admin_reply_at || r.adminReplyAt || ""
     }))
   };
 }
 
 async function addBoardPostSupabase(board, title, content, writer, pin4, imageData){
+  let imageUrl = "";
+  // GitHub 정적 환경에서는 파일 업로드용 Storage 설정이 없으면 이미지 저장은 별도 작업 필요
+  // 임시로 data URL 저장 가능하지만 DB 용량 문제 때문에 작은 이미지만 권장
+  if(imageData && imageData.base64){
+    imageUrl = `data:${imageData.mimeType};base64,${imageData.base64}`;
+  }
   const row = {
     board:String(board || "promo"),
     title:String(title || ""),
     content:String(content || ""),
     writer:String(writer || ""),
     pin4:String(pin4 || ""),
-    image_url:"",
+    image_url:imageUrl,
     views:0,
     created_at:new Date().toISOString()
   };
-
-  if(imageData && imageData.base64){
-    row.image_url = `data:${imageData.mimeType};base64,${imageData.base64}`;
-  }
-
   const { error } = await sb.from("board_posts").insert(row);
   if(error) throw error;
   return { ok:true };
@@ -5344,7 +5180,7 @@ function openBoardPost(idx){
         </div>
       ` : ""}
 
-${""}
+      ${p.imageUrl ? `<img class="board-post-img" src="${esc(p.imageUrl)}" alt="첨부 이미지">` : ""}
 
       <div class="comment-box">
         <div class="comment-title">댓글</div>
@@ -5448,9 +5284,9 @@ document.addEventListener("click", async function(e){
     const content = document.getElementById("boardContentInput").value.trim();
     const writer = document.getElementById("boardWriter").value.trim();
     const pin = document.getElementById("boardPinInput").value.trim();
-const file = document.getElementById("boardImageInput").files[0];
+    const file = document.getElementById("boardImageInput").files[0];
 
-let imageData = null;
+    let imageData = null;
 
 if(file){
   const allowedTypes = ["image/jpeg", "image/png"];
@@ -5484,7 +5320,7 @@ if(file){
         hideLoading();
         toast(e.message || "작성 실패");
       })
-.addBoardPost(CURRENT_BOARD, title, content, writer, pin, imageData);
+      .addBoardPost(CURRENT_BOARD, title, content, writer, pin, imageData);
 
     return;
   }
@@ -5492,43 +5328,17 @@ if(file){
 
 function fileToBase64Data(file){
   return new Promise((resolve, reject) => {
-    const img = new Image();
     const reader = new FileReader();
 
-    reader.onload = e => {
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      const base64 = result.split(",")[1];
 
-        const maxW = 900;
-        const maxH = 900;
-
-        let w = img.width;
-        let h = img.height;
-
-        if(w > h && w > maxW){
-          h = Math.round(h * maxW / w);
-          w = maxW;
-        }else if(h > maxH){
-          w = Math.round(w * maxH / h);
-          h = maxH;
-        }
-
-        canvas.width = w;
-        canvas.height = h;
-
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, w, h);
-
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.65);
-
-        resolve({
-          mimeType: "image/jpeg",
-          base64: dataUrl.split(",")[1]
-        });
-      };
-
-      img.onerror = reject;
-      img.src = e.target.result;
+      resolve({
+        name: file.name,
+        mimeType: file.type,
+        base64
+      });
     };
 
     reader.onerror = reject;
@@ -5595,9 +5405,7 @@ function openBoardEditForm(idx, pin){
 
       <input id="editBoardImage" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"/>
 
-${p.imageUrl ? `
-  <img class="board-post-img" src="${esc(p.imageUrl)}" alt="첨부 이미지">
-` : ""}
+      ${p.imageUrl ? `<img class="board-post-img" src="${esc(p.imageUrl)}" alt="기존 이미지">` : ""}
 
       <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
         <button class="btn gold" onclick="submitBoardEdit('${p.id}', '${pin.replace(/'/g, "\\'")}')">수정 완료</button>
@@ -5802,10 +5610,6 @@ async function handleTeamScreenshotFile(file){
     alert("사진 용량은 5MB 이하로 올려주세요.");
     return;
   }
-
-    imageDataList.push(await fileToBase64Data(file));
-}
-  
   TEAM_REQUEST_SCREENSHOT_DATA = await fileToDataUrl(file);
   TEAM_REQUEST_SCREENSHOT_NAME = file.name || "소통방 스크린샷";
   const label = document.getElementById("reqScreenshotFileName");
@@ -6982,38 +6786,7 @@ ctx.shadowBlur = 0;
 
   requestAnimationFrame(frame);
 }
-
-function openBoardImagePopup(url){
-  let popup = document.getElementById("boardImagePopup");
-
-  if(!popup){
-    popup = document.createElement("div");
-    popup.id = "boardImagePopup";
-    popup.className = "hidden";
-    popup.innerHTML = `
-      <div class="board-image-popup-box" onclick="event.stopPropagation()">
-        <button class="board-image-popup-close" onclick="closeBoardImagePopup()">×</button>
-        <img id="boardImagePopupImg" class="board-image-popup-img" src="">
-      </div>
-    `;
-    popup.onclick = closeBoardImagePopup;
-    document.body.appendChild(popup);
-  }
-
-  const img = document.getElementById("boardImagePopupImg");
-  if(!img) return;
-
-  img.src = url;
-  popup.classList.remove("hidden");
-}
-
-function closeBoardImagePopup(){
-  const popup = document.getElementById("boardImagePopup");
-  const img = document.getElementById("boardImagePopupImg");
-
-  if(img) img.src = "";
-  if(popup) popup.classList.add("hidden");
-}
+  
 </script>
   <div id="rankGraphPopup" class="hidden">
   <div class="rank-graph-box">
@@ -7057,12 +6830,6 @@ function closeBoardImagePopup(){
       <h3>3. 단체 실력 발전가능성 TOP 10</h3>
 <canvas id="clubGrowthCanvas" width="390" height="420"></canvas>
     </div>
-  </div>
-</div>
-    <div id="boardImagePopup" class="hidden" onclick="closeBoardImagePopup()">
-  <div class="board-image-popup-box" onclick="event.stopPropagation()">
-    <button class="board-image-popup-close" onclick="closeBoardImagePopup()">×</button>
-    <img id="boardImagePopupImg" class="board-image-popup-img" src="">
   </div>
 </div>
 </body>
