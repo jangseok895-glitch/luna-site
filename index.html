@@ -2598,6 +2598,54 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   font-weight:900 !important;
   cursor:pointer !important;
 }
+
+  .board-post-img{
+  cursor:pointer !important;
+}
+
+#boardImagePopup{
+  position:fixed !important;
+  inset:0 !important;
+  background:rgba(0,0,0,.75) !important;
+  z-index:999999999 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:20px !important;
+}
+
+#boardImagePopup.hidden{
+  display:none !important;
+}
+
+.board-image-popup-box{
+  position:relative !important;
+  max-width:96vw !important;
+  max-height:92vh !important;
+}
+
+.board-image-popup-img{
+  max-width:96vw !important;
+  max-height:92vh !important;
+  object-fit:contain !important;
+  border-radius:12px !important;
+  background:#fff !important;
+}
+
+.board-image-popup-close{
+  position:absolute !important;
+  top:-14px !important;
+  right:-14px !important;
+  width:42px !important;
+  height:42px !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:#ef4444 !important;
+  color:#fff !important;
+  font-size:18px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+}
 </style>
 </head>
 
@@ -6881,11 +6929,25 @@ ctx.shadowBlur = 0;
   requestAnimationFrame(frame);
 }
 
-  function openBoardImagePopup(url){
-  const popup = document.getElementById("boardImagePopup");
-  const img = document.getElementById("boardImagePopupImg");
+function openBoardImagePopup(url){
+  let popup = document.getElementById("boardImagePopup");
 
-  if(!popup || !img) return;
+  if(!popup){
+    popup = document.createElement("div");
+    popup.id = "boardImagePopup";
+    popup.className = "hidden";
+    popup.innerHTML = `
+      <div class="board-image-popup-box" onclick="event.stopPropagation()">
+        <button class="board-image-popup-close" onclick="closeBoardImagePopup()">×</button>
+        <img id="boardImagePopupImg" class="board-image-popup-img" src="">
+      </div>
+    `;
+    popup.onclick = closeBoardImagePopup;
+    document.body.appendChild(popup);
+  }
+
+  const img = document.getElementById("boardImagePopupImg");
+  if(!img) return;
 
   img.src = url;
   popup.classList.remove("hidden");
