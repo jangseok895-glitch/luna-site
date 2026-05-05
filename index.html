@@ -2550,10 +2550,66 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   border:1px solid rgba(14,165,233,.25) !important;
   background:#ffffff !important;
 }
+
+  .image-popup{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:1000000000 !important;
+  background:rgba(0,0,0,.75) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:20px !important;
+}
+
+.image-popup.hidden{
+  display:none !important;
+}
+
+.image-popup-box{
+  position:relative !important;
+  max-width:96vw !important;
+  max-height:94vh !important;
+}
+
+.image-popup-img{
+  display:block !important;
+  max-width:96vw !important;
+  max-height:90vh !important;
+  object-fit:contain !important;
+  border-radius:14px !important;
+  background:#fff !important;
+}
+
+.image-popup-close{
+  position:absolute !important;
+  top:-12px !important;
+  right:-12px !important;
+  width:42px !important;
+  height:42px !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:#ef4444 !important;
+  color:#fff !important;
+  font-size:22px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+}
+
+.board-post-img{
+  cursor:pointer !important;
+}
 </style>
 </head>
 
 <body>
+<div id="imagePopup" class="image-popup hidden" onclick="closeImagePopup()">
+  <div class="image-popup-box" onclick="event.stopPropagation()">
+    <button class="image-popup-close" onclick="closeImagePopup()">×</button>
+    <img id="imagePopupImg" class="image-popup-img" src="" alt="확대 이미지">
+  </div>
+</div>
+  
 <div id="loadingOverlay" class="hidden">
   <div class="loading-box">
     <img
@@ -5177,6 +5233,23 @@ async function renderBoardList(){
   `;
 }
 
+  function openImagePopup(src){
+  const popup = document.getElementById("imagePopup");
+  const img = document.getElementById("imagePopupImg");
+
+  if(!popup || !img) return;
+
+  img.src = src;
+  popup.classList.remove("hidden");
+}
+
+function closeImagePopup(){
+  const popup = document.getElementById("imagePopup");
+  const img = document.getElementById("imagePopupImg");
+
+  if(img) img.src = "";
+  if(popup) popup.classList.add("hidden");
+}
 /* ===== 게시글 열기 ===== */
 function openBoardPost(idx){
   const p = CURRENT_BOARD_POSTS[idx];
@@ -5213,12 +5286,12 @@ function openBoardPost(idx){
 ${p.imageUrls && p.imageUrls.length ? `
   <div class="board-post-images">
     ${p.imageUrls.map(url => `
-      <img class="board-post-img" src="${esc(url)}" alt="첨부 이미지">
+<img class="board-post-img" src="${esc(url)}" alt="첨부 이미지" onclick="openImagePopup('${esc(url)}')">
     `).join("")}
   </div>
 ` : p.imageUrl ? `
   <div class="board-post-images">
-    <img class="board-post-img" src="${esc(p.imageUrl)}" alt="첨부 이미지">
+<img class="board-post-img" src="${esc(p.imageUrl)}" alt="첨부 이미지" onclick="openImagePopup('${esc(p.imageUrl)}')">
   </div>
 ` : ""}
 
@@ -5372,7 +5445,15 @@ for(const file of files){
   }
 });
 
-function fileToBase64Data(file){
+async function fileToBase64Data(file){
+  const allowedTypes = ["image/jpeg", "image/png"];
+
+  if(!allowedTypes.includes(file.type)){
+    throw new Error("JPG 또는 PNG 파일만 업로드할 수 있습니다.");
+  }
+
+  const compressedFile = await compressImageUnder5MB(file);
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -5381,15 +5462,68 @@ function fileToBase64Data(file){
       const base64 = result.split(",")[1];
 
       resolve({
-        name: file.name,
-        mimeType: file.type,
+        name: compressedFile.name,
+        mimeType: compressedFile.type,
         base64
       });
     };
 
     reader.onerror = reject;
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(compressedFile);
   });
+}
+
+async function compressImageUnder5MB(file){
+  const maxSize = 4.5 * 1024 * 1024; // base64 저장 때문에 5MB보다 살짝 낮게
+  if(file.size <= maxSize) return file;
+
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+
+  await new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = reject;
+    img.src = url;
+  });
+
+  let maxWidth = 1600;
+  let quality = 0.85;
+  let blob = null;
+
+  while(true){
+    const scale = Math.min(1, maxWidth / img.width);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    blob = await new Promise(resolve => {
+      canvas.toBlob(resolve, "image/jpeg", quality);
+    });
+
+    if(!blob) break;
+
+    if(blob.size <= maxSize) break;
+
+    if(quality > 0.45){
+      quality -= 0.1;
+    }else{
+      maxWidth -= 200;
+    }
+
+    if(maxWidth < 700) break;
+  }
+
+  URL.revokeObjectURL(url);
+
+  return new File(
+    [blob],
+    file.name.replace(/\.[^/.]+$/, "") + "_compressed.jpg",
+    { type:"image/jpeg" }
+  );
 }
 
 /* ===== 삭제 ===== */
