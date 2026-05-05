@@ -6764,7 +6764,7 @@ function top10PreferMaps(teamRows){
   const mapScores = {};
 
   teamRows.forEach(r => {
-    let selected = r.selected;
+let selected = r.selections;
     if(!selected) return;
 
     if(typeof selected === "string"){
