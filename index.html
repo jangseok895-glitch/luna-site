@@ -6677,12 +6677,17 @@ function drawSimpleBarChart(canvasId, titleData, color){
       const fullBarW = Math.max(2, (graphW * value) / maxVal);
       const barW = fullBarW * rate;
 
-      if(isPrefer){
-        ctx.fillStyle = "#111827";
-        ctx.textAlign = "right";
-        ctx.font = "bold 16px Pretendard";
-        ctx.fillText(`${i + 1}위`, left - 12, y + 20);
-      }else{
+if(isPrefer){
+  ctx.fillStyle = "#111827";
+  ctx.textAlign = "right";
+  ctx.font = "bold 16px Pretendard";
+
+  const labelRank = d.groupTitle
+    ? `${d.groupTitle} ${d.groupRank}위`
+    : `${i + 1}위`;
+
+  ctx.fillText(labelRank, left - 12, y + 20);
+}else{
         ctx.fillStyle = "#111827";
         ctx.textAlign = "right";
         ctx.font = "12px Pretendard";
@@ -6796,12 +6801,16 @@ return {
 }
 
 function top10PreferMaps(teamRows, mapRows){
-  const mapNameById = {};
+  const mapInfoById = {};
 
   (mapRows || []).forEach(r => {
     const id = String(r.id || "").trim();
-    const name = String(r.map_name || r["맵이름"] || "").trim();
-    if(id && name) mapNameById[id] = name;
+    const name = String(r.map_name || "").trim();
+    const difficulty = String(r.difficulty || "").trim();
+
+    if(id && name){
+      mapInfoById[id] = { name, difficulty };
+    }
   });
 
   const mapScores = {};
@@ -6820,15 +6829,11 @@ function top10PreferMaps(teamRows, mapRows){
 
     Object.entries(selected || {}).forEach(([rowId, data]) => {
       const key = String(rowId).trim();
-
-      const mapName =
-        mapNameById[key] ||
-        data?.map_name ||
-        data?.mapName ||
-        data?.map ||
-        key;
+      const info = mapInfoById[key];
+      if(!info) return;
 
       let rank = "";
+
       if(typeof data === "string"){
         rank = data;
       }else{
@@ -6836,33 +6841,60 @@ function top10PreferMaps(teamRows, mapRows){
       }
 
       const score = RANK_POWER_SCORE[rank] || 0;
-      if(!mapName || !score) return;
+      if(!score) return;
 
-      if(!mapScores[mapName]){
-        mapScores[mapName] = { score:0, count:0 };
+      const mapName = info.name;
+      const difficulty = info.difficulty;
+
+      if(!mapScores[difficulty]){
+        mapScores[difficulty] = {};
       }
 
-      mapScores[mapName].score += score;
-      mapScores[mapName].count += 1;
+      if(!mapScores[difficulty][mapName]){
+        mapScores[difficulty][mapName] = {
+          score:0,
+          count:0,
+          difficulty
+        };
+      }
+
+      mapScores[difficulty][mapName].score += score;
+      mapScores[difficulty][mapName].count += 1;
     });
   });
 
-  const totalScore = Object.values(mapScores)
-    .reduce((sum, data) => sum + data.score, 0) || 1;
+  const result = [];
 
-  return Object.entries(mapScores)
-    .map(([mapName, data]) => {
+  const groups = [
+    { key:"루키", title:"루키맵", limit:3 },
+    { key:"L3", title:"L3맵", limit:5 },
+    { key:"L2", title:"L2맵", limit:5 },
+    { key:"L1", title:"L1맵", limit:3 }
+  ];
+
+  groups.forEach(group => {
+    const rows = Object.entries(mapScores[group.key] || {})
+      .sort((a,b) => b[1].score - a[1].score)
+      .slice(0, group.limit);
+
+    const totalScore = Object.values(mapScores[group.key] || {})
+      .reduce((sum, data) => sum + data.score, 0) || 1;
+
+    rows.forEach(([mapName, data], index) => {
       const percent = ((data.score / totalScore) * 100).toFixed(2);
 
-      return {
+      result.push({
         label: mapName,
         value: data.score,
         text: mapName,
-        scoreText: `${percent}%`
-      };
-    })
-    .sort((a,b) => b.value - a.value)
-    .slice(0,10);
+        scoreText: `${percent}%`,
+        groupTitle: group.title,
+        groupRank: index + 1
+      });
+    });
+  });
+
+  return result;
 }
 
 function top10ClubGrowth(teamRows, profileRows){
@@ -6965,9 +6997,9 @@ async function openClubActivityGraph(){
         .not("nickname", "is", null)
     );
 
-    const mapRows = await sbSelect("map_records", q =>
-      q.select("id,map_name")
-    );
+const mapRows = await sbSelect("map_records", q =>
+  q.select("id,map_name,difficulty")
+);
 
     const registerData = top10ClubRegisterRate(teamRows);
     const highRankData = top10ClubHighRank(teamRows);
