@@ -2604,15 +2604,88 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 
 <body>
 <audio id="bgm" loop playsinline preload="auto">
-  <source src="https://xyibdanmecakevhtdajl.supabase.co/storage/v1/object/sign/bgm/kartmusic.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yYTViYzBjYS04YWY4LTQ2OGItOTczYi1iMTRmM2E3OTMxOWUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJiZ20va2FydG11c2ljLm1wMyIsImlhdCI6MTc3Nzk3NDMzNCwiZXhwIjoxODA5NTEwMzM0fQ.uLJif3ZMpQyFdTBQqNxTOGnCTeHejTVU9_rNrAw6Bi4" type="audio/mpeg">
+  <source src="https://xyibdanmecakevhtdajl.supabase.co/storage/v1/object/sign/bgm/kartmusic.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yYTViYzBjYS04YWY4LTQ2OGItOTczYi1iMTRmM2E3OTMxOWUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJiZ20va2FydG11c2ljLm1wMyIsImlhdCI6MTc3Nzk3MzY0MSwiZXhwIjoxODA5NTA5NjQxfQ.xVn99Xn0hNiLUVL9ejubBlkO0itJcn6GGQWkmDR-bkw" type="audio/mpeg">
 </audio>
 
+<button id="bgmOffBtn" onclick="turnOffBGM()">
+  🔇 음악끄기
+</button>
+
+<style>
+#bgmOffBtn{
+  display:none;
+  position:fixed;
+  top:145px;
+  right:70px;
+  z-index:999999999;
+  padding:16px 24px;
+  border:0;
+  border-radius:22px;
+  background:#ef1717;
+  color:#ffffff;
+  font-size:22px;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 8px 22px rgba(239,23,23,.38);
+}
+
+#bgmOffBtn.show{
+  display:block;
+  animation:bgmPop .35s ease-out;
+}
+
+#bgmOffBtn.hide{
+  opacity:0;
+  transform:scale(.6);
+  pointer-events:none;
+  transition:all .35s ease;
+}
+
+@keyframes bgmPop{
+  0%{transform:scale(.6);opacity:0;}
+  100%{transform:scale(1);opacity:1;}
+}
+</style>
+
 <script>
-document.addEventListener("click", () => {
+let bgmStoppedForever = false;
+let bgmStarted = false;
+
+document.addEventListener("click", startBGMOnce);
+
+function startBGMOnce(){
+  if(bgmStoppedForever || bgmStarted) return;
+
   const bgm = document.getElementById("bgm");
+  const btn = document.getElementById("bgmOffBtn");
+
   bgm.volume = 0.35;
-  bgm.play();
-}, { once:true });
+
+  bgm.play().then(() => {
+    bgmStarted = true;
+    btn.classList.remove("hide");
+    btn.classList.add("show");
+  }).catch(() => {
+    console.log("음악 재생 실패");
+  });
+}
+
+function turnOffBGM(){
+  const bgm = document.getElementById("bgm");
+  const btn = document.getElementById("bgmOffBtn");
+
+  bgmStoppedForever = true;
+
+  bgm.pause();
+  bgm.currentTime = 0;
+
+  btn.classList.remove("show");
+  btn.classList.add("hide");
+
+  setTimeout(() => {
+    btn.style.display = "none";
+  }, 350);
+}
 </script>
   
 <div id="imagePopup" class="image-popup hidden" onclick="closeImagePopup()">
