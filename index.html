@@ -1030,10 +1030,13 @@ tbody tr:hover{
 }
 
 .board-post-img{
-  max-width:100%;
-  border-radius:12px;
-  margin-top:10px;
-  border:1px solid rgba(14,165,233,.25);
+  width:25% !important;
+  max-width:300px !important;
+  height:auto !important;
+  display:block !important;
+  margin-top:10px !important;
+  border-radius:12px !important;
+  border:1px solid rgba(14,165,233,.25) !important;
 }
 
 .board-write-box{
@@ -2529,6 +2532,120 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 
   letter-spacing:.5px;
 }
+
+  .board-post-images{
+  display:grid !important;
+  grid-template-columns:repeat(3, 1fr) !important;
+  gap:10px !important;
+  margin-top:10px !important;
+  max-width:760px !important;
+}
+
+.board-post-img{
+  width:100% !important;
+  height:220px !important;
+  object-fit:contain !important;
+  display:block !important;
+  border-radius:12px !important;
+  border:1px solid rgba(14,165,233,.25) !important;
+  background:#ffffff !important;
+}
+
+  .board-post-img{
+  cursor:pointer !important;
+}
+
+#boardImagePopup{
+  position:fixed !important;
+  inset:0 !important;
+  background:rgba(0,0,0,.75) !important;
+  z-index:999999999 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:20px !important;
+}
+
+#boardImagePopup.hidden{
+  display:none !important;
+}
+
+.board-image-popup-box{
+  position:relative !important;
+  max-width:96vw !important;
+  max-height:92vh !important;
+}
+
+.board-image-popup-img{
+  max-width:96vw !important;
+  max-height:92vh !important;
+  object-fit:contain !important;
+  border-radius:12px !important;
+  background:#fff !important;
+}
+
+.board-image-popup-close{
+  position:absolute !important;
+  top:-14px !important;
+  right:-14px !important;
+  width:42px !important;
+  height:42px !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:#ef4444 !important;
+  color:#fff !important;
+  font-size:18px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+}
+
+  .board-post-img{
+  cursor:pointer !important;
+}
+
+#boardImagePopup{
+  position:fixed !important;
+  inset:0 !important;
+  background:rgba(0,0,0,.75) !important;
+  z-index:999999999 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:20px !important;
+}
+
+#boardImagePopup.hidden{
+  display:none !important;
+}
+
+.board-image-popup-box{
+  position:relative !important;
+  max-width:96vw !important;
+  max-height:92vh !important;
+}
+
+.board-image-popup-img{
+  max-width:96vw !important;
+  max-height:92vh !important;
+  object-fit:contain !important;
+  border-radius:12px !important;
+  background:#fff !important;
+}
+
+.board-image-popup-close{
+  position:absolute !important;
+  top:-14px !important;
+  right:-14px !important;
+  width:42px !important;
+  height:42px !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:#ef4444 !important;
+  color:#fff !important;
+  font-size:18px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+}
 </style>
 </head>
 
@@ -2911,7 +3028,7 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
       <input id="boardTitleInput" class="text" placeholder="제목"/>
       <textarea id="boardContentInput" class="text board-textarea" placeholder="내용"></textarea>
 
-<input id="boardImageInput" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"/>
+<input id="boardImageInput" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" multiple/>
 
 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
   <input id="boardPinInput" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="비밀번호 4자리"/>
@@ -4595,7 +4712,8 @@ async function getBoardPostsSupabase(board){
       writer: r.writer || "",
       pin: r.pin4 || r.pin || "",
       createdAt: r.created_at || r.createdAt || "",
-      imageUrl: r.image_url || r.imageUrl || "",
+imageUrl: r.image_url || r.imageUrl || "",
+imageUrls: r.image_urls || [],
       views: Number(r.views || 0),
       adminReply: r.admin_reply || r.adminReply || "",
       adminReplyAt: r.admin_reply_at || r.adminReplyAt || ""
@@ -4603,23 +4721,31 @@ async function getBoardPostsSupabase(board){
   };
 }
 
-async function addBoardPostSupabase(board, title, content, writer, pin4, imageData){
-  let imageUrl = "";
-  // GitHub 정적 환경에서는 파일 업로드용 Storage 설정이 없으면 이미지 저장은 별도 작업 필요
-  // 임시로 data URL 저장 가능하지만 DB 용량 문제 때문에 작은 이미지만 권장
-  if(imageData && imageData.base64){
-    imageUrl = `data:${imageData.mimeType};base64,${imageData.base64}`;
-  }
+async function addBoardPostSupabase(board, title, content, writer, pin4, imageDataList){
+  const imageUrls = [];
+
+  const list = Array.isArray(imageDataList)
+    ? imageDataList
+    : (imageDataList ? [imageDataList] : []);
+
+  list.forEach(img => {
+    if(img && img.base64){
+      imageUrls.push(`data:${img.mimeType};base64,${img.base64}`);
+    }
+  });
+
   const row = {
     board:String(board || "promo"),
     title:String(title || ""),
     content:String(content || ""),
     writer:String(writer || ""),
     pin4:String(pin4 || ""),
-    image_url:imageUrl,
+    image_url:imageUrls[0] || "",
+    image_urls:imageUrls,
     views:0,
     created_at:new Date().toISOString()
   };
+
   const { error } = await sb.from("board_posts").insert(row);
   if(error) throw error;
   return { ok:true };
@@ -5180,7 +5306,23 @@ function openBoardPost(idx){
         </div>
       ` : ""}
 
-      ${p.imageUrl ? `<img class="board-post-img" src="${esc(p.imageUrl)}" alt="첨부 이미지">` : ""}
+${p.imageUrls && p.imageUrls.length ? `
+  <div class="board-post-images">
+    ${p.imageUrls.map(url => `
+<img class="board-post-img"
+     src="${esc(url)}"
+     alt="첨부 이미지"
+     onclick="window.open('${esc(url)}', '_blank')">
+    `).join("")}
+  </div>
+` : p.imageUrl ? `
+  <div class="board-post-images">
+<img class="board-post-img"
+     src="${esc(p.imageUrl)}"
+     alt="첨부 이미지"
+     onclick="window.open('${esc(p.imageUrl)}', '_blank')">
+  </div>
+` : ""}
 
       <div class="comment-box">
         <div class="comment-title">댓글</div>
@@ -5284,11 +5426,17 @@ document.addEventListener("click", async function(e){
     const content = document.getElementById("boardContentInput").value.trim();
     const writer = document.getElementById("boardWriter").value.trim();
     const pin = document.getElementById("boardPinInput").value.trim();
-    const file = document.getElementById("boardImageInput").files[0];
+const imageInput = document.getElementById("boardImageInput");
+const files = Array.from(imageInput.files || []);
 
-    let imageData = null;
+if(files.length > 3){
+  alert("사진은 최대 3장까지만 업로드할 수 있습니다.");
+  return;
+}
 
-if(file){
+let imageDataList = [];
+
+for(const file of files){
   const allowedTypes = ["image/jpeg", "image/png"];
 
   if(!allowedTypes.includes(file.type)){
@@ -5296,7 +5444,7 @@ if(file){
     return;
   }
 
-  imageData = await fileToBase64Data(file);
+  imageDataList.push(await fileToBase64Data(file));
 }
 
     showLoading("게시글 등록 중입니다");
@@ -5320,7 +5468,7 @@ if(file){
         hideLoading();
         toast(e.message || "작성 실패");
       })
-      .addBoardPost(CURRENT_BOARD, title, content, writer, pin, imageData);
+.addBoardPost(CURRENT_BOARD, title, content, writer, pin, imageDataList);
 
     return;
   }
@@ -5328,17 +5476,43 @@ if(file){
 
 function fileToBase64Data(file){
   return new Promise((resolve, reject) => {
+    const img = new Image();
     const reader = new FileReader();
 
-    reader.onload = () => {
-      const result = String(reader.result || "");
-      const base64 = result.split(",")[1];
+    reader.onload = e => {
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
 
-      resolve({
-        name: file.name,
-        mimeType: file.type,
-        base64
-      });
+        const maxW = 900;
+        const maxH = 900;
+
+        let w = img.width;
+        let h = img.height;
+
+        if(w > h && w > maxW){
+          h = Math.round(h * maxW / w);
+          w = maxW;
+        }else if(h > maxH){
+          w = Math.round(w * maxH / h);
+          h = maxH;
+        }
+
+        canvas.width = w;
+        canvas.height = h;
+
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.65);
+
+        resolve({
+          mimeType: "image/jpeg",
+          base64: dataUrl.split(",")[1]
+        });
+      };
+
+      img.onerror = reject;
+      img.src = e.target.result;
     };
 
     reader.onerror = reject;
@@ -5610,6 +5784,10 @@ async function handleTeamScreenshotFile(file){
     alert("사진 용량은 5MB 이하로 올려주세요.");
     return;
   }
+
+    imageDataList.push(await fileToBase64Data(file));
+}
+  
   TEAM_REQUEST_SCREENSHOT_DATA = await fileToDataUrl(file);
   TEAM_REQUEST_SCREENSHOT_NAME = file.name || "소통방 스크린샷";
   const label = document.getElementById("reqScreenshotFileName");
@@ -6786,7 +6964,38 @@ ctx.shadowBlur = 0;
 
   requestAnimationFrame(frame);
 }
-  
+
+function openBoardImagePopup(url){
+  let popup = document.getElementById("boardImagePopup");
+
+  if(!popup){
+    popup = document.createElement("div");
+    popup.id = "boardImagePopup";
+    popup.className = "hidden";
+    popup.innerHTML = `
+      <div class="board-image-popup-box" onclick="event.stopPropagation()">
+        <button class="board-image-popup-close" onclick="closeBoardImagePopup()">×</button>
+        <img id="boardImagePopupImg" class="board-image-popup-img" src="">
+      </div>
+    `;
+    popup.onclick = closeBoardImagePopup;
+    document.body.appendChild(popup);
+  }
+
+  const img = document.getElementById("boardImagePopupImg");
+  if(!img) return;
+
+  img.src = url;
+  popup.classList.remove("hidden");
+}
+
+function closeBoardImagePopup(){
+  const popup = document.getElementById("boardImagePopup");
+  const img = document.getElementById("boardImagePopupImg");
+
+  if(img) img.src = "";
+  if(popup) popup.classList.add("hidden");
+}
 </script>
   <div id="rankGraphPopup" class="hidden">
   <div class="rank-graph-box">
@@ -6830,6 +7039,12 @@ ctx.shadowBlur = 0;
       <h3>3. 단체 실력 발전가능성 TOP 10</h3>
 <canvas id="clubGrowthCanvas" width="390" height="420"></canvas>
     </div>
+  </div>
+</div>
+    <div id="boardImagePopup" class="hidden" onclick="closeBoardImagePopup()">
+  <div class="board-image-popup-box" onclick="event.stopPropagation()">
+    <button class="board-image-popup-close" onclick="closeBoardImagePopup()">×</button>
+    <img id="boardImagePopupImg" class="board-image-popup-img" src="">
   </div>
 </div>
 </body>
