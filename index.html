@@ -6625,7 +6625,7 @@ function drawSimpleBarChart(canvasId, titleData, color){
   const H = canvas.height;
 
   const left = 105;
-  const right = 55;
+  const right = 75;
   const top = 20;
   const rowH = 34;
   const barH = 18;
@@ -6652,36 +6652,31 @@ function drawSimpleBarChart(canvasId, titleData, color){
       const fullBarW = Math.max(2, (graphW * value) / maxVal);
       const barW = fullBarW * rate;
 
-      // 왼쪽 단체명
       ctx.fillStyle = "#111827";
       ctx.textAlign = "right";
       ctx.font = "12px Pretendard";
       ctx.fillText(String(d.label || "").slice(0, 8), left - 8, y + 14);
 
-      // 막대
       ctx.fillStyle = color;
       ctx.fillRect(left, y, barW, barH);
 
       if(progress > 0.75){
-        // 막대 안쪽 글씨/퍼센트: 흰색
         ctx.fillStyle = "#ffffff";
         ctx.shadowColor = "rgba(0,0,0,0.45)";
         ctx.shadowBlur = 4;
         ctx.textAlign = "left";
         ctx.font = "bold 11px Pretendard";
-
         ctx.fillText(String(d.text || ""), left + 6, y + 14);
 
         ctx.shadowBlur = 0;
 
-        // 2번 그래프만 오른쪽 점수 표시
-        if(canvasId === "clubHighRankCanvas"){
+        if(canvasId === "clubHighRankCanvas" || canvasId === "preferMapCanvas"){
           ctx.fillStyle = "#111827";
           ctx.textAlign = "left";
           ctx.font = "12px Pretendard";
           ctx.fillText(
-            String(d.scoreText || ""),
-            Math.min(left + fullBarW + 6, W - 42),
+            String(d.scoreText || d.value || ""),
+            Math.min(left + fullBarW + 6, W - 70),
             y + 14
           );
         }
@@ -6760,6 +6755,68 @@ return {
   text:`${topRanks} 분포 크루`,
   scoreText:`${finalScore}%`
 };
+    })
+    .sort((a,b) => b.value - a.value)
+    .slice(0,10);
+}
+
+function top10PreferMaps(teamRows){
+  const mapScores = {};
+
+  teamRows.forEach(r => {
+    let selected = r.selected;
+    if(!selected) return;
+
+    if(typeof selected === "string"){
+      try{
+        selected = JSON.parse(selected);
+      }catch(e){
+        return;
+      }
+    }
+
+    Object.entries(selected || {}).forEach(([mapName, data]) => {
+      let rank = "";
+
+      if(typeof data === "string"){
+        rank = data;
+      }else{
+        rank = data?.tier || data?.rank || data?.군 || data?.level || "";
+      }
+
+      const score = RANK_POWER_SCORE[rank] || 0;
+      if(!mapName || !score) return;
+
+      if(!mapScores[mapName]){
+        mapScores[mapName] = {
+          score:0,
+          count:0,
+          ranks:{}
+        };
+      }
+
+      mapScores[mapName].score += score;
+      mapScores[mapName].count += 1;
+      mapScores[mapName].ranks[rank] = (mapScores[mapName].ranks[rank] || 0) + 1;
+    });
+  });
+
+  const totalScore = Object.values(mapScores)
+    .reduce((sum, data) => sum + data.score, 0) || 1;
+
+  return Object.entries(mapScores)
+    .map(([mapName, data]) => {
+      const topRank = Object.entries(data.ranks)
+        .sort((a,b) => b[1] - a[1])[0]?.[0] || "";
+
+      const percent = ((data.score / totalScore) * 100).toFixed(2);
+
+      return {
+        label: mapName,
+        value: data.score,
+        text: `${topRank} 체크 많음`,
+        scoreText: `${percent}%`
+      };
     })
     .sort((a,b) => b.value - a.value)
     .slice(0,10);
@@ -6856,7 +6913,7 @@ function top10ClubGrowth(teamRows, profileRows){
 async function openClubActivityGraph(){
   try{
     const teamRows = await sbSelect("team_members", q =>
-      q.select("team_name,nickname,pin5,total,updated_at,created_at")
+      q.select("team_name,nickname,pin5,total,selected,updated_at,created_at")
         .not("team_name", "is", null)
     );
 
@@ -6868,50 +6925,79 @@ async function openClubActivityGraph(){
     const registerData = top10ClubRegisterRate(teamRows);
     const highRankData = top10ClubHighRank(teamRows);
     const growthData = top10ClubGrowth(teamRows, profileRows);
+    const preferMapData = top10PreferMaps(teamRows);
 
     drawSimpleBarChart("clubRegisterRateCanvas", registerData, "#2563eb");
     drawSimpleBarChart("clubHighRankCanvas", highRankData, "#ef4444");
     drawSimpleBarChart("clubGrowthCanvas", growthData, "#f59e0b");
+    drawSimpleBarChart("preferMapCanvas", preferMapData, "#2563eb");
 
   }catch(e){
     console.error(e);
-    alert("단체별 활동성 그래프를 불러오지 못했습니다.");
+    alert("그래프를 불러오지 못했습니다.");
   }
 }
 
 function showGraphTab(type){
   const rankSection = document.getElementById("rankGraphSection");
   const clubSection = document.getElementById("clubActivityGraphSection");
+  const preferSection = document.getElementById("preferMapGraphSection");
+
   const title = document.getElementById("rankGraphTitle");
 
   const btnRank = document.getElementById("btnGraphTabRank");
   const btnClub = document.getElementById("btnGraphTabClub");
+  const btnPrefer = document.getElementById("btnGraphTabPrefer");
 
   if(type === "club"){
     rankSection?.classList.add("hidden");
+    preferSection?.classList.add("hidden");
     clubSection?.classList.remove("hidden");
 
     btnRank?.classList.remove("active");
+    btnPrefer?.classList.remove("active");
     btnClub?.classList.add("active");
 
-    if(title) title.textContent = "루칭방 그래프";
+    if(title) title.textContent = "단체별 활동성 그래프";
 
     setTimeout(() => {
       openClubActivityGraph();
     }, 50);
 
-  }else{
+    return;
+  }
+
+  if(type === "prefer"){
+    rankSection?.classList.add("hidden");
     clubSection?.classList.add("hidden");
-    rankSection?.classList.remove("hidden");
+    preferSection?.classList.remove("hidden");
 
+    btnRank?.classList.remove("active");
     btnClub?.classList.remove("active");
-    btnRank?.classList.add("active");
+    btnPrefer?.classList.add("active");
 
-    if(title) title.textContent = "루칭방 그래프";
+    if(title) title.textContent = "선호맵 TOP 10";
 
-    if(window.lastSaveData && window.lastRealData){
-      drawRankGraphAnimated(window.lastSaveData, window.lastRealData);
-    }
+    setTimeout(() => {
+      openClubActivityGraph();
+    }, 50);
+
+    return;
+  }
+
+  // 기본값: 군별 그래프
+  clubSection?.classList.add("hidden");
+  preferSection?.classList.add("hidden");
+  rankSection?.classList.remove("hidden");
+
+  btnClub?.classList.remove("active");
+  btnPrefer?.classList.remove("active");
+  btnRank?.classList.add("active");
+
+  if(title) title.textContent = "루칭방 그래프";
+
+  if(window.lastSaveData && window.lastRealData){
+    drawRankGraphAnimated(window.lastSaveData, window.lastRealData);
   }
 }
 
@@ -7059,7 +7145,7 @@ ctx.shadowBlur = 0;
 <div class="graph-title-row">
 <h2 id="rankGraphTitle">루칭방 그래프</h2>
 
-  <div class="graph-tab-buttons">
+<div class="graph-tab-buttons">
 <button class="graph-tab-btn active" id="btnGraphTabRank" onclick="showGraphTab('rank')">
   군별 그래프
 </button>
@@ -7067,7 +7153,11 @@ ctx.shadowBlur = 0;
 <button class="graph-tab-btn" id="btnGraphTabClub" onclick="showGraphTab('club')">
   단체별 활동성 그래프
 </button>
-  </div>
+
+<button class="graph-tab-btn" id="btnGraphTabPrefer" onclick="showGraphTab('prefer')">
+  선호맵 TOP 10
+</button>
+</div>
 </div>
 
 <div id="rankGraphSection">
@@ -7094,6 +7184,15 @@ ctx.shadowBlur = 0;
     <div class="club-graph-card">
       <h3>3. 단체 실력 발전가능성 TOP 10</h3>
 <canvas id="clubGrowthCanvas" width="390" height="420"></canvas>
+    </div>
+  </div>
+</div>
+
+    <div id="preferMapGraphSection" class="hidden">
+  <div class="club-graph-grid">
+    <div class="club-graph-card">
+      <h3>선호맵 TOP 10</h3>
+      <canvas id="preferMapCanvas" width="900" height="420"></canvas>
     </div>
   </div>
 </div>
