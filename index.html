@@ -2532,6 +2532,24 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 
   letter-spacing:.5px;
 }
+
+  .board-post-images{
+  display:grid !important;
+  grid-template-columns:repeat(3, 1fr) !important;
+  gap:10px !important;
+  margin-top:10px !important;
+  max-width:760px !important;
+}
+
+.board-post-img{
+  width:100% !important;
+  height:220px !important;
+  object-fit:contain !important;
+  display:block !important;
+  border-radius:12px !important;
+  border:1px solid rgba(14,165,233,.25) !important;
+  background:#ffffff !important;
+}
 </style>
 </head>
 
@@ -2914,7 +2932,7 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
       <input id="boardTitleInput" class="text" placeholder="제목"/>
       <textarea id="boardContentInput" class="text board-textarea" placeholder="내용"></textarea>
 
-<input id="boardImageInput" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"/>
+<input id="boardImageInput" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" multiple/>
 
 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
   <input id="boardPinInput" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="비밀번호 4자리"/>
@@ -5287,7 +5305,15 @@ document.addEventListener("click", async function(e){
     const content = document.getElementById("boardContentInput").value.trim();
     const writer = document.getElementById("boardWriter").value.trim();
     const pin = document.getElementById("boardPinInput").value.trim();
-    const file = document.getElementById("boardImageInput").files[0];
+const imageInput = document.getElementById("boardImageInput");
+const files = Array.from(imageInput.files || []);
+
+if(files.length > 3){
+  alert("사진은 최대 3장까지만 업로드할 수 있습니다.");
+  return;
+}
+
+const file = files[0];
 
     let imageData = null;
 
