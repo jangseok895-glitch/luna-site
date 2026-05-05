@@ -2550,102 +2550,6 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   border:1px solid rgba(14,165,233,.25) !important;
   background:#ffffff !important;
 }
-
-  .board-post-img{
-  cursor:pointer !important;
-}
-
-#boardImagePopup{
-  position:fixed !important;
-  inset:0 !important;
-  background:rgba(0,0,0,.75) !important;
-  z-index:999999999 !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  padding:20px !important;
-}
-
-#boardImagePopup.hidden{
-  display:none !important;
-}
-
-.board-image-popup-box{
-  position:relative !important;
-  max-width:96vw !important;
-  max-height:92vh !important;
-}
-
-.board-image-popup-img{
-  max-width:96vw !important;
-  max-height:92vh !important;
-  object-fit:contain !important;
-  border-radius:12px !important;
-  background:#fff !important;
-}
-
-.board-image-popup-close{
-  position:absolute !important;
-  top:-14px !important;
-  right:-14px !important;
-  width:42px !important;
-  height:42px !important;
-  border:0 !important;
-  border-radius:50% !important;
-  background:#ef4444 !important;
-  color:#fff !important;
-  font-size:18px !important;
-  font-weight:900 !important;
-  cursor:pointer !important;
-}
-
-  .board-post-img{
-  cursor:pointer !important;
-}
-
-#boardImagePopup{
-  position:fixed !important;
-  inset:0 !important;
-  background:rgba(0,0,0,.75) !important;
-  z-index:999999999 !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  padding:20px !important;
-}
-
-#boardImagePopup.hidden{
-  display:none !important;
-}
-
-.board-image-popup-box{
-  position:relative !important;
-  max-width:96vw !important;
-  max-height:92vh !important;
-}
-
-.board-image-popup-img{
-  max-width:96vw !important;
-  max-height:92vh !important;
-  object-fit:contain !important;
-  border-radius:12px !important;
-  background:#fff !important;
-}
-
-.board-image-popup-close{
-  position:absolute !important;
-  top:-14px !important;
-  right:-14px !important;
-  width:42px !important;
-  height:42px !important;
-  border:0 !important;
-  border-radius:50% !important;
-  background:#ef4444 !important;
-  color:#fff !important;
-  font-size:18px !important;
-  font-weight:900 !important;
-  cursor:pointer !important;
-}
 </style>
 </head>
 
@@ -5309,12 +5213,12 @@ function openBoardPost(idx){
 ${p.imageUrls && p.imageUrls.length ? `
   <div class="board-post-images">
     ${p.imageUrls.map(url => `
-<img class="board-post-img" src="${esc(url)}" alt="첨부 이미지" onclick="openBoardImagePopup('${esc(url)}')">
+      <img class="board-post-img" src="${esc(url)}" alt="첨부 이미지">
     `).join("")}
   </div>
 ` : p.imageUrl ? `
   <div class="board-post-images">
-<img class="board-post-img" src="${esc(p.imageUrl)}" alt="첨부 이미지" onclick="openBoardImagePopup('${esc(p.imageUrl)}')">
+    <img class="board-post-img" src="${esc(p.imageUrl)}" alt="첨부 이미지">
   </div>
 ` : ""}
 
@@ -5470,43 +5374,17 @@ for(const file of files){
 
 function fileToBase64Data(file){
   return new Promise((resolve, reject) => {
-    const img = new Image();
     const reader = new FileReader();
 
-    reader.onload = e => {
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      const base64 = result.split(",")[1];
 
-        const maxW = 900;
-        const maxH = 900;
-
-        let w = img.width;
-        let h = img.height;
-
-        if(w > h && w > maxW){
-          h = Math.round(h * maxW / w);
-          w = maxW;
-        }else if(h > maxH){
-          w = Math.round(w * maxH / h);
-          h = maxH;
-        }
-
-        canvas.width = w;
-        canvas.height = h;
-
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, w, h);
-
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.65);
-
-        resolve({
-          mimeType: "image/jpeg",
-          base64: dataUrl.split(",")[1]
-        });
-      };
-
-      img.onerror = reject;
-      img.src = e.target.result;
+      resolve({
+        name: file.name,
+        mimeType: file.type,
+        base64
+      });
     };
 
     reader.onerror = reject;
@@ -5778,10 +5656,6 @@ async function handleTeamScreenshotFile(file){
     alert("사진 용량은 5MB 이하로 올려주세요.");
     return;
   }
-
-    imageDataList.push(await fileToBase64Data(file));
-}
-  
   TEAM_REQUEST_SCREENSHOT_DATA = await fileToDataUrl(file);
   TEAM_REQUEST_SCREENSHOT_NAME = file.name || "소통방 스크린샷";
   const label = document.getElementById("reqScreenshotFileName");
@@ -6958,38 +6832,7 @@ ctx.shadowBlur = 0;
 
   requestAnimationFrame(frame);
 }
-
-function openBoardImagePopup(url){
-  let popup = document.getElementById("boardImagePopup");
-
-  if(!popup){
-    popup = document.createElement("div");
-    popup.id = "boardImagePopup";
-    popup.className = "hidden";
-    popup.innerHTML = `
-      <div class="board-image-popup-box" onclick="event.stopPropagation()">
-        <button class="board-image-popup-close" onclick="closeBoardImagePopup()">×</button>
-        <img id="boardImagePopupImg" class="board-image-popup-img" src="">
-      </div>
-    `;
-    popup.onclick = closeBoardImagePopup;
-    document.body.appendChild(popup);
-  }
-
-  const img = document.getElementById("boardImagePopupImg");
-  if(!img) return;
-
-  img.src = url;
-  popup.classList.remove("hidden");
-}
-
-function closeBoardImagePopup(){
-  const popup = document.getElementById("boardImagePopup");
-  const img = document.getElementById("boardImagePopupImg");
-
-  if(img) img.src = "";
-  if(popup) popup.classList.add("hidden");
-}
+  
 </script>
   <div id="rankGraphPopup" class="hidden">
   <div class="rank-graph-box">
@@ -7033,12 +6876,6 @@ function closeBoardImagePopup(){
       <h3>3. 단체 실력 발전가능성 TOP 10</h3>
 <canvas id="clubGrowthCanvas" width="390" height="420"></canvas>
     </div>
-  </div>
-</div>
-    <div id="boardImagePopup" class="hidden" onclick="closeBoardImagePopup()">
-  <div class="board-image-popup-box" onclick="event.stopPropagation()">
-    <button class="board-image-popup-close" onclick="closeBoardImagePopup()">×</button>
-    <img id="boardImagePopupImg" class="board-image-popup-img" src="">
   </div>
 </div>
 </body>
