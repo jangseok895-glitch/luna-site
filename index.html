@@ -2599,6 +2599,29 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 .board-post-img{
   cursor:pointer !important;
 }
+
+  /* 선호맵 TOP 10 그래프 넓게 사용 */
+#preferMapGraphSection{
+  width:100% !important;
+}
+
+#preferMapGraphSection .club-graph-grid{
+  display:block !important;
+  width:100% !important;
+}
+
+#preferMapGraphSection .club-graph-card{
+  width:100% !important;
+  max-width:none !important;
+  min-height:560px !important;
+  padding:18px 24px !important;
+}
+
+#preferMapCanvas{
+  width:100% !important;
+  height:520px !important;
+  display:block !important;
+}
 </style>
 </head>
 
@@ -7208,7 +7231,7 @@ ctx.shadowBlur = 0;
   <div class="club-graph-grid">
     <div class="club-graph-card">
       <h3>선호맵 TOP 10</h3>
-<canvas id="preferMapCanvas" width="1000" height="520"></canvas>
+<canvas id="preferMapCanvas" width="1150" height="520"></canvas>
     </div>
   </div>
 </div>
