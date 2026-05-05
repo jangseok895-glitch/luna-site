@@ -4616,7 +4616,8 @@ async function getBoardPostsSupabase(board){
       writer: r.writer || "",
       pin: r.pin4 || r.pin || "",
       createdAt: r.created_at || r.createdAt || "",
-      imageUrl: r.image_url || r.imageUrl || "",
+imageUrl: r.image_url || r.imageUrl || "",
+imageUrls: r.image_urls || [],
       views: Number(r.views || 0),
       adminReply: r.admin_reply || r.adminReply || "",
       adminReplyAt: r.admin_reply_at || r.adminReplyAt || ""
@@ -4624,23 +4625,31 @@ async function getBoardPostsSupabase(board){
   };
 }
 
-async function addBoardPostSupabase(board, title, content, writer, pin4, imageData){
-  let imageUrl = "";
-  // GitHub 정적 환경에서는 파일 업로드용 Storage 설정이 없으면 이미지 저장은 별도 작업 필요
-  // 임시로 data URL 저장 가능하지만 DB 용량 문제 때문에 작은 이미지만 권장
-  if(imageData && imageData.base64){
-    imageUrl = `data:${imageData.mimeType};base64,${imageData.base64}`;
-  }
+async function addBoardPostSupabase(board, title, content, writer, pin4, imageDataList){
+  const imageUrls = [];
+
+  const list = Array.isArray(imageDataList)
+    ? imageDataList
+    : (imageDataList ? [imageDataList] : []);
+
+  list.forEach(img => {
+    if(img && img.base64){
+      imageUrls.push(`data:${img.mimeType};base64,${img.base64}`);
+    }
+  });
+
   const row = {
     board:String(board || "promo"),
     title:String(title || ""),
     content:String(content || ""),
     writer:String(writer || ""),
     pin4:String(pin4 || ""),
-    image_url:imageUrl,
+    image_url:imageUrls[0] || "",
+    image_urls:imageUrls,
     views:0,
     created_at:new Date().toISOString()
   };
+
   const { error } = await sb.from("board_posts").insert(row);
   if(error) throw error;
   return { ok:true };
@@ -5323,11 +5332,9 @@ if(files.length > 3){
   return;
 }
 
-const file = files[0];
+let imageDataList = [];
 
-    let imageData = null;
-
-if(file){
+for(const file of files){
   const allowedTypes = ["image/jpeg", "image/png"];
 
   if(!allowedTypes.includes(file.type)){
@@ -5335,7 +5342,7 @@ if(file){
     return;
   }
 
-  imageData = await fileToBase64Data(file);
+  imageDataList.push(await fileToBase64Data(file));
 }
 
     showLoading("게시글 등록 중입니다");
@@ -5359,7 +5366,7 @@ if(file){
         hideLoading();
         toast(e.message || "작성 실패");
       })
-      .addBoardPost(CURRENT_BOARD, title, content, writer, pin, imageData);
+.addBoardPost(CURRENT_BOARD, title, content, writer, pin, imageDataList);
 
     return;
   }
