@@ -4744,7 +4744,7 @@ async function getBoardPostsSupabase(board){
   const b = String(board || "promo");
 
   const rows = await sbSelect("board_posts", q =>
-    q.select("*")
+    q.select("id,no,board,title,content,writer,pin4,created_at,views,admin_reply,admin_reply_at")
       .eq("board", b)
       .order("created_at", { ascending:false })
       .order("id", { ascending:false })
@@ -4758,13 +4758,12 @@ async function getBoardPostsSupabase(board){
       title: r.title || "",
       content: r.content || "",
       writer: r.writer || "",
-      pin: r.pin4 || r.pin || "",
-      createdAt: r.created_at || r.createdAt || "",
-imageUrl: r.image_url || r.imageUrl || "",
-imageUrls: r.image_urls || [],
+      pin: r.pin4 || "",
+      createdAt: r.created_at || "",
+      imageUrl: "",
       views: Number(r.views || 0),
-      adminReply: r.admin_reply || r.adminReply || "",
-      adminReplyAt: r.admin_reply_at || r.adminReplyAt || ""
+      adminReply: r.admin_reply || "",
+      adminReplyAt: r.admin_reply_at || ""
     }))
   };
 }
@@ -5345,15 +5344,12 @@ function openBoardPost(idx){
         </div>
       ` : ""}
 
-${p.imageUrls && p.imageUrls.length ? `
-  <div class="board-post-images">
-    ${p.imageUrls.map(url => `
-<img class="board-post-img" src="${esc(url)}" alt="첨부 이미지" onclick="openBoardImagePopup('${esc(url)}')">
+${p.imageUrls && p.imageUrls.length ? `...` : p.imageUrl ? `...` : ""}
     `).join("")}
   </div>
 ` : p.imageUrl ? `
   <div class="board-post-images">
-<img class="board-post-img" src="${esc(p.imageUrl)}" alt="첨부 이미지" onclick="openBoardImagePopup('${esc(p.imageUrl)}')">
+${p.imageUrls && p.imageUrls.length ? `...` : p.imageUrl ? `...` : ""}
   </div>
 ` : ""}
 
