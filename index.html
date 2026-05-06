@@ -2165,12 +2165,36 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   flex:0 0 auto !important;
 }
 
+#liveLogBox{
+  width:230px !important;
+  height:34px !important;
+  margin-left:8px !important;
+  overflow:hidden !important;
+  border-radius:12px !important;
+
+  background:#ffffff !important;          /* 흰색 배경 */
+  border:2px solid #38bdf8 !important;     /* 하늘색 테두리 */
+
+  display:inline-flex !important;
+  align-items:center !important;
+  padding:0 10px !important;
+  flex:0 0 230px !important;
+}
+
+/* 전체 텍스트 */
 #liveLogTrack{
   white-space:nowrap !important;
   font-size:14px !important;
-  font-weight:400 !important;
+  font-weight:400 !important;   /* 기본 얇게 */
   color:#111827 !important;
-  animation:liveLogScroll 7s linear infinite !important;
+
+  animation:liveLogScroll 11s linear infinite !important;
+}
+
+/* 아이디만 강조 */
+.live-nick{
+  color:#2563eb;
+  font-weight:900;
 }
 
 @keyframes liveLogScroll{
@@ -2753,7 +2777,7 @@ function turnOffBGM(){
   <span id="onlineCount" class="online-count">-</span>
 </div>
 
-<div id="liveLogBox">
+  <div id="liveLogBox">
   <div id="liveLogTrack">최근 활동을 불러오는 중...</div>
 </div>
 </div>
