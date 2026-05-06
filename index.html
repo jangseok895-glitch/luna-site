@@ -2165,35 +2165,17 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   flex:0 0 auto !important;
 }
 
-#liveLogBox{
-  position:relative !important;
-  width:230px !important;
-  height:34px !important;
-  overflow:hidden !important;
-}
-
-.liveLogTrack{
-  position:absolute !important;
-  left:0 !important;
-  top:50% !important;
+#liveLogTrack{
   white-space:nowrap !important;
   font-size:14px !important;
   font-weight:400 !important;
   color:#111827 !important;
-  transform:translateY(-50%) translateX(230px);
-}
-
-.liveLogTrack.run{
-  animation:liveLogScroll 7s linear forwards !important;
+  animation:liveLogScroll 7s linear infinite !important;
 }
 
 @keyframes liveLogScroll{
-  0%{
-    transform:translateY(-50%) translateX(230px);
-  }
-  100%{
-    transform:translateY(-50%) translateX(-100%);
-  }
+  0%{ transform:translateX(230px); }
+  100%{ transform:translateX(-100%); }
 }
 
   /* 검색 결과 팝업을 왼쪽으로 이동 */
@@ -2772,8 +2754,7 @@ function turnOffBGM(){
 </div>
 
 <div id="liveLogBox">
-  <div class="liveLogTrack" id="liveLogTrack1">최근 활동을 불러오는 중...</div>
-  <div class="liveLogTrack" id="liveLogTrack2"></div>
+  <div id="liveLogTrack">최근 활동을 불러오는 중...</div>
 </div>
 </div>
 <div class="row" style="gap:8px">
