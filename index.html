@@ -2197,9 +2197,23 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   font-weight:900;
 }
 
+#liveLogTrack{
+  white-space:nowrap !important;
+  font-size:14px !important;
+  font-weight:400 !important;
+  color:#111827 !important;
+
+  animation:liveLogScroll 8.5s linear infinite !important;
+}
+
 @keyframes liveLogScroll{
-  0%{ transform:translateX(230px); }
-  100%{ transform:translateX(-100%); }
+  0%{
+    transform:translateX(230px);
+  }
+
+  100%{
+    transform:translateX(-72%);
+  }
 }
 
   /* 검색 결과 팝업을 왼쪽으로 이동 */
