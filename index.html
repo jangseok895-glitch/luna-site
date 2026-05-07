@@ -2697,6 +2697,31 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
       0 0 28px rgba(255,0,0,.45);
   }
 }
+
+  .tournament-thumb-card{
+  position:relative !important;
+}
+
+.tournament-soon-badge{
+  position:absolute !important;
+  left:22px !important;
+  bottom:92px !important;
+
+  padding:8px 15px !important;
+  border-radius:999px !important;
+
+  background:#ff1744 !important;
+  color:#ffffff !important;
+
+  font-size:18px !important;
+  font-weight:900 !important;
+
+  border:3px solid #ffffff !important;
+  box-shadow:0 4px 12px rgba(255,0,0,.45) !important;
+
+  transform:rotate(-8deg) !important;
+  z-index:10 !important;
+}
 </style>
 </head>
 
@@ -5213,6 +5238,7 @@ if(board === "eventTournament"){
 
 <div class="tournament-thumb-card" onclick="openTournamentPoster('critical')">
   <div class="tournament-title">크리티컬 히트 아이템전 대회 - 5월 15일</div>
+    <div class="tournament-soon-badge">임박</div>
   <img class="tournament-thumb-img" src="https://i.ibb.co/n8R1q5R2/11.jpg">
 
   <button
