@@ -2655,6 +2655,50 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   height:270px !important;
   display:block !important;
 }
+
+  .hot-tab{
+  position:relative !important;
+}
+
+.hot-badge{
+  position:absolute !important;
+  top:-10px !important;
+  right:12px !important;
+
+  padding:3px 8px !important;
+  border-radius:999px !important;
+
+  background:linear-gradient(135deg,#ff3b3b,#ff0000) !important;
+  color:#ffffff !important;
+
+  font-size:11px !important;
+  font-weight:900 !important;
+  letter-spacing:.5px !important;
+
+  border:2px solid #ffffff !important;
+
+  box-shadow:
+    0 0 10px rgba(255,0,0,.45),
+    0 0 20px rgba(255,0,0,.25) !important;
+
+  animation:hotPulse 1s infinite;
+}
+
+@keyframes hotPulse{
+  0%,100%{
+    transform:scale(1);
+    box-shadow:
+      0 0 10px rgba(255,0,0,.45),
+      0 0 20px rgba(255,0,0,.25);
+  }
+
+  50%{
+    transform:scale(1.12);
+    box-shadow:
+      0 0 16px rgba(255,0,0,.75),
+      0 0 28px rgba(255,0,0,.45);
+  }
+}
 </style>
 </head>
 
@@ -2797,7 +2841,10 @@ function turnOffBGM(){
 <div class="main-tabs">
   <button class="main-tab active" data-tab="gunpyo">군표</button>
   <button class="main-tab" data-tab="real">군 실명제</button>
-  <button class="main-tab" data-tab="eventTournament">이벤트/대회</button>
+<button class="main-tab hot-tab" data-tab="eventTournament">
+  이벤트/대회
+  <span class="hot-badge">HOT</span>
+</button>
   <button class="main-tab" data-tab="promo">홍보/자유</button>
   <button class="main-tab" data-tab="qna">민원Q/A</button>
 </div>
