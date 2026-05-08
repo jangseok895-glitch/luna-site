@@ -7817,7 +7817,11 @@ async function updateRealTopPercentByTotal(selectedTotal){
   const pos = Math.max(0.04, Math.min(0.88, percent / 100));
 
   boxEl.style.setProperty("--percent-pos", String(pos));
+if(rank <= 30){
+  textEl.innerHTML = `${rank}위`;
+}else{
   textEl.innerHTML = `상위<br>${percent}%`;
+}
 
   if(badgeEl){
     const badge = getRealPercentBadge(rank, percent);
