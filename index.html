@@ -8030,6 +8030,20 @@ badgeEl.className = badge.cls;
     subEl.textContent = "";
   }
 }
+
+  function openRankGuidePopup(){
+  const popup = document.getElementById("rankGuidePopup");
+  if(popup){
+    popup.classList.remove("hidden");
+  }
+}
+
+function closeRankGuidePopup(){
+  const popup = document.getElementById("rankGuidePopup");
+  if(popup){
+    popup.classList.add("hidden");
+  }
+}
 </script>
   <div id="rankGraphPopup" class="hidden">
   <div class="rank-graph-box">
@@ -8105,9 +8119,9 @@ badgeEl.className = badge.cls;
 </div>
 </div>
 
-    <div id="rankGuidePopup" class="hidden">
+<div id="rankGuidePopup" class="hidden">
   <div class="rank-guide-box">
-    <button id="rankGuideCloseBtn" class="rank-guide-close" type="button">닫기</button>
+    <button class="rank-guide-close" type="button" onclick="closeRankGuidePopup()">닫기</button>
     <img class="rank-guide-img" src="https://i.ibb.co/0pjDrvSm/image.png" alt="계급표">
   </div>
 </div>
