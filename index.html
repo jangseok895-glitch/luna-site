@@ -2728,49 +2728,39 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   margin-top:48px !important;
   text-align:center !important;
   color:#ef4444 !important;
-  font-size:28px !important;
+  font-size:26px !important;
   font-weight:1000 !important;
   line-height:1.05 !important;
   text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff,0 3px 5px rgba(0,0,0,.22) !important;
 }
 
 #realPercentSubText{
-  margin-top:6px !important;
-  font-size:20px !important;
-  font-weight:1000 !important;
-  color:#2563eb !important;
-  text-shadow:
-    -1px -1px 0 #ffffff,
-     1px -1px 0 #ffffff,
-    -1px  1px 0 #ffffff,
-     1px  1px 0 #ffffff,
-     0 3px 6px rgba(37,99,235,.25) !important;
+  display:none !important;
 }
 
 .percent-arrow{
   position:absolute !important;
   left:5px !important;
-  top:calc(0px + (180px * var(--percent-pos, .5))) !important;
-  width:72px !important;
-  height:28px !important;
+  top:calc(8px + (150px * var(--percent-pos, .5))) !important;
+  width:76px !important;
+  height:30px !important;
   background:#ef4444 !important;
   clip-path:polygon(0 35%,65% 35%,65% 0,100% 50%,65% 100%,65% 65%,0 65%) !important;
-
   z-index:9999 !important;
   pointer-events:none !important;
-
-  filter:drop-shadow(0 0 8px rgba(239,68,68,.9)) !important;
-  animation:percentArrowGlow .8s ease-in-out infinite !important;
+  animation:percentArrowBlink .65s ease-in-out infinite !important;
 }
 
-@keyframes percentArrowGlow{
+@keyframes percentArrowBlink{
   0%,100%{
-    opacity:.82;
-    filter:drop-shadow(0 0 4px rgba(239,68,68,.6));
+    opacity:.75;
+    transform:scale(1);
+    filter:drop-shadow(0 0 4px rgba(239,68,68,.7));
   }
   50%{
     opacity:1;
-    filter:drop-shadow(0 0 14px rgba(239,68,68,1));
+    transform:scale(1.08);
+    filter:drop-shadow(0 0 16px rgba(239,68,68,1));
   }
 }
 </style>
@@ -7415,7 +7405,7 @@ async function updateRealTopPercentByTotal(selectedTotal){
   if(total <= 0){
     boxEl.style.setProperty("--percent-pos", "0.5");
     textEl.innerHTML = "상위<br>- %";
-    if(subEl) subEl.textContent = "군실명제 등록자 기준";
+    if(subEl) subEl.textContent = "";
     return;
   }
 
@@ -7431,9 +7421,29 @@ async function updateRealTopPercentByTotal(selectedTotal){
   if(!scores.length){
     boxEl.style.setProperty("--percent-pos", "0.5");
     textEl.innerHTML = "상위<br>- %";
-    if(subEl) subEl.textContent = "군실명제 등록자 기준";
+    if(subEl) subEl.textContent = "";
     return;
   }
+
+  const higherCount = scores.filter(v => v > total).length;
+  const rank = higherCount + 1;
+
+  let percent = Math.round((rank / scores.length) * 1000) / 10;
+
+  if(percent < 0.1) percent = 0.1;
+  if(percent > 100) percent = 100;
+
+  // 90% 이상이어도 화살표가 세모 아래로 빠지지 않게 제한
+  const pos = Math.max(0.04, Math.min(0.88, percent / 100));
+
+  boxEl.style.setProperty("--percent-pos", String(pos));
+
+  textEl.innerHTML = `상위<br>${percent}%`;
+
+  if(subEl){
+    subEl.textContent = "";
+  }
+}
 
   const higherCount = scores.filter(v => v > total).length;
   const rank = higherCount + 1;
@@ -7442,7 +7452,7 @@ async function updateRealTopPercentByTotal(selectedTotal){
   if(percent < 0.1) percent = 0.1;
   if(percent > 100) percent = 100;
 
-  const pos = percent / 100;
+const pos = Math.max(0.04, Math.min(0.88, percent / 100));
 
   boxEl.style.setProperty("--percent-pos", String(pos));
   textEl.innerHTML = `상위<br>${percent}%`;
