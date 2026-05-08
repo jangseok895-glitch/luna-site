@@ -4959,7 +4959,7 @@ realViewsEl.innerHTML =
   }
 
   updateRealMeter(total);
-updateRealTopPercentByTotal(total, d.nickname, d.team_name);
+updateRealTopPercentByTotal(total, d.nickname, d.pin5);
   renderRealPc(sel);
 }
 
@@ -7972,7 +7972,7 @@ function getRealPercentBadge(rank, percent){
   return { img:"https://i.ibb.co/hJdpmhzg/image.png", cls:"rank-img" };
 }
 
-async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, selectedTeamName){
+async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, selectedPin5){
   const boxEl = document.getElementById("realPercentGraphBox");
   const textEl = document.getElementById("realPercentText");
   const subEl = document.getElementById("realPercentSubText");
@@ -7980,28 +7980,36 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, sele
 
   if(!boxEl || !textEl) return;
 
-const rows = await sbSelect("team_members", q =>
-  q.select("nickname,pin5,total").not("total", "is", null)
-);
+  const selectedKey =
+    String(selectedNickname || "").trim() + "__" + String(selectedPin5 || "").trim();
 
-  const bestByMember = new Map();
+  const rows = await sbSelect("team_members", q =>
+    q.select("nickname,pin5,total").not("total", "is", null)
+  );
+
+  const bestByPerson = new Map();
 
   rows.forEach(r => {
-const nickname = String(r.nickname || "").trim();
-const pin5 = String(r.pin5 || "").trim();
-const total = Number(r.total) || 0;
+    const nickname = String(r.nickname || "").trim();
+    const pin5 = String(r.pin5 || "").trim();
+    const total = Number(r.total) || 0;
 
-if(!nickname || !pin5 || total <= 0) return;
+    if(!nickname || !pin5 || total <= 0) return;
 
-const key = `${nickname}__${pin5}`;
-    const prev = bestByMember.get(key) || 0;
+    const key = `${nickname}__${pin5}`;
+    const prev = bestByPerson.get(key) || 0;
 
     if(total > prev){
-      bestByMember.set(key, total);
+      bestByPerson.set(key, total);
     }
   });
 
-  const total = Number(selectedTotal) || 0;
+  let total = Number(selectedTotal) || 0;
+
+  /* 선택한 사람도 nickname + pin5 기준 최고점으로 보정 */
+  if(bestByPerson.has(selectedKey)){
+    total = bestByPerson.get(selectedKey);
+  }
 
   if(total <= 0){
     boxEl.style.setProperty("--percent-pos", "0.5");
@@ -8016,7 +8024,7 @@ const key = `${nickname}__${pin5}`;
     return;
   }
 
-  const scores = Array.from(bestByMember.values())
+  const scores = Array.from(bestByPerson.values())
     .filter(v => v > 0)
     .sort((a, b) => b - a);
 
