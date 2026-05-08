@@ -6069,7 +6069,9 @@ ${p.imageUrls && p.imageUrls.length ? `
   loadBoardComments(p.id);
 }
 
-/* ===== 글쓰기 버튼 ===== */
+/* ===== 글쓰기 / 검색 / 계급표 버튼 ===== */
+
+/* 검색창 엔터 */
 document.addEventListener("keydown", function(e){
   if(e.target && e.target.id === "boardSearchInput" && e.key === "Enter"){
     e.preventDefault();
@@ -6077,27 +6079,60 @@ document.addEventListener("keydown", function(e){
   }
 });
 
+/* 검색 버튼 / 초기화 버튼 / 계급표 팝업 */
 document.addEventListener("click", function(e){
+
+  /* 게시판 검색 */
   if(e.target.closest("#btnBoardSearch")){
     e.preventDefault();
     renderBoardList();
+    return;
   }
 
+  /* 게시판 검색 초기화 */
   if(e.target.closest("#btnBoardSearchReset")){
     e.preventDefault();
+
     const input = document.getElementById("boardSearchInput");
     if(input) input.value = "";
-    renderBoardList();
-  }
-});
 
-document.addEventListener("keydown", function(e){
-  if(e.target && e.target.id === "boardSearchInput" && e.key === "Enter"){
+    renderBoardList();
+    return;
+  }
+
+  /* 계급표 팝업 열기 */
+  if(e.target.closest("#rankGuideBtn")){
     e.preventDefault();
-    renderBoardList();
+
+    const popup = document.getElementById("rankGuidePopup");
+    if(popup){
+      popup.classList.remove("hidden");
+    }
+
+    return;
   }
+
+  /* 계급표 팝업 닫기 */
+  if(e.target.closest("#rankGuideCloseBtn")){
+    e.preventDefault();
+
+    const popup = document.getElementById("rankGuidePopup");
+    if(popup){
+      popup.classList.add("hidden");
+    }
+
+    return;
+  }
+
+  /* 계급표 팝업 바깥 클릭 시 닫기 */
+  if(e.target && e.target.id === "rankGuidePopup"){
+    e.target.classList.add("hidden");
+    return;
+  }
+
 });
 
+/* 글쓰기 버튼 / 닫기 버튼 / 작성 버튼 */
 document.addEventListener("click", async function(e){
   const openBtn = e.target.closest("#btnOpenBoardWrite");
   const closeBtn = e.target.closest("#btnCloseBoardWrite");
@@ -6105,17 +6140,21 @@ document.addEventListener("click", async function(e){
 
   if(openBtn){
     e.preventDefault();
+
     document.getElementById("boardWriteBox")?.classList.remove("hidden");
     document.getElementById("boardWriteBox")?.scrollIntoView({
       behavior:"smooth",
       block:"start"
     });
+
     return;
   }
 
   if(closeBtn){
     e.preventDefault();
+
     document.getElementById("boardWriteBox")?.classList.add("hidden");
+
     return;
   }
 
@@ -6126,26 +6165,27 @@ document.addEventListener("click", async function(e){
     const content = document.getElementById("boardContentInput").value.trim();
     const writer = document.getElementById("boardWriter").value.trim();
     const pin = document.getElementById("boardPinInput").value.trim();
-const imageInput = document.getElementById("boardImageInput");
-const files = Array.from(imageInput.files || []);
 
-if(files.length > 3){
-  alert("사진은 최대 3장까지만 업로드할 수 있습니다.");
-  return;
-}
+    const imageInput = document.getElementById("boardImageInput");
+    const files = Array.from(imageInput.files || []);
 
-let imageDataList = [];
+    if(files.length > 3){
+      alert("사진은 최대 3장까지만 업로드할 수 있습니다.");
+      return;
+    }
 
-for(const file of files){
-  const allowedTypes = ["image/jpeg", "image/png"];
+    let imageDataList = [];
 
-  if(!allowedTypes.includes(file.type)){
-    toast("JPG 또는 PNG 파일만 업로드할 수 있습니다.");
-    return;
-  }
+    for(const file of files){
+      const allowedTypes = ["image/jpeg", "image/png"];
 
-  imageDataList.push(await fileToBase64Data(file));
-}
+      if(!allowedTypes.includes(file.type)){
+        toast("JPG 또는 PNG 파일만 업로드할 수 있습니다.");
+        return;
+      }
+
+      imageDataList.push(await fileToBase64Data(file));
+    }
 
     showLoading("게시글 등록 중입니다");
 
@@ -6168,7 +6208,7 @@ for(const file of files){
         hideLoading();
         toast(e.message || "작성 실패");
       })
-.addBoardPost(CURRENT_BOARD, title, content, writer, pin, imageDataList);
+      .addBoardPost(CURRENT_BOARD, title, content, writer, pin, imageDataList);
 
     return;
   }
@@ -8043,13 +8083,6 @@ badgeEl.className = badge.cls;
     </div>
   </div>
 </div>
-</div>
-
-    <div id="rankGuidePopup" class="hidden">
-  <div class="rank-guide-box">
-    <button class="rank-guide-close" type="button" onclick="closeRankGuidePopup()">닫기</button>
-    <img class="rank-guide-img" src="https://i.ibb.co/0pjDrvSm/image.png" alt="계급표">
-  </div>
 </div>
 
     <div id="rankGuidePopup" class="hidden">
