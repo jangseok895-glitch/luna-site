@@ -2700,14 +2700,15 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 #realPercentGraphBox{
   position:absolute !important;
   right:80px !important;
-  top:125px !important;
+  top:155px !important;
   width:260px !important;
-  height:260px !important;
+  height:230px !important;
   display:flex !important;
   flex-direction:column !important;
   align-items:center !important;
   justify-content:flex-start !important;
   z-index:20 !important;
+  overflow:visible !important;
 }
 
 .percent-triangle{
@@ -2720,6 +2721,7 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   align-items:center !important;
   justify-content:center !important;
   filter:drop-shadow(0 8px 12px rgba(0,0,0,.18)) !important;
+  z-index:1 !important;
 }
 
 #realPercentText{
@@ -2753,7 +2755,11 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   height:28px !important;
   background:#ef4444 !important;
   clip-path:polygon(0 35%,65% 35%,65% 0,100% 50%,65% 100%,65% 65%,0 65%) !important;
-  filter:drop-shadow(0 0 7px rgba(239,68,68,.85)) !important;
+
+  z-index:9999 !important;
+  pointer-events:none !important;
+
+  filter:drop-shadow(0 0 8px rgba(239,68,68,.9)) !important;
   animation:percentArrowGlow .8s ease-in-out infinite !important;
 }
 
@@ -7441,9 +7447,9 @@ async function updateRealTopPercentByTotal(selectedTotal){
   boxEl.style.setProperty("--percent-pos", String(pos));
   textEl.innerHTML = `상위<br>${percent}%`;
 
-  if(subEl){
-    subEl.textContent = `${rank}위 / ${scores.length}명`;
-  }
+if(subEl){
+  subEl.textContent = "";
+}
 }
 </script>
   <div id="rankGraphPopup" class="hidden">
