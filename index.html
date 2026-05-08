@@ -2834,6 +2834,115 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     transform:scale(1.2) rotate(15deg);
   }
 }
+
+  /* ===== 세모 그래프 최종 수정 ===== */
+
+/* 그래프 위치/크기 */
+#realPercentGraphBox{
+  right:72px !important;
+  top:160px !important;
+  width:300px !important;
+  height:185px !important;
+}
+
+/* 세모 높이 아주 살짝 낮춤 */
+.percent-triangle{
+  width:128px !important;
+  height:148px !important;
+}
+
+/* 상위 몇% 글씨 3px 작게 */
+#realPercentText{
+  margin-top:38px !important;
+  font-size:21px !important;
+  line-height:1.05 !important;
+}
+
+/* 기존 외계어 기준표 제거 */
+#realPercentGraphBox::after,
+#realPercentGraphBox::before{
+  content:none !important;
+  display:none !important;
+}
+
+/* 기준표를 새로 그림 */
+.percent-triangle::after{
+  content:"0% 상위\A20%\A40%\A60%\A80%\A100% 하위" !important;
+  white-space:pre !important;
+  position:absolute !important;
+  left:148px !important;
+  top:8px !important;
+  width:95px !important;
+  color:#475569 !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+  line-height:29px !important;
+  text-align:left !important;
+  clip-path:none !important;
+  z-index:50 !important;
+}
+
+/* 기준선 */
+.percent-triangle::before{
+  content:"" !important;
+  position:absolute !important;
+  left:130px !important;
+  top:8px !important;
+  width:1px !important;
+  height:145px !important;
+  background:rgba(71,85,105,.35) !important;
+  box-shadow:
+    0 29px 0 rgba(71,85,105,.25),
+    0 58px 0 rgba(71,85,105,.25),
+    0 87px 0 rgba(71,85,105,.25),
+    0 116px 0 rgba(71,85,105,.25),
+    0 145px 0 rgba(71,85,105,.25) !important;
+  clip-path:none !important;
+  z-index:49 !important;
+}
+
+/* 얄상한 반짝 강조 화살표 */
+.percent-arrow{
+  left:42px !important;
+  top:calc(3px + (124px * var(--percent-pos, .5))) !important;
+  width:54px !important;
+  height:20px !important;
+  background:linear-gradient(90deg,#ff3b3b,#ff6b6b) !important;
+  border:2px solid #ffffff !important;
+  border-radius:999px !important;
+  clip-path:polygon(0 32%,68% 32%,68% 12%,100% 50%,68% 88%,68% 68%,0 68%) !important;
+  box-shadow:
+    0 0 8px rgba(239,68,68,.75),
+    0 0 16px rgba(239,68,68,.35) !important;
+  animation:percentArrowTwinkle .8s ease-in-out infinite !important;
+  z-index:9999 !important;
+}
+
+.percent-arrow::after{
+  content:"" !important;
+  position:absolute !important;
+  inset:-4px !important;
+  border-radius:999px !important;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent) !important;
+  animation:percentArrowShine 1.1s linear infinite !important;
+}
+
+@keyframes percentArrowTwinkle{
+  0%,100%{
+    opacity:.82;
+    filter:drop-shadow(0 0 4px rgba(239,68,68,.75));
+  }
+  50%{
+    opacity:1;
+    filter:drop-shadow(0 0 14px rgba(255,0,0,1));
+  }
+}
+
+@keyframes percentArrowShine{
+  0%{ transform:translateX(-45px); opacity:0; }
+  45%{ opacity:.85; }
+  100%{ transform:translateX(45px); opacity:0; }
+}
 </style>
 </head>
 
