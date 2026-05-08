@@ -7997,24 +7997,24 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, sele
     if(!nickname || !pin5 || total <= 0) return;
 
     const key = `${nickname}__${pin5}`;
-    const prev = bestByPerson.get(key) || 0;
+    const prev = bestByPerson.get(key);
 
-    if(total > prev){
-      bestByPerson.set(key, total);
+    if(!prev || total > prev.total){
+      bestByPerson.set(key, {
+        key,
+        nickname,
+        pin5,
+        total
+      });
     }
   });
 
-  let total = Number(selectedTotal) || 0;
+  const rankingList = Array.from(bestByPerson.values())
+    .sort((a, b) => b.total - a.total);
 
-  if(bestByPerson.has(selectedKey)){
-    total = bestByPerson.get(selectedKey);
-  }
+  const myIndex = rankingList.findIndex(item => item.key === selectedKey);
 
-  const scores = Array.from(bestByPerson.values())
-    .filter(v => Number(v) > 0)
-    .sort((a, b) => b - a);
-
-  if(!scores.length || total <= 0){
+  if(myIndex < 0){
     boxEl.style.setProperty("--percent-pos", "0.5");
     textEl.innerHTML = "상위<br>- %";
 
@@ -8027,16 +8027,10 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, sele
     return;
   }
 
-  const EPS = 0.000001;
+  const rank = myIndex + 1;
+  const totalPeople = rankingList.length;
 
-  /* 내 점수보다 높은 '사람 수'만 계산 */
-const uniqueScores = [...new Set(scores)]
-  .sort((a, b) => b - a);
-
-const rank =
-  uniqueScores.findIndex(v => Number(v) === Number(total)) + 1;
-
-  let percent = Math.round((rank / scores.length) * 1000) / 10;
+  let percent = Math.round((rank / totalPeople) * 1000) / 10;
 
   if(percent < 0.1) percent = 0.1;
   if(percent > 100) percent = 100;
