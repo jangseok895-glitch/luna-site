@@ -3060,6 +3060,27 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 #realPercentBadge{
   gap:0 !important;
 }
+
+  /* 그래프 우측 계급 이미지 */
+#realPercentBadge{
+  position:absolute !important;
+  left:220px !important;
+  top:66px !important;
+  width:82px !important;
+  height:82px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  z-index:90 !important;
+}
+
+.rank-badge-img{
+  width:74px !important;
+  height:74px !important;
+  object-fit:contain !important;
+  display:block !important;
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,.22)) !important;
+}
 </style>
 </head>
 
@@ -7702,50 +7723,40 @@ function getRealPercentBadge(rank, percent){
   percent = Number(percent) || 100;
 
   if(rank >= 1 && rank <= 3){
-    return { icon:"👑", name:"금왕관", cls:"rank-gold" };
+    return { img:"https://i.ibb.co/0y40dPsR/image.png", cls:"rank-img" };
   }
-
   if(rank >= 4 && rank <= 15){
-    return { icon:"♛", name:"은왕관", cls:"rank-silver" };
+    return { img:"https://i.ibb.co/bjsC6Rzy/image.png", cls:"rank-img" };
   }
-
   if(rank >= 16 && rank <= 30){
-    return { icon:"♛", name:"동왕관", cls:"rank-bronze" };
+    return { img:"https://i.ibb.co/Z1wMt18B/image.png", cls:"rank-img" };
   }
-
   if(percent <= 10.9){
-    return { icon:"🥇", name:"금메달", cls:"rank-gold" };
+    return { img:"https://i.ibb.co/b527n59M/image.png", cls:"rank-img" };
   }
-
   if(percent <= 15.9){
-    return { icon:"🥈", name:"은메달", cls:"rank-silver" };
+    return { img:"https://i.ibb.co/9Hs21JSc/image.png", cls:"rank-img" };
   }
-
   if(percent <= 23.9){
-    return { icon:"🥉", name:"동메달", cls:"rank-bronze" };
+    return { img:"https://i.ibb.co/C3QjzCjc/image.png", cls:"rank-img" };
   }
-
   if(percent <= 34.9){
-    return { icon:"★", name:"금별", cls:"rank-gold" };
+    return { img:"https://i.ibb.co/Z1RR5hXT/image.png", cls:"rank-img" };
   }
-
   if(percent <= 47.9){
-    return { icon:"★", name:"은별", cls:"rank-silver" };
+    return { img:"https://i.ibb.co/1f93rFd4/image.png", cls:"rank-img" };
   }
-
   if(percent <= 63.9){
-    return { icon:"★", name:"동별", cls:"rank-bronze" };
+    return { img:"https://i.ibb.co/gM5QCftq/image.png", cls:"rank-img" };
   }
-
   if(percent <= 82.9){
-    return { icon:"⌄⌄⌄", name:"상사", cls:"rank-v" };
+    return { img:"https://i.ibb.co/LXWZqMZ9/image.png", cls:"rank-img" };
   }
-
   if(percent <= 90.9){
-    return { icon:"⌄⌄", name:"중사", cls:"rank-v" };
+    return { img:"https://i.ibb.co/7xNk83vK/image.png", cls:"rank-img" };
   }
 
-  return { icon:"⌄", name:"하사", cls:"rank-v" };
+  return { img:"https://i.ibb.co/hJdpmhzg/image.png", cls:"rank-img" };
 }
 
 async function updateRealTopPercentByTotal(selectedTotal){
@@ -7810,10 +7821,7 @@ async function updateRealTopPercentByTotal(selectedTotal){
 
   if(badgeEl){
     const badge = getRealPercentBadge(rank, percent);
-badgeEl.innerHTML = `
-  <div class="rank-icon">${badge.icon}</div>
-  <div class="rank-name">${badge.name}</div>
-`;
+badgeEl.innerHTML = `<img src="${badge.img}" class="rank-badge-img" alt="계급">`;
 badgeEl.className = badge.cls;
   }
 
