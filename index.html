@@ -5311,14 +5311,15 @@ async function getTeamMemberProfileSupabase(team, memberNickname){
   const selections = typeof r.selections === "string" ? JSON.parse(r.selections || "{}") : (r.selections || {});
   const sheet = await getSheetDataSupabase();
   const safeSelections = (typeof normalizeSelectionKeys === "function") ? normalizeSelectionKeys(selections) : selections;
-  return {
-    team:t,
-    nickname:n,
-    totalScore:calcTotalFromSelectionsSupabase(safeSelections, sheet.rows),
-    selections:safeSelections,
-    updatedAt:r.updated_at || r.updatedAt || r.created_at || "",
-    views:newViews
-  };
+return {
+  team:t,
+  nickname:n,
+  pin5:r.pin5 || "",
+  totalScore:calcTotalFromSelectionsSupabase(safeSelections, sheet.rows),
+  selections:safeSelections,
+  updatedAt:r.updated_at || r.updatedAt || r.created_at || "",
+  views:newViews
+};
 }
 
 async function searchTeamMembersSupabase(keyword){
@@ -8038,7 +8039,7 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, sele
   const pos = Math.max(0.04, Math.min(0.88, percent / 100));
   boxEl.style.setProperty("--percent-pos", String(pos));
 
-  if(rank <= 30){
+  if(rank <= 10){
     textEl.innerHTML = `${rank}위`;
   }else{
     textEl.innerHTML = `상위<br>${percent}%`;
