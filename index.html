@@ -4954,7 +4954,7 @@ realViewsEl.innerHTML =
   }
 
   updateRealMeter(total);
-  updateRealTopPercentByTotal(total);
+updateRealTopPercentByTotal(total, d && d.nickname ? d.nickname : "");
   renderRealPc(sel);
 }
 
@@ -7967,7 +7967,7 @@ function getRealPercentBadge(rank, percent){
   return { img:"https://i.ibb.co/hJdpmhzg/image.png", cls:"rank-img" };
 }
 
-async function updateRealTopPercentByTotal(selectedTotal){
+async function updateRealTopPercentByTotal(selectedTotal, selectedNickname){
   const boxEl = document.getElementById("realPercentGraphBox");
   const textEl = document.getElementById("realPercentText");
   const subEl = document.getElementById("realPercentSubText");
@@ -7975,7 +7975,31 @@ async function updateRealTopPercentByTotal(selectedTotal){
 
   if(!boxEl || !textEl) return;
 
-  const total = Number(selectedTotal) || 0;
+  const nick = String(selectedNickname || "").trim();
+
+  const rows = await sbSelect("team_members", q =>
+    q.select("nickname,total").not("total", "is", null)
+  );
+
+  const bestByNickname = new Map();
+
+  rows.forEach(r => {
+    const nickname = String(r.nickname || "").trim();
+    const total = Number(r.total) || 0;
+
+    if(!nickname || total <= 0) return;
+
+    const prev = bestByNickname.get(nickname) || 0;
+    if(total > prev){
+      bestByNickname.set(nickname, total);
+    }
+  });
+
+  let total = Number(selectedTotal) || 0;
+
+  if(nick && bestByNickname.has(nick)){
+    total = bestByNickname.get(nick);
+  }
 
   if(total <= 0){
     boxEl.style.setProperty("--percent-pos", "0.5");
@@ -7984,49 +8008,15 @@ async function updateRealTopPercentByTotal(selectedTotal){
     if(badgeEl){
       badgeEl.textContent = "-";
       badgeEl.className = "";
-      badgeEl.style.color = "#111827";
     }
 
     if(subEl) subEl.textContent = "";
     return;
   }
 
-const rows = await sbSelect("team_members", q =>
-  q.select("nickname,total").not("total", "is", null)
-);
-
-/* 닉네임이 같으면 같은 사람으로 보고, 닉네임별 최고 total만 사용 */
-const bestByNickname = new Map();
-
-rows.forEach(r => {
-  const nickname = String(r.nickname || "").trim();
-  const total = Number(r.total) || 0;
-
-  if(!nickname || total <= 0) return;
-
-  const prev = bestByNickname.get(nickname) || 0;
-
-  if(total > prev){
-    bestByNickname.set(nickname, total);
-  }
-});
-
-const scores = Array.from(bestByNickname.values())
-  .sort((a, b) => b - a);
-
-  if(!scores.length){
-    boxEl.style.setProperty("--percent-pos", "0.5");
-    textEl.innerHTML = "상위<br>- %";
-
-    if(badgeEl){
-      badgeEl.textContent = "-";
-      badgeEl.className = "";
-      badgeEl.style.color = "#111827";
-    }
-
-    if(subEl) subEl.textContent = "";
-    return;
-  }
+  const scores = Array.from(bestByNickname.values())
+    .filter(v => v > 0)
+    .sort((a, b) => b - a);
 
   const higherCount = scores.filter(v => v > total).length;
   const rank = higherCount + 1;
@@ -8039,16 +8029,17 @@ const scores = Array.from(bestByNickname.values())
   const pos = Math.max(0.04, Math.min(0.88, percent / 100));
 
   boxEl.style.setProperty("--percent-pos", String(pos));
-if(rank <= 30){
-  textEl.innerHTML = `${rank}위`;
-}else{
-  textEl.innerHTML = `상위<br>${percent}%`;
-}
+
+  if(rank <= 30){
+    textEl.innerHTML = `${rank}위`;
+  }else{
+    textEl.innerHTML = `상위<br>${percent}%`;
+  }
 
   if(badgeEl){
     const badge = getRealPercentBadge(rank, percent);
-badgeEl.innerHTML = `<img src="${badge.img}" class="rank-badge-img" alt="계급">`;
-badgeEl.className = badge.cls;
+    badgeEl.innerHTML = `<img src="${badge.img}" class="rank-badge-img" alt="계급">`;
+    badgeEl.className = badge.cls;
   }
 
   if(subEl){
