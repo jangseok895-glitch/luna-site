@@ -3278,13 +3278,31 @@ function turnOffBGM(){
   }, 350);
 }
 
-  function openRankGuidePopup(){
-  document.getElementById("rankGuidePopup")?.classList.remove("hidden");
-}
+document.addEventListener("DOMContentLoaded", function(){
+  const rankGuideBtn = document.getElementById("rankGuideBtn");
+  const rankGuidePopup = document.getElementById("rankGuidePopup");
+  const rankGuideCloseBtn = document.getElementById("rankGuideCloseBtn");
 
-function closeRankGuidePopup(){
-  document.getElementById("rankGuidePopup")?.classList.add("hidden");
-}
+  if(rankGuideBtn && rankGuidePopup){
+    rankGuideBtn.addEventListener("click", function(){
+      rankGuidePopup.classList.remove("hidden");
+    });
+  }
+
+  if(rankGuideCloseBtn && rankGuidePopup){
+    rankGuideCloseBtn.addEventListener("click", function(){
+      rankGuidePopup.classList.add("hidden");
+    });
+  }
+
+  if(rankGuidePopup){
+    rankGuidePopup.addEventListener("click", function(e){
+      if(e.target === rankGuidePopup){
+        rankGuidePopup.classList.add("hidden");
+      }
+    });
+  }
+});
 </script>
   
 <div id="imagePopup" class="image-popup hidden" onclick="closeImagePopup()">
@@ -3431,7 +3449,7 @@ function closeRankGuidePopup(){
 
   <div id="realPercentBadge">-</div>
 
-  <button id="rankGuideBtn" type="button" onclick="openRankGuidePopup()">표 보기</button>
+<button id="rankGuideBtn" type="button">표 보기</button>
 
   <div id="realPercentSubText">군실명제 등록자 기준</div>
 </div>
@@ -8030,6 +8048,13 @@ badgeEl.className = badge.cls;
     <div id="rankGuidePopup" class="hidden">
   <div class="rank-guide-box">
     <button class="rank-guide-close" type="button" onclick="closeRankGuidePopup()">닫기</button>
+    <img class="rank-guide-img" src="https://i.ibb.co/0pjDrvSm/image.png" alt="계급표">
+  </div>
+</div>
+
+    <div id="rankGuidePopup" class="hidden">
+  <div class="rank-guide-box">
+    <button id="rankGuideCloseBtn" class="rank-guide-close" type="button">닫기</button>
     <img class="rank-guide-img" src="https://i.ibb.co/0pjDrvSm/image.png" alt="계급표">
   </div>
 </div>
