@@ -2943,6 +2943,48 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   45%{ opacity:.85; }
   100%{ transform:translateX(45px); opacity:0; }
 }
+
+  /* ===== 세모 그래프 우측 계급 표시 ===== */
+#realPercentBadge{
+  position:absolute !important;
+  left:225px !important;
+  top:70px !important;
+  min-width:88px !important;
+  min-height:58px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  font-size:38px !important;
+  font-weight:1000 !important;
+  line-height:1 !important;
+  color:#111827 !important;
+  z-index:80 !important;
+  filter:drop-shadow(0 2px 2px rgba(255,255,255,.9))
+         drop-shadow(0 3px 4px rgba(0,0,0,.18)) !important;
+}
+
+/* 왕관은 크게 */
+#realPercentBadge.badge-crown{
+  font-size:42px !important;
+}
+
+/* 메달 */
+#realPercentBadge.badge-medal{
+  font-size:42px !important;
+}
+
+/* 별 */
+#realPercentBadge.badge-star{
+  font-size:42px !important;
+}
+
+/* 검은색 V 계급 */
+#realPercentBadge.badge-v{
+  font-size:34px !important;
+  letter-spacing:-6px !important;
+  color:#111827 !important;
+}
 </style>
 </head>
 
@@ -3173,6 +3215,8 @@ function turnOffBGM(){
   <div class="percent-triangle">
     <div id="realPercentText">상위<br>- %</div>
   </div>
+
+      <div id="realPercentBadge">-</div>
 
   <div id="realPercentSubText">군실명제 등록자 기준</div>
 </div>
@@ -7578,10 +7622,62 @@ ctx.shadowBlur = 0;
 }
 
 
+function getRealPercentBadge(rank, percent){
+  rank = Number(rank) || 999999;
+  percent = Number(percent) || 100;
+
+  if(rank >= 1 && rank <= 3){
+    return { text:"👑", cls:"badge-crown", color:"#facc15" }; // 금왕관
+  }
+
+  if(rank >= 4 && rank <= 15){
+    return { text:"♕", cls:"badge-crown", color:"#c0c0c0" }; // 은왕관
+  }
+
+  if(rank >= 16 && rank <= 30){
+    return { text:"♕", cls:"badge-crown", color:"#cd7f32" }; // 동왕관
+  }
+
+  if(percent <= 10.9){
+    return { text:"🥇", cls:"badge-medal", color:"#facc15" };
+  }
+
+  if(percent <= 15.9){
+    return { text:"🥈", cls:"badge-medal", color:"#c0c0c0" };
+  }
+
+  if(percent <= 23.9){
+    return { text:"🥉", cls:"badge-medal", color:"#cd7f32" };
+  }
+
+  if(percent <= 34.9){
+    return { text:"★", cls:"badge-star", color:"#facc15" };
+  }
+
+  if(percent <= 47.9){
+    return { text:"★", cls:"badge-star", color:"#c0c0c0" };
+  }
+
+  if(percent <= 63.9){
+    return { text:"★", cls:"badge-star", color:"#cd7f32" };
+  }
+
+  if(percent <= 82.9){
+    return { text:"∨∨∨", cls:"badge-v", color:"#111827" };
+  }
+
+  if(percent <= 90.9){
+    return { text:"∨∨", cls:"badge-v", color:"#111827" };
+  }
+
+  return { text:"∨", cls:"badge-v", color:"#111827" };
+}
+
 async function updateRealTopPercentByTotal(selectedTotal){
   const boxEl = document.getElementById("realPercentGraphBox");
   const textEl = document.getElementById("realPercentText");
   const subEl = document.getElementById("realPercentSubText");
+  const badgeEl = document.getElementById("realPercentBadge");
 
   if(!boxEl || !textEl) return;
 
@@ -7590,6 +7686,13 @@ async function updateRealTopPercentByTotal(selectedTotal){
   if(total <= 0){
     boxEl.style.setProperty("--percent-pos", "0.5");
     textEl.innerHTML = "상위<br>- %";
+
+    if(badgeEl){
+      badgeEl.textContent = "-";
+      badgeEl.className = "";
+      badgeEl.style.color = "#111827";
+    }
+
     if(subEl) subEl.textContent = "";
     return;
   }
@@ -7606,6 +7709,13 @@ async function updateRealTopPercentByTotal(selectedTotal){
   if(!scores.length){
     boxEl.style.setProperty("--percent-pos", "0.5");
     textEl.innerHTML = "상위<br>- %";
+
+    if(badgeEl){
+      badgeEl.textContent = "-";
+      badgeEl.className = "";
+      badgeEl.style.color = "#111827";
+    }
+
     if(subEl) subEl.textContent = "";
     return;
   }
@@ -7622,6 +7732,13 @@ async function updateRealTopPercentByTotal(selectedTotal){
 
   boxEl.style.setProperty("--percent-pos", String(pos));
   textEl.innerHTML = `상위<br>${percent}%`;
+
+  if(badgeEl){
+    const badge = getRealPercentBadge(rank, percent);
+    badgeEl.textContent = badge.text;
+    badgeEl.className = badge.cls;
+    badgeEl.style.color = badge.color;
+  }
 
   if(subEl){
     subEl.textContent = "";
