@@ -8006,7 +8006,7 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, sele
 
   let total = Number(selectedTotal) || 0;
 
-  if(selectedKey && bestByPerson.has(selectedKey)){
+  if(bestByPerson.has(selectedKey)){
     total = bestByPerson.get(selectedKey);
   }
 
@@ -8027,8 +8027,13 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, sele
     return;
   }
 
-  const higherCount = scores.filter(v => v > total).length;
-  const rank = higherCount + 1;
+  const EPS = 0.000001;
+
+  const uniqueHigherScores = [...new Set(
+    scores.filter(v => v > total + EPS)
+  )];
+
+  const rank = uniqueHigherScores.length + 1;
 
   let percent = Math.round((rank / scores.length) * 1000) / 10;
   if(percent < 0.1) percent = 0.1;
