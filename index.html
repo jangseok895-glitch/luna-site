@@ -7936,36 +7936,50 @@ function getRealPercentBadge(rank, percent){
   rank = Number(rank) || 999999;
   percent = Number(percent) || 100;
 
-  if(rank >= 1 && rank <= 3){
+  if(rank === 1){
+    return { img:"https://i.ibb.co/qLTHCXxd/image.png", cls:"rank-img" };
+  }
+
+  if(rank >= 2 && rank <= 3){
     return { img:"https://i.ibb.co/0y40dPsR/image.png", cls:"rank-img" };
   }
+
   if(rank >= 4 && rank <= 15){
     return { img:"https://i.ibb.co/bjsC6Rzy/image.png", cls:"rank-img" };
   }
+
   if(rank >= 16 && rank <= 30){
     return { img:"https://i.ibb.co/Z1wMt18B/image.png", cls:"rank-img" };
   }
+
   if(percent <= 10.9){
     return { img:"https://i.ibb.co/b527n59M/image.png", cls:"rank-img" };
   }
+
   if(percent <= 15.9){
     return { img:"https://i.ibb.co/9Hs21JSc/image.png", cls:"rank-img" };
   }
+
   if(percent <= 23.9){
     return { img:"https://i.ibb.co/C3QjzCjc/image.png", cls:"rank-img" };
   }
+
   if(percent <= 34.9){
     return { img:"https://i.ibb.co/Z1RR5hXT/image.png", cls:"rank-img" };
   }
+
   if(percent <= 47.9){
     return { img:"https://i.ibb.co/1f93rFd4/image.png", cls:"rank-img" };
   }
+
   if(percent <= 63.9){
     return { img:"https://i.ibb.co/gM5QCftq/image.png", cls:"rank-img" };
   }
+
   if(percent <= 82.9){
     return { img:"https://i.ibb.co/LXWZqMZ9/image.png", cls:"rank-img" };
   }
+
   if(percent <= 90.9){
     return { img:"https://i.ibb.co/7xNk83vK/image.png", cls:"rank-img" };
   }
