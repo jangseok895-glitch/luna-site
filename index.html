@@ -2700,9 +2700,9 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 #realPercentGraphBox{
   position:absolute !important;
   right:80px !important;
-  top:155px !important;
-  width:260px !important;
-  height:230px !important;
+  top:160px !important;
+  width:280px !important;
+  height:205px !important;
   display:flex !important;
   flex-direction:column !important;
   align-items:center !important;
@@ -2713,22 +2713,22 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 
 .percent-triangle{
   position:relative !important;
-  width:150px !important;
-  height:180px !important;
+  width:135px !important;
+  height:160px !important;
   clip-path:polygon(50% 0%, 100% 100%, 0% 100%) !important;
   background:linear-gradient(to bottom,#ff4b5c 0%,#8b7cf6 38%,#63e6be 62%,#fff176 100%) !important;
   display:flex !important;
   align-items:center !important;
   justify-content:center !important;
-  filter:drop-shadow(0 8px 12px rgba(0,0,0,.18)) !important;
-  z-index:1 !important;
+  filter:drop-shadow(0 7px 10px rgba(0,0,0,.16)) !important;
+  z-index:2 !important;
 }
 
 #realPercentText{
-  margin-top:48px !important;
+  margin-top:42px !important;
   text-align:center !important;
   color:#ef4444 !important;
-  font-size:26px !important;
+  font-size:24px !important;
   font-weight:1000 !important;
   line-height:1.05 !important;
   text-shadow:
@@ -2743,29 +2743,91 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   display:none !important;
 }
 
+/* 우측 퍼센트 기준선 */
+#realPercentGraphBox::after{
+  content:"0% (상위)\A\A20%\A\A40%\A\A60%\A\A80%\A\A100% (하위)";
+  white-space:pre !important;
+  position:absolute !important;
+  right:-8px !important;
+  top:5px !important;
+  width:92px !important;
+  height:160px !important;
+  color:#475569 !important;
+  font-size:12px !important;
+  font-weight:800 !important;
+  line-height:26px !important;
+  text-align:left !important;
+  z-index:1 !important;
+}
+
+/* 우측 점선 */
+#realPercentGraphBox::before{
+  content:"" !important;
+  position:absolute !important;
+  right:58px !important;
+  top:10px !important;
+  width:82px !important;
+  height:150px !important;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 24px,
+      rgba(100,116,139,.35) 24px,
+      rgba(100,116,139,.35) 25px,
+      transparent 25px,
+      transparent 30px
+    ) !important;
+  z-index:0 !important;
+  pointer-events:none !important;
+}
+
+/* 귀여운 화살표 */
 .percent-arrow{
   position:absolute !important;
-  left:5px !important;
-  top:calc(8px + (150px * var(--percent-pos, .5))) !important;
-  width:76px !important;
-  height:30px !important;
-  background:#ef4444 !important;
-  clip-path:polygon(0 35%,65% 35%,65% 0,100% 50%,65% 100%,65% 65%,0 65%) !important;
+  left:10px !important;
+  top:calc(6px + (134px * var(--percent-pos, .5))) !important;
+  width:58px !important;
+  height:25px !important;
+  background:linear-gradient(135deg,#ff6b6b,#ef4444) !important;
+  border:3px solid #ffffff !important;
+  border-radius:999px 0 0 999px !important;
+  clip-path:polygon(0 20%,62% 20%,62% 0,100% 50%,62% 100%,62% 80%,0 80%) !important;
   z-index:9999 !important;
   pointer-events:none !important;
-  animation:percentArrowBlink .65s ease-in-out infinite !important;
+  animation:percentArrowBlink .7s ease-in-out infinite !important;
+}
+
+.percent-arrow::after{
+  content:"✨" !important;
+  position:absolute !important;
+  left:-18px !important;
+  top:-10px !important;
+  font-size:18px !important;
+  animation:percentSparkle .9s ease-in-out infinite !important;
 }
 
 @keyframes percentArrowBlink{
   0%,100%{
-    opacity:.72;
+    opacity:.78;
     transform:scale(1);
-    filter:drop-shadow(0 0 4px rgba(239,68,68,.75));
+    filter:drop-shadow(0 0 5px rgba(239,68,68,.75));
   }
   50%{
     opacity:1;
-    transform:scale(1.1);
-    filter:drop-shadow(0 0 18px rgba(239,68,68,1));
+    transform:scale(1.08);
+    filter:drop-shadow(0 0 16px rgba(239,68,68,1));
+  }
+}
+
+@keyframes percentSparkle{
+  0%,100%{
+    opacity:.35;
+    transform:scale(.85) rotate(0deg);
+  }
+  50%{
+    opacity:1;
+    transform:scale(1.2) rotate(15deg);
   }
 }
 </style>
