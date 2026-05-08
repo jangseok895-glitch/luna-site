@@ -4959,7 +4959,7 @@ realViewsEl.innerHTML =
   }
 
   updateRealMeter(total);
-updateRealTopPercentByTotal(total, d && d.nickname ? d.nickname : "");
+updateRealTopPercentByTotal(total, d.nickname, d.team_name);
   renderRealPc(sel);
 }
 
@@ -7972,7 +7972,7 @@ function getRealPercentBadge(rank, percent){
   return { img:"https://i.ibb.co/hJdpmhzg/image.png", cls:"rank-img" };
 }
 
-async function updateRealTopPercentByTotal(selectedTotal, selectedNickname){
+async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, selectedTeamName){
   const boxEl = document.getElementById("realPercentGraphBox");
   const textEl = document.getElementById("realPercentText");
   const subEl = document.getElementById("realPercentSubText");
@@ -7980,31 +7980,28 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname){
 
   if(!boxEl || !textEl) return;
 
-  const nick = String(selectedNickname || "").trim();
-
   const rows = await sbSelect("team_members", q =>
-    q.select("nickname,total").not("total", "is", null)
+    q.select("team_name,nickname,total").not("total", "is", null)
   );
 
-  const bestByNickname = new Map();
+  const bestByMember = new Map();
 
   rows.forEach(r => {
+    const teamName = String(r.team_name || "").trim();
     const nickname = String(r.nickname || "").trim();
     const total = Number(r.total) || 0;
 
-    if(!nickname || total <= 0) return;
+    if(!teamName || !nickname || total <= 0) return;
 
-    const prev = bestByNickname.get(nickname) || 0;
+    const key = `${teamName}__${nickname}`;
+    const prev = bestByMember.get(key) || 0;
+
     if(total > prev){
-      bestByNickname.set(nickname, total);
+      bestByMember.set(key, total);
     }
   });
 
-  let total = Number(selectedTotal) || 0;
-
-  if(nick && bestByNickname.has(nick)){
-    total = bestByNickname.get(nick);
-  }
+  const total = Number(selectedTotal) || 0;
 
   if(total <= 0){
     boxEl.style.setProperty("--percent-pos", "0.5");
@@ -8019,7 +8016,7 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname){
     return;
   }
 
-  const scores = Array.from(bestByNickname.values())
+  const scores = Array.from(bestByMember.values())
     .filter(v => v > 0)
     .sort((a, b) => b - a);
 
