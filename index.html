@@ -2748,67 +2748,58 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 }
 
 /* 우측 퍼센트 기준선 */
+/* 우측 퍼센트 기준표 - 깨짐 방지 */
 #realPercentGraphBox::after{
-  content:"0% (상위)\A\A20%\A\A40%\A\A60%\A\A80%\A\A100% (하위)";
+  content:"0% 상위\A20%\A40%\A60%\A80%\A100% 하위" !important;
   white-space:pre !important;
   position:absolute !important;
-  right:-8px !important;
-  top:5px !important;
-  width:92px !important;
-  height:160px !important;
+  left:170px !important;
+  top:3px !important;
+  width:90px !important;
   color:#475569 !important;
-  font-size:12px !important;
+  font-size:11px !important;
   font-weight:800 !important;
-  line-height:26px !important;
+  line-height:27px !important;
   text-align:left !important;
-  z-index:1 !important;
+  z-index:2 !important;
 }
 
-/* 우측 점선 */
+/* 우측 기준선 */
 #realPercentGraphBox::before{
   content:"" !important;
   position:absolute !important;
-  right:58px !important;
+  left:150px !important;
   top:10px !important;
-  width:82px !important;
+  width:1px !important;
   height:150px !important;
-  background:
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0px,
-      transparent 24px,
-      rgba(100,116,139,.35) 24px,
-      rgba(100,116,139,.35) 25px,
-      transparent 25px,
-      transparent 30px
-    ) !important;
-  z-index:0 !important;
-  pointer-events:none !important;
+  background:rgba(100,116,139,.35) !important;
+  box-shadow:
+    0 27px 0 rgba(100,116,139,.25),
+    0 54px 0 rgba(100,116,139,.25),
+    0 81px 0 rgba(100,116,139,.25),
+    0 108px 0 rgba(100,116,139,.25),
+    0 135px 0 rgba(100,116,139,.25) !important;
+  z-index:1 !important;
 }
 
-/* 귀여운 화살표 */
+/* 얇고 귀여운 화살표 */
 .percent-arrow{
   position:absolute !important;
-  left:10px !important;
+  left:20px !important;
   top:calc(6px + (134px * var(--percent-pos, .5))) !important;
-  width:58px !important;
-  height:25px !important;
-  background:linear-gradient(135deg,#ff6b6b,#ef4444) !important;
-  border:3px solid #ffffff !important;
-  border-radius:999px 0 0 999px !important;
-  clip-path:polygon(0 20%,62% 20%,62% 0,100% 50%,62% 100%,62% 80%,0 80%) !important;
+  width:48px !important;
+  height:18px !important;
+  background:linear-gradient(135deg,#ff7a7a,#ef4444) !important;
+  border:2px solid #ffffff !important;
+  border-radius:999px !important;
+  clip-path:polygon(0 28%,68% 28%,68% 8%,100% 50%,68% 92%,68% 72%,0 72%) !important;
   z-index:9999 !important;
   pointer-events:none !important;
-  animation:percentArrowBlink .7s ease-in-out infinite !important;
+  animation:percentArrowBlink .85s ease-in-out infinite !important;
 }
 
 .percent-arrow::after{
-  content:"✨" !important;
-  position:absolute !important;
-  left:-18px !important;
-  top:-10px !important;
-  font-size:18px !important;
-  animation:percentSparkle .9s ease-in-out infinite !important;
+  content:"" !important;
 }
 
 @keyframes percentArrowBlink{
@@ -2833,6 +2824,11 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     opacity:1;
     transform:scale(1.2) rotate(15deg);
   }
+}
+
+  #realPercentGraphBox{
+  width:260px !important;
+  padding-right:95px !important;
 }
 </style>
 </head>
