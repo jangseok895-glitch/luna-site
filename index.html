@@ -7980,20 +7980,20 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, sele
 
   if(!boxEl || !textEl) return;
 
-  const rows = await sbSelect("team_members", q =>
-    q.select("team_name,nickname,total").not("total", "is", null)
-  );
+const rows = await sbSelect("team_members", q =>
+  q.select("nickname,pin5,total").not("total", "is", null)
+);
 
   const bestByMember = new Map();
 
   rows.forEach(r => {
-    const teamName = String(r.team_name || "").trim();
-    const nickname = String(r.nickname || "").trim();
-    const total = Number(r.total) || 0;
+const nickname = String(r.nickname || "").trim();
+const pin5 = String(r.pin5 || "").trim();
+const total = Number(r.total) || 0;
 
-    if(!teamName || !nickname || total <= 0) return;
+if(!nickname || !pin5 || total <= 0) return;
 
-    const key = `${teamName}__${nickname}`;
+const key = `${nickname}__${pin5}`;
     const prev = bestByMember.get(key) || 0;
 
     if(total > prev){
