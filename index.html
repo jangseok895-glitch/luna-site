@@ -8011,7 +8011,7 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, sele
   }
 
   const scores = Array.from(bestByPerson.values())
-    .filter(v => v > 0)
+    .filter(v => Number(v) > 0)
     .sort((a, b) => b - a);
 
   if(!scores.length || total <= 0){
@@ -8029,13 +8029,12 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, sele
 
   const EPS = 0.000001;
 
-  const uniqueHigherScores = [...new Set(
-    scores.filter(v => v > total + EPS)
-  )];
-
-  const rank = uniqueHigherScores.length + 1;
+  /* 내 점수보다 높은 '사람 수'만 계산 */
+  const higherCount = scores.filter(v => Number(v) > Number(total) + EPS).length;
+  const rank = higherCount + 1;
 
   let percent = Math.round((rank / scores.length) * 1000) / 10;
+
   if(percent < 0.1) percent = 0.1;
   if(percent > 100) percent = 100;
 
