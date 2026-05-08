@@ -3201,22 +3201,77 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 }
 
   /* 1위 다이아왕관 반짝 효과 */
-#realPercentBadge.rank-diamond .rank-badge-img{
-  animation:diamondCrownSparkle 1.2s ease-in-out infinite !important;
-  filter:
-    drop-shadow(0 0 6px rgba(255,215,0,.9))
-    drop-shadow(0 0 12px rgba(255,255,255,.9))
-    drop-shadow(0 0 18px rgba(125,211,252,.65)) !important;
+/* 1위 다이아왕관 주변 랜덤 반짝 효과 */
+#realPercentBadge.rank-diamond{
+  position:absolute !important;
+  overflow:visible !important;
 }
 
-@keyframes diamondCrownSparkle{
+#realPercentBadge.rank-diamond .rank-badge-img{
+  animation:diamondCrownFloat 1.8s ease-in-out infinite !important;
+  filter:drop-shadow(0 3px 5px rgba(0,0,0,.25)) !important;
+}
+
+/* 반짝 점 1 */
+#realPercentBadge.rank-diamond::before{
+  content:"✦" !important;
+  position:absolute !important;
+  left:-10px !important;
+  top:4px !important;
+  color:#ffd700 !important;
+  font-size:18px !important;
+  animation:diamondSpark1 1.4s ease-in-out infinite !important;
+  z-index:120 !important;
+}
+
+/* 반짝 점 2 */
+#realPercentBadge.rank-diamond::after{
+  content:"✧" !important;
+  position:absolute !important;
+  right:-8px !important;
+  top:18px !important;
+  color:#ffffff !important;
+  font-size:16px !important;
+  animation:diamondSpark2 1.7s ease-in-out infinite !important;
+  z-index:120 !important;
+}
+
+@keyframes diamondCrownFloat{
   0%,100%{
-    transform:scale(1);
-    opacity:.95;
+    transform:translateY(0) rotate(-2deg);
   }
   50%{
-    transform:scale(1.08);
+    transform:translateY(-4px) rotate(2deg);
+  }
+}
+
+@keyframes diamondSpark1{
+  0%,100%{
+    opacity:0;
+    transform:scale(.3) rotate(0deg);
+  }
+  35%{
     opacity:1;
+    transform:scale(1.25) rotate(25deg);
+  }
+  70%{
+    opacity:.25;
+    transform:scale(.7) rotate(60deg);
+  }
+}
+
+@keyframes diamondSpark2{
+  0%,100%{
+    opacity:.15;
+    transform:scale(.5) rotate(0deg);
+  }
+  45%{
+    opacity:1;
+    transform:scale(1.35) rotate(-35deg);
+  }
+  80%{
+    opacity:0;
+    transform:scale(.4) rotate(-70deg);
   }
 }
 </style>
