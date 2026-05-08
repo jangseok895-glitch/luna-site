@@ -2697,20 +2697,21 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   z-index:10 !important;
 }
 
-  #realPercentGraphBox{
+#realPercentGraphBox{
   position:absolute !important;
-  right:85px !important;
-  top:205px !important;
-  width:230px !important;
-  height:230px !important;
+  right:80px !important;
+  top:125px !important;
+  width:260px !important;
+  height:260px !important;
   display:flex !important;
   flex-direction:column !important;
   align-items:center !important;
-  justify-content:center !important;
+  justify-content:flex-start !important;
   z-index:20 !important;
 }
 
 .percent-triangle{
+  position:relative !important;
   width:150px !important;
   height:180px !important;
   clip-path:polygon(50% 0%, 100% 100%, 0% 100%) !important;
@@ -2718,6 +2719,7 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   display:flex !important;
   align-items:center !important;
   justify-content:center !important;
+  filter:drop-shadow(0 8px 12px rgba(0,0,0,.18)) !important;
 }
 
 #realPercentText{
@@ -2727,30 +2729,43 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   font-size:28px !important;
   font-weight:1000 !important;
   line-height:1.05 !important;
-  text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff !important;
+  text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff,0 3px 5px rgba(0,0,0,.22) !important;
 }
 
 #realPercentSubText{
-  margin-top:8px !important;
-  font-size:13px !important;
-  font-weight:900 !important;
+  margin-top:6px !important;
+  font-size:20px !important;
+  font-weight:1000 !important;
   color:#2563eb !important;
+  text-shadow:
+    -1px -1px 0 #ffffff,
+     1px -1px 0 #ffffff,
+    -1px  1px 0 #ffffff,
+     1px  1px 0 #ffffff,
+     0 3px 6px rgba(37,99,235,.25) !important;
 }
 
 .percent-arrow{
   position:absolute !important;
   left:5px !important;
-  top:65px !important;
-  width:70px !important;
-  height:26px !important;
+  top:calc(0px + (180px * var(--percent-pos, .5))) !important;
+  width:72px !important;
+  height:28px !important;
   background:#ef4444 !important;
   clip-path:polygon(0 35%,65% 35%,65% 0,100% 50%,65% 100%,65% 65%,0 65%) !important;
-  animation:percentArrowMove 1s ease-in-out infinite !important;
+  filter:drop-shadow(0 0 7px rgba(239,68,68,.85)) !important;
+  animation:percentArrowGlow .8s ease-in-out infinite !important;
 }
 
-@keyframes percentArrowMove{
-  0%,100%{ transform:translateY(-8px); }
-  50%{ transform:translateY(10px); }
+@keyframes percentArrowGlow{
+  0%,100%{
+    opacity:.82;
+    filter:drop-shadow(0 0 4px rgba(239,68,68,.6));
+  }
+  50%{
+    opacity:1;
+    filter:drop-shadow(0 0 14px rgba(239,68,68,1));
+  }
 }
 </style>
 </head>
@@ -7382,15 +7397,17 @@ ctx.shadowBlur = 0;
 }
 
 
-  async function updateRealTopPercentByTotal(selectedTotal){
+async function updateRealTopPercentByTotal(selectedTotal){
+  const boxEl = document.getElementById("realPercentGraphBox");
   const textEl = document.getElementById("realPercentText");
   const subEl = document.getElementById("realPercentSubText");
 
-  if(!textEl) return;
+  if(!boxEl || !textEl) return;
 
   const total = Number(selectedTotal) || 0;
 
   if(total <= 0){
+    boxEl.style.setProperty("--percent-pos", "0.5");
     textEl.innerHTML = "상위<br>- %";
     if(subEl) subEl.textContent = "군실명제 등록자 기준";
     return;
@@ -7406,6 +7423,7 @@ ctx.shadowBlur = 0;
     .sort((a, b) => b - a);
 
   if(!scores.length){
+    boxEl.style.setProperty("--percent-pos", "0.5");
     textEl.innerHTML = "상위<br>- %";
     if(subEl) subEl.textContent = "군실명제 등록자 기준";
     return;
@@ -7416,7 +7434,11 @@ ctx.shadowBlur = 0;
 
   let percent = Math.round((rank / scores.length) * 1000) / 10;
   if(percent < 0.1) percent = 0.1;
+  if(percent > 100) percent = 100;
 
+  const pos = percent / 100;
+
+  boxEl.style.setProperty("--percent-pos", String(pos));
   textEl.innerHTML = `상위<br>${percent}%`;
 
   if(subEl){
