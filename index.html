@@ -2696,6 +2696,62 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   transform:rotate(-8deg) !important;
   z-index:10 !important;
 }
+
+  #realPercentGraphBox{
+  position:absolute !important;
+  right:85px !important;
+  top:205px !important;
+  width:230px !important;
+  height:230px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  z-index:20 !important;
+}
+
+.percent-triangle{
+  width:150px !important;
+  height:180px !important;
+  clip-path:polygon(50% 0%, 100% 100%, 0% 100%) !important;
+  background:linear-gradient(to bottom,#ff4b5c 0%,#8b7cf6 38%,#63e6be 62%,#fff176 100%) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+#realPercentText{
+  margin-top:48px !important;
+  text-align:center !important;
+  color:#ef4444 !important;
+  font-size:28px !important;
+  font-weight:1000 !important;
+  line-height:1.05 !important;
+  text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff !important;
+}
+
+#realPercentSubText{
+  margin-top:8px !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+  color:#2563eb !important;
+}
+
+.percent-arrow{
+  position:absolute !important;
+  left:5px !important;
+  top:65px !important;
+  width:70px !important;
+  height:26px !important;
+  background:#ef4444 !important;
+  clip-path:polygon(0 35%,65% 35%,65% 0,100% 50%,65% 100%,65% 65%,0 65%) !important;
+  animation:percentArrowMove 1s ease-in-out infinite !important;
+}
+
+@keyframes percentArrowMove{
+  0%,100%{ transform:translateY(-8px); }
+  50%{ transform:translateY(10px); }
+}
 </style>
 </head>
 
@@ -2918,6 +2974,16 @@ function turnOffBGM(){
 <div class="rank-meter" id="realRankMeter">
   <div class="meter-scale" id="realMeterScale"></div>
   <div class="meter-arrow" id="realMeterArrow"></div>
+</div>
+
+  <div id="realPercentGraphBox">
+  <div class="percent-arrow"></div>
+
+  <div class="percent-triangle">
+    <div id="realPercentText">상위<br>- %</div>
+  </div>
+
+  <div id="realPercentSubText">군실명제 등록자 기준</div>
 </div>
 
 <div id="manageOpenBox">
@@ -4076,6 +4142,7 @@ function clearRealResult() {
     "선택된 멤버가 없습니다";
   document.getElementById("realSavedAt").textContent = "마지막 저장한 날짜 : -";
   updateRealMeter(0, true);
+  updateRealTopPercentByTotal(0);
 
   const tb = document.getElementById("tbodyRealPc");
   if (tb)
@@ -4383,6 +4450,7 @@ realViewsEl.innerHTML =
   }
 
   updateRealMeter(total);
+  updateRealTopPercentByTotal(total);
   renderRealPc(sel);
 }
 
@@ -7312,7 +7380,49 @@ ctx.shadowBlur = 0;
 
   requestAnimationFrame(frame);
 }
-  
+
+
+  async function updateRealTopPercentByTotal(selectedTotal){
+  const textEl = document.getElementById("realPercentText");
+  const subEl = document.getElementById("realPercentSubText");
+
+  if(!textEl) return;
+
+  const total = Number(selectedTotal) || 0;
+
+  if(total <= 0){
+    textEl.innerHTML = "상위<br>- %";
+    if(subEl) subEl.textContent = "군실명제 등록자 기준";
+    return;
+  }
+
+  const rows = await sbSelect("team_members", q =>
+    q.select("total").not("total", "is", null)
+  );
+
+  const scores = rows
+    .map(r => Number(r.total) || 0)
+    .filter(v => v > 0)
+    .sort((a, b) => b - a);
+
+  if(!scores.length){
+    textEl.innerHTML = "상위<br>- %";
+    if(subEl) subEl.textContent = "군실명제 등록자 기준";
+    return;
+  }
+
+  const higherCount = scores.filter(v => v > total).length;
+  const rank = higherCount + 1;
+
+  let percent = Math.round((rank / scores.length) * 1000) / 10;
+  if(percent < 0.1) percent = 0.1;
+
+  textEl.innerHTML = `상위<br>${percent}%`;
+
+  if(subEl){
+    subEl.textContent = `${rank}위 / ${scores.length}명`;
+  }
+}
 </script>
   <div id="rankGraphPopup" class="hidden">
   <div class="rank-graph-box">
