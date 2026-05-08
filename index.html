@@ -8006,12 +8006,15 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, sele
 
   let total = Number(selectedTotal) || 0;
 
-  /* 선택한 사람도 nickname + pin5 기준 최고점으로 보정 */
-  if(bestByPerson.has(selectedKey)){
+  if(selectedKey && bestByPerson.has(selectedKey)){
     total = bestByPerson.get(selectedKey);
   }
 
-  if(total <= 0){
+  const scores = Array.from(bestByPerson.values())
+    .filter(v => v > 0)
+    .sort((a, b) => b - a);
+
+  if(!scores.length || total <= 0){
     boxEl.style.setProperty("--percent-pos", "0.5");
     textEl.innerHTML = "상위<br>- %";
 
@@ -8024,20 +8027,14 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, sele
     return;
   }
 
-  const scores = Array.from(bestByPerson.values())
-    .filter(v => v > 0)
-    .sort((a, b) => b - a);
-
   const higherCount = scores.filter(v => v > total).length;
   const rank = higherCount + 1;
 
   let percent = Math.round((rank / scores.length) * 1000) / 10;
-
   if(percent < 0.1) percent = 0.1;
   if(percent > 100) percent = 100;
 
   const pos = Math.max(0.04, Math.min(0.88, percent / 100));
-
   boxEl.style.setProperty("--percent-pos", String(pos));
 
   if(rank <= 30){
