@@ -2985,6 +2985,71 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   letter-spacing:-6px !important;
   color:#111827 !important;
 }
+
+  /* ===== 그래프 우측 계급 표시 개선 ===== */
+#realPercentBadge{
+  position:absolute !important;
+  left:220px !important;
+  top:66px !important;
+  width:96px !important;
+  min-height:72px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:4px !important;
+  z-index:90 !important;
+  text-align:center !important;
+}
+
+#realPercentBadge .rank-icon{
+  font-size:38px !important;
+  line-height:1 !important;
+  font-weight:1000 !important;
+  text-shadow:
+    0 2px 0 #ffffff,
+    0 3px 5px rgba(0,0,0,.25) !important;
+}
+
+#realPercentBadge .rank-name{
+  padding:4px 9px !important;
+  border-radius:999px !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+  line-height:1 !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+  border:2px solid #ffffff !important;
+  box-shadow:0 3px 8px rgba(0,0,0,.18) !important;
+}
+
+#realPercentBadge.rank-gold .rank-icon{
+  color:#facc15 !important;
+}
+
+#realPercentBadge.rank-silver .rank-icon{
+  color:#cbd5e1 !important;
+}
+
+#realPercentBadge.rank-bronze .rank-icon{
+  color:#b45309 !important;
+}
+
+/* 하사/중사/상사 표시 */
+#realPercentBadge.rank-v .rank-icon{
+  color:#111827 !important;
+  font-size:42px !important;
+  letter-spacing:-8px !important;
+  transform:scaleX(1.25) !important;
+  text-shadow:
+    0 2px 0 #ffffff,
+    0 3px 4px rgba(0,0,0,.25) !important;
+}
+
+#realPercentBadge.rank-v .rank-name{
+  background:#111827 !important;
+  color:#ffffff !important;
+}
 </style>
 </head>
 
@@ -7627,50 +7692,50 @@ function getRealPercentBadge(rank, percent){
   percent = Number(percent) || 100;
 
   if(rank >= 1 && rank <= 3){
-    return { text:"👑", cls:"badge-crown", color:"#facc15" }; // 금왕관
+    return { icon:"👑", name:"금왕관", cls:"rank-gold" };
   }
 
   if(rank >= 4 && rank <= 15){
-    return { text:"♕", cls:"badge-crown", color:"#c0c0c0" }; // 은왕관
+    return { icon:"♛", name:"은왕관", cls:"rank-silver" };
   }
 
   if(rank >= 16 && rank <= 30){
-    return { text:"♕", cls:"badge-crown", color:"#cd7f32" }; // 동왕관
+    return { icon:"♛", name:"동왕관", cls:"rank-bronze" };
   }
 
   if(percent <= 10.9){
-    return { text:"🥇", cls:"badge-medal", color:"#facc15" };
+    return { icon:"🥇", name:"금메달", cls:"rank-gold" };
   }
 
   if(percent <= 15.9){
-    return { text:"🥈", cls:"badge-medal", color:"#c0c0c0" };
+    return { icon:"🥈", name:"은메달", cls:"rank-silver" };
   }
 
   if(percent <= 23.9){
-    return { text:"🥉", cls:"badge-medal", color:"#cd7f32" };
+    return { icon:"🥉", name:"동메달", cls:"rank-bronze" };
   }
 
   if(percent <= 34.9){
-    return { text:"★", cls:"badge-star", color:"#facc15" };
+    return { icon:"★", name:"금별", cls:"rank-gold" };
   }
 
   if(percent <= 47.9){
-    return { text:"★", cls:"badge-star", color:"#c0c0c0" };
+    return { icon:"★", name:"은별", cls:"rank-silver" };
   }
 
   if(percent <= 63.9){
-    return { text:"★", cls:"badge-star", color:"#cd7f32" };
+    return { icon:"★", name:"동별", cls:"rank-bronze" };
   }
 
   if(percent <= 82.9){
-    return { text:"∨∨∨", cls:"badge-v", color:"#111827" };
+    return { icon:"⌄⌄⌄", name:"상사", cls:"rank-v" };
   }
 
   if(percent <= 90.9){
-    return { text:"∨∨", cls:"badge-v", color:"#111827" };
+    return { icon:"⌄⌄", name:"중사", cls:"rank-v" };
   }
 
-  return { text:"∨", cls:"badge-v", color:"#111827" };
+  return { icon:"⌄", name:"하사", cls:"rank-v" };
 }
 
 async function updateRealTopPercentByTotal(selectedTotal){
@@ -7735,9 +7800,11 @@ async function updateRealTopPercentByTotal(selectedTotal){
 
   if(badgeEl){
     const badge = getRealPercentBadge(rank, percent);
-    badgeEl.textContent = badge.text;
-    badgeEl.className = badge.cls;
-    badgeEl.style.color = badge.color;
+badgeEl.innerHTML = `
+  <div class="rank-icon">${badge.icon}</div>
+  <div class="rank-name">${badge.name}</div>
+`;
+badgeEl.className = badge.cls;
   }
 
   if(subEl){
