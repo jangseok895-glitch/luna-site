@@ -7991,14 +7991,28 @@ async function updateRealTopPercentByTotal(selectedTotal){
     return;
   }
 
-  const rows = await sbSelect("team_members", q =>
-    q.select("total").not("total", "is", null)
-  );
+const rows = await sbSelect("team_members", q =>
+  q.select("nickname,total").not("total", "is", null)
+);
 
-  const scores = rows
-    .map(r => Number(r.total) || 0)
-    .filter(v => v > 0)
-    .sort((a, b) => b - a);
+/* 닉네임이 같으면 같은 사람으로 보고, 닉네임별 최고 total만 사용 */
+const bestByNickname = new Map();
+
+rows.forEach(r => {
+  const nickname = String(r.nickname || "").trim();
+  const total = Number(r.total) || 0;
+
+  if(!nickname || total <= 0) return;
+
+  const prev = bestByNickname.get(nickname) || 0;
+
+  if(total > prev){
+    bestByNickname.set(nickname, total);
+  }
+});
+
+const scores = Array.from(bestByNickname.values())
+  .sort((a, b) => b - a);
 
   if(!scores.length){
     boxEl.style.setProperty("--percent-pos", "0.5");
