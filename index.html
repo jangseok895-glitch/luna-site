@@ -3387,7 +3387,7 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 
 #mini55Grid{
   display:grid !important;
-  grid-template-columns:repeat(7,1fr) !important;
+  grid-template-columns:repeat(5,1fr) !important;
   gap:8px !important;
   margin-top:10px !important;
 }
@@ -3396,12 +3396,12 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   aspect-ratio:1/1 !important;
   border:0 !important;
   border-radius:12px !important;
-  background:#fff !important;
-  color:#2563eb !important;
+  background:linear-gradient(135deg,#38bdf8,#2563eb) !important;
+  color:#ffffff !important;
   font-size:24px !important;
   font-weight:1000 !important;
   cursor:pointer !important;
-  box-shadow:0 4px 10px rgba(14,165,233,.18) !important;
+  box-shadow:0 4px 10px rgba(37,99,235,.28) !important;
 }
 
 #mini55Result{
@@ -6050,8 +6050,8 @@ if(board === "eventTournament"){
   <div class="tournament-title">미니게임 - 빨리55</div>
 
   <div class="mini55-thumb">
-    <div class="mini55-logo">55</div>
-    <div class="mini55-desc">1부터 55까지<br>빠르게 클릭!</div>
+<div class="mini55-logo">45</div>
+<div class="mini55-desc">1부터 45까지<br>빠르게 클릭!</div>
     <div class="mini55-best">오늘의 1위 : 기록 없음</div>
   </div>
 
@@ -8530,13 +8530,13 @@ function startMini55(){
   const firstNums = [];
   const nextNums = [];
 
-  for(let i = 1; i <= 49; i++){
-    firstNums.push(i);
-  }
+for(let i = 1; i <= 25; i++){
+  firstNums.push(i);
+}
 
-  for(let i = 50; i <= 55; i++){
-    nextNums.push(i);
-  }
+for(let i = 26; i <= 45; i++){
+  nextNums.push(i);
+}
 
   firstNums.sort(function(){
     return Math.random() - 0.5;
@@ -8566,9 +8566,9 @@ function startMini55(){
 
       mini55Current++;
 
-      if(mini55Current > 55){
-        finishMini55();
-      }
+if(mini55Current > 45){
+  finishMini55();
+}
     });
 
     grid.appendChild(cell);
