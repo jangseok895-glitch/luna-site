@@ -3664,6 +3664,12 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 #mini4545Popup{
   overflow:hidden !important;
 }
+
+  .mini4545-cell,
+.mini4545-start-btn{
+  touch-action:manipulation !important;
+  -webkit-tap-highlight-color:transparent !important;
+}
 </style>
 </head>
 
@@ -3941,7 +3947,10 @@ function renderMini4545Board(){
     btn.type = "button";
     btn.className = "mini4545-cell" + (num === null ? " empty" : "");
     btn.textContent = num || "";
-    btn.onclick = () => clickMini4545Cell(idx);
+btn.addEventListener("pointerdown", function(e){
+  e.preventDefault();
+  clickMini4545Cell(idx);
+}, { passive:false });
     board.appendChild(btn);
   });
 }
