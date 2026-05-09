@@ -3567,6 +3567,36 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 </style>
 </head>
 
+  <script>
+window.addEventListener("DOMContentLoaded", function(){
+
+  document.addEventListener("click", function(e){
+
+    const gameBtn = e.target.closest(".tournament-apply-btn");
+    const gameCard = e.target.closest(".tournament-thumb-card");
+
+    if(gameBtn && gameBtn.innerText.includes("게임 시작")){
+      const card = gameBtn.closest(".tournament-thumb-card");
+
+      if(card && card.innerText.includes("미니게임")){
+        e.preventDefault();
+        e.stopPropagation();
+        openMini4949V2();
+        return;
+      }
+    }
+
+    if(gameCard && gameCard.innerText.includes("미니게임")){
+      e.preventDefault();
+      e.stopPropagation();
+      openMini4949V2();
+      return;
+    }
+
+  });
+
+});
+</script>
 <body>
 <audio id="bgm" loop playsinline preload="auto">
   <source src="https://xyibdanmecakevhtdajl.supabase.co/storage/v1/object/sign/bgm/kartmusic111.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yYTViYzBjYS04YWY4LTQ2OGItOTczYi1iMTRmM2E3OTMxOWUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJiZ20va2FydG11c2ljMTExLm1wMyIsImlhdCI6MTc3ODI1MTAzMiwiZXhwIjoxODA5Nzg3MDMyfQ.MvzH90TjgOmrmvi49usEYxZ1gNPJnxlFuB2G8dnrMBk" type="audio/mpeg">
@@ -6447,7 +6477,7 @@ if(board === "eventTournament"){
     <div id="mini4949TodayBest">오늘의 1위 : 기록 없음</div>
   </div>
 
-<button class="tournament-apply-btn" type="button" onclick="event.stopPropagation(); openMini4949V2();">
+<button class="tournament-apply-btn" type="button">
   게임 시작
 </button>
 </div>
