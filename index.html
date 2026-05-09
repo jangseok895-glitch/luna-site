@@ -8595,17 +8595,33 @@ async function submitMini4545Score(){
 }
 
 function shareMini4545(){
-  const timeText = document.getElementById("mini4545FinalTime")?.textContent || "";
-  const text = `빨리빨리4545 기록: ${timeText}초\n루칭방 사이트에서 도전하기!\n${location.href}`;
+  const nick = document.getElementById("mini4545Nickname")?.value.trim();
+  const timeText = document.getElementById("mini4545FinalTime")?.textContent;
+
+  if(!nick){
+    alert("아이디를 입력해주세요.");
+    return;
+  }
+
+  if(!timeText){
+    alert("게임 완료 후 공유 가능합니다.");
+    return;
+  }
+
+  const shareText =
+`${nick}님이 빨리빨리4545 미니게임에서 ${timeText}초를 등극하셨습니다!
+
+나도 도전하기
+${location.href}`;
 
   if(navigator.share){
     navigator.share({
-      title:"빨리빨리4545",
-      text,
+      title:"빨리빨리4545 기록 공유",
+      text:shareText,
       url:location.href
     });
   }else{
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(shareText);
     alert("공유 문구가 복사되었습니다.");
   }
 }
