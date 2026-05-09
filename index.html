@@ -6468,7 +6468,7 @@ if(board === "eventTournament"){
   </button>
 </div>
 
-<div class="tournament-thumb-card" onclick="openMini4949V2()">
+<div class="tournament-thumb-card" onclick="document.getElementById('mini4949V2Overlay').classList.remove('hidden')">
   <div class="tournament-title">미니게임 - 빨리55</div>
 
   <div class="mini4949-thumb">
@@ -6477,7 +6477,11 @@ if(board === "eventTournament"){
     <div id="mini4949TodayBest">오늘의 1위 : 기록 없음</div>
   </div>
 
-<button class="tournament-apply-btn" type="button">
+<button
+  class="tournament-apply-btn"
+  type="button"
+  onclick="event.stopPropagation(); document.getElementById('mini4949V2Overlay').classList.remove('hidden');"
+>
   게임 시작
 </button>
 </div>
