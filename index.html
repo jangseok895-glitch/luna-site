@@ -6056,9 +6056,26 @@ if(board === "eventTournament"){
   </div>
 
 <button
-  class="tournament-apply-btn mini55-open-btn"
+  class="tournament-apply-btn"
   type="button"
-  onclick="openMini55Direct()"
+  onclick="
+    event.preventDefault();
+    event.stopPropagation();
+
+    var p = document.getElementById('mini55Overlay');
+
+    if(p){
+      p.classList.add('show');
+      p.style.display='flex';
+      p.style.position='fixed';
+      p.style.inset='0';
+      p.style.zIndex='999999999';
+      return false;
+    }
+
+    alert('미니게임 팝업 HTML이 없습니다');
+    return false;
+  "
 >
   게임 시작
 </button>
