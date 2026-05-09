@@ -4393,6 +4393,19 @@ function escMini4545(v){
     <button class="btn red" id="btnOpenTeamAdminPopup" type="button">
   단체 삭제
 </button>
+    <label id="manageLockWrap" style="
+display:flex;
+align-items:center;
+gap:8px;
+font-size:15px;
+font-weight:900;
+color:#111827;
+margin-top:8px;
+user-select:none;
+">
+  <input type="checkbox" id="manageLockChk">
+  관리탭 고정하기
+</label>
   </div>
 
   <!-- 검색 결과 팝업 -->
@@ -6573,6 +6586,9 @@ window.addEventListener("scroll", function () {
   if (!document.body.classList.contains("real-mode")) return;
   if (realManageClosed) return;
   if (realManageManualOpen) return;
+
+  // 관리탭 고정 체크 시 자동 닫힘 방지
+  if (document.getElementById("manageLockChk")?.checked) return;
 
   const y = window.scrollY || document.documentElement.scrollTop;
 
