@@ -3499,6 +3499,108 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     font-size:42px !important;
   }
 }
+
+  /* ===== 빨리빨리4545 포스터 ===== */
+.mini4545-poster{
+  position:relative !important;
+  width:100% !important;
+  height:260px !important;
+  overflow:hidden !important;
+  border-radius:12px !important;
+
+  background:
+    radial-gradient(circle at top left, rgba(255,255,255,.28), transparent 35%),
+    linear-gradient(135deg,#0ea5e9 0%,#2563eb 45%,#172554 100%) !important;
+
+  border:1px solid rgba(255,255,255,.15) !important;
+
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+.mini4545-poster-glow{
+  position:absolute !important;
+  width:240px !important;
+  height:240px !important;
+  border-radius:50% !important;
+  background:rgba(255,255,255,.18) !important;
+  filter:blur(45px) !important;
+  top:-80px !important;
+  left:-50px !important;
+}
+
+.mini4545-logo{
+  position:relative !important;
+  z-index:3 !important;
+
+  font-size:34px !important;
+  line-height:1 !important;
+  color:#ffffff !important;
+  text-align:center !important;
+
+  text-shadow:
+    0 4px 10px rgba(0,0,0,.35),
+    0 0 18px rgba(255,255,255,.28) !important;
+}
+
+.mini4545-logo span{
+  display:block !important;
+  margin-top:4px !important;
+
+  font-size:52px !important;
+  color:#fde047 !important;
+
+  text-shadow:
+    0 4px 10px rgba(0,0,0,.4),
+    0 0 22px rgba(253,224,71,.75) !important;
+}
+
+.mini4545-grid-preview{
+  position:absolute !important;
+  inset:0 !important;
+
+  display:grid !important;
+  grid-template-columns:repeat(5,1fr) !important;
+  gap:6px !important;
+
+  padding:14px !important;
+
+  opacity:.18 !important;
+  transform:rotate(-8deg) scale(1.05) !important;
+}
+
+.mini4545-grid-preview div{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  border-radius:10px !important;
+
+  background:rgba(255,255,255,.18) !important;
+
+  color:#ffffff !important;
+  font-size:24px !important;
+
+  backdrop-filter:blur(2px) !important;
+}
+
+.mini4545-speed-text{
+  position:absolute !important;
+  bottom:14px !important;
+  right:14px !important;
+
+  z-index:3 !important;
+
+  color:rgba(255,255,255,.92) !important;
+
+  font-size:13px !important;
+  line-height:1.35 !important;
+  text-align:right !important;
+
+  letter-spacing:1px !important;
+}
 </style>
 </head>
 
@@ -6444,15 +6546,65 @@ if(board === "eventTournament"){
   </button>
 </div>
 
-<button
-  type="button"
-  class="tournament-apply-btn"
-  onclick="event.stopPropagation(); openMini4545Game();"
->
-  게임해보기
-</button>
+<div class="tournament-thumb-card" onclick="openMini4545Game()">
+  <div class="tournament-title">
+    미니게임 - 빨리빨리4545
+  </div>
 
+  <div class="mini4545-poster">
+    <div class="mini4545-poster-glow"></div>
+
+    <div class="mini4545-logo">
+      빨리빨리
+      <span>4545</span>
     </div>
+
+    <div class="mini4545-grid-preview">
+      <div>7</div>
+      <div>18</div>
+      <div>2</div>
+      <div>25</div>
+      <div>11</div>
+
+      <div>14</div>
+      <div>1</div>
+      <div>20</div>
+      <div>5</div>
+      <div>9</div>
+
+      <div>22</div>
+      <div>3</div>
+      <div>17</div>
+      <div>8</div>
+      <div>24</div>
+
+      <div>12</div>
+      <div>19</div>
+      <div>6</div>
+      <div>21</div>
+      <div>4</div>
+
+      <div>13</div>
+      <div>16</div>
+      <div>10</div>
+      <div>23</div>
+      <div>15</div>
+    </div>
+
+    <div class="mini4545-speed-text">
+      1 → 45<br>
+      SPEED TOUCH GAME
+    </div>
+  </div>
+
+  <button
+    type="button"
+    class="tournament-apply-btn"
+    onclick="event.stopPropagation(); openMini4545Game();"
+  >
+    게임해보기
+  </button>
+</div>
   `;
 
   return;
