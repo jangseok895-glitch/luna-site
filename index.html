@@ -3601,6 +3601,19 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 
   letter-spacing:1px !important;
 }
+
+  .mini4545-title-wrap{
+  display:flex !important;
+  align-items:flex-start !important;
+  gap:170px !important;
+}
+
+.mini4545-title-wrap .mini4545-timer{
+  margin-top:2px !important;
+  font-size:32px !important;
+  font-weight:400 !important;
+  color:#ef4444 !important;
+}
 </style>
 </head>
 
@@ -3757,13 +3770,16 @@ function openMini4545Game(){
     popup.innerHTML = `
       <div class="mini4545-box">
         <div class="mini4545-head">
-          <div>
-            <div class="mini4545-title">빨리빨리4545</div>
-            <div class="mini4545-desc">1부터 45까지 순서대로 빠르게 누르세요.</div>
-          </div>
+<div class="mini4545-title-wrap">
+  <div>
+    <div class="mini4545-title">빨리빨리4545</div>
+    <div class="mini4545-desc">1부터 45까지 순서대로 빠르게 누르세요.</div>
+  </div>
+
+  <div id="mini4545Timer" class="mini4545-timer">0.000초</div>
+</div>
 
           <div style="display:flex;align-items:center;gap:10px;">
-            <div id="mini4545Timer" class="mini4545-timer">0.000초</div>
             <button type="button" class="mini4545-close" onclick="closeMini4545Game()">닫기</button>
           </div>
         </div>
