@@ -3313,6 +3313,121 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   font-size:14px !important;
   font-weight:900 !important;
 }
+
+  /* ===== 4949 미니게임 팝업 ===== */
+#game4949Popup{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:999999999 !important;
+  background:rgba(0,0,0,.45) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+#game4949Popup.hidden{
+  display:none !important;
+}
+
+.game4949-box{
+  width:520px !important;
+  max-width:94vw !important;
+  background:linear-gradient(135deg,#ffffff,#dff6ff,#bfdbfe) !important;
+  border:2px solid #38bdf8 !important;
+  border-radius:22px !important;
+  padding:22px !important;
+  text-align:center !important;
+  box-shadow:0 15px 40px rgba(0,0,0,.28) !important;
+  position:relative !important;
+}
+
+.game4949-close{
+  position:absolute !important;
+  right:14px !important;
+  top:14px !important;
+  border:0 !important;
+  border-radius:10px !important;
+  background:#ef4444 !important;
+  color:#fff !important;
+  padding:7px 12px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+}
+
+.game4949-box h2{
+  margin:8px 0 14px !important;
+  font-size:28px !important;
+  font-weight:1000 !important;
+  color:#2563eb !important;
+}
+
+.game4949-info{
+  display:flex !important;
+  justify-content:center !important;
+  gap:14px !important;
+  margin-bottom:14px !important;
+  font-size:18px !important;
+  font-weight:900 !important;
+}
+
+.game4949-info b{
+  color:#ef4444 !important;
+}
+
+#game4949Grid{
+  display:grid !important;
+  grid-template-columns:repeat(7, 1fr) !important;
+  gap:7px !important;
+  margin:0 auto 16px !important;
+  width:420px !important;
+  max-width:100% !important;
+}
+
+.game4949-cell{
+  aspect-ratio:1/1 !important;
+  border-radius:10px !important;
+  border:1px solid #93c5fd !important;
+  background:#ffffff !important;
+  color:#2563eb !important;
+  font-size:20px !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+  box-shadow:0 3px 8px rgba(14,165,233,.18) !important;
+}
+
+.game4949-cell:hover{
+  transform:scale(1.05) !important;
+  background:#e0f7ff !important;
+}
+
+.game4949-cell.done{
+  background:#f1f5f9 !important;
+  color:transparent !important;
+  cursor:default !important;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.08) !important;
+}
+
+.game4949-start-btn,
+.game4949-share-btn{
+  width:100% !important;
+  padding:13px 10px !important;
+  border:0 !important;
+  border-radius:14px !important;
+  font-size:18px !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+  margin-top:8px !important;
+}
+
+.game4949-start-btn{
+  background:linear-gradient(135deg,#38bdf8,#2563eb) !important;
+  color:#ffffff !important;
+}
+
+.game4949-share-btn{
+  background:linear-gradient(135deg,#fff7cc,#facc15) !important;
+  color:#111827 !important;
+}
 </style>
 </head>
 
@@ -3465,9 +3580,118 @@ document.addEventListener("click", function(e){
   oscillator.stop(audioCtx.currentTime + 0.08);
 }
 
+let game4949Current = 1;
+let game4949StartTime = null;
+let game4949TimerInterval = null;
+let game4949FinalTime = 0;
+
 function open4949Game(){
   play4949ClickSound();
-  alert("미니게임 - 4949 준비중입니다!");
+  document.getElementById("game4949Popup").classList.remove("hidden");
+  reset4949Game();
+}
+
+function close4949Game(){
+  clearInterval(game4949TimerInterval);
+  document.getElementById("game4949Popup").classList.add("hidden");
+}
+
+function reset4949Game(){
+  clearInterval(game4949TimerInterval);
+
+  game4949Current = 1;
+  game4949StartTime = null;
+  game4949FinalTime = 0;
+
+  document.getElementById("game4949Next").textContent = "1";
+  document.getElementById("game4949Timer").textContent = "0.00초";
+  document.getElementById("game4949ShareBtn").classList.add("hidden");
+
+  const grid = document.getElementById("game4949Grid");
+  grid.innerHTML = "";
+
+  for(let i = 0; i < 49; i++){
+    const cell = document.createElement("button");
+    cell.className = "game4949-cell";
+    cell.textContent = "";
+    cell.disabled = true;
+    grid.appendChild(cell);
+  }
+}
+
+function start4949Game(){
+  play4949ClickSound();
+
+  clearInterval(game4949TimerInterval);
+
+  game4949Current = 1;
+  game4949StartTime = Date.now();
+  game4949FinalTime = 0;
+
+  document.getElementById("game4949Next").textContent = "1";
+  document.getElementById("game4949Timer").textContent = "0.00초";
+  document.getElementById("game4949ShareBtn").classList.add("hidden");
+
+  const numbers = Array.from({ length:49 }, function(_, i){
+    return i + 1;
+  }).sort(function(){
+    return Math.random() - 0.5;
+  });
+
+  const grid = document.getElementById("game4949Grid");
+  grid.innerHTML = "";
+
+  numbers.forEach(function(num){
+    const cell = document.createElement("button");
+    cell.className = "game4949-cell";
+    cell.textContent = num;
+
+    cell.onclick = function(){
+      if(num !== game4949Current){
+        return;
+      }
+
+      play4949ClickSound();
+
+      cell.textContent = "";
+      cell.classList.add("done");
+      cell.disabled = true;
+
+      game4949Current++;
+      document.getElementById("game4949Next").textContent = game4949Current <= 49 ? game4949Current : "완료";
+
+      if(game4949Current > 49){
+        finish4949Game();
+      }
+    };
+
+    grid.appendChild(cell);
+  });
+
+  game4949TimerInterval = setInterval(function(){
+    const nowTime = (Date.now() - game4949StartTime) / 1000;
+    document.getElementById("game4949Timer").textContent = nowTime.toFixed(2) + "초";
+  }, 10);
+}
+
+function finish4949Game(){
+  clearInterval(game4949TimerInterval);
+
+  game4949FinalTime = (Date.now() - game4949StartTime) / 1000;
+
+  document.getElementById("game4949Timer").textContent = game4949FinalTime.toFixed(2) + "초";
+  document.getElementById("game4949ShareBtn").classList.remove("hidden");
+
+  alert("완료! 기록 : " + game4949FinalTime.toFixed(2) + "초");
+}
+
+function share4949Result(){
+  const text = "🎮 미니게임 4949 기록!\n" +
+               "기록 : " + game4949FinalTime.toFixed(2) + "초\n" +
+               "1부터 49까지 빠르게 클릭!";
+
+  navigator.clipboard.writeText(text);
+  alert("결과가 복사되었습니다!");
 }
 </script>
   
@@ -8308,6 +8532,32 @@ function closeRankGuidePopup(){
   <div class="rank-guide-box">
     <button class="rank-guide-close" type="button" onclick="closeRankGuidePopup()">닫기</button>
     <img class="rank-guide-img" src="https://i.ibb.co/0pjDrvSm/image.png" alt="계급표">
+  </div>
+</div>
+
+    <!-- 4949 미니게임 팝업 -->
+<div id="game4949Popup" class="hidden">
+  <div class="game4949-box">
+
+    <button class="game4949-close" onclick="close4949Game()">닫기</button>
+
+    <h2>미니게임 - 4949</h2>
+
+    <div class="game4949-info">
+      <div>다음 숫자 : <b id="game4949Next">1</b></div>
+      <div>기록 : <b id="game4949Timer">0.00초</b></div>
+    </div>
+
+    <div id="game4949Grid"></div>
+
+    <button class="game4949-start-btn" onclick="start4949Game()">
+      게임 시작
+    </button>
+
+    <button id="game4949ShareBtn" class="game4949-share-btn hidden" onclick="share4949Result()">
+      결과 공유하기
+    </button>
+
   </div>
 </div>
 </body>
