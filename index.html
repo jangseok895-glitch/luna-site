@@ -9017,7 +9017,7 @@ window.openMini4949V2_FORCE = function(){
         <h2 class="mini4949V2Title">미니게임 - 빨리55</h2>
 
         <div class="mini4949V2TopBtns">
-          <button type="button" onclick="startMini4949V2()">시작하기</button>
+<button type="button" onclick="startMini55_FORCE()">시작하기</button>
           <button type="button" onclick="alert('랭킹은 다음 단계에서 연결합니다.')">랭킹보기</button>
         </div>
 
@@ -9031,7 +9031,7 @@ window.openMini4949V2_FORCE = function(){
             <input type="text" id="mini4949V2Nickname" maxlength="12">
           </div>
           <div class="mini4949V2BottomBtns">
-            <button type="button" onclick="startMini4949V2()">다시하기</button>
+<button type="button" onclick="startMini55_FORCE()">다시하기</button>
             <button type="button" onclick="shareMini4949V2()">공유하기</button>
           </div>
         </div>
@@ -9046,6 +9046,91 @@ window.openMini4949V2_FORCE = function(){
   popup.style.position = "fixed";
   popup.style.inset = "0";
   popup.style.zIndex = "999999999";
+};
+</script>
+
+    <script>
+window.startMini55_FORCE = function(){
+  let current = 1;
+  let timer = null;
+  let startTime = Date.now();
+
+  const grid = document.getElementById("mini4949V2Grid");
+  const timerBox = document.getElementById("mini4949V2Timer");
+  const resultBox = document.getElementById("mini4949V2Result");
+
+  if(!grid){
+    alert("게임판을 찾지 못했습니다.");
+    return;
+  }
+
+  if(resultBox){
+    resultBox.classList.add("hidden");
+  }
+
+  grid.innerHTML = "";
+  timerBox.textContent = "0.00초";
+
+  const firstNums = [];
+  const nextNums = [];
+
+  for(let i = 1; i <= 49; i++){
+    firstNums.push(i);
+  }
+
+  for(let i = 50; i <= 55; i++){
+    nextNums.push(i);
+  }
+
+  firstNums.sort(function(){
+    return Math.random() - 0.5;
+  });
+
+  timer = setInterval(function(){
+    const sec = (Date.now() - startTime) / 1000;
+    timerBox.textContent = sec.toFixed(2) + "초";
+  }, 10);
+
+  firstNums.forEach(function(num){
+    const btn = document.createElement("button");
+    btn.className = "mini4949V2Cell";
+    btn.textContent = num;
+    btn.dataset.num = num;
+
+    btn.onclick = function(){
+      if(Number(btn.dataset.num) !== current){
+        return;
+      }
+
+      if(nextNums.length > 0){
+        btn.textContent = nextNums.shift();
+        btn.dataset.num = btn.textContent;
+      }else{
+        btn.remove();
+      }
+
+      current++;
+
+      if(current > 55){
+        clearInterval(timer);
+
+        const finalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+
+        timerBox.textContent = finalTime + "초";
+
+        const finalBox = document.getElementById("mini4949V2FinalTime");
+        if(finalBox){
+          finalBox.textContent = finalTime + "초";
+        }
+
+        if(resultBox){
+          resultBox.classList.remove("hidden");
+        }
+      }
+    };
+
+    grid.appendChild(btn);
+  });
 };
 </script>
 </body>
