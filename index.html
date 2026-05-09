@@ -3434,6 +3434,62 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   font-size:44px;
 }
 }
+
+  .mini4545-game-area{
+  position:relative !important;
+  width:100% !important;
+}
+
+.mini4545-board{
+  display:grid !important;
+  grid-template-columns:repeat(5, 1fr) !important;
+  gap:8px !important;
+  width:100% !important;
+}
+
+.mini4545-cell{
+  aspect-ratio:1 / 1 !important;
+  height:auto !important;
+  border:0 !important;
+  border-radius:14px !important;
+  background:linear-gradient(135deg,#38bdf8,#2563eb) !important;
+  color:#ffffff !important;
+  font-size:52px !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+  box-shadow:0 6px 14px rgba(37,99,235,.28), inset 0 2px 0 rgba(255,255,255,.35) !important;
+}
+
+.mini4545-start-cover{
+  position:absolute !important;
+  inset:0 !important;
+  z-index:20 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:rgba(255,255,255,.38) !important;
+  backdrop-filter:blur(2px) !important;
+  border-radius:16px !important;
+}
+
+.mini4545-start-cover.hidden{
+  display:none !important;
+}
+
+.mini4545-start-btn{
+  width:220px !important;
+  height:78px !important;
+  border:0 !important;
+  border-radius:20px !important;
+  background:linear-gradient(135deg,#ffe082,#facc15,#f59e0b) !important;
+  color:#111827 !important;
+  font-size:30px !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.25),
+    inset 0 2px 0 rgba(255,255,255,.65) !important;
+}
 </style>
 </head>
 
@@ -8367,7 +8423,15 @@ function openMini4545Game(){
 
         <div class="mini4545-layout">
           <div>
-            <div id="mini4545Board" class="mini4545-board"></div>
+<div class="mini4545-game-area">
+  <div id="mini4545Board" class="mini4545-board"></div>
+
+  <div id="mini4545StartCover" class="mini4545-start-cover">
+    <button class="mini4545-start-btn" onclick="startMini4545Timer()">
+      게임시작
+    </button>
+  </div>
+</div>
 
             <div id="mini4545Result" class="mini4545-result hidden">
               <div style="font-size:20px;font-weight:1000;margin-bottom:8px;">
@@ -8431,6 +8495,7 @@ function startMini4545Game(){
   document.getElementById("mini4545Result")?.classList.add("hidden");
 
   renderMini4545Board();
+  document.getElementById("mini4545StartCover")?.classList.remove("hidden");
 }
 
 function startMini4545Timer(){
@@ -8438,6 +8503,8 @@ function startMini4545Timer(){
 
   mini4545State.started = true;
   mini4545State.startTime = performance.now();
+  
+  document.getElementById("mini4545StartCover")?.classList.add("hidden");
 
   clearInterval(mini4545State.timerId);
   mini4545State.timerId = setInterval(updateMini4545Timer, 20);
