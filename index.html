@@ -8447,7 +8447,9 @@ function closeRankGuidePopup(){
     <h2>미니게임 - 빨리55</h2>
 
     <div class="mini55-top">
-      <button id="mini55StartBtn" type="button">시작하기</button>
+<button id="mini55StartBtn" type="button" onclick="startMini55()">
+  시작하기
+</button>
       <button id="mini55RankBtn" type="button">랭킹보기</button>
     </div>
 
@@ -8464,8 +8466,12 @@ function closeRankGuidePopup(){
       </div>
 
       <div class="mini55-bottom">
-        <button id="mini55RestartBtn" type="button">다시하기</button>
-        <button id="mini55ShareBtn" type="button">공유하기</button>
+<button id="mini55RestartBtn" type="button" onclick="startMini55()">
+  다시하기
+</button>
+<button id="mini55ShareBtn" type="button" onclick="shareMini55()">
+  공유하기
+</button>
       </div>
     </div>
   </div>
