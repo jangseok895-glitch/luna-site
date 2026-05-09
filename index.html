@@ -4116,7 +4116,56 @@ function renderMini4545Daily(rows){
   `).join("") : `<div style="font-size:14px;font-weight:400;color:#64748b;">아직 기록이 없습니다.</div>`;
 }
 
-function shareMini4545(){
+async function saveMini4545ScoreSilent(){
+  const nick = document.getElementById("mini4545Nickname")?.value.trim();
+  const score = Number(document.getElementById("mini4545FinalTime")?.textContent);
+
+  if(!nick){
+    alert("아이디를 입력해주세요.");
+    return false;
+  }
+
+  if(!score){
+    alert("게임 완료 후 등록 가능합니다.");
+    return false;
+  }
+
+  try{
+    if(typeof sb !== "undefined" && sb){
+      const { error } = await sb
+        .from("mini_game_4545_scores")
+        .insert({
+          nickname:nick,
+          score_time:score
+        });
+
+      if(error) throw error;
+    }else{
+      const rows = JSON.parse(localStorage.getItem("mini_game_4545_scores") || "[]");
+      rows.push({
+        nickname:nick,
+        score_time:score,
+        created_at:new Date().toISOString()
+      });
+      localStorage.setItem("mini_game_4545_scores", JSON.stringify(rows));
+    }
+
+    await loadMini4545Ranks();
+    return true;
+
+  }catch(e){
+    console.error(e);
+    alert("랭킹 등록 실패. Supabase 테이블을 확인해주세요.");
+    return false;
+  }
+}
+
+async function submitMini4545Score(){
+  const ok = await saveMini4545ScoreSilent();
+  if(ok) alert("랭킹 등록 완료!");
+}
+  
+async function shareMini4545(){
   const nick = document.getElementById("mini4545Nickname")?.value.trim();
   const timeText = document.getElementById("mini4545FinalTime")?.textContent;
 
@@ -4130,6 +4179,9 @@ function shareMini4545(){
     return;
   }
 
+  const saved = await saveMini4545ScoreSilent();
+  if(!saved) return;
+
   const shareText =
 `${nick}님이 빨리빨리4545 미니게임에서 ${timeText}초를 등극하셨습니다!
 
@@ -4137,14 +4189,14 @@ function shareMini4545(){
 ${location.href}`;
 
   if(navigator.share){
-    navigator.share({
-      title:"빨리빨리4545 기록 공유",
+    await navigator.share({
+      title:"빨리빨리4545",
       text:shareText,
       url:location.href
     });
   }else{
-    navigator.clipboard.writeText(shareText);
-    alert("공유 문구가 복사되었습니다.");
+    await navigator.clipboard.writeText(shareText);
+    alert("랭킹 등록 완료! 공유 문구가 복사되었습니다.");
   }
 }
 
