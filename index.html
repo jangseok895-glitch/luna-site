@@ -3293,9 +3293,6 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 
 .mini4545-box{
   width:min(1080px,96vw) !important;
-  height:720px !important;
-
-  overflow:hidden !important;
   padding:18px !important;
   border-radius:24px !important;
   background:
@@ -3609,11 +3606,31 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   gap:170px !important;
 }
 
-.mini4545-title-wrap .mini4545-timer{
-  margin-top:2px !important;
-  font-size:32px !important;
+/* 타이머 강조 */
+.mini4545-title-wrap .mini4545-timer,
+.mini4545-timer{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  min-width:170px !important;
+  height:54px !important;
+  padding:0 20px !important;
+
+  border-radius:16px !important;
+  background:linear-gradient(135deg,#ff1744,#ef4444,#b91c1c) !important;
+  border:3px solid #ffffff !important;
+
+  color:#ffffff !important;
+  font-size:30px !important;
   font-weight:400 !important;
-  color:#ef4444 !important;
+
+  box-shadow:
+    0 8px 18px rgba(239,68,68,.35),
+    0 0 0 4px rgba(239,68,68,.18),
+    inset 0 2px 0 rgba(255,255,255,.35) !important;
+
+  text-shadow:0 2px 4px rgba(0,0,0,.25) !important;
 }
 
   /* PC에서만 미니게임 팝업 80% 크기로 축소 */
@@ -3634,6 +3651,18 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   #mini4545Popup{
     overflow:hidden !important;
   }
+}
+
+  /* 팝업 스크롤 없이 전체 보이게 */
+.mini4545-box{
+  height:auto !important;
+  min-height:auto !important;
+  max-height:none !important;
+  overflow:visible !important;
+}
+
+#mini4545Popup{
+  overflow:hidden !important;
 }
 </style>
 </head>
