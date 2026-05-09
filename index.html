@@ -6438,9 +6438,6 @@ if(board === "eventTournament"){
   </button>
 </div>
 
-  <div class="tournament-thumb-card" onclick="openMini4949V2()">
-  <div class="tournament-title">미니게임 - 4949</div>
-
 <div class="tournament-thumb-card" onclick="openMini4949V2()">
   <div class="tournament-title">미니게임 - 빨리55</div>
 
@@ -8734,6 +8731,17 @@ function closeRankGuidePopup(){
   if(popup){
     popup.classList.add("hidden");
   }
+}
+
+  function openMini4949V2(){
+  const popup = document.getElementById("mini4949V2Overlay");
+
+  if(!popup){
+    alert("mini4949V2Overlay 팝업 HTML이 없습니다.");
+    return;
+  }
+
+  popup.classList.remove("hidden");
 }
 </script>
   <div id="rankGraphPopup" class="hidden">
