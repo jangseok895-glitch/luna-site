@@ -6480,7 +6480,7 @@ if(board === "eventTournament"){
 <button
   class="tournament-apply-btn"
   type="button"
-  onclick="event.stopPropagation(); document.getElementById('mini4949V2Overlay').classList.remove('hidden');"
+  onclick="event.preventDefault(); event.stopPropagation(); window.openMini4949V2_FORCE();"
 >
   게임 시작
 </button>
@@ -8998,6 +8998,21 @@ document.addEventListener("click", function(e){
     openMini4949V2();
   }
 });
+</script>
+
+    <script>
+window.openMini4949V2_FORCE = function(){
+  alert("게임 버튼 클릭 확인");
+
+  const popup = document.getElementById("mini4949V2Overlay");
+
+  if(!popup){
+    alert("mini4949V2Overlay 팝업이 없습니다.");
+    return;
+  }
+
+  popup.classList.remove("hidden");
+};
 </script>
 </body>
 </html>
