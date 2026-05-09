@@ -3360,7 +3360,8 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 }
 
 .mini4545-cell{
-  height:92px;
+  aspect-ratio:1 / 1 !important;
+  height:auto !important;
   border:0;
   border-radius:14px;
   background:linear-gradient(135deg,#38bdf8,#2563eb);
@@ -3427,10 +3428,11 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   .mini4545-layout{
     grid-template-columns:1fr;
   }
-  .mini4545-cell{
-    height:78px;
-    font-size:44px;
-  }
+.mini4545-cell{
+  aspect-ratio:1 / 1 !important;
+  height:auto !important;
+  font-size:44px;
+}
 }
 </style>
 </head>
@@ -8390,7 +8392,10 @@ function openMini4545Game(){
               <div id="mini4545DailyList"></div>
             </div>
 
-            <button class="btn gold" onclick="startMini4545Game()">다시 시작</button>
+<div style="display:flex;gap:8px;margin-top:12px;">
+  <button class="btn gold" onclick="startMini4545Timer()">게임시작</button>
+  <button class="btn" onclick="startMini4545Game()">새로 섞기</button>
+</div>
           </div>
         </div>
       </div>
@@ -8412,42 +8417,47 @@ function startMini4545Game(){
   mini4545State.next = 1;
   mini4545State.spawn = 26;
   mini4545State.finished = false;
-  mini4545State.cells = Array.from({length:25}, (_,i) => i + 1);
-  mini4545State.startTime = performance.now();
+  mini4545State.started = false;
 
+  mini4545State.cells = shuffleMini4545(
+    Array.from({length:25}, (_,i) => i + 1)
+  );
+
+  mini4545State.startTime = 0;
+
+  clearInterval(mini4545State.timerId);
+
+  document.getElementById("mini4545Timer").textContent = "0.000초";
   document.getElementById("mini4545Result")?.classList.add("hidden");
+
+  renderMini4545Board();
+}
+
+function startMini4545Timer(){
+  if(mini4545State.started) return;
+
+  mini4545State.started = true;
+  mini4545State.startTime = performance.now();
 
   clearInterval(mini4545State.timerId);
   mini4545State.timerId = setInterval(updateMini4545Timer, 20);
-
-  renderMini4545Board();
-  updateMini4545Timer();
 }
 
-function updateMini4545Timer(){
-  if(!mini4545State.startTime) return;
-  const sec = (performance.now() - mini4545State.startTime) / 1000;
-  const el = document.getElementById("mini4545Timer");
-  if(el) el.textContent = sec.toFixed(3) + "초";
-}
-
-function renderMini4545Board(){
-  const board = document.getElementById("mini4545Board");
-  if(!board) return;
-
-  board.innerHTML = "";
-
-  mini4545State.cells.forEach((num, idx) => {
-    const btn = document.createElement("button");
-    btn.className = "mini4545-cell" + (num === null ? " empty" : "");
-    btn.textContent = num || "";
-    btn.onclick = () => clickMini4545Cell(idx);
-    board.appendChild(btn);
-  });
+function shuffleMini4545(arr){
+  for(let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
 function clickMini4545Cell(idx){
   if(mini4545State.finished) return;
+
+  if(!mini4545State.started){
+    alert("게임시작 버튼을 먼저 눌러주세요.");
+    return;
+  }
 
   const num = mini4545State.cells[idx];
   if(num !== mini4545State.next) return;
