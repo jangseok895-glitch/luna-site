@@ -4025,19 +4025,21 @@ async function submitMini4545Score(){
     if(typeof sb !== "undefined" && sb){
       const { error } = await sb
         .from("mini_game_4545_scores")
-        .insert({
-          nickname:nick,
-          score_time:score
-        });
+.insert({
+  nickname:nick,
+  score_time:score,
+  created_day:getMini4545TodayKey()
+});
 
       if(error) throw error;
     }else{
       const rows = JSON.parse(localStorage.getItem("mini_game_4545_scores") || "[]");
-      rows.push({
-        nickname:nick,
-        score_time:score,
-        created_at:new Date().toISOString()
-      });
+rows.push({
+  nickname:nick,
+  score_time:score,
+  created_day:getMini4545TodayKey(),
+  created_at:new Date().toISOString()
+});
       localStorage.setItem("mini_game_4545_scores", JSON.stringify(rows));
     }
 
@@ -4049,28 +4051,57 @@ async function submitMini4545Score(){
   }
 }
 
+function getMini4545TodayKey(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
 async function loadMini4545Ranks(){
-  let rows = [];
+  let todayRows = [];
+  let allRows = [];
 
   try{
     if(typeof sb !== "undefined" && sb){
-      const { data, error } = await sb
+      const todayKey = getMini4545TodayKey();
+
+      const todayResult = await sb
+        .from("mini_game_4545_scores")
+        .select("*")
+        .eq("created_day", todayKey)
+        .order("score_time", { ascending:true })
+        .limit(20);
+
+      if(todayResult.error) throw todayResult.error;
+      todayRows = todayResult.data || [];
+
+      const allResult = await sb
         .from("mini_game_4545_scores")
         .select("*")
         .order("score_time", { ascending:true })
-        .limit(200);
+        .limit(500);
 
-      if(error) throw error;
-      rows = data || [];
+      if(allResult.error) throw allResult.error;
+      allRows = allResult.data || [];
+
     }else{
-      rows = JSON.parse(localStorage.getItem("mini_game_4545_scores") || "[]");
+      allRows = JSON.parse(localStorage.getItem("mini_game_4545_scores") || "[]");
+
+      const todayKey = getMini4545TodayKey();
+
+      todayRows = allRows
+        .filter(r => r.created_day === todayKey)
+        .sort((a,b) => Number(a.score_time) - Number(b.score_time))
+        .slice(0,20);
     }
   }catch(e){
     console.error(e);
   }
 
-  renderMini4545Ranks(rows);
-  renderMini4545Daily(rows);
+  // 현재랭킹 TOP20 = 오늘 기록만
+  renderMini4545Ranks(todayRows);
+
+  // 오늘의 최고랭커 = 전체 기록 기준 날짜별 최고
+  renderMini4545Daily(allRows);
 }
 
 function renderMini4545Ranks(rows){
@@ -4134,19 +4165,21 @@ async function saveMini4545ScoreSilent(){
     if(typeof sb !== "undefined" && sb){
       const { error } = await sb
         .from("mini_game_4545_scores")
-        .insert({
-          nickname:nick,
-          score_time:score
-        });
+.insert({
+  nickname:nick,
+  score_time:score,
+  created_day:getMini4545TodayKey()
+});
 
       if(error) throw error;
     }else{
       const rows = JSON.parse(localStorage.getItem("mini_game_4545_scores") || "[]");
-      rows.push({
-        nickname:nick,
-        score_time:score,
-        created_at:new Date().toISOString()
-      });
+rows.push({
+  nickname:nick,
+  score_time:score,
+  created_day:getMini4545TodayKey(),
+  created_at:new Date().toISOString()
+});
       localStorage.setItem("mini_game_4545_scores", JSON.stringify(rows));
     }
 
