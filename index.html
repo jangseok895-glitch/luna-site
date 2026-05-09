@@ -9000,18 +9000,52 @@ document.addEventListener("click", function(e){
 });
 </script>
 
-    <script>
+<script>
 window.openMini4949V2_FORCE = function(){
-  alert("게임 버튼 클릭 확인");
-
-  const popup = document.getElementById("mini4949V2Overlay");
+  let popup = document.getElementById("mini4949V2Overlay");
 
   if(!popup){
-    alert("mini4949V2Overlay 팝업이 없습니다.");
-    return;
+    alert("팝업이 없어서 새로 생성합니다.");
+
+    popup = document.createElement("div");
+    popup.id = "mini4949V2Overlay";
+
+    popup.innerHTML = `
+      <div id="mini4949V2Window">
+        <button id="mini4949V2Close" onclick="this.closest('#mini4949V2Overlay').classList.add('hidden')">✕</button>
+
+        <h2 class="mini4949V2Title">미니게임 - 빨리55</h2>
+
+        <div class="mini4949V2TopBtns">
+          <button type="button" onclick="startMini4949V2()">시작하기</button>
+          <button type="button" onclick="alert('랭킹은 다음 단계에서 연결합니다.')">랭킹보기</button>
+        </div>
+
+        <div id="mini4949V2Timer">0.00초</div>
+        <div id="mini4949V2Grid"></div>
+
+        <div id="mini4949V2Result" class="hidden">
+          <div id="mini4949V2FinalTime">0.00초</div>
+          <div class="mini4949V2InputRow">
+            <span>아이디 입력 :</span>
+            <input type="text" id="mini4949V2Nickname" maxlength="12">
+          </div>
+          <div class="mini4949V2BottomBtns">
+            <button type="button" onclick="startMini4949V2()">다시하기</button>
+            <button type="button" onclick="shareMini4949V2()">공유하기</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(popup);
   }
 
   popup.classList.remove("hidden");
+  popup.style.display = "flex";
+  popup.style.position = "fixed";
+  popup.style.inset = "0";
+  popup.style.zIndex = "999999999";
 };
 </script>
 </body>
