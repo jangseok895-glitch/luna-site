@@ -6055,9 +6055,13 @@ if(board === "eventTournament"){
     <div class="mini55-best">오늘의 1위 : 기록 없음</div>
   </div>
 
-  <button class="tournament-apply-btn mini55-open-btn" type="button">
-    게임 시작
-  </button>
+<button
+  class="tournament-apply-btn mini55-open-btn"
+  type="button"
+  onclick="event.preventDefault(); event.stopPropagation(); const p=document.getElementById('mini55Overlay'); if(!p){alert('mini55Overlay가 없습니다');}else{p.classList.add('show'); p.style.display='flex';}"
+>
+  게임 시작
+</button>
 </div>
 
     </div>
