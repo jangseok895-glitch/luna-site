@@ -6447,9 +6447,9 @@ if(board === "eventTournament"){
     <div id="mini4949TodayBest">오늘의 1위 : 기록 없음</div>
   </div>
 
-  <button class="tournament-apply-btn" type="button" onclick="event.stopPropagation(); openMini4949V2();">
-    게임 시작
-  </button>
+<button class="tournament-apply-btn" type="button" onclick="event.stopPropagation(); openMini4949V2();">
+  게임 시작
+</button>
 </div>
     </div>
   `;
@@ -8883,5 +8883,26 @@ function closeRankGuidePopup(){
 
   </div>
 </div>
+
+    <script>
+window.openMini4949V2 = function(){
+  const popup = document.getElementById("mini4949V2Overlay");
+  if(!popup){
+    alert("미니게임 팝업 HTML을 찾지 못했습니다.");
+    return;
+  }
+  popup.classList.remove("hidden");
+};
+
+document.addEventListener("click", function(e){
+  const gameCard = e.target.closest(".tournament-thumb-card");
+
+  if(gameCard && gameCard.innerText.includes("미니게임 - 빨리55")){
+    e.preventDefault();
+    e.stopPropagation();
+    openMini4949V2();
+  }
+});
+</script>
 </body>
 </html>
