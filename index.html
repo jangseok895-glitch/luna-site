@@ -6058,24 +6058,7 @@ if(board === "eventTournament"){
 <button
   class="tournament-apply-btn"
   type="button"
-  onclick="
-    event.preventDefault();
-    event.stopPropagation();
-
-    var p = document.getElementById('mini55Overlay');
-
-    if(p){
-      p.classList.add('show');
-      p.style.display='flex';
-      p.style.position='fixed';
-      p.style.inset='0';
-      p.style.zIndex='999999999';
-      return false;
-    }
-
-    alert('미니게임 팝업 HTML이 없습니다');
-    return false;
-  "
+  onclick="event.preventDefault(); event.stopPropagation(); setTimeout(openMini55Direct, 0); return false;"
 >
   게임 시작
 </button>
@@ -8362,6 +8345,7 @@ function closeRankGuidePopup(){
     popup.classList.add("hidden");
   }
 }
+  
 </script>
   <div id="rankGraphPopup" class="hidden">
   <div class="rank-graph-box">
@@ -8660,6 +8644,23 @@ document.addEventListener("click", function(e){
   popup.style.inset = "0";
   popup.style.zIndex = "999999999";
 }, true);
+</script>
+
+    <script>
+function openMini55Direct(){
+  const p = document.getElementById("mini55Overlay");
+
+  if(!p){
+    alert("미니게임 팝업 HTML이 없습니다.");
+    return;
+  }
+
+  p.classList.add("show");
+  p.style.display = "flex";
+  p.style.position = "fixed";
+  p.style.inset = "0";
+  p.style.zIndex = "999999999";
+}
 </script>
 </body>
 </html>
