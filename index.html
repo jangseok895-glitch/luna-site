@@ -6058,7 +6058,20 @@ if(board === "eventTournament"){
 <button
   class="tournament-apply-btn mini55-open-btn"
   type="button"
-  onclick="event.preventDefault(); event.stopPropagation(); const p=document.getElementById('mini55Overlay'); if(!p){alert('mini55Overlay가 없습니다');}else{p.classList.add('show'); p.style.display='flex';}"
+  style="position:relative; z-index:999999; pointer-events:auto;"
+  onclick="
+    alert('게임 시작 버튼 눌림');
+    const p = document.getElementById('mini55Overlay');
+    if(!p){
+      alert('mini55Overlay 팝업을 찾지 못했습니다');
+    }else{
+      p.classList.add('show');
+      p.style.display='flex';
+      p.style.position='fixed';
+      p.style.inset='0';
+      p.style.zIndex='999999999';
+    }
+  "
 >
   게임 시작
 </button>
