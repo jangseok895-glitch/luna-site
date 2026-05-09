@@ -8635,5 +8635,31 @@ function openMini55Direct(){
   p.style.zIndex = "999999999";
 }
 </script>
+
+    <script>
+document.addEventListener("click", function(e){
+  const card = e.target.closest(".tournament-thumb-card");
+
+  if(!card) return;
+
+  if(!card.innerText.includes("미니게임 - 빨리55")) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const popup = document.getElementById("mini55Overlay");
+
+  if(!popup){
+    alert("mini55Overlay 팝업 HTML이 없습니다.");
+    return;
+  }
+
+  popup.classList.add("show");
+  popup.style.display = "flex";
+  popup.style.position = "fixed";
+  popup.style.inset = "0";
+  popup.style.zIndex = "999999999";
+}, true);
+</script>
 </body>
 </html>
