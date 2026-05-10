@@ -6620,7 +6620,21 @@ function closeRealManageTab() {
   realManageClosed = true;
   realManageManualOpen = false;
 
+const keepManageTab = document.getElementById("realManageFixCheck")?.checked;
+
+document.body.classList.add("capture-mode");
+
+if(!keepManageTab){
   document.body.classList.add("real-manage-closed");
+}
+
+/* 여기서 html2canvas 실행 */
+
+document.body.classList.remove("capture-mode");
+
+if(!keepManageTab){
+  document.body.classList.remove("real-manage-closed");
+}
   refreshHeaderPush();
 }
 
