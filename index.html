@@ -3675,6 +3675,36 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   touch-action:manipulation !important;
   -webkit-tap-highlight-color:transparent !important;
 }
+
+  /* ===== 세모 그래프 예쁘게 보정 ===== */
+.percent-triangle{
+  border:3px solid rgba(255,255,255,.95) !important;
+  border-radius:18px !important;
+  filter:
+    drop-shadow(0 4px 6px rgba(0,0,0,.18))
+    drop-shadow(0 0 10px rgba(56,189,248,.45)) !important;
+  box-shadow:
+    inset 0 2px 8px rgba(255,255,255,.45),
+    0 0 0 3px rgba(56,189,248,.18) !important;
+}
+
+/* 퍼센트 글씨 귀엽게 */
+#realPercentText{
+  margin-top:50px !important;
+  font-size:25px !important;
+  font-weight:1000 !important;
+  line-height:1 !important;
+  color:#ffffff !important;
+  letter-spacing:-1px !important;
+
+  text-shadow:
+    -2px -2px 0 #ef4444,
+     2px -2px 0 #ef4444,
+    -2px  2px 0 #ef4444,
+     2px  2px 0 #ef4444,
+     0 3px 5px rgba(0,0,0,.25),
+     0 0 10px rgba(255,255,255,.75) !important;
+}
 </style>
 </head>
 
@@ -9044,7 +9074,7 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, sele
   if(rank <= 10){
     textEl.innerHTML = `${rank}위`;
   }else{
-    textEl.innerHTML = `상위<br>${percent}%`;
+textEl.innerHTML = `${percent}%`;
   }
 
   if(badgeEl){
