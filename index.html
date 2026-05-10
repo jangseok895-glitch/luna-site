@@ -9094,9 +9094,9 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, sele
   boxEl.style.setProperty("--percent-pos", String(pos));
 
   if(rank <= 10){
-    textEl.innerHTML = `${rank}위`;
+textEl.innerHTML = "";
   }else{
-textEl.innerHTML = `${percent}%`;
+textEl.innerHTML = "";
   }
 
   if(badgeEl){
