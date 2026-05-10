@@ -3690,28 +3690,20 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 
 /* 퍼센트 글씨 귀엽게 */
 #realPercentText{
-  display:inline-flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-
-  min-width:86px !important;
-  padding:6px 12px !important;
-
-  font-size:18px !important;
+  margin-top:50px !important;
+  font-size:25px !important;
   font-weight:1000 !important;
   line-height:1 !important;
-  color:#ef4444 !important;
+  color:#ffffff !important;
   letter-spacing:-1px !important;
 
-  background:rgba(255,255,255,.82) !important;
-  border:3px solid #ef4444 !important;
-  border-radius:999px !important;
-
-  box-shadow:
-    0 4px 10px rgba(0,0,0,.18),
-    inset 0 2px 0 rgba(255,255,255,.8) !important;
-
-  text-shadow:none !important;
+  text-shadow:
+    -2px -2px 0 #ef4444,
+     2px -2px 0 #ef4444,
+    -2px  2px 0 #ef4444,
+     2px  2px 0 #ef4444,
+     0 3px 5px rgba(0,0,0,.25),
+     0 0 10px rgba(255,255,255,.75) !important;
 }
 </style>
 </head>
@@ -9094,9 +9086,9 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, sele
   boxEl.style.setProperty("--percent-pos", String(pos));
 
   if(rank <= 10){
-textEl.innerHTML = "";
+    textEl.innerHTML = `${rank}위`;
   }else{
-textEl.innerHTML = "";
+textEl.innerHTML = `${percent}%`;
   }
 
   if(badgeEl){
