@@ -3955,6 +3955,85 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     min-width:24px !important;
   }
 }
+
+  .critical-notice-menu{
+  display:grid !important;
+  grid-template-columns:repeat(2,1fr) !important;
+  gap:12px !important;
+  margin-top:16px !important;
+}
+
+.big-x-close{
+  width:54px !important;
+  height:54px !important;
+  padding:0 !important;
+  border-radius:50% !important;
+  font-size:30px !important;
+  font-weight:1000 !important;
+  line-height:54px !important;
+  text-align:center !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+  box-shadow:0 4px 14px rgba(239,68,68,.45) !important;
+}
+
+.critical-image-box{
+  overflow:visible !important;
+}
+
+.critical-image-slider{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:12px !important;
+}
+
+.critical-popup-img{
+  max-width:760px !important;
+  max-height:72vh !important;
+  object-fit:contain !important;
+}
+
+.critical-arrow{
+  width:58px !important;
+  height:58px !important;
+  border-radius:50% !important;
+  border:0 !important;
+  background:linear-gradient(135deg,#38bdf8,#2563eb) !important;
+  color:#ffffff !important;
+  font-size:34px !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  box-shadow:0 5px 14px rgba(37,99,235,.35) !important;
+}
+
+@media(max-width:520px){
+  .critical-notice-menu{
+    grid-template-columns:1fr !important;
+  }
+
+  .big-x-close{
+    width:60px !important;
+    height:60px !important;
+    font-size:34px !important;
+    line-height:60px !important;
+  }
+
+  .critical-arrow{
+    width:52px !important;
+    height:52px !important;
+    font-size:30px !important;
+  }
+
+  .critical-popup-img{
+    max-width:calc(96vw - 120px) !important;
+    max-height:68vh !important;
+  }
+}
 </style>
 </head>
 
@@ -7175,7 +7254,7 @@ function moveTournamentPoster(dir){
   updateTournamentPoster();
 }
 
-  const CRITICAL_NOTICE_IMAGES = {
+const CRITICAL_NOTICE_IMAGES = {
   schedule: {
     title: "대회일정보기",
     img: "https://i.ibb.co/GQynf8vx/Kakao-Talk-20260507-220727153.jpg"
@@ -7202,6 +7281,9 @@ function moveTournamentPoster(dir){
   }
 };
 
+const CRITICAL_NOTICE_ORDER = ["schedule", "rule", "teams", "bracket", "maps", "kart"];
+let criticalNoticeIndex = 0;
+
 function openCriticalNoticePopup(){
   const oldPopup = document.getElementById("criticalNoticePopup");
   if(oldPopup) oldPopup.remove();
@@ -7210,16 +7292,17 @@ function openCriticalNoticePopup(){
   popup.id = "criticalNoticePopup";
   popup.innerHTML = `
     <div class="tournament-popup-box">
-      <button class="tournament-close" onclick="closeCriticalNoticePopup()">닫기</button>
-      <div class="tournament-popup-title">크리티컬 히트 대회 진행/공지</div>
+      <button class="tournament-close big-x-close" onclick="closeCriticalNoticePopup()">X</button>
 
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:16px;">
+      <div class="tournament-popup-title">
+        크리티컬 히트 대회 진행/공지
+      </div>
+
+      <div class="critical-notice-menu">
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('schedule')">대회일정보기</button>
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('rule')">공식 경기규정 보기</button>
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('teams')">예선 참가팀 보기</button>
-<button class="tournament-apply-btn" onclick="openCriticalBracketPopup()">
-  대진표 보기
-</button>
+        <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('bracket')">대진표 보기</button>
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('maps')">맵 리스트 보기</button>
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('kart')">카트 규정보기</button>
       </div>
@@ -7230,11 +7313,20 @@ function openCriticalNoticePopup(){
 }
 
 function closeCriticalNoticePopup(){
-  document.getElementById("criticalNoticePopup")?.remove();
+  const popup = document.getElementById("criticalNoticePopup");
+  if(popup) popup.remove();
 }
 
 function openCriticalNoticeImage(type){
-  const data = CRITICAL_NOTICE_IMAGES[type];
+  const idx = CRITICAL_NOTICE_ORDER.indexOf(type);
+  criticalNoticeIndex = idx >= 0 ? idx : 0;
+
+  renderCriticalNoticeImage();
+}
+
+function renderCriticalNoticeImage(){
+  const key = CRITICAL_NOTICE_ORDER[criticalNoticeIndex];
+  const data = CRITICAL_NOTICE_IMAGES[key];
   if(!data) return;
 
   const oldPopup = document.getElementById("criticalImagePopup");
@@ -7242,13 +7334,27 @@ function openCriticalNoticeImage(type){
 
   const popup = document.createElement("div");
   popup.id = "criticalImagePopup";
-  popup.innerHTML = `
-    <div class="tournament-popup-box">
-      <button class="tournament-close" onclick="closeCriticalImagePopup()">닫기</button>
-      <div class="tournament-popup-title">${data.title}</div>
 
-      <div class="tournament-popup-slider">
-        <img class="tournament-popup-img" src="${data.img}">
+  popup.innerHTML = `
+    <div class="tournament-popup-box critical-image-box">
+      <button class="tournament-close big-x-close" onclick="closeCriticalImagePopup()">X</button>
+
+      <div class="tournament-popup-title">
+        ${data.title}
+      </div>
+
+      <div class="critical-image-slider">
+        <button class="critical-arrow critical-arrow-left" onclick="moveCriticalNoticeImage(-1)">&#60;</button>
+
+        <img class="tournament-popup-img critical-popup-img" src="${data.img}" alt="${data.title}">
+
+        <button class="critical-arrow critical-arrow-right" onclick="moveCriticalNoticeImage(1)">&#62;</button>
+      </div>
+
+      <div class="tournament-bottom-nav">
+        <button id="tournamentPrevBtn" class="tournament-nav-btn" onclick="moveCriticalNoticeImage(-1)">&#60;</button>
+        <div class="tournament-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
+        <button id="tournamentNextBtn" class="tournament-nav-btn" onclick="moveCriticalNoticeImage(1)">&#62;</button>
       </div>
     </div>
   `;
@@ -7256,8 +7362,23 @@ function openCriticalNoticeImage(type){
   document.body.appendChild(popup);
 }
 
+function moveCriticalNoticeImage(dir){
+  criticalNoticeIndex += dir;
+
+  if(criticalNoticeIndex < 0){
+    criticalNoticeIndex = CRITICAL_NOTICE_ORDER.length - 1;
+  }
+
+  if(criticalNoticeIndex >= CRITICAL_NOTICE_ORDER.length){
+    criticalNoticeIndex = 0;
+  }
+
+  renderCriticalNoticeImage();
+}
+
 function closeCriticalImagePopup(){
-  document.getElementById("criticalImagePopup")?.remove();
+  const popup = document.getElementById("criticalImagePopup");
+  if(popup) popup.remove();
 }
 
 function updateTournamentPoster(){
