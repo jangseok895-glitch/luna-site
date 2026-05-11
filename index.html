@@ -3726,6 +3726,17 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 
   text-shadow:none !important;
 }
+
+  #criticalNoticePopup{
+  position:fixed !important;
+  inset:0 !important;
+  background:rgba(0,0,0,.65) !important;
+  z-index:99999999 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:20px !important;
+}
 </style>
 </head>
 
@@ -6787,15 +6798,16 @@ if(board === "eventTournament"){
 
 <div class="tournament-thumb-card" onclick="openTournamentPoster('critical')">
   <div class="tournament-title">크리티컬 히트 아이템전 대회 - 5월 15일</div>
-    <div class="tournament-soon-badge">임박</div>
-  <img class="tournament-thumb-img" src="https://i.ibb.co/n8R1q5R2/11.jpg">
+  <div class="tournament-soon-badge">임박</div>
+
+  <img class="tournament-thumb-img" src="https://i.ibb.co/GQynf8vx/Kakao-Talk-20260507-220727153.jpg">
 
   <button
     type="button"
     class="tournament-apply-btn"
-    onclick="event.stopPropagation(); window.open('https://open.kakao.com/o/gbBgWCpi', '_blank');"
+    onclick="event.stopPropagation(); openCriticalNoticePopup();"
   >
-    신청하러 가기
+    대회 진행/공지
   </button>
 </div>
 
@@ -6886,18 +6898,12 @@ allstar: {
     "https://i.ibb.co/RkST5CvB/image.jpg"
   ]
 },
-  critical: {
-    title: "크리티컬 히트 아이템전 대회 - 5월 15일",
-images: [
-  "https://i.ibb.co/n8R1q5R2/11.jpg",
-  "https://i.ibb.co/7t5jML5d/Kakao-Talk-20260507-220727153.png",
-  "https://i.ibb.co/YBfPfxPF/22.jpg",
-  "https://i.ibb.co/RkbdTrMw/33.jpg",
-  "https://i.ibb.co/gMbgXMDc/Kakao-Talk-20260507-231140266.png",
-  "https://i.ibb.co/DfyTG03X/44.jpg",
-  "https://i.ibb.co/Xk4NJfF7/66.jpg"
-]
-  }
+critical: {
+  title: "크리티컬 히트 아이템전 대회 - 5월 15일",
+  images: [
+    "https://i.ibb.co/GQynf8vx/Kakao-Talk-20260507-220727153.jpg"
+  ]
+}
 };
 
 let tournamentKey = "";
@@ -6949,6 +6955,87 @@ function moveTournamentPoster(dir){
   if(tournamentIndex >= data.images.length) tournamentIndex = 0;
 
   updateTournamentPoster();
+}
+
+  const CRITICAL_NOTICE_IMAGES = {
+  schedule: {
+    title: "대회일정보기",
+    img: "https://i.ibb.co/GQynf8vx/Kakao-Talk-20260507-220727153.jpg"
+  },
+  rule: {
+    title: "공식 경기규정 보기",
+    img: "https://i.ibb.co/RkbdTrMw/33.jpg"
+  },
+  teams: {
+    title: "예선 참가팀 보기",
+    img: "https://i.ibb.co/qFL6csTM/image.jpg"
+  },
+  bracket: {
+    title: "대진표 보기",
+    img: "https://i.ibb.co/8gMycTJB/image.jpg"
+  },
+  maps: {
+    title: "맵 리스트 보기",
+    img: "https://i.ibb.co/gMbgXMDc/Kakao-Talk-20260507-231140266.png"
+  },
+  kart: {
+    title: "카트 규정보기",
+    img: "https://i.ibb.co/DfyTG03X/44.jpg"
+  }
+};
+
+function openCriticalNoticePopup(){
+  const oldPopup = document.getElementById("criticalNoticePopup");
+  if(oldPopup) oldPopup.remove();
+
+  const popup = document.createElement("div");
+  popup.id = "criticalNoticePopup";
+  popup.innerHTML = `
+    <div class="tournament-popup-box">
+      <button class="tournament-close" onclick="closeCriticalNoticePopup()">닫기</button>
+      <div class="tournament-popup-title">크리티컬 히트 대회 진행/공지</div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:16px;">
+        <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('schedule')">대회일정보기</button>
+        <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('rule')">공식 경기규정 보기</button>
+        <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('teams')">예선 참가팀 보기</button>
+        <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('bracket')">대진표 보기</button>
+        <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('maps')">맵 리스트 보기</button>
+        <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('kart')">카트 규정보기</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+}
+
+function closeCriticalNoticePopup(){
+  document.getElementById("criticalNoticePopup")?.remove();
+}
+
+function openCriticalNoticeImage(type){
+  const data = CRITICAL_NOTICE_IMAGES[type];
+  if(!data) return;
+
+  closeCriticalNoticePopup();
+
+  const oldPopup = document.getElementById("tournamentPopup");
+  if(oldPopup) oldPopup.remove();
+
+  const popup = document.createElement("div");
+  popup.id = "tournamentPopup";
+  popup.innerHTML = `
+    <div class="tournament-popup-box">
+      <button class="tournament-close" onclick="closeTournamentPoster()">닫기</button>
+      <div class="tournament-popup-title">${data.title}</div>
+
+      <div class="tournament-popup-slider">
+        <img class="tournament-popup-img" src="${data.img}">
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
 }
 
 function updateTournamentPoster(){
