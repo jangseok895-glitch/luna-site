@@ -3771,6 +3771,104 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   display:block !important;
   margin:0 auto !important;
 }
+
+  #criticalBracketPopup{
+  position:fixed !important;
+  inset:0 !important;
+  background:rgba(0,0,0,.65) !important;
+  z-index:100000000 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:14px !important;
+}
+
+.bracket-popup-box{
+  width:96vw !important;
+  max-width:1500px !important;
+  max-height:94vh !important;
+  overflow:auto !important;
+  background:#ffffff !important;
+  border-radius:18px !important;
+  padding:14px !important;
+  position:relative !important;
+}
+
+.bracket-image-wrap{
+  position:relative !important;
+  width:100% !important;
+}
+
+.bracket-base-img{
+  width:100% !important;
+  height:auto !important;
+  display:block !important;
+  border-radius:12px !important;
+}
+
+#bracketTextLayer{
+  position:absolute !important;
+  inset:0 !important;
+  pointer-events:none !important;
+}
+
+.bracket-text{
+  position:absolute !important;
+  transform:translate(-50%, -50%) !important;
+  color:#ffffff !important;
+  font-size:clamp(11px, 1.1vw, 18px) !important;
+  font-weight:900 !important;
+  text-align:center !important;
+  white-space:nowrap !important;
+  text-shadow:0 2px 4px rgba(0,0,0,.9) !important;
+}
+
+.bracket-bottom{
+  margin-top:10px !important;
+  display:flex !important;
+  justify-content:center !important;
+}
+
+#bracketAdminBox{
+  margin-top:12px !important;
+  padding:12px !important;
+  background:#f0fbff !important;
+  border:1px solid rgba(14,165,233,.35) !important;
+  border-radius:14px !important;
+}
+
+.bracket-admin-title{
+  font-size:20px !important;
+  font-weight:900 !important;
+  text-align:center !important;
+  margin-bottom:12px !important;
+}
+
+.bracket-admin-group{
+  margin-bottom:14px !important;
+}
+
+.bracket-admin-head,
+.bracket-admin-row{
+  display:grid !important;
+  grid-template-columns:50px 1fr 70px 70px 80px 90px !important;
+  gap:6px !important;
+  align-items:center !important;
+  margin-bottom:6px !important;
+}
+
+.bracket-admin-head{
+  font-weight:900 !important;
+  text-align:center !important;
+}
+
+.bracket-admin-row input{
+  height:34px !important;
+  padding:4px 6px !important;
+  border:1px solid rgba(14,165,233,.35) !important;
+  border-radius:8px !important;
+  text-align:center !important;
+}
 </style>
 </head>
 
@@ -7033,7 +7131,9 @@ function openCriticalNoticePopup(){
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('schedule')">대회일정보기</button>
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('rule')">공식 경기규정 보기</button>
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('teams')">예선 참가팀 보기</button>
-        <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('bracket')">대진표 보기</button>
+<button class="tournament-apply-btn" onclick="openCriticalBracketPopup()">
+  대진표 보기
+</button>
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('maps')">맵 리스트 보기</button>
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('kart')">카트 규정보기</button>
       </div>
@@ -9261,6 +9361,168 @@ function closeRankGuidePopup(){
   if(popup){
     popup.classList.add("hidden");
   }
+}
+
+  const BRACKET_PASSWORD = "4567";
+
+const bracketRows = ["A", "B", "C", "D"];
+const bracketFields = ["team", "win", "lose", "point", "round"];
+
+function openCriticalBracketPopup(){
+  const oldPopup = document.getElementById("criticalBracketPopup");
+  if(oldPopup) oldPopup.remove();
+
+  const popup = document.createElement("div");
+  popup.id = "criticalBracketPopup";
+  popup.innerHTML = `
+    <div class="bracket-popup-box">
+      <button class="tournament-close" onclick="closeCriticalBracketPopup()">닫기</button>
+
+      <div class="bracket-image-wrap">
+        <img class="bracket-base-img" src="https://i.ibb.co/8gMycTJB/image.jpg">
+
+        <div id="bracketTextLayer"></div>
+      </div>
+
+      <div class="bracket-bottom">
+        <button class="tournament-apply-btn" onclick="openBracketAdminMode()">운영진 모드</button>
+      </div>
+
+      <div id="bracketAdminBox" class="hidden"></div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+  renderBracketTexts();
+}
+
+function closeCriticalBracketPopup(){
+  document.getElementById("criticalBracketPopup")?.remove();
+}
+
+function openBracketAdminMode(){
+  const pw = prompt("운영진 비밀번호를 입력해주세요.");
+
+  if(pw !== BRACKET_PASSWORD){
+    alert("비밀번호가 올바르지 않습니다.");
+    return;
+  }
+
+  renderBracketAdminBox();
+}
+
+function getBracketData(){
+  return JSON.parse(localStorage.getItem("critical_bracket_data") || "{}");
+}
+
+function saveBracketData(data){
+  localStorage.setItem("critical_bracket_data", JSON.stringify(data));
+}
+
+function renderBracketAdminBox(){
+  const data = getBracketData();
+  const box = document.getElementById("bracketAdminBox");
+
+  let html = `
+    <div class="bracket-admin-title">대진표 운영진 입력</div>
+  `;
+
+  bracketRows.forEach(group => {
+    html += `
+      <div class="bracket-admin-group">
+        <b>${group}조</b>
+        <div class="bracket-admin-head">
+          <span>번호</span>
+          <span>팀명</span>
+          <span>승</span>
+          <span>패</span>
+          <span>승점</span>
+          <span>라운드</span>
+        </div>
+    `;
+
+    for(let i=1; i<=4; i++){
+      html += `
+        <div class="bracket-admin-row">
+          <span>${i}</span>
+          <input id="${group}${i}_team" value="${data?.[group]?.[i]?.team || ""}">
+          <input id="${group}${i}_win" value="${data?.[group]?.[i]?.win || ""}">
+          <input id="${group}${i}_lose" value="${data?.[group]?.[i]?.lose || ""}">
+          <input id="${group}${i}_point" value="${data?.[group]?.[i]?.point || ""}">
+          <input id="${group}${i}_round" value="${data?.[group]?.[i]?.round || ""}">
+        </div>
+      `;
+    }
+
+    html += `</div>`;
+  });
+
+  html += `
+    <button class="tournament-apply-btn" onclick="confirmBracketAdminInput()">확인</button>
+  `;
+
+  box.innerHTML = html;
+  box.classList.remove("hidden");
+}
+
+function confirmBracketAdminInput(){
+  const data = {};
+
+  bracketRows.forEach(group => {
+    data[group] = {};
+
+    for(let i=1; i<=4; i++){
+      data[group][i] = {};
+
+      bracketFields.forEach(field => {
+        data[group][i][field] = document.getElementById(`${group}${i}_${field}`).value.trim();
+      });
+    }
+  });
+
+  saveBracketData(data);
+  renderBracketTexts();
+  alert("대진표가 반영되었습니다.");
+}
+
+function renderBracketTexts(){
+  const layer = document.getElementById("bracketTextLayer");
+  if(!layer) return;
+
+  const data = getBracketData();
+  layer.innerHTML = "";
+
+  const positions = {
+    A:{x:7.8,  y:31.8},
+    B:{x:55.7, y:31.8},
+    C:{x:7.8,  y:64.1},
+    D:{x:55.7, y:64.1}
+  };
+
+  bracketRows.forEach(group => {
+    for(let i=1; i<=4; i++){
+      const row = data?.[group]?.[i] || {};
+      const baseX = positions[group].x;
+      const baseY = positions[group].y + ((i - 1) * 5.7);
+
+      const values = [
+        {text: row.team || "",  x:baseX + 10.5, y:baseY},
+        {text: row.win || "",   x:baseX + 28.8, y:baseY},
+        {text: row.lose || "",  x:baseX + 34.4, y:baseY},
+        {text: row.point || "", x:baseX + 40.0, y:baseY},
+        {text: row.round || "", x:baseX + 46.0, y:baseY}
+      ];
+
+      values.forEach(v => {
+        const div = document.createElement("div");
+        div.className = "bracket-text";
+        div.style.left = v.x + "%";
+        div.style.top = v.y + "%";
+        div.textContent = v.text;
+        layer.appendChild(div);
+      });
+    }
+  });
 }
 </script>
   <div id="rankGraphPopup" class="hidden">
