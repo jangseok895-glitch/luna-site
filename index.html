@@ -3737,6 +3737,17 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   justify-content:center !important;
   padding:20px !important;
 }
+
+  #criticalImagePopup{
+  position:fixed !important;
+  inset:0 !important;
+  background:rgba(0,0,0,.65) !important;
+  z-index:100000000 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:20px !important;
+}
 </style>
 </head>
 
@@ -7017,16 +7028,14 @@ function openCriticalNoticeImage(type){
   const data = CRITICAL_NOTICE_IMAGES[type];
   if(!data) return;
 
-  closeCriticalNoticePopup();
-
-  const oldPopup = document.getElementById("tournamentPopup");
+  const oldPopup = document.getElementById("criticalImagePopup");
   if(oldPopup) oldPopup.remove();
 
   const popup = document.createElement("div");
-  popup.id = "tournamentPopup";
+  popup.id = "criticalImagePopup";
   popup.innerHTML = `
     <div class="tournament-popup-box">
-      <button class="tournament-close" onclick="closeTournamentPoster()">닫기</button>
+      <button class="tournament-close" onclick="closeCriticalImagePopup()">닫기</button>
       <div class="tournament-popup-title">${data.title}</div>
 
       <div class="tournament-popup-slider">
@@ -7036,6 +7045,10 @@ function openCriticalNoticeImage(type){
   `;
 
   document.body.appendChild(popup);
+}
+
+function closeCriticalImagePopup(){
+  document.getElementById("criticalImagePopup")?.remove();
 }
 
 function updateTournamentPoster(){
