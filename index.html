@@ -3869,6 +3869,8 @@ let mini4545State = {
   startTime:0,
   timerId:null,
   cells:[]
+  clickTimes: [],
+invalidPlay: false,
 };
 
 function openMini4545Game(){
@@ -4023,6 +4025,20 @@ function clickMini4545Cell(idx){
 
   if(num !== mini4545State.next) return;
 
+    // 매크로 클릭 간격 감지
+  const now = performance.now();
+
+  mini4545State.clickTimes.push(now);
+
+  if(mini4545State.clickTimes.length >= 2){
+    const len = mini4545State.clickTimes.length;
+    const gap = now - mini4545State.clickTimes[len - 2];
+
+    if(gap < 35){
+      mini4545State.invalidPlay = true;
+    }
+  }
+
   if(mini4545State.spawn <= 45){
     mini4545State.cells[idx] = mini4545State.spawn;
     mini4545State.spawn++;
@@ -4040,10 +4056,37 @@ function clickMini4545Cell(idx){
 }
 
 function finishMini4545Game(){
-  mini4545State.finished = true;
   clearInterval(mini4545State.timerId);
 
   const sec = ((performance.now() - mini4545State.startTime) / 1000).toFixed(3);
+
+  const score = Number(sec);
+  const clicks = mini4545State.clickTimes || [];
+
+  const gaps = clicks.slice(1).map((t, i) => t - clicks[i]);
+  const tooFastCount = gaps.filter(g => g < 50).length;
+  const avgGap = gaps.length
+    ? gaps.reduce((a, b) => a + b, 0) / gaps.length
+    : 9999;
+
+  // 매크로/비정상 입력 감지 시 기록 등록 차단
+  if(
+    score < 4.5 ||
+    tooFastCount >= 5 ||
+    avgGap < 90 ||
+    mini4545State.invalidPlay
+  ){
+    mini4545State.finished = true;
+
+    document.getElementById("mini4545Timer").textContent = sec + "초";
+    document.getElementById("mini4545FinalTime").textContent = "";
+    document.getElementById("mini4545Result").classList.remove("hidden");
+
+    alert("비정상적인 입력이 감지되어 기록 등록이 제한됩니다.");
+    return;
+  }
+
+  mini4545State.finished = true;
 
   document.getElementById("mini4545Timer").textContent = sec + "초";
   document.getElementById("mini4545FinalTime").textContent = sec;
@@ -4060,7 +4103,12 @@ function shuffleMini4545(arr){
 
 async function submitMini4545Score(){
   const nick = document.getElementById("mini4545Nickname")?.value.trim();
-  const score = Number(document.getElementById("mini4545FinalTime")?.textContent);
+const score = Number(document.getElementById("mini4545FinalTime")?.textContent);
+
+if(score < 4.5 || mini4545State.invalidPlay){
+  alert("비정상적인 기록으로 등록할 수 없습니다.");
+  return false;
+}
 
   if(!nick){
     alert("아이디를 입력해주세요.");
@@ -4079,7 +4127,10 @@ async function submitMini4545Score(){
 .insert({
   nickname:nick,
   score_time:score,
-  created_day:getMini4545TodayKey()
+  created_day:getMini4545TodayKey(),
+  user_agent:navigator.userAgent,
+  click_count:mini4545State.clickTimes?.length || 0,
+  invalid_play:mini4545State.invalidPlay === true
 });
 
       if(error) throw error;
