@@ -9532,21 +9532,30 @@ function renderBracketTexts(){
     D:{x:55.7, y:64.1}
   };
 
+  const groupAdjust = {
+  A:{x:0,    y:1.35, numX:0},
+  B:{x:0,    y:1.35, numX:-2.8},
+  C:{x:0,    y:2.05, numX:0},
+  D:{x:0,    y:2.05, numX:-2.8}
+};
+
   bracketRows.forEach(group => {
     for(let i=1; i<=4; i++){
       const row = data?.[group]?.[i] || {};
       const baseX = positions[group].x;
       const baseY = positions[group].y + ((i - 1) * 5.7);
 
+const adj = groupAdjust[group] || {x:0, y:0, numX:0};
+
 const values = [
   // 팀명
-  {text: row.team || "",  x:baseX + 10.2, y:baseY + 1.0},
+  {text: row.team || "",  x:baseX + 10.2 + adj.x, y:baseY + adj.y},
 
   // 승 / 패 / 승점 / 라운드
-  {text: row.win || "",   x:baseX + 23.5, y:baseY + 1.0},
-  {text: row.lose || "",  x:baseX + 29.0, y:baseY + 1.0},
-  {text: row.point || "", x:baseX + 34.5, y:baseY + 1.0},
-  {text: row.round || "", x:baseX + 40.2, y:baseY + 1.0}
+  {text: row.win || "",   x:baseX + 23.5 + adj.numX, y:baseY + adj.y},
+  {text: row.lose || "",  x:baseX + 29.0 + adj.numX, y:baseY + adj.y},
+  {text: row.point || "", x:baseX + 34.5 + adj.numX, y:baseY + adj.y},
+  {text: row.round || "", x:baseX + 40.2 + adj.numX, y:baseY + adj.y}
 ];
 
       values.forEach(v => {
