@@ -7302,7 +7302,7 @@ function openCriticalNoticePopup(){
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('schedule')">대회일정보기</button>
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('rule')">공식 경기규정 보기</button>
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('teams')">예선 참가팀 보기</button>
-        <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('bracket')">대진표 보기</button>
+<button class="tournament-apply-btn" onclick="openCriticalBracketPopup()">대진표 보기</button>
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('maps')">맵 리스트 보기</button>
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('kart')">카트 규정보기</button>
       </div>
@@ -7349,12 +7349,6 @@ function renderCriticalNoticeImage(){
         <img class="tournament-popup-img critical-popup-img" src="${data.img}" alt="${data.title}">
 
         <button class="critical-arrow critical-arrow-right" onclick="moveCriticalNoticeImage(1)">&#62;</button>
-      </div>
-
-      <div class="tournament-bottom-nav">
-        <button id="tournamentPrevBtn" class="tournament-nav-btn" onclick="moveCriticalNoticeImage(-1)">&#60;</button>
-        <div class="tournament-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
-        <button id="tournamentNextBtn" class="tournament-nav-btn" onclick="moveCriticalNoticeImage(1)">&#62;</button>
       </div>
     </div>
   `;
