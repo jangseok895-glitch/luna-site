@@ -6949,21 +6949,11 @@ function closeRealManageTab() {
   realManageClosed = true;
   realManageManualOpen = false;
 
-const keepManageTab = document.getElementById("realManageFixCheck")?.checked;
+  // 관리탭 고정 체크 시 닫지 않음
+  if (document.getElementById("manageLockChk")?.checked) return;
 
-document.body.classList.add("capture-mode");
-
-if(!keepManageTab){
   document.body.classList.add("real-manage-closed");
-}
 
-/* 여기서 html2canvas 실행 */
-
-document.body.classList.remove("capture-mode");
-
-if(!keepManageTab){
-  document.body.classList.remove("real-manage-closed");
-}
   refreshHeaderPush();
 }
 
