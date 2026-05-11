@@ -9529,13 +9529,15 @@ function renderBracketTexts(){
       const baseX = positions[group].x;
       const baseY = positions[group].y + ((i - 1) * 5.7);
 
-      const values = [
-        {text: row.team || "",  x:baseX + 10.5, y:baseY},
-        {text: row.win || "",   x:baseX + 28.8, y:baseY},
-        {text: row.lose || "",  x:baseX + 34.4, y:baseY},
-        {text: row.point || "", x:baseX + 40.0, y:baseY},
-        {text: row.round || "", x:baseX + 46.0, y:baseY}
-      ];
+const values = [
+  {text: row.team || "",  x:baseX + 10.5, y:baseY},
+
+  // 승 / 패 / 승점 / 라운드 위치 보정
+  {text: row.win || "",   x:baseX + 23.0, y:baseY + 1.2},
+  {text: row.lose || "",  x:baseX + 28.6, y:baseY + 1.2},
+  {text: row.point || "", x:baseX + 34.2, y:baseY + 1.2},
+  {text: row.round || "", x:baseX + 39.8, y:baseY + 1.2}
+];
 
       values.forEach(v => {
         const div = document.createElement("div");
