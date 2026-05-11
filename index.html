@@ -3922,6 +3922,39 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     font-size:16px !important;
   }
 }
+
+  /* 모바일 대진표 점수 표시 강제 보정 */
+#criticalBracketPopup .bracket-image-wrap{
+  position:relative !important;
+}
+
+#criticalBracketPopup #bracketTextLayer{
+  position:absolute !important;
+  inset:0 !important;
+  z-index:50 !important;
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  pointer-events:none !important;
+}
+
+#criticalBracketPopup .bracket-text{
+  position:absolute !important;
+  z-index:60 !important;
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  color:#ffffff !important;
+  font-weight:900 !important;
+  text-shadow:0 2px 5px #000, 0 0 4px #000 !important;
+}
+
+@media(max-width:700px){
+  #criticalBracketPopup .bracket-text{
+    font-size:18px !important;
+    min-width:24px !important;
+  }
+}
 </style>
 </head>
 
@@ -9553,9 +9586,9 @@ function renderBracketTexts(){
   };
 
 const groupAdjust = {
-  A:{x:0,    y:3.1, numX:-0.7},
+  A:{x:0,    y:3.1, numX:-1.0},
   B:{x:-0.4, y:3.1, numX:-3.2},
-  C:{x:0,    y:3.8, numX:-0.7},
+  C:{x:0,    y:3.8, numX:-1.0},
   D:{x:-0.4, y:3.8, numX:-3.2}
 };
 
