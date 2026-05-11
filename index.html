@@ -3893,6 +3893,15 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   transform:translate(-62%, -5%) !important;
   font-size:clamp(12px, 1.05vw, 17px) !important;
 }
+
+  /* 대진표 글씨 전체 밀림 초기화 */
+#criticalBracketPopup .rank-guide-box{
+  transform:none !important;
+}
+
+#criticalBracketPopup .bracket-text{
+  transform:translate(-50%, -50%) !important;
+}
 </style>
 </head>
 
@@ -9530,13 +9539,14 @@ function renderBracketTexts(){
       const baseY = positions[group].y + ((i - 1) * 5.7);
 
 const values = [
-  {text: row.team || "",  x:baseX + 10.5, y:baseY},
+  // 팀명
+  {text: row.team || "",  x:baseX + 10.2, y:baseY + 1.0},
 
-  // 승 / 패 / 승점 / 라운드 위치 보정
-  {text: row.win || "",   x:baseX + 23.0, y:baseY + 1.2},
-  {text: row.lose || "",  x:baseX + 28.6, y:baseY + 1.2},
-  {text: row.point || "", x:baseX + 34.2, y:baseY + 1.2},
-  {text: row.round || "", x:baseX + 39.8, y:baseY + 1.2}
+  // 승 / 패 / 승점 / 라운드
+  {text: row.win || "",   x:baseX + 23.5, y:baseY + 1.0},
+  {text: row.lose || "",  x:baseX + 29.0, y:baseY + 1.0},
+  {text: row.point || "", x:baseX + 34.5, y:baseY + 1.0},
+  {text: row.round || "", x:baseX + 40.2, y:baseY + 1.0}
 ];
 
       values.forEach(v => {
