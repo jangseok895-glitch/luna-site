@@ -9478,8 +9478,11 @@ function openCriticalBracketPopup(){
     </div>
   `;
 
-  document.body.appendChild(popup);
+document.body.appendChild(popup);
+
+loadBracketData().then(() => {
   renderBracketTexts();
+});
 }
 
 function closeCriticalBracketPopup(){
@@ -9497,14 +9500,61 @@ function openBracketAdminMode(){
   renderBracketAdminBox();
 }
 
+  let criticalBracketData = {};
+
+async function loadBracketData(){
+  try{
+    if(typeof sb === "undefined" || !sb){
+      criticalBracketData = JSON.parse(localStorage.getItem("critical_bracket_data") || "{}");
+      return criticalBracketData;
+    }
+
+    const { data, error } = await sb
+      .from("critical_bracket_data")
+      .select("data")
+      .eq("id", "main")
+      .single();
+
+    if(error) throw error;
+
+    criticalBracketData = data?.data || {};
+    return criticalBracketData;
+  }catch(e){
+    console.error("대진표 불러오기 실패:", e);
+    criticalBracketData = {};
+    return {};
+  }
+}
+
+async function saveBracketData(data){
+  try{
+    if(typeof sb === "undefined" || !sb){
+      localStorage.setItem("critical_bracket_data", JSON.stringify(data));
+      criticalBracketData = data;
+      return;
+    }
+
+    const { error } = await sb
+      .from("critical_bracket_data")
+      .upsert({
+        id: "main",
+        data: data,
+        updated_at: new Date().toISOString()
+      });
+
+    if(error) throw error;
+
+    criticalBracketData = data;
+  }catch(e){
+    console.error("대진표 저장 실패:", e);
+    alert("저장 실패: Supabase 연결을 확인해주세요.");
+  }
+}
+
 function getBracketData(){
-  return JSON.parse(localStorage.getItem("critical_bracket_data") || "{}");
+  return criticalBracketData || {};
 }
-
-function saveBracketData(data){
-  localStorage.setItem("critical_bracket_data", JSON.stringify(data));
-}
-
+  
 function renderBracketAdminBox(){
   const data = getBracketData();
   const box = document.getElementById("bracketAdminBox");
@@ -9551,7 +9601,7 @@ function renderBracketAdminBox(){
   box.classList.remove("hidden");
 }
 
-function confirmBracketAdminInput(){
+async function confirmBracketAdminInput(){
   const data = {};
 
   bracketRows.forEach(group => {
@@ -9566,9 +9616,9 @@ function confirmBracketAdminInput(){
     }
   });
 
-  saveBracketData(data);
-  renderBracketTexts();
-  alert("대진표가 반영되었습니다.");
+await saveBracketData(data);
+renderBracketTexts();
+alert("대진표가 반영되었습니다.");
 }
 
 function renderBracketTexts(){
