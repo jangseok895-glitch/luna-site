@@ -3869,6 +3869,30 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   border-radius:8px !important;
   text-align:center !important;
 }
+
+  /* 대진표 팝업 닫기 버튼 크게 / 항상 보이게 */
+#criticalBracketPopup .tournament-close{
+  position:fixed !important;
+  top:22px !important;
+  right:28px !important;
+  z-index:1000000001 !important;
+
+  width:76px !important;
+  height:48px !important;
+  padding:0 !important;
+
+  border-radius:14px !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+  font-size:18px !important;
+  font-weight:900 !important;
+}
+
+/* 대진표 입력 글씨 위치 보정 */
+#criticalBracketPopup .bracket-text{
+  transform:translate(-62%, -34%) !important;
+  font-size:clamp(12px, 1.05vw, 17px) !important;
+}
 </style>
 </head>
 
