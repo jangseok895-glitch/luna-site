@@ -3902,6 +3902,26 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 #criticalBracketPopup .bracket-text{
   transform:translate(-50%, -50%) !important;
 }
+
+  #criticalBracketPopup #bracketTextLayer{
+  display:block !important;
+  z-index:5 !important;
+  opacity:1 !important;
+  visibility:visible !important;
+}
+
+#criticalBracketPopup .bracket-text{
+  display:block !important;
+  z-index:6 !important;
+  opacity:1 !important;
+  visibility:visible !important;
+}
+
+@media(max-width:700px){
+  #criticalBracketPopup .bracket-text{
+    font-size:16px !important;
+  }
+}
 </style>
 </head>
 
@@ -9533,10 +9553,10 @@ function renderBracketTexts(){
   };
 
 const groupAdjust = {
-  A:{x:0,    y:2.5, numX:-0.7},
-  B:{x:-0.4, y:2.5, numX:-3.2},
-  C:{x:0,    y:3.2, numX:-0.7},
-  D:{x:-0.4, y:3.2, numX:-3.2}
+  A:{x:0,    y:2.8, numX:-0.7},
+  B:{x:-0.4, y:2.8, numX:-3.2},
+  C:{x:0,    y:3.5, numX:-0.7},
+  D:{x:-0.4, y:3.5, numX:-3.2}
 };
 
   bracketRows.forEach(group => {
