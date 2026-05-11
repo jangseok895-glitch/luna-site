@@ -6773,14 +6773,17 @@ if(board === "eventTournament"){
   list.innerHTML = `
     <div class="tournament-main-grid">
 
-      <div class="tournament-thumb-card" onclick="openTournamentPoster('allstar')">
-        <div class="tournament-title">카러플 올스타전 - 5월17일</div>
-<img class="tournament-thumb-img" src="https://i.ibb.co/jvzPTMYz/image.png">
-<button class="tournament-apply-btn"
-        onclick="event.stopPropagation(); window.open('https://www.youtube.com/post/UgkxYvfxmRNpt9Xzl45_3IYWY7nOh8lR6P29', '_blank')">
-  보러가기
-</button>
-      </div>
+<div class="tournament-thumb-card" onclick="openTournamentPoster('allstar')">
+  <div class="tournament-title">카러플 올스타전 - 5월17일</div>
+  <div class="tournament-soon-badge">임박</div>
+
+  <img class="tournament-thumb-img" src="https://i.ibb.co/jvzPTMYz/image.png">
+
+  <button class="tournament-apply-btn"
+          onclick="event.stopPropagation(); window.open('https://www.youtube.com/', '_blank')">
+    보러가기
+  </button>
+</div>
 
 <div class="tournament-thumb-card" onclick="openTournamentPoster('critical')">
   <div class="tournament-title">크리티컬 히트 아이템전 대회 - 5월 15일</div>
