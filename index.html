@@ -4950,6 +4950,57 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     width:150px !important;
   }
 }
+
+  /* ===== 예선 조배정 중복 버튼 제거 + 이미지 축소 ===== */
+
+/* 위에 겹쳐 뜨는 강제 버튼 숨김 */
+#criticalBracketPopup .critical-force-nav{
+  display:none !important;
+}
+
+/* 예선 조배정 이미지 전체 축소 */
+#criticalBracketPopup .bracket-image-wrap{
+  width:75% !important;
+  max-width:900px !important;
+  margin:0 auto !important;
+}
+
+#criticalBracketPopup .bracket-base-img{
+  width:100% !important;
+  height:auto !important;
+  display:block !important;
+}
+
+/* 예선 조배정 아래 버튼은 보이게 */
+#criticalBracketPopup .critical-bottom-nav{
+  position:static !important;
+  display:grid !important;
+  grid-template-columns:130px 1fr 130px !important;
+  align-items:center !important;
+  gap:16px !important;
+  width:min(760px,96%) !important;
+  margin:14px auto 0 !important;
+  padding:0 !important;
+  background:transparent !important;
+}
+
+/* ===== 올스타전 방송보러가기 버튼 겹침 방지 ===== */
+
+.tournament-overlay-nav{
+  grid-template-columns:130px 1fr 130px !important;
+  padding:0 26px !important;
+}
+
+.tournament-broadcast-btn{
+  justify-self:center !important;
+  width:190px !important;
+  transform:translateY(-72px) !important; /* 이전 버튼 위로 올림 */
+  z-index:9999999 !important;
+}
+
+.tournament-overlay-btn{
+  z-index:9999998 !important;
+}
 </style>
 </head>
 
