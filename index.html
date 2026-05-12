@@ -4666,6 +4666,68 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 #tournamentPopup .tournament-arrow{
   display:none !important;
 }
+
+  /* =========================
+   크리티컬 로딩
+========================= */
+
+#criticalLoadingOverlay{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:999999999 !important;
+
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  background:rgba(0,0,0,.45) !important;
+}
+
+.critical-loading-gif{
+  width:min(260px,60vw) !important;
+  border-radius:18px !important;
+}
+
+/* =========================
+   크리티컬 이전/다음 강제 생성
+========================= */
+
+.critical-bottom-nav{
+  display:flex !important;
+  justify-content:space-between !important;
+  align-items:center !important;
+
+  width:min(760px,95%) !important;
+  margin:14px auto 0 !important;
+}
+
+.critical-nav-btn{
+  width:120px !important;
+  height:58px !important;
+
+  border-radius:50px !important;
+  border:4px solid #ffffff !important;
+
+  background:#ef4444 !important;
+  color:#ffffff !important;
+
+  font-size:20px !important;
+  font-weight:1000 !important;
+
+  cursor:pointer !important;
+
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  box-shadow:0 6px 18px rgba(0,0,0,.35) !important;
+}
+
+.critical-count{
+  color:#2563eb !important;
+  font-size:18px !important;
+  font-weight:1000 !important;
+}
 </style>
 </head>
 
@@ -8006,6 +8068,9 @@ function openCriticalNoticeImage(type){
 }
 
 function renderCriticalNoticeImage(){
+
+  showCriticalLoading();
+  
   const key = CRITICAL_NOTICE_ORDER[criticalNoticeIndex];
 
   if(key === "bracket"){
@@ -8037,15 +8102,22 @@ function renderCriticalNoticeImage(){
         ${contentHtml}
       </div>
 
-      <div class="critical-bottom-nav">
-        <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(-1)">이전</button>
-        <div class="critical-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
-        <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
-      </div>
+<div class="critical-bottom-nav">
+  <button class="critical-nav-btn"
+          onclick="moveCriticalNoticeImage(-1)">이전</button>
+
+  <div class="critical-count">
+    ${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}
+  </div>
+
+  <button class="critical-nav-btn"
+          onclick="moveCriticalNoticeImage(1)">다음</button>
+</div>
     </div>
   `;
 
   document.body.appendChild(popup);
+  hideCriticalLoading();
 }
 
 function moveCriticalNoticeImage(dir){
@@ -10491,6 +10563,30 @@ const values = [
       });
     }
   });
+}
+
+  function showCriticalLoading(){
+
+  let old = document.getElementById("criticalLoadingOverlay");
+  if(old) old.remove();
+
+  const div = document.createElement("div");
+  div.id = "criticalLoadingOverlay";
+
+  div.innerHTML = `
+    <div class="critical-loading-box">
+      <img src="https://i.ibb.co/s9kkcQtD/image.gif"
+           class="critical-loading-gif">
+    </div>
+  `;
+
+  document.body.appendChild(div);
+}
+
+function hideCriticalLoading(){
+  setTimeout(()=>{
+    document.getElementById("criticalLoadingOverlay")?.remove();
+  }, 500);
 }
 </script>
   <div id="rankGraphPopup" class="hidden">
