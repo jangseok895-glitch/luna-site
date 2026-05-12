@@ -4036,6 +4036,22 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   filter:grayscale(1) !important;
   pointer-events:none !important;
 }
+
+  /* 예선 조 배정 - 붉은색 */
+.red-tournament-btn{
+  background:linear-gradient(135deg,#ff6b6b,#dc2626) !important;
+  color:#ffffff !important;
+  border:1px solid #b91c1c !important;
+  box-shadow:0 5px 14px rgba(220,38,38,.28) !important;
+}
+
+/* 펭펭 방송 - 녹색 */
+.green-tournament-btn{
+  background:linear-gradient(135deg,#4ade80,#16a34a) !important;
+  color:#ffffff !important;
+  border:1px solid #15803d !important;
+  box-shadow:0 5px 14px rgba(22,163,74,.28) !important;
+}
 </style>
 </head>
 
@@ -7306,12 +7322,12 @@ function openCriticalNoticePopup(){
   <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('maps')">맵리스트보기</button>
 
   <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('teams')">대회참가팀보기</button>
-  <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('bracket')">예선 조배정</button>
+<button class="tournament-apply-btn red-tournament-btn" onclick="openCriticalNoticeImage('bracket')">예선 조배정</button>
 
-  <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('prelimBracket')">예선 대진표</button>
+<button class="tournament-apply-btn disabled-tournament-btn" disabled>예선 대진표</button>
   <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('prelimBracket')">본선 대진표</button>
 
-  <button class="tournament-apply-btn" onclick="window.open('https://chzzk.naver.com/2b88c012c87944c88d051ad7d92c2c32','_blank')">펭펭방송 보기</button>
+<button class="tournament-apply-btn green-tournament-btn" onclick="window.open('https://chzzk.naver.com/2b88c012c87944c88d051ad7d92c2c32','_blank')">펭펭방송 보기</button>
   <button class="tournament-apply-btn disabled-tournament-btn" disabled>수핏방송 보기</button>
 </div>
     </div>
