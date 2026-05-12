@@ -4404,6 +4404,68 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     font-size:18px !important;
   }
 }
+
+  /* ===== 크리티컬 히트 공지 이미지 이전/다음 버튼 ===== */
+
+.critical-image-slider,
+.critical-bracket-slider{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  overflow:visible !important;
+}
+
+.critical-arrow{
+  position:absolute !important;
+  top:50% !important;
+  transform:translateY(-50%) !important;
+
+  width:62px !important;
+  height:62px !important;
+  border-radius:50% !important;
+  border:4px solid #ffffff !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+
+  font-size:20px !important;
+  font-weight:1000 !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  padding:0 !important;
+  z-index:99999 !important;
+  cursor:pointer !important;
+  box-shadow:0 6px 18px rgba(0,0,0,.35) !important;
+}
+
+.critical-prev-btn{
+  left:14px !important;
+}
+
+.critical-next-btn{
+  right:14px !important;
+}
+
+@media(max-width:520px){
+  .critical-arrow{
+    width:56px !important;
+    height:56px !important;
+    font-size:18px !important;
+  }
+
+  .critical-prev-btn{
+    left:8px !important;
+  }
+
+  .critical-next-btn{
+    right:8px !important;
+  }
+}
 </style>
 </head>
 
@@ -7744,11 +7806,11 @@ function renderCriticalNoticeImage(){
       <div class="tournament-popup-title">${data.title}</div>
 
       <div class="critical-image-slider">
-        <button class="critical-arrow" onclick="moveCriticalNoticeImage(-1)">&#60;</button>
+<button class="critical-arrow critical-prev-btn" onclick="moveCriticalNoticeImage(-1)">이전</button>
 
-        <img class="tournament-popup-img critical-popup-img" src="${data.img}" alt="${data.title}">
+<img class="tournament-popup-img critical-popup-img" src="${data.img}" alt="${data.title}">
 
-        <button class="critical-arrow" onclick="moveCriticalNoticeImage(1)">&#62;</button>
+<button class="critical-arrow critical-next-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
       </div>
 
       <div class="critical-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
@@ -9987,14 +10049,11 @@ function openCriticalBracketPopup(){
 <div class="tournament-popup-title">예선 조 배정</div>
 
       <div class="critical-bracket-slider">
-        <button class="critical-arrow" onclick="moveCriticalNoticeImage(-1)">&#60;</button>
+<button class="critical-arrow critical-prev-btn" onclick="moveCriticalNoticeImage(-1)">이전</button>
 
-        <div class="bracket-image-wrap">
-          <img class="bracket-base-img" src="https://i.ibb.co/8gMycTJB/image.jpg">
-          <div id="bracketTextLayer"></div>
-        </div>
+<img class="tournament-popup-img critical-popup-img" src="${data.img}" alt="${data.title}">
 
-        <button class="critical-arrow" onclick="moveCriticalNoticeImage(1)">&#62;</button>
+<button class="critical-arrow critical-next-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
       </div>
 
       <div class="critical-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
