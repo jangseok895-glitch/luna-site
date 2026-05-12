@@ -4072,6 +4072,40 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   gap:14px !important;
   margin-bottom:12px !important;
 }
+
+  .tournament-popup-slider{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+/* 좌우 화살표를 이미지 안쪽으로 이동 */
+.tournament-arrow{
+  position:absolute !important;
+  top:50% !important;
+  transform:translateY(-50%) !important;
+  z-index:10 !important;
+
+  width:54px !important;
+  height:54px !important;
+  border-radius:50% !important;
+
+  background:rgba(37,99,235,.85) !important;
+  color:#ffffff !important;
+  border:3px solid rgba(255,255,255,.9) !important;
+  box-shadow:0 4px 14px rgba(0,0,0,.35) !important;
+}
+
+/* 왼쪽 화살표 */
+.tournament-arrow:first-child{
+  left:18px !important;
+}
+
+/* 오른쪽 화살표 */
+.tournament-arrow:last-child{
+  right:18px !important;
+}
 </style>
 </head>
 
