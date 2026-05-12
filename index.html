@@ -4526,6 +4526,93 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     right:8px !important;
   }
 }
+
+  /* =========================
+   크리티컬 히트 공지 버튼 고정
+========================= */
+
+/* 공지 이미지 팝업만 */
+#criticalImagePopup .critical-image-slider,
+#criticalBracketPopup .critical-bracket-slider{
+  position:relative !important;
+  overflow:visible !important;
+  padding-bottom:85px !important;
+}
+
+/* 이전 다음 버튼 */
+#criticalImagePopup .critical-arrow,
+#criticalBracketPopup .critical-arrow{
+  position:absolute !important;
+  bottom:10px !important;
+  top:auto !important;
+  transform:none !important;
+
+  width:62px !important;
+  height:62px !important;
+
+  border-radius:50% !important;
+  border:4px solid #ffffff !important;
+
+  background:#ef4444 !important;
+  color:#ffffff !important;
+
+  font-size:20px !important;
+  font-weight:1000 !important;
+
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  z-index:999999 !important;
+  cursor:pointer !important;
+
+  box-shadow:0 6px 18px rgba(0,0,0,.35) !important;
+}
+
+/* 왼쪽 */
+#criticalImagePopup .critical-prev-btn,
+#criticalBracketPopup .critical-prev-btn{
+  left:14px !important;
+}
+
+/* 오른쪽 */
+#criticalImagePopup .critical-next-btn,
+#criticalBracketPopup .critical-next-btn{
+  right:14px !important;
+}
+
+/* 모바일 */
+@media(max-width:520px){
+
+  #criticalImagePopup .critical-arrow,
+  #criticalBracketPopup .critical-arrow{
+    width:56px !important;
+    height:56px !important;
+    font-size:18px !important;
+    bottom:8px !important;
+  }
+
+  #criticalImagePopup .critical-prev-btn,
+  #criticalBracketPopup .critical-prev-btn{
+    left:8px !important;
+  }
+
+  #criticalImagePopup .critical-next-btn,
+  #criticalBracketPopup .critical-next-btn{
+    right:8px !important;
+  }
+}
+
+/* =========================
+   메인포스터는 이전/다음 제거
+========================= */
+
+#tournamentPopup #tournamentPrevBtn,
+#tournamentPopup #tournamentNextBtn,
+#tournamentPopup .tournament-bottom-nav,
+#tournamentPopup .tournament-arrow{
+  display:none !important;
+}
 </style>
 </head>
 
