@@ -4728,6 +4728,48 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   font-size:18px !important;
   font-weight:1000 !important;
 }
+
+  /* ===== 크리티컬 공지 이전/다음 강제 표시 ===== */
+
+#criticalImagePopup .critical-arrow,
+#criticalBracketPopup .critical-arrow{
+  display:none !important;
+}
+
+.critical-force-nav{
+  position:sticky !important;
+  bottom:0 !important;
+  z-index:9999999 !important;
+
+  display:grid !important;
+  grid-template-columns:120px 1fr 120px !important;
+  gap:14px !important;
+  align-items:center !important;
+
+  width:min(760px,96%) !important;
+  margin:14px auto 0 !important;
+  padding:10px 0 4px !important;
+  background:#ffffff !important;
+}
+
+.critical-force-btn{
+  height:56px !important;
+  border-radius:999px !important;
+  border:4px solid #ffffff !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+  font-size:20px !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+  box-shadow:0 6px 18px rgba(0,0,0,.35) !important;
+}
+
+.critical-force-count{
+  text-align:center !important;
+  color:#2563eb !important;
+  font-size:18px !important;
+  font-weight:1000 !important;
+}
 </style>
 </head>
 
@@ -5294,6 +5336,46 @@ function escMini4545(v){
     .replaceAll('"',"&quot;")
     .replaceAll("'","&#039;");
 }
+
+  /* ===== 크리티컬 히트 공지 팝업 이전/다음 강제 생성 ===== */
+
+function forceCriticalNoticeButtons(){
+  const popup = document.querySelector("#criticalImagePopup, #criticalBracketPopup");
+  if(!popup) return;
+
+  const box =
+    popup.querySelector(".critical-image-box") ||
+    popup.querySelector(".bracket-popup-box") ||
+    popup.querySelector(".tournament-popup-box") ||
+    popup.firstElementChild;
+
+  if(!box) return;
+
+  box.querySelector(".critical-force-nav")?.remove();
+
+  const nav = document.createElement("div");
+  nav.className = "critical-force-nav";
+  nav.innerHTML = `
+    <button type="button" class="critical-force-btn" onclick="moveCriticalNoticeImage(-1)">이전</button>
+    <div class="critical-force-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
+    <button type="button" class="critical-force-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
+  `;
+
+  box.appendChild(nav);
+}
+
+/* 기존 함수 실행 후 버튼 강제 삽입 */
+const _oldRenderCriticalNoticeImage = renderCriticalNoticeImage;
+renderCriticalNoticeImage = function(){
+  _oldRenderCriticalNoticeImage.apply(this, arguments);
+  setTimeout(forceCriticalNoticeButtons, 50);
+};
+
+const _oldOpenCriticalBracketPopup = openCriticalBracketPopup;
+openCriticalBracketPopup = function(){
+  _oldOpenCriticalBracketPopup.apply(this, arguments);
+  setTimeout(forceCriticalNoticeButtons, 50);
+};
 </script>
   
 <div id="imagePopup" class="image-popup hidden" onclick="closeImagePopup()">
