@@ -4029,6 +4029,13 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     max-height:68vh !important;
   }
 }
+
+  .disabled-tournament-btn{
+  opacity:.45 !important;
+  cursor:not-allowed !important;
+  filter:grayscale(1) !important;
+  pointer-events:none !important;
+}
 </style>
 </head>
 
@@ -7282,8 +7289,9 @@ function openCriticalNoticePopup(){
       <div class="critical-notice-menu">
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('schedule')">대회일정보기</button>
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('rule')">공식 경기규정 보기</button>
-        <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('teams')">예선 참가팀 보기</button>
-        <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('bracket')">대진표 보기</button>
+<button class="tournament-apply-btn" onclick="openCriticalNoticeImage('teams')">대회 참가팀 보기</button>
+<button class="tournament-apply-btn" onclick="openCriticalNoticeImage('bracket')">예선전 대진표</button>
+<button class="tournament-apply-btn disabled-tournament-btn" disabled>본선/결승 대진표</button>
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('maps')">맵 리스트 보기</button>
         <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('kart')">카트 규정보기</button>
       </div>
@@ -9573,7 +9581,7 @@ function openCriticalBracketPopup(){
     <div class="bracket-popup-box">
       <button class="tournament-close big-x-close" onclick="closeCriticalBracketPopup()">X</button>
 
-      <div class="tournament-popup-title">대진표 보기</div>
+<div class="tournament-popup-title">예선전 대진표</div>
 
       <div class="critical-bracket-slider">
         <button class="critical-arrow" onclick="moveCriticalNoticeImage(-1)">&#60;</button>
