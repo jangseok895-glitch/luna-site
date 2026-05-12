@@ -4823,6 +4823,133 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     font-size:18px !important;
   }
 }
+
+  /* ===== 올스타전 메인 팝업: 그림 위 하단 버튼 ===== */
+
+.tournament-image-wrap{
+  position:relative !important;
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+  overflow:visible !important;
+}
+
+.tournament-overlay-nav{
+  position:absolute !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:18px !important;
+
+  display:grid !important;
+  grid-template-columns:130px 1fr 130px !important;
+  align-items:center !important;
+  gap:16px !important;
+
+  padding:0 32px !important;
+  z-index:999999 !important;
+  pointer-events:none !important;
+}
+
+.tournament-overlay-btn,
+.tournament-broadcast-btn{
+  height:58px !important;
+  border-radius:999px !important;
+  border:4px solid #ffffff !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+  font-size:20px !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+  box-shadow:0 6px 18px rgba(0,0,0,.45) !important;
+  pointer-events:auto !important;
+}
+
+.tournament-broadcast-btn{
+  justify-self:center !important;
+  width:180px !important;
+  background:linear-gradient(135deg,#22c55e,#16a34a) !important;
+}
+
+/* ===== 크리티컬 공지 이미지: 그림 위 하단 버튼 ===== */
+
+#criticalImagePopup .critical-image-slider,
+#criticalBracketPopup .critical-bracket-slider{
+  position:relative !important;
+  overflow:visible !important;
+}
+
+#criticalImagePopup .critical-bottom-nav,
+#criticalBracketPopup .critical-bottom-nav,
+#criticalImagePopup .critical-force-nav,
+#criticalBracketPopup .critical-force-nav{
+  position:absolute !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:18px !important;
+
+  display:grid !important;
+  grid-template-columns:130px 1fr 130px !important;
+  align-items:center !important;
+  gap:16px !important;
+
+  padding:0 32px !important;
+  z-index:999999 !important;
+  background:transparent !important;
+  pointer-events:none !important;
+}
+
+#criticalImagePopup .critical-nav-btn,
+#criticalBracketPopup .critical-nav-btn,
+#criticalImagePopup .critical-force-btn,
+#criticalBracketPopup .critical-force-btn{
+  height:58px !important;
+  border-radius:999px !important;
+  border:4px solid #ffffff !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+  font-size:20px !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+  box-shadow:0 6px 18px rgba(0,0,0,.45) !important;
+  pointer-events:auto !important;
+}
+
+#criticalImagePopup .critical-count,
+#criticalBracketPopup .critical-count,
+#criticalImagePopup .critical-force-count,
+#criticalBracketPopup .critical-force-count{
+  text-align:center !important;
+  color:#2563eb !important;
+  font-size:18px !important;
+  font-weight:1000 !important;
+  text-shadow:0 2px 4px rgba(255,255,255,.95) !important;
+}
+
+@media(max-width:520px){
+  .tournament-overlay-nav,
+  #criticalImagePopup .critical-bottom-nav,
+  #criticalBracketPopup .critical-bottom-nav,
+  #criticalImagePopup .critical-force-nav,
+  #criticalBracketPopup .critical-force-nav{
+    bottom:10px !important;
+    grid-template-columns:105px 1fr 105px !important;
+    padding:0 16px !important;
+  }
+
+  .tournament-overlay-btn,
+  .tournament-broadcast-btn,
+  #criticalImagePopup .critical-nav-btn,
+  #criticalBracketPopup .critical-nav-btn,
+  #criticalImagePopup .critical-force-btn,
+  #criticalBracketPopup .critical-force-btn{
+    height:52px !important;
+    font-size:17px !important;
+  }
+
+  .tournament-broadcast-btn{
+    width:150px !important;
+  }
+}
 </style>
 </head>
 
@@ -7904,10 +8031,10 @@ if(board === "eventTournament"){
 
   <img class="tournament-thumb-img" src="https://github.com/jangseok895-glitch/luna-site/blob/main/pictures/%ED%8C%AC%ED%95%A0.jpg?raw=true">
 
-  <button class="tournament-apply-btn"
-          onclick="event.stopPropagation(); window.open('https://www.youtube.com/@liquidchalang/featured', '_blank')">
-    보러가기
-  </button>
+<button class="tournament-apply-btn"
+        onclick="event.stopPropagation(); openTournamentPoster('allstar')">
+  대회 진행/공지
+</button>
 </div>
 
 <div class="tournament-thumb-card" onclick="openTournamentPoster('critical')">
@@ -8005,19 +8132,20 @@ if(board === "promo" || board === "qna"){
 
 /* ===== 대회 팝업 ===== */
 const TOURNAMENT_POSTERS = {
-allstar: {
-  title: "카러플 올스타전 - 5월17일",
-  images: [
-    "https://github.com/jangseok895-glitch/luna-site/blob/main/pictures/%ED%8C%AC%ED%95%A0.jpg?raw=true",
-    "https://github.com/jangseok895-glitch/luna-site/blob/main/pictures/%EA%B7%9C%EC%A0%95.jpg?raw=true"
-  ]
-},
-critical: {
-  title: "크리티컬 히트 아이템전 대회 - 5월 15일",
-  images: [
-    "https://i.ibb.co/GQynf8vx/Kakao-Talk-20260507-220727153.jpg"
-  ]
-}
+  allstar: {
+    title: "카러플 올스타전 - 5월17일",
+    broadcastUrl: "https://www.youtube.com/@liquidchalang/featured",
+    images: [
+      "https://github.com/jangseok895-glitch/luna-site/blob/main/pictures/%ED%8C%AC%ED%95%A0.jpg?raw=true",
+      "https://github.com/jangseok895-glitch/luna-site/blob/main/pictures/%EA%B7%9C%EC%A0%95.jpg?raw=true"
+    ]
+  },
+  critical: {
+    title: "크리티컬 히트 아이템전 대회 - 5월 15일",
+    images: [
+      "https://i.ibb.co/GQynf8vx/Kakao-Talk-20260507-220727153.jpg"
+    ]
+  }
 };
 
 let tournamentKey = "";
@@ -8027,8 +8155,7 @@ function openTournamentPoster(key){
   tournamentKey = key;
   tournamentIndex = 0;
 
-  const oldPopup = document.getElementById("tournamentPopup");
-  if(oldPopup) oldPopup.remove();
+  document.getElementById("tournamentPopup")?.remove();
 
   const popup = document.createElement("div");
   popup.id = "tournamentPopup";
@@ -8042,17 +8169,13 @@ function openTournamentPoster(key){
       <div class="tournament-image-wrap">
         <img id="tournamentPopupImg" class="tournament-popup-img">
 
-        <button id="tournamentPrevBtn"
-                class="tournament-side-btn tournament-prev-btn"
-                onclick="moveTournamentPoster(-1)">
-          이전
-        </button>
+        <div id="tournamentOverlayNav" class="tournament-overlay-nav">
+          <button id="tournamentPrevBtn" class="tournament-overlay-btn" onclick="moveTournamentPoster(-1)">이전</button>
 
-        <button id="tournamentNextBtn"
-                class="tournament-side-btn tournament-next-btn"
-                onclick="moveTournamentPoster(1)">
-          다음
-        </button>
+          <button id="tournamentBroadcastBtn" class="tournament-broadcast-btn" onclick="openTournamentBroadcast()">방송보러가기</button>
+
+          <button id="tournamentNextBtn" class="tournament-overlay-btn" onclick="moveTournamentPoster(1)">다음</button>
+        </div>
       </div>
 
       <div id="tournamentPopupCount" class="tournament-count"></div>
@@ -8280,25 +8403,16 @@ function updateTournamentPoster(){
   document.getElementById("tournamentPopupImg").src = data.images[tournamentIndex];
 
   const count = document.getElementById("tournamentPopupCount");
-  const prev = document.getElementById("tournamentPrevBtn");
-  const next = document.getElementById("tournamentNextBtn");
+  const nav = document.getElementById("tournamentOverlayNav");
 
   if(tournamentKey === "critical"){
     count.textContent = "";
-    prev.style.display = "none";
-    next.style.display = "none";
+    nav.style.display = "none";
     return;
   }
 
-  if(data.images.length > 1){
-    count.textContent = `${tournamentIndex + 1} / ${data.images.length}`;
-    prev.style.display = "inline-flex";
-    next.style.display = "inline-flex";
-  }else{
-    count.textContent = "";
-    prev.style.display = "none";
-    next.style.display = "none";
-  }
+  nav.style.display = "grid";
+  count.textContent = `${tournamentIndex + 1} / ${data.images.length}`;
 }
 
 
@@ -10728,6 +10842,13 @@ function hideCriticalLoading(){
   setTimeout(()=>{
     document.getElementById("criticalLoadingOverlay")?.remove();
   }, 500);
+}
+
+  function openTournamentBroadcast(){
+  const data = TOURNAMENT_POSTERS[tournamentKey];
+  if(data?.broadcastUrl){
+    window.open(data.broadcastUrl, "_blank");
+  }
 }
 </script>
   <div id="rankGraphPopup" class="hidden">
