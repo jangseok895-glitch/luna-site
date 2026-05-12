@@ -4466,6 +4466,66 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
     right:8px !important;
   }
 }
+
+  .critical-ready-box{
+  width:min(760px,90vw) !important;
+  height:420px !important;
+  border-radius:18px !important;
+  background:linear-gradient(135deg,#f3f4f6,#d1d5db) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  color:#111827 !important;
+  font-size:52px !important;
+  font-weight:1000 !important;
+  border:3px dashed #9ca3af !important;
+}
+
+  /* ===== 크리티컬 히트 이전/다음 버튼 아래로 이동 ===== */
+
+.critical-image-slider,
+.critical-bracket-slider{
+  position:relative !important;
+  padding-bottom:90px !important;
+}
+
+/* 버튼을 그림 하단쪽으로 */
+.critical-arrow{
+  top:auto !important;
+  bottom:12px !important;
+  transform:none !important;
+}
+
+/* 왼쪽 */
+.critical-prev-btn{
+  left:18px !important;
+}
+
+/* 오른쪽 */
+.critical-next-btn{
+  right:18px !important;
+}
+
+/* 모바일 */
+@media(max-width:520px){
+
+  .critical-image-slider,
+  .critical-bracket-slider{
+    padding-bottom:78px !important;
+  }
+
+  .critical-arrow{
+    bottom:8px !important;
+  }
+
+  .critical-prev-btn{
+    left:8px !important;
+  }
+
+  .critical-next-btn{
+    right:8px !important;
+  }
+}
 </style>
 </head>
 
@@ -7689,28 +7749,48 @@ const CRITICAL_NOTICE_IMAGES = {
     title: "대회일정보기",
     img: "https://i.ibb.co/GQynf8vx/Kakao-Talk-20260507-220727153.jpg"
   },
+
   rule: {
-    title: "공식 경기규정 보기",
+    title: "공식 경기규정보기",
     img: "https://i.ibb.co/RkbdTrMw/33.jpg"
   },
+
   kart: {
-    title: "카트 규정보기",
+    title: "카트규정보기",
     img: "https://i.ibb.co/DfyTG03X/44.jpg"
   },
+
   maps: {
-    title: "맵 리스트 보기",
+    title: "맵리스트보기",
     img: "https://i.ibb.co/gMbgXMDc/Kakao-Talk-20260507-231140266.png"
   },
+
   teams: {
-    title: "대회 참가팀 보기",
+    title: "대회참가팀보기",
     img: "https://github.com/jangseok895-glitch/luna-site/blob/main/pictures/%ED%81%AC%ED%9E%88%EC%BB%B5%EC%84%A0%EC%88%98.jpg?raw=true"
   },
+
+  /* 예선 조배정 */
   bracket: {
-    title: "예선 조 배정"
+    title: "예선 조배정"
   },
-  prelimBracket: {
+
+  /* 회색 버튼 - 준비중 */
+  prelimReady: {
     title: "예선 대진표",
+    ready: true
+  },
+
+  /* 본선 대진표 */
+  prelimBracket: {
+    title: "본선 대진표",
     img: "https://i.ibb.co/LXNSMhqH/image.png"
+  },
+
+  /* 회색 버튼 - 준비중 */
+  sufitReady: {
+    title: "수핏방송 보기",
+    ready: true
   }
 };
 
@@ -7721,7 +7801,9 @@ const CRITICAL_NOTICE_ORDER = [
   "maps",
   "teams",
   "bracket",
-  "prelimBracket"
+  "prelimReady",
+  "prelimBracket",
+  "sufitReady"
 ];
 let criticalNoticeIndex = 0;
 
@@ -7750,14 +7832,14 @@ function openCriticalNoticePopup(){
   <div class="critical-grid">
     <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('teams')">대회참가팀보기</button>
     <button class="tournament-apply-btn red-tournament-btn" onclick="openCriticalNoticeImage('bracket')">예선 조배정</button>
-    <button class="tournament-apply-btn disabled-tournament-btn" disabled>예선 대진표</button>
+<button class="tournament-apply-btn disabled-tournament-btn" onclick="openCriticalNoticeImage('prelimReady')">예선 대진표</button>
     <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('prelimBracket')">본선 대진표</button>
   </div>
 
   <div class="critical-group-title">- 방송 관련 -</div>
   <div class="critical-grid">
     <button class="tournament-apply-btn green-tournament-btn" onclick="window.open('https://chzzk.naver.com/2b88c012c87944c88d051ad7d92c2c32','_blank')">펭펭방송 보기</button>
-    <button class="tournament-apply-btn disabled-tournament-btn" disabled>수핏방송 보기</button>
+<button class="tournament-apply-btn disabled-tournament-btn" onclick="openCriticalNoticeImage('sufitReady')">수핏방송 보기</button>
   </div>
 
 </div>
@@ -7787,15 +7869,21 @@ function renderCriticalNoticeImage(){
   const key = CRITICAL_NOTICE_ORDER[criticalNoticeIndex];
 
   if(key === "bracket"){
-    document.getElementById("criticalImagePopup")?.remove();
     openCriticalBracketPopup();
     return;
   }
 
-  const data = CRITICAL_NOTICE_IMAGES[key];
-  if(!data) return;
+  const data = CRITICAL_NOTICE_IMAGES[key] || {
+    title:"준비중",
+    ready:true
+  };
 
   document.getElementById("criticalImagePopup")?.remove();
+  document.getElementById("criticalBracketPopup")?.remove();
+
+  const contentHtml = data.img
+    ? `<img class="tournament-popup-img critical-popup-img" src="${data.img}" alt="${data.title}">`
+    : `<div class="critical-ready-box">준비중</div>`;
 
   const popup = document.createElement("div");
   popup.id = "criticalImagePopup";
@@ -7806,11 +7894,11 @@ function renderCriticalNoticeImage(){
       <div class="tournament-popup-title">${data.title}</div>
 
       <div class="critical-image-slider">
-<button class="critical-arrow critical-prev-btn" onclick="moveCriticalNoticeImage(-1)">이전</button>
+        <button class="critical-arrow critical-prev-btn" onclick="moveCriticalNoticeImage(-1)">이전</button>
 
-<img class="tournament-popup-img critical-popup-img" src="${data.img}" alt="${data.title}">
+        ${contentHtml}
 
-<button class="critical-arrow critical-next-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
+        <button class="critical-arrow critical-next-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
       </div>
 
       <div class="critical-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
@@ -10037,6 +10125,7 @@ const bracketFields = ["team", "win", "lose", "point", "round"];
 
 function openCriticalBracketPopup(){
   document.getElementById("criticalBracketPopup")?.remove();
+  document.getElementById("criticalImagePopup")?.remove();
 
   criticalNoticeIndex = CRITICAL_NOTICE_ORDER.indexOf("bracket");
 
@@ -10046,14 +10135,17 @@ function openCriticalBracketPopup(){
     <div class="bracket-popup-box">
       <button class="tournament-close big-x-close" onclick="closeCriticalBracketPopup()">X</button>
 
-<div class="tournament-popup-title">예선 조 배정</div>
+      <div class="tournament-popup-title">예선 조 배정</div>
 
       <div class="critical-bracket-slider">
-<button class="critical-arrow critical-prev-btn" onclick="moveCriticalNoticeImage(-1)">이전</button>
+        <button class="critical-arrow critical-prev-btn" onclick="moveCriticalNoticeImage(-1)">이전</button>
 
-<img class="tournament-popup-img critical-popup-img" src="${data.img}" alt="${data.title}">
+        <div class="bracket-image-wrap">
+          <img class="bracket-base-img" src="https://i.ibb.co/8gMycTJB/image.jpg">
+          <div id="bracketTextLayer"></div>
+        </div>
 
-<button class="critical-arrow critical-next-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
+        <button class="critical-arrow critical-next-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
       </div>
 
       <div class="critical-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
