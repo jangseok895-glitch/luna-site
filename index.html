@@ -7335,36 +7335,30 @@ function openCriticalNoticePopup(){
       <div class="tournament-popup-title">크리티컬 히트 대회 진행/공지</div>
 
 <div class="critical-notice-menu">
-<!-- 규정 관련 -->
-<div class="critical-group-title">- 규정 관련 -</div>
 
-<div class="critical-grid">
-  <button class="tournament-apply-btn">대회일정보기</button>
-  <button class="tournament-apply-btn">공식경기규정보기</button>
+  <div class="critical-group-title">- 규정 관련 -</div>
+  <div class="critical-grid">
+    <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('schedule')">대회일정보기</button>
+    <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('rule')">공식경기규정보기</button>
+    <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('kart')">카트규정보기</button>
+    <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('maps')">맵리스트보기</button>
+  </div>
 
-  <button class="tournament-apply-btn">카트규정보기</button>
-  <button class="tournament-apply-btn">맵리스트보기</button>
+  <div class="critical-group-title">- 경기 관련 -</div>
+  <div class="critical-grid">
+    <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('teams')">대회참가팀보기</button>
+    <button class="tournament-apply-btn red-tournament-btn" onclick="openCriticalNoticeImage('bracket')">예선 조배정</button>
+    <button class="tournament-apply-btn disabled-tournament-btn" disabled>예선 대진표</button>
+    <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('prelimBracket')">본선 대진표</button>
+  </div>
+
+  <div class="critical-group-title">- 방송 관련 -</div>
+  <div class="critical-grid">
+    <button class="tournament-apply-btn green-tournament-btn" onclick="window.open('https://chzzk.naver.com/2b88c012c87944c88d051ad7d92c2c32','_blank')">펭펭방송 보기</button>
+    <button class="tournament-apply-btn disabled-tournament-btn" disabled>수핏방송 보기</button>
+  </div>
+
 </div>
-
-<!-- 경기 관련 -->
-<div class="critical-group-title">- 경기 관련 -</div>
-
-<div class="critical-grid">
-  <button class="tournament-apply-btn">대회참가팀보기</button>
-  <button class="tournament-apply-btn red-tournament-btn">예선 조배정</button>
-
-  <button class="tournament-apply-btn disabled-tournament-btn" disabled>예선 대진표</button>
-  <button class="tournament-apply-btn">본선 대진표</button>
-</div>
-
-<!-- 방송 관련 -->
-<div class="critical-group-title">- 방송 관련 -</div>
-
-<div class="critical-grid">
-  <button class="tournament-apply-btn green-tournament-btn">펭펭방송 보기</button>
-  <button class="tournament-apply-btn disabled-tournament-btn" disabled>수핏방송 보기</button>
-</div>
-    </div>
   `;
 
   document.body.appendChild(popup);
