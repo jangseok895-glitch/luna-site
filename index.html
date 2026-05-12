@@ -4607,12 +4607,7 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
    메인포스터는 이전/다음 제거
 ========================= */
 
-#tournamentPopup #tournamentPrevBtn,
-#tournamentPopup #tournamentNextBtn,
-#tournamentPopup .tournament-bottom-nav,
-#tournamentPopup .tournament-arrow{
-  display:none !important;
-}
+
 
   /* ===== 크리티컬 히트 공지 이전/다음 하단 고정 ===== */
 
@@ -4660,12 +4655,7 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 }
 
 /* 크리티컬 히트 메인포스터 이전/다음 제거 */
-#tournamentPopup #tournamentPrevBtn,
-#tournamentPopup #tournamentNextBtn,
-#tournamentPopup .tournament-bottom-nav,
-#tournamentPopup .tournament-arrow{
-  display:none !important;
-}
+
 
   /* =========================
    크리티컬 로딩
@@ -8212,14 +8202,16 @@ function openCriticalNoticeImage(type){
 
 function renderCriticalNoticeImage(){
 
-  showCriticalLoading();
-  
   const key = CRITICAL_NOTICE_ORDER[criticalNoticeIndex];
 
   if(key === "bracket"){
+    hideCriticalLoading();
     openCriticalBracketPopup();
+    setTimeout(forceCriticalNoticeButtons, 80);
     return;
   }
+
+  showCriticalLoading();
 
   const data = CRITICAL_NOTICE_IMAGES[key] || {
     title:"준비중",
@@ -8230,7 +8222,11 @@ function renderCriticalNoticeImage(){
   document.getElementById("criticalBracketPopup")?.remove();
 
   const contentHtml = data.img
-    ? `<img class="tournament-popup-img critical-popup-img" src="${data.img}" alt="${data.title}">`
+    ? `<img class="tournament-popup-img critical-popup-img"
+            src="${data.img}"
+            alt="${data.title}"
+            onload="hideCriticalLoading(); setTimeout(forceCriticalNoticeButtons, 80);"
+            onerror="hideCriticalLoading(); setTimeout(forceCriticalNoticeButtons, 80);">`
     : `<div class="critical-ready-box">준비중</div>`;
 
   const popup = document.createElement("div");
@@ -8244,23 +8240,15 @@ function renderCriticalNoticeImage(){
       <div class="critical-image-slider">
         ${contentHtml}
       </div>
-
-<div class="critical-bottom-nav">
-  <button class="critical-nav-btn"
-          onclick="moveCriticalNoticeImage(-1)">이전</button>
-
-  <div class="critical-count">
-    ${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}
-  </div>
-
-  <button class="critical-nav-btn"
-          onclick="moveCriticalNoticeImage(1)">다음</button>
-</div>
     </div>
   `;
 
   document.body.appendChild(popup);
-  hideCriticalLoading();
+
+  if(!data.img){
+    hideCriticalLoading();
+    setTimeout(forceCriticalNoticeButtons, 80);
+  }
 }
 
 function moveCriticalNoticeImage(dir){
@@ -8294,6 +8282,13 @@ function updateTournamentPoster(){
   const count = document.getElementById("tournamentPopupCount");
   const prev = document.getElementById("tournamentPrevBtn");
   const next = document.getElementById("tournamentNextBtn");
+
+  if(tournamentKey === "critical"){
+    count.textContent = "";
+    prev.style.display = "none";
+    next.style.display = "none";
+    return;
+  }
 
   if(data.images.length > 1){
     count.textContent = `${tournamentIndex + 1} / ${data.images.length}`;
@@ -10513,11 +10508,14 @@ function openCriticalBracketPopup(){
     </div>
   `;
 
-  document.body.appendChild(popup);
+document.body.appendChild(popup);
 
-  loadBracketData().then(() => {
-    renderBracketTexts();
-  });
+hideCriticalLoading();
+setTimeout(forceCriticalNoticeButtons, 80);
+
+loadBracketData().then(() => {
+  renderBracketTexts();
+});
 }
 
 function closeCriticalBracketPopup(){
