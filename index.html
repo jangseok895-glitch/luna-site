@@ -4140,6 +4140,141 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
 #tournamentNextBtn{
   right:16px !important;
 }
+
+  /* ===== 대회 팝업 이전/다음 버튼 올스타전 방식으로 고정 ===== */
+
+#tournamentPopup{
+  position:fixed !important;
+  inset:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:rgba(0,0,0,.65) !important;
+  z-index:99999999 !important;
+  padding:18px !important;
+}
+
+.tournament-popup-box{
+  width:min(980px,96vw) !important;
+  max-height:94vh !important;
+  background:#ffffff !important;
+  border-radius:20px !important;
+  padding:18px !important;
+  position:relative !important;
+  overflow:auto !important;
+}
+
+.tournament-close{
+  position:absolute !important;
+  top:14px !important;
+  right:14px !important;
+  width:64px !important;
+  height:64px !important;
+  border-radius:50% !important;
+  border:0 !important;
+  background:#ef4444 !important;
+  color:#fff !important;
+  font-size:34px !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+  z-index:20 !important;
+}
+
+.tournament-popup-title{
+  margin:8px 80px 14px !important;
+  text-align:center !important;
+  color:#0f172a !important;
+  font-size:26px !important;
+  font-weight:1000 !important;
+  word-break:keep-all !important;
+}
+
+.tournament-image-wrap{
+  position:relative !important;
+  width:100% !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  overflow:visible !important;
+}
+
+.tournament-popup-img{
+  display:block !important;
+  width:auto !important;
+  max-width:100% !important;
+  max-height:76vh !important;
+  object-fit:contain !important;
+  border-radius:12px !important;
+  margin:0 auto !important;
+}
+
+.tournament-side-btn{
+  position:absolute !important;
+  top:50% !important;
+  transform:translateY(-50%) !important;
+  width:62px !important;
+  height:62px !important;
+  border-radius:50% !important;
+  border:4px solid #ffffff !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+  font-size:22px !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+  z-index:30 !important;
+  box-shadow:0 6px 18px rgba(0,0,0,.35) !important;
+}
+
+.tournament-prev-btn{
+  left:16px !important;
+}
+
+.tournament-next-btn{
+  right:16px !important;
+}
+
+.tournament-count{
+  margin-top:12px !important;
+  text-align:center !important;
+  color:#2563eb !important;
+  font-size:18px !important;
+  font-weight:1000 !important;
+}
+
+@media(max-width:520px){
+  .tournament-popup-box{
+    padding:12px !important;
+  }
+
+  .tournament-popup-title{
+    font-size:20px !important;
+    margin:6px 70px 10px !important;
+  }
+
+  .tournament-close{
+    width:58px !important;
+    height:58px !important;
+    font-size:32px !important;
+  }
+
+  .tournament-side-btn{
+    width:56px !important;
+    height:56px !important;
+    font-size:20px !important;
+  }
+
+  .tournament-prev-btn{
+    left:10px !important;
+  }
+
+  .tournament-next-btn{
+    right:10px !important;
+  }
+
+  .tournament-popup-img{
+    max-height:72vh !important;
+  }
+}
 </style>
 </head>
 
@@ -7178,7 +7313,7 @@ if(board === "eventTournament"){
     <div class="tournament-main-grid">
 
 <div class="tournament-thumb-card" onclick="openTournamentPoster('allstar')">
-  <div class="tournament-title">카러플 올스타전 - 5월17일</div>
+  <div class="tournament-title">카러플 올스타전 (5/17)</div>
   <div class="tournament-soon-badge">임박</div>
 
   <img class="tournament-thumb-img" src="https://github.com/jangseok895-glitch/luna-site/blob/main/pictures/%ED%8C%AC%ED%95%A0.jpg?raw=true">
@@ -7190,7 +7325,7 @@ if(board === "eventTournament"){
 </div>
 
 <div class="tournament-thumb-card" onclick="openTournamentPoster('critical')">
-  <div class="tournament-title">크리티컬히트 아이템전대회 5월 15일</div>
+  <div class="tournament-title">크리티컬히트 아이템전 대회 (5/15)</div>
   <div class="tournament-soon-badge">진행중</div>
 
   <img class="tournament-thumb-img" src="https://i.ibb.co/GQynf8vx/Kakao-Talk-20260507-220727153.jpg">
@@ -7314,19 +7449,27 @@ function openTournamentPoster(key){
 
   popup.innerHTML = `
     <div class="tournament-popup-box">
-      <button class="tournament-close" onclick="closeTournamentPoster()">닫기</button>
+      <button class="tournament-close" onclick="closeTournamentPoster()">X</button>
+
       <div id="tournamentPopupTitle" class="tournament-popup-title"></div>
 
-      <div class="tournament-popup-slider">
-<div class="tournament-popup-slider">
-  <img id="tournamentPopupImg" class="tournament-popup-img">
-</div>
+      <div class="tournament-image-wrap">
+        <img id="tournamentPopupImg" class="tournament-popup-img">
 
-<div class="tournament-bottom-nav">
-  <button id="tournamentPrevBtn" class="tournament-nav-btn" onclick="moveTournamentPoster(-1)">이전</button>
-  <div id="tournamentPopupCount" class="tournament-count"></div>
-  <button id="tournamentNextBtn" class="tournament-nav-btn" onclick="moveTournamentPoster(1)">다음</button>
-</div>
+        <button id="tournamentPrevBtn"
+                class="tournament-side-btn tournament-prev-btn"
+                onclick="moveTournamentPoster(-1)">
+          이전
+        </button>
+
+        <button id="tournamentNextBtn"
+                class="tournament-side-btn tournament-next-btn"
+                onclick="moveTournamentPoster(1)">
+          다음
+        </button>
+      </div>
+
+      <div id="tournamentPopupCount" class="tournament-count"></div>
     </div>
   `;
 
