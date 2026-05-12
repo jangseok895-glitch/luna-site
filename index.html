@@ -4052,6 +4052,26 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   border:1px solid #15803d !important;
   box-shadow:0 5px 14px rgba(22,163,74,.28) !important;
 }
+
+  .critical-group-title{
+  margin:18px 0 10px !important;
+  text-align:center !important;
+
+  font-size:22px !important;
+  font-weight:900 !important;
+  color:#2563eb !important;
+
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.8),
+    0 0 10px rgba(37,99,235,.18);
+}
+
+.critical-grid{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:14px !important;
+  margin-bottom:12px !important;
+}
 </style>
 </head>
 
@@ -7315,19 +7335,33 @@ function openCriticalNoticePopup(){
       <div class="tournament-popup-title">크리티컬 히트 대회 진행/공지</div>
 
 <div class="critical-notice-menu">
-  <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('schedule')">대회일정보기</button>
-  <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('rule')">공식경기규정보기</button>
+<!-- 규정 관련 -->
+<div class="critical-group-title">- 규정 관련 -</div>
 
-  <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('kart')">카트규정보기</button>
-  <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('maps')">맵리스트보기</button>
+<div class="critical-grid">
+  <button class="tournament-apply-btn">대회일정보기</button>
+  <button class="tournament-apply-btn">공식경기규정보기</button>
 
-  <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('teams')">대회참가팀보기</button>
-<button class="tournament-apply-btn red-tournament-btn" onclick="openCriticalNoticeImage('bracket')">예선 조배정</button>
+  <button class="tournament-apply-btn">카트규정보기</button>
+  <button class="tournament-apply-btn">맵리스트보기</button>
+</div>
 
-<button class="tournament-apply-btn disabled-tournament-btn" disabled>예선 대진표</button>
-  <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('prelimBracket')">본선 대진표</button>
+<!-- 경기 관련 -->
+<div class="critical-group-title">- 경기 관련 -</div>
 
-<button class="tournament-apply-btn green-tournament-btn" onclick="window.open('https://chzzk.naver.com/2b88c012c87944c88d051ad7d92c2c32','_blank')">펭펭방송 보기</button>
+<div class="critical-grid">
+  <button class="tournament-apply-btn">대회참가팀보기</button>
+  <button class="tournament-apply-btn red-tournament-btn">예선 조배정</button>
+
+  <button class="tournament-apply-btn disabled-tournament-btn" disabled>예선 대진표</button>
+  <button class="tournament-apply-btn">본선 대진표</button>
+</div>
+
+<!-- 방송 관련 -->
+<div class="critical-group-title">- 방송 관련 -</div>
+
+<div class="critical-grid">
+  <button class="tournament-apply-btn green-tournament-btn">펭펭방송 보기</button>
   <button class="tournament-apply-btn disabled-tournament-btn" disabled>수핏방송 보기</button>
 </div>
     </div>
