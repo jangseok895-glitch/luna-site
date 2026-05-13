@@ -5061,6 +5061,25 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   display:block !important;
   margin:0 auto !important;
 }
+
+  /* 예선 대진표 이미지 강제 축소 */
+#tournamentPopup #tournamentPopupImg{
+  width:75% !important;
+  max-width:75% !important;
+  height:auto !important;
+  max-height:none !important;
+  object-fit:contain !important;
+  display:block !important;
+  margin:0 auto !important;
+}
+
+/* 이미지 감싸는 박스도 중앙 정렬 */
+#tournamentPopup .tournament-image-wrap{
+  width:100% !important;
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+}
 </style>
 </head>
 
