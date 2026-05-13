@@ -4342,6 +4342,30 @@ body.pc-view #goPcBtn{
 0%{transform:scale(.6);opacity:0;}
   100%{transform:scale(1);opacity:1;}
 }
+
+  /* 올스타전 버튼 글자 중복 방지 */
+#tournamentPrevBtn,
+#tournamentNextBtn{
+  font-size:0 !important;
+}
+
+#tournamentPrevBtn::after{
+  content:"이전";
+  font-size:18px !important;
+  font-weight:1000 !important;
+}
+
+#tournamentNextBtn::after{
+  content:"다음";
+  font-size:18px !important;
+  font-weight:1000 !important;
+}
+
+/* 크리티컬 히트 메인 포스터에서는 하단 버튼 숨김 */
+#tournamentPopup.critical-main #tournamentOverlayNav,
+#tournamentPopup.critical-main #tournamentPopupCount{
+  display:none !important;
+}
 </style>
 </head>
 
@@ -7510,6 +7534,10 @@ function openTournamentPoster(key){
   const popup = document.createElement("div");
   popup.id = "tournamentPopup";
 
+   if(key === "critical"){
+  popup.classList.add("critical-main");
+}
+
   popup.innerHTML = `
     <div class="tournament-popup-box">
       <button class="tournament-close" onclick="closeTournamentPoster()">X</button>
@@ -7768,14 +7796,25 @@ function updateTournamentPoster(){
   const count = document.getElementById("tournamentPopupCount");
   const nav = document.getElementById("tournamentOverlayNav");
 
+  const prevBtn = document.getElementById("tournamentPrevBtn");
+  const nextBtn = document.getElementById("tournamentNextBtn");
+  const broadcastBtn = document.getElementById("tournamentBroadcastBtn");
+
+  /* 크리티컬 히트 메인페이지는 버튼 전부 숨김 */
   if(tournamentKey === "critical"){
-    count.textContent = "";
-    nav.style.display = "none";
+    if(nav) nav.style.display = "none";
+    if(count) count.textContent = "";
     return;
   }
 
-  nav.style.display = "grid";
-  count.textContent = `${tournamentIndex + 1} / ${data.images.length}`;
+  /* 올스타전만 버튼 표시 */
+  if(nav) nav.style.display = "grid";
+
+  if(prevBtn) prevBtn.textContent = "이전";
+  if(nextBtn) nextBtn.textContent = "다음";
+  if(broadcastBtn) broadcastBtn.style.display = data.broadcastUrl ? "inline-flex" : "none";
+
+  if(count) count.textContent = `${tournamentIndex + 1} / ${data.images.length}`;
 }
 
 /* ===== 게시글 불러오기 ===== */
