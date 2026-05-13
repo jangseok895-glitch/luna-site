@@ -11107,5 +11107,22 @@ function hideCriticalLoading(){
     <img class="rank-guide-img" src="https://i.ibb.co/0pjDrvSm/image.png" alt="계급표">
   </div>
 </div>
+    <style>
+/* 예선 대진표 그림만 3/4 크기 */
+#criticalImagePopup .critical-popup-img[alt="예선 대진표"]{
+  width:75% !important;
+  max-width:75% !important;
+  height:auto !important;
+  max-height:none !important;
+  display:block !important;
+  margin:0 auto !important;
+  object-fit:contain !important;
+}
+
+/* 감싸는 박스 중앙 정렬 */
+#criticalImagePopup .critical-image-slider{
+  text-align:center !important;
+}
+</style>
 </body>
 </html>
