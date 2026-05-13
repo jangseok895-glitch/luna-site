@@ -5107,6 +5107,26 @@ body.pc-view #goPcBtn{box-shadow:0 0 0 3px rgba(14,165,233,.22),0 6px 16px rgba(
   display:block !important;
   margin:0 auto !important;
 }
+
+  /* 예선 대진표 버튼 = 예선 조배정 버튼과 동일한 붉은색 */
+.prelim-btn,
+button[data-title="예선 대진표"],
+button[onclick*="예선 대진표"]{
+  background:linear-gradient(135deg,#ff5a5a,#dc2626) !important;
+  color:#ffffff !important;
+  border:1px solid #b91c1c !important;
+}
+
+  /* ===== 예선 대진표 강제 축소 ===== */
+#tournamentPopupImg{
+  width:70% !important;
+  max-width:70% !important;
+  height:auto !important;
+  max-height:70vh !important;
+  object-fit:contain !important;
+  display:block !important;
+  margin:0 auto !important;
+}
 </style>
 </head>
 
