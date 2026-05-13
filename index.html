@@ -8293,11 +8293,10 @@ const CRITICAL_NOTICE_IMAGES = {
     title: "예선 조배정"
   },
 
-  /* 회색 버튼 - 준비중 */
-  prelimReady: {
-    title: "예선 대진표",
-    ready: true
-  },
+prelimReady: {
+  title: "예선 대진표",
+  img: "https://i.ibb.co/5Nsbf8j/image.jpg"
+},
 
   /* 본선 대진표 */
   prelimBracket: {
@@ -8350,7 +8349,7 @@ function openCriticalNoticePopup(){
   <div class="critical-grid">
     <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('teams')">대회참가팀보기</button>
     <button class="tournament-apply-btn red-tournament-btn" onclick="openCriticalNoticeImage('bracket')">예선 조배정</button>
-<button class="tournament-apply-btn disabled-tournament-btn" onclick="openCriticalNoticeImage('prelimReady')">예선 대진표</button>
+<button class="tournament-apply-btn" onclick="openCriticalNoticeImage('prelimReady')">예선 대진표</button>
     <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('prelimBracket')">본선 대진표</button>
   </div>
 
