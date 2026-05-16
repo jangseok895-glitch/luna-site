@@ -7758,14 +7758,12 @@ function renderCriticalNoticeImage(){
   if(key === "bracket"){
     hideCriticalLoading();
     openCriticalBracketPopup();
-    setTimeout(forceCriticalNoticeButtons, 80);
     return;
   }
 
   if(key === "prelimBracket"){
     hideCriticalLoading();
     openFinalBracketPopup();
-    setTimeout(forceCriticalNoticeButtons, 80);
     return;
   }
 
@@ -7780,8 +7778,8 @@ function renderCriticalNoticeImage(){
     ? `<img class="tournament-popup-img critical-popup-img"
             src="${data.img}"
             alt="${data.title}"
-            onload="hideCriticalLoading(); setTimeout(forceCriticalNoticeButtons, 80);"
-            onerror="hideCriticalLoading(); setTimeout(forceCriticalNoticeButtons, 80);">`
+            onload="hideCriticalLoading();"
+            onerror="hideCriticalLoading();">`
     : `<div class="critical-ready-box">준비중</div>`;
 
   const popup = document.createElement("div");
@@ -7795,26 +7793,19 @@ function renderCriticalNoticeImage(){
       <div class="critical-image-slider">
         ${contentHtml}
       </div>
+
+      <div class="critical-bottom-nav">
+        <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(-1)">이전</button>
+        <div class="critical-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
+        <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
+      </div>
     </div>
   `;
 
   document.body.appendChild(popup);
 
-  if(key === "prelimReady"){
-    const img = popup.querySelector(".critical-popup-img");
-    if(img){
-      img.style.setProperty("width", "52%", "important");
-      img.style.setProperty("max-width", "52%", "important");
-      img.style.setProperty("height", "auto", "important");
-      img.style.setProperty("display", "block", "important");
-      img.style.setProperty("margin", "0 auto", "important");
-      img.style.setProperty("object-fit", "contain", "important");
-    }
-  }
-
   if(!data.img){
     hideCriticalLoading();
-    setTimeout(forceCriticalNoticeButtons, 80);
   }
 }
 
@@ -10099,6 +10090,10 @@ function openFinalBracketPopup(){
 
       <div class="tournament-popup-title">본선 대진표</div>
 
+      <div class="bracket-bottom" style="margin-bottom:10px;">
+        <button class="tournament-apply-btn" onclick="openFinalBracketAdminMode()">운영진 모드</button>
+      </div>
+
       <div class="critical-image-slider">
         <div class="bracket-image-wrap">
           <img class="tournament-popup-img critical-popup-img"
@@ -10113,10 +10108,6 @@ function openFinalBracketPopup(){
         <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(-1)">이전</button>
         <div class="critical-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
         <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
-      </div>
-
-      <div class="bracket-bottom">
-        <button class="tournament-apply-btn" onclick="openFinalBracketAdminMode()">운영진 모드</button>
       </div>
 
       <div id="finalBracketAdminBox" class="hidden"></div>
