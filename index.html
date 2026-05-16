@@ -6529,30 +6529,37 @@ function resetDeleteUI() {
   document.getElementById("btnViewDelete").textContent = "삭제";
 }
 
-function onDeleteBtnClicked() {
-  const team = document.getElementById("viewTeam").value.trim();
-  const member = document.getElementById("viewMember").value.trim();
+async function onDeleteBtnClicked() {
+  try {
+    const team = document.getElementById("viewTeam")?.value.trim();
+    const member = document.getElementById("viewMember")?.value.trim();
 
-  const pin = prompt("개인 비밀번호 5자리 / 클럽 비밀번호 4자리 / 운영진 비밀번호 4자리를 입력하세요.");
+    if (!team || !member) {
+      alert("삭제할 단체/멤버를 먼저 조회해주세요.");
+      return;
+    }
 
-  if (!pin) return;
+    const pin = prompt("개인 비밀번호 5자리 / 클럽 비밀번호 4자리 / 운영진 비밀번호 4자리를 입력하세요.");
 
-  showLoading("군실명제 삭제 중입니다");
+    if (!pin) return;
 
-  google.script.run
-    .withSuccessHandler(() => {
-      hideLoading();
-      toast("삭제 완료");
+    showLoading("군실명제 삭제 중입니다");
 
-      clearRealResult();
-      resetDeleteUI();
-      initRealUI();
-    })
-    .withFailureHandler((e) => {
-      hideLoading();
-      alert(e.message || "삭제 실패");
-    })
-    .deleteTeamMember(team, member, pin);
+    await deleteTeamMemberSupabase(team, member, pin);
+
+    hideLoading();
+    toast("삭제 완료");
+
+    clearRealResult();
+    resetDeleteUI();
+
+    await initRealUI();
+
+  } catch (e) {
+    hideLoading();
+    console.error(e);
+    alert(e.message || "삭제 실패");
+  }
 }
 
 function renderRealProfile(d) {
@@ -7730,9 +7737,16 @@ function openCriticalNoticeImage(type){
   const idx = CRITICAL_NOTICE_ORDER.indexOf(type);
   criticalNoticeIndex = idx >= 0 ? idx : 0;
 
+  document.getElementById("criticalImagePopup")?.remove();
+  document.getElementById("criticalBracketPopup")?.remove();
+
   if(type === "bracket"){
-    document.getElementById("criticalImagePopup")?.remove();
     openCriticalBracketPopup();
+    return;
+  }
+
+  if(type === "prelimBracket"){
+    openFinalBracketPopup();
     return;
   }
 
@@ -7740,14 +7754,6 @@ function openCriticalNoticeImage(type){
 }
 
 function renderCriticalNoticeImage(){
-
-  if(key === "prelimBracket"){
-  hideCriticalLoading();
-  openFinalBracketPopup();
-  setTimeout(forceCriticalNoticeButtons, 80);
-  return;
-}
-
   const key = CRITICAL_NOTICE_ORDER[criticalNoticeIndex];
 
   if(key === "bracket"){
@@ -7756,13 +7762,6 @@ function renderCriticalNoticeImage(){
     setTimeout(forceCriticalNoticeButtons, 80);
     return;
   }
-
-  if(type === "prelimBracket"){
-  document.getElementById("criticalImagePopup")?.remove();
-  document.getElementById("criticalBracketPopup")?.remove();
-  openFinalBracketPopup();
-  return;
-}
 
   showCriticalLoading();
 
@@ -7798,19 +7797,18 @@ function renderCriticalNoticeImage(){
 
   document.body.appendChild(popup);
 
-  /* 예선 대진표 이미지만 강제 3/4 축소 */
-if(key === "prelimReady"){
-  const img = popup.querySelector(".critical-popup-img");
+  if(key === "prelimReady"){
+    const img = popup.querySelector(".critical-popup-img");
 
-  if(img){
-    img.style.setProperty("width", "52%", "important");
-    img.style.setProperty("max-width", "52%", "important");
-    img.style.setProperty("height", "auto", "important");
-    img.style.setProperty("display", "block", "important");
-    img.style.setProperty("margin", "0 auto", "important");
-    img.style.setProperty("object-fit", "contain", "important");
+    if(img){
+      img.style.setProperty("width", "52%", "important");
+      img.style.setProperty("max-width", "52%", "important");
+      img.style.setProperty("height", "auto", "important");
+      img.style.setProperty("display", "block", "important");
+      img.style.setProperty("margin", "0 auto", "important");
+      img.style.setProperty("object-fit", "contain", "important");
+    }
   }
-}
 
   if(!data.img){
     hideCriticalLoading();
