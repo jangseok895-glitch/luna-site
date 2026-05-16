@@ -4405,6 +4405,38 @@ body.pc-view #goPcBtn{
   border-radius:8px !important;
   text-align:center !important;
 }
+
+  #finalBracketTextLayer{
+  position:absolute !important;
+  inset:0 !important;
+  z-index:30 !important;
+  pointer-events:none !important;
+}
+
+.final-bracket-team{
+  position:absolute !important;
+  transform:translate(-50%, -50%) !important;
+  color:#ffffff !important;
+  font-size:18px !important;
+  font-weight:1000 !important;
+  text-align:center !important;
+  line-height:1.35 !important;
+  white-space:pre-line !important;
+  text-shadow:0 2px 5px #000, 0 0 6px #000 !important;
+}
+
+.final-admin-row{
+  display:grid !important;
+  grid-template-columns:110px 1fr 1fr !important;
+  gap:8px !important;
+  align-items:center !important;
+  margin-bottom:8px !important;
+}
+
+.final-admin-row input{
+  height:36px !important;
+  text-align:center !important;
+}
 </style>
 </head>
 
@@ -10056,7 +10088,7 @@ function openCriticalBracketPopup(){
 
       <div class="critical-bracket-slider">
         <div class="bracket-image-wrap">
-          <img class="bracket-base-img" src="https://i.ibb.co/5Nsbf8j/image.jpg">
+<img class="bracket-base-img" src="https://i.ibb.co/HpgBfwmy/image.jpg">
           <div id="bracketTextLayer"></div>
         </div>
       </div>
@@ -10084,7 +10116,7 @@ function openCriticalBracketPopup(){
   });
 }
 
-  function openFinalBracketPopup(){
+function openFinalBracketPopup(){
   document.getElementById("criticalImagePopup")?.remove();
   document.getElementById("criticalBracketPopup")?.remove();
 
@@ -10102,10 +10134,13 @@ function openCriticalBracketPopup(){
       <div class="tournament-popup-title">본선 대진표</div>
 
       <div class="critical-image-slider">
-        <img class="tournament-popup-img critical-popup-img"
-             src="${data.img}"
-             alt="본선 대진표"
-             onload="hideCriticalLoading();">
+        <div class="bracket-image-wrap">
+          <img class="tournament-popup-img critical-popup-img"
+               src="${data.img}"
+               alt="본선 대진표"
+               onload="hideCriticalLoading(); renderFinalBracketTexts();">
+          <div id="finalBracketTextLayer"></div>
+        </div>
       </div>
 
       <div class="critical-bottom-nav">
@@ -10113,10 +10148,146 @@ function openCriticalBracketPopup(){
         <div class="critical-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
         <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
       </div>
+
+      <div class="bracket-bottom">
+        <button class="tournament-apply-btn" onclick="openFinalBracketAdminMode()">운영진 모드</button>
+      </div>
+
+      <div id="finalBracketAdminBox" class="hidden"></div>
     </div>
   `;
 
   document.body.appendChild(popup);
+
+  loadFinalBracketData().then(() => {
+    renderFinalBracketTexts();
+  });
+}
+
+  let finalBracketData = {};
+
+const finalBracketMatches = [
+  { key:"qf1", label:"8강 1경기", x:15, y:44 },
+  { key:"qf2", label:"8강 2경기", x:15, y:64 },
+  { key:"sf1", label:"4강 1경기", x:36, y:51 },
+  { key:"final", label:"결승전", x:52, y:59 },
+  { key:"third", label:"3위 결정전", x:52, y:83 },
+  { key:"sf2", label:"4강 2경기", x:68, y:51 },
+  { key:"qf3", label:"8강 3경기", x:88, y:44 },
+  { key:"qf4", label:"8강 4경기", x:88, y:64 }
+];
+
+async function loadFinalBracketData(){
+  try{
+    if(typeof sb === "undefined" || !sb){
+      finalBracketData = JSON.parse(localStorage.getItem("final_bracket_data") || "{}");
+      return finalBracketData;
+    }
+
+    const { data, error } = await sb
+      .from("critical_bracket_data")
+      .select("data")
+      .eq("id", "final")
+      .single();
+
+    if(error) throw error;
+
+    finalBracketData = data?.data || {};
+    return finalBracketData;
+  }catch(e){
+    finalBracketData = {};
+    return {};
+  }
+}
+
+async function saveFinalBracketData(data){
+  if(typeof sb === "undefined" || !sb){
+    localStorage.setItem("final_bracket_data", JSON.stringify(data));
+    finalBracketData = data;
+    return;
+  }
+
+  const { error } = await sb
+    .from("critical_bracket_data")
+    .upsert({
+      id:"final",
+      data:data,
+      updated_at:new Date().toISOString()
+    });
+
+  if(error) throw error;
+
+  finalBracketData = data;
+}
+
+function openFinalBracketAdminMode(){
+  const pw = prompt("운영진 비밀번호를 입력해주세요.");
+
+  if(pw !== "4567"){
+    alert("비밀번호가 올바르지 않습니다.");
+    return;
+  }
+
+  renderFinalBracketAdminBox();
+}
+
+function renderFinalBracketAdminBox(){
+  const box = document.getElementById("finalBracketAdminBox");
+  if(!box) return;
+
+  let html = `<div class="bracket-admin-title">본선 대진표 운영진 입력</div>`;
+
+  finalBracketMatches.forEach(m => {
+    const row = finalBracketData[m.key] || {};
+
+    html += `
+      <div class="final-admin-row">
+        <b>${m.label}</b>
+        <input id="final_${m.key}_top" placeholder="윗줄 팀이름" value="${esc(row.top || "")}">
+        <input id="final_${m.key}_bottom" placeholder="아랫줄 팀이름" value="${esc(row.bottom || "")}">
+      </div>
+    `;
+  });
+
+  html += `<button class="tournament-apply-btn" onclick="confirmFinalBracketAdminInput()">확인</button>`;
+
+  box.innerHTML = html;
+  box.classList.remove("hidden");
+}
+
+async function confirmFinalBracketAdminInput(){
+  const data = {};
+
+  finalBracketMatches.forEach(m => {
+    data[m.key] = {
+      top: document.getElementById(`final_${m.key}_top`)?.value.trim() || "",
+      bottom: document.getElementById(`final_${m.key}_bottom`)?.value.trim() || ""
+    };
+  });
+
+  await saveFinalBracketData(data);
+  renderFinalBracketTexts();
+  alert("본선 대진표가 반영되었습니다.");
+}
+
+function renderFinalBracketTexts(){
+  const layer = document.getElementById("finalBracketTextLayer");
+  if(!layer) return;
+
+  layer.innerHTML = "";
+
+  finalBracketMatches.forEach(m => {
+    const row = finalBracketData[m.key] || {};
+    const text = [row.top || "", row.bottom || ""].filter(Boolean).join("\n");
+
+    const div = document.createElement("div");
+    div.className = "final-bracket-team";
+    div.style.left = m.x + "%";
+    div.style.top = m.y + "%";
+    div.textContent = text;
+
+    layer.appendChild(div);
+  });
 }
 
 function closeCriticalBracketPopup(){
