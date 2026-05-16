@@ -4437,6 +4437,15 @@ body.pc-view #goPcBtn{
   height:36px !important;
   text-align:center !important;
 }
+
+  #criticalImagePopup{
+  overflow-y:auto !important;
+}
+
+#criticalImagePopup .tournament-popup-box{
+  overflow:visible !important;
+  max-height:none !important;
+}
 </style>
 </head>
 
@@ -10090,7 +10099,6 @@ function openFinalBracketPopup(){
 
       <div class="tournament-popup-title">본선 대진표</div>
 
-      <div class="bracket-bottom" style="margin-bottom:10px;">
         <button class="tournament-apply-btn" onclick="openFinalBracketAdminMode()">운영진 모드</button>
       </div>
 
@@ -10104,13 +10112,17 @@ function openFinalBracketPopup(){
         </div>
       </div>
 
-      <div class="critical-bottom-nav">
-        <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(-1)">이전</button>
-        <div class="critical-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
-        <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
-      </div>
+<div class="critical-bottom-nav">
+  <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(-1)">이전</button>
+  <div class="critical-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
+  <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
+</div>
 
-      <div id="finalBracketAdminBox" class="hidden"></div>
+<div class="bracket-bottom" style="margin-top:14px;">
+  <button class="tournament-apply-btn" onclick="openFinalBracketAdminMode()">운영진 모드</button>
+</div>
+
+<div id="finalBracketAdminBox" class="hidden"></div>
     </div>
   `;
 
@@ -10124,14 +10136,17 @@ function openFinalBracketPopup(){
   let finalBracketData = {};
 
 const finalBracketMatches = [
-  { key:"qf1", label:"8강 1경기", x:15, y:44 },
-  { key:"qf2", label:"8강 2경기", x:15, y:64 },
-  { key:"sf1", label:"4강 1경기", x:36, y:51 },
-  { key:"final", label:"결승전", x:52, y:59 },
-  { key:"third", label:"3위 결정전", x:52, y:83 },
-  { key:"sf2", label:"4강 2경기", x:68, y:51 },
-  { key:"qf3", label:"8강 3경기", x:88, y:44 },
-  { key:"qf4", label:"8강 4경기", x:88, y:64 }
+  { key:"qf1", label:"8강 1경기", x:16, y:50 },
+  { key:"qf2", label:"8강 2경기", x:16, y:70 },
+
+  { key:"sf1", label:"4강 1경기", x:36, y:57 },
+  { key:"sf2", label:"4강 2경기", x:68, y:57 },
+
+  { key:"final", label:"결승전", x:52, y:64 },
+  { key:"third", label:"3위 결정전", x:52, y:88 },
+
+  { key:"qf3", label:"8강 3경기", x:87, y:50 },
+  { key:"qf4", label:"8강 4경기", x:87, y:70 }
 ];
 
 async function loadFinalBracketData(){
