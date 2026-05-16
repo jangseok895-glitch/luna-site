@@ -4442,9 +4442,41 @@ body.pc-view #goPcBtn{
   overflow-y:auto !important;
 }
 
-#criticalImagePopup .tournament-popup-box{
-  overflow:visible !important;
-  max-height:none !important;
+#criticalImagePopup,
+#criticalBracketPopup{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:999999999 !important;
+  background:rgba(0,0,0,.65) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:18px !important;
+  overflow-y:auto !important;
+}
+
+#criticalImagePopup .tournament-popup-box,
+#criticalBracketPopup .bracket-popup-box{
+  width:min(1180px,96vw) !important;
+  max-height:92vh !important;
+  overflow-y:auto !important;
+  background:#ffffff !important;
+  border-radius:20px !important;
+  padding:18px !important;
+  position:relative !important;
+}
+
+#criticalImagePopup .critical-popup-img{
+  display:block !important;
+  width:100% !important;
+  max-width:100% !important;
+  max-height:70vh !important;
+  object-fit:contain !important;
+  margin:0 auto !important;
+}
+
+.bracket-bottom{
+  margin-top:14px !important;
 }
 </style>
 </head>
@@ -7742,6 +7774,7 @@ function openCriticalNoticeImage(type){
   const idx = CRITICAL_NOTICE_ORDER.indexOf(type);
   criticalNoticeIndex = idx >= 0 ? idx : 0;
 
+  document.getElementById("criticalNoticePopup")?.remove();
   document.getElementById("criticalImagePopup")?.remove();
   document.getElementById("criticalBracketPopup")?.remove();
 
@@ -10083,6 +10116,7 @@ function openCriticalBracketPopup(){
 }
 
 function openFinalBracketPopup(){
+  document.getElementById("criticalNoticePopup")?.remove();
   document.getElementById("criticalImagePopup")?.remove();
   document.getElementById("criticalBracketPopup")?.remove();
 
@@ -10099,9 +10133,6 @@ function openFinalBracketPopup(){
 
       <div class="tournament-popup-title">본선 대진표</div>
 
-        <button class="tournament-apply-btn" onclick="openFinalBracketAdminMode()">운영진 모드</button>
-      </div>
-
       <div class="critical-image-slider">
         <div class="bracket-image-wrap">
           <img class="tournament-popup-img critical-popup-img"
@@ -10112,17 +10143,17 @@ function openFinalBracketPopup(){
         </div>
       </div>
 
-<div class="critical-bottom-nav">
-  <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(-1)">이전</button>
-  <div class="critical-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
-  <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
-</div>
+      <div class="critical-bottom-nav">
+        <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(-1)">이전</button>
+        <div class="critical-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
+        <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
+      </div>
 
-<div class="bracket-bottom" style="margin-top:14px;">
-  <button class="tournament-apply-btn" onclick="openFinalBracketAdminMode()">운영진 모드</button>
-</div>
+      <div class="bracket-bottom">
+        <button class="tournament-apply-btn" onclick="openFinalBracketAdminMode()">운영진 모드</button>
+      </div>
 
-<div id="finalBracketAdminBox" class="hidden"></div>
+      <div id="finalBracketAdminBox" class="hidden"></div>
     </div>
   `;
 
