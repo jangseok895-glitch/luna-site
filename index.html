@@ -6529,19 +6529,18 @@ function resetDeleteUI() {
   document.getElementById("btnViewDelete").textContent = "삭제";
 }
 
-async function onDeleteBtnClicked() {
-  try {
+async function onDeleteBtnClicked(){
+  try{
     const team = document.getElementById("viewTeam")?.value.trim();
     const member = document.getElementById("viewMember")?.value.trim();
 
-    if (!team || !member) {
+    if(!team || !member){
       alert("삭제할 단체/멤버를 먼저 조회해주세요.");
       return;
     }
 
     const pin = prompt("개인 비밀번호 5자리 / 클럽 비밀번호 4자리 / 운영진 비밀번호 4자리를 입력하세요.");
-
-    if (!pin) return;
+    if(!pin) return;
 
     showLoading("군실명제 삭제 중입니다");
 
@@ -6552,10 +6551,9 @@ async function onDeleteBtnClicked() {
 
     clearRealResult();
     resetDeleteUI();
-
     await initRealUI();
 
-  } catch (e) {
+  }catch(e){
     hideLoading();
     console.error(e);
     alert(e.message || "삭제 실패");
@@ -7756,9 +7754,19 @@ function openCriticalNoticeImage(type){
 function renderCriticalNoticeImage(){
   const key = CRITICAL_NOTICE_ORDER[criticalNoticeIndex];
 
+  document.getElementById("criticalImagePopup")?.remove();
+  document.getElementById("criticalBracketPopup")?.remove();
+
   if(key === "bracket"){
     hideCriticalLoading();
     openCriticalBracketPopup();
+    setTimeout(forceCriticalNoticeButtons, 80);
+    return;
+  }
+
+  if(key === "prelimBracket"){
+    hideCriticalLoading();
+    openFinalBracketPopup();
     setTimeout(forceCriticalNoticeButtons, 80);
     return;
   }
@@ -7769,9 +7777,6 @@ function renderCriticalNoticeImage(){
     title:"준비중",
     ready:true
   };
-
-  document.getElementById("criticalImagePopup")?.remove();
-  document.getElementById("criticalBracketPopup")?.remove();
 
   const contentHtml = data.img
     ? `<img class="tournament-popup-img critical-popup-img"
@@ -7799,7 +7804,6 @@ function renderCriticalNoticeImage(){
 
   if(key === "prelimReady"){
     const img = popup.querySelector(".critical-popup-img");
-
     if(img){
       img.style.setProperty("width", "52%", "important");
       img.style.setProperty("max-width", "52%", "important");
