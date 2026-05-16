@@ -4970,41 +4970,7 @@ function escMini4545(v){
 
   /* ===== 크리티컬 히트 공지 팝업 이전/다음 강제 생성 ===== */
 
-function forceCriticalNoticeButtons(){
-  const popup = document.querySelector("#criticalImagePopup, #criticalBracketPopup");
-  if(!popup) return;
 
-  const slider =
-    popup.querySelector(".critical-image-slider") ||
-    popup.querySelector(".critical-bracket-slider");
-
-  if(!slider) return;
-
-  slider.querySelector(".critical-force-nav")?.remove();
-
-  const nav = document.createElement("div");
-  nav.className = "critical-force-nav";
-  nav.innerHTML = `
-    <button type="button" class="critical-force-btn" onclick="moveCriticalNoticeImage(-1)">이전</button>
-    <div class="critical-force-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
-    <button type="button" class="critical-force-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
-  `;
-
-  slider.appendChild(nav);
-}
-
-/* 기존 함수 실행 후 버튼 강제 삽입 */
-const _oldRenderCriticalNoticeImage = renderCriticalNoticeImage;
-renderCriticalNoticeImage = function(){
-  _oldRenderCriticalNoticeImage.apply(this, arguments);
-  setTimeout(forceCriticalNoticeButtons, 50);
-};
-
-const _oldOpenCriticalBracketPopup = openCriticalBracketPopup;
-openCriticalBracketPopup = function(){
-  _oldOpenCriticalBracketPopup.apply(this, arguments);
-  setTimeout(forceCriticalNoticeButtons, 50);
-};
 </script>
   
 <div id="imagePopup" class="image-popup hidden" onclick="closeImagePopup()">
