@@ -4366,6 +4366,45 @@ body.pc-view #goPcBtn{
 #tournamentPopup.critical-main #tournamentPopupCount{
   display:none !important;
 }
+
+  #finalBracketTextLayer{
+  position:absolute !important;
+  inset:0 !important;
+  z-index:60 !important;
+  pointer-events:none !important;
+}
+
+.final-bracket-team{
+  position:absolute !important;
+  transform:translate(-50%, -50%) !important;
+  color:#ffffff !important;
+  font-size:clamp(13px, 1.25vw, 19px) !important;
+  font-weight:1000 !important;
+  text-align:center !important;
+  line-height:1.35 !important;
+  white-space:pre-line !important;
+  text-shadow:0 2px 5px #000, 0 0 5px #000 !important;
+}
+
+.final-admin-row{
+  display:grid !important;
+  grid-template-columns:110px 1fr 1fr !important;
+  gap:8px !important;
+  align-items:center !important;
+  margin-bottom:8px !important;
+}
+
+.final-admin-row b{
+  text-align:center !important;
+}
+
+.final-admin-row input{
+  height:36px !important;
+  padding:5px 8px !important;
+  border:1px solid rgba(14,165,233,.35) !important;
+  border-radius:8px !important;
+  text-align:center !important;
+}
 </style>
 </head>
 
@@ -7702,6 +7741,13 @@ function openCriticalNoticeImage(type){
 
 function renderCriticalNoticeImage(){
 
+  if(key === "prelimBracket"){
+  hideCriticalLoading();
+  openFinalBracketPopup();
+  setTimeout(forceCriticalNoticeButtons, 80);
+  return;
+}
+
   const key = CRITICAL_NOTICE_ORDER[criticalNoticeIndex];
 
   if(key === "bracket"){
@@ -7710,6 +7756,13 @@ function renderCriticalNoticeImage(){
     setTimeout(forceCriticalNoticeButtons, 80);
     return;
   }
+
+  if(type === "prelimBracket"){
+  document.getElementById("criticalImagePopup")?.remove();
+  document.getElementById("criticalBracketPopup")?.remove();
+  openFinalBracketPopup();
+  return;
+}
 
   showCriticalLoading();
 
@@ -9985,24 +10038,29 @@ const bracketRows = ["A", "B", "C", "D"];
 const bracketFields = ["team", "win", "lose", "point", "round"];
 
 function openCriticalBracketPopup(){
-  document.getElementById("criticalBracketPopup")?.remove();
   document.getElementById("criticalImagePopup")?.remove();
+  document.getElementById("criticalBracketPopup")?.remove();
 
   criticalNoticeIndex = CRITICAL_NOTICE_ORDER.indexOf("bracket");
 
   const popup = document.createElement("div");
   popup.id = "criticalBracketPopup";
+
   popup.innerHTML = `
     <div class="bracket-popup-box">
       <button class="tournament-close big-x-close" onclick="closeCriticalBracketPopup()">X</button>
 
-      <div class="tournament-popup-title">예선 조 배정</div>
+      <div class="tournament-popup-title">크리티컬 히트 대회</div>
 
       <div class="critical-bracket-slider">
+        <button class="critical-side-arrow critical-side-prev" onclick="moveCriticalNoticeImage(-1)">‹</button>
+
         <div class="bracket-image-wrap">
-          <img class="bracket-base-img" src="https://i.ibb.co/HpgBfwmy/image.jpg">
-          <div id="bracketTextLayer"></div>
+          <img class="bracket-base-img" src="${CRITICAL_BRACKET_IMG}">
+          <div id="criticalBracketTextLayer"></div>
         </div>
+
+        <button class="critical-side-arrow critical-side-next" onclick="moveCriticalNoticeImage(1)">›</button>
       </div>
 
       <div class="critical-bottom-nav">
@@ -10012,21 +10070,24 @@ function openCriticalBracketPopup(){
       </div>
 
       <div class="bracket-bottom">
-        <button class="tournament-apply-btn" onclick="openBracketAdminMode()">운영진 모드</button>
+        <button class="tournament-apply-btn" onclick="openCriticalBracketAdminMode()">운영진 모드</button>
       </div>
 
-      <div id="bracketAdminBox" class="hidden"></div>
+      <div id="criticalBracketAdminBox" class="hidden"></div>
     </div>
   `;
 
-document.body.appendChild(popup);
+  document.body.appendChild(popup);
 
-hideCriticalLoading();
-setTimeout(forceCriticalNoticeButtons, 80);
+  hideCriticalLoading();
 
-loadBracketData().then(() => {
-  renderBracketTexts();
-});
+  setTimeout(() => {
+    forceCriticalNoticeButtons?.();
+  }, 80);
+
+  loadCriticalBracketData().then(() => {
+    renderCriticalBracketTexts();
+  });
 }
 
 function closeCriticalBracketPopup(){
