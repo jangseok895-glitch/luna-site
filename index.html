@@ -10052,17 +10052,13 @@ function openCriticalBracketPopup(){
     <div class="bracket-popup-box">
       <button class="tournament-close big-x-close" onclick="closeCriticalBracketPopup()">X</button>
 
-      <div class="tournament-popup-title">크리티컬 히트 대회</div>
+      <div class="tournament-popup-title">예선 조배정</div>
 
       <div class="critical-bracket-slider">
-        <button class="critical-side-arrow critical-side-prev" onclick="moveCriticalNoticeImage(-1)">‹</button>
-
         <div class="bracket-image-wrap">
           <img class="bracket-base-img" src="${CRITICAL_BRACKET_IMG}">
-          <div id="criticalBracketTextLayer"></div>
+          <div id="bracketTextLayer"></div>
         </div>
-
-        <button class="critical-side-arrow critical-side-next" onclick="moveCriticalNoticeImage(1)">›</button>
       </div>
 
       <div class="critical-bottom-nav">
@@ -10072,10 +10068,10 @@ function openCriticalBracketPopup(){
       </div>
 
       <div class="bracket-bottom">
-        <button class="tournament-apply-btn" onclick="openCriticalBracketAdminMode()">운영진 모드</button>
+        <button class="tournament-apply-btn" onclick="openBracketAdminMode()">운영진 모드</button>
       </div>
 
-      <div id="criticalBracketAdminBox" class="hidden"></div>
+      <div id="bracketAdminBox" class="hidden"></div>
     </div>
   `;
 
@@ -10083,13 +10079,44 @@ function openCriticalBracketPopup(){
 
   hideCriticalLoading();
 
-  setTimeout(() => {
-    forceCriticalNoticeButtons?.();
-  }, 80);
-
-  loadCriticalBracketData().then(() => {
-    renderCriticalBracketTexts();
+  loadBracketData().then(() => {
+    renderBracketTexts();
   });
+}
+
+  function openFinalBracketPopup(){
+  document.getElementById("criticalImagePopup")?.remove();
+  document.getElementById("criticalBracketPopup")?.remove();
+
+  criticalNoticeIndex = CRITICAL_NOTICE_ORDER.indexOf("prelimBracket");
+
+  const data = CRITICAL_NOTICE_IMAGES.prelimBracket;
+
+  const popup = document.createElement("div");
+  popup.id = "criticalImagePopup";
+
+  popup.innerHTML = `
+    <div class="tournament-popup-box critical-image-box">
+      <button class="tournament-close big-x-close" onclick="closeCriticalImagePopup()">X</button>
+
+      <div class="tournament-popup-title">본선 대진표</div>
+
+      <div class="critical-image-slider">
+        <img class="tournament-popup-img critical-popup-img"
+             src="${data.img}"
+             alt="본선 대진표"
+             onload="hideCriticalLoading();">
+      </div>
+
+      <div class="critical-bottom-nav">
+        <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(-1)">이전</button>
+        <div class="critical-count">${criticalNoticeIndex + 1} / ${CRITICAL_NOTICE_ORDER.length}</div>
+        <button class="critical-nav-btn" onclick="moveCriticalNoticeImage(1)">다음</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
 }
 
 function closeCriticalBracketPopup(){
