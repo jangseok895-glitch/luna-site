@@ -4478,6 +4478,33 @@ body.pc-view #goPcBtn{
 .bracket-bottom{
   margin-top:14px !important;
 }
+
+  .final-admin-row{
+  display:grid !important;
+  grid-template-columns:110px 1fr 1fr 1fr !important;
+  gap:8px !important;
+  align-items:center !important;
+  margin-bottom:8px !important;
+}
+
+.final-bracket-team{
+  position:absolute !important;
+  transform:translate(-50%, -50%) !important;
+  color:#ffffff !important;
+  font-size:15px !important;
+  font-weight:1000 !important;
+  text-align:center !important;
+  line-height:1.25 !important;
+  white-space:pre-line !important;
+  text-shadow:0 2px 5px #000, 0 0 6px #000 !important;
+}
+
+.final-bracket-schedule{
+  color:#38bdf8 !important;
+  font-size:14px !important;
+  font-weight:1000 !important;
+  margin-top:2px !important;
+}
 </style>
 </head>
 
@@ -10167,17 +10194,17 @@ function openFinalBracketPopup(){
   let finalBracketData = {};
 
 const finalBracketMatches = [
-  { key:"qf1", label:"8강 1경기", x:16.0, y:48.5 },
-  { key:"qf2", label:"8강 2경기", x:16.0, y:67.8 },
+  { key:"qf1", label:"8강 1경기", x:16.0, y:43.5 },
+  { key:"qf2", label:"8강 2경기", x:16.0, y:63.8 },
 
-  { key:"sf1", label:"4강 1경기", x:39.0, y:52.0 },
-  { key:"sf2", label:"4강 2경기", x:65.0, y:52.0 },
+  { key:"sf1", label:"4강 1경기", x:39.0, y:50.8 },
+  { key:"sf2", label:"4강 2경기", x:64.5, y:50.8 },
 
-  { key:"final", label:"결승전", x:52.0, y:60.5 },
-  { key:"third", label:"3위 결정전", x:52.0, y:84.5 },
+  { key:"final", label:"결승전", x:52.0, y:58.5 },
+  { key:"third", label:"3위 결정전", x:52.0, y:82.5 },
 
-  { key:"qf3", label:"8강 3경기", x:86.0, y:48.5 },
-  { key:"qf4", label:"8강 4경기", x:86.0, y:67.8 }
+  { key:"qf3", label:"8강 3경기", x:83.8, y:43.5 },
+  { key:"qf4", label:"8강 4경기", x:83.8, y:63.8 }
 ];
 
 async function loadFinalBracketData(){
@@ -10246,8 +10273,9 @@ function renderFinalBracketAdminBox(){
     html += `
       <div class="final-admin-row">
         <b>${m.label}</b>
-        <input id="final_${m.key}_top" placeholder="윗줄 팀이름" value="${esc(row.top || "")}">
-        <input id="final_${m.key}_bottom" placeholder="아랫줄 팀이름" value="${esc(row.bottom || "")}">
+<input id="final_${m.key}_top" placeholder="윗줄 팀이름" value="${esc(row.top || "")}">
+<input id="final_${m.key}_bottom" placeholder="아랫줄 팀이름" value="${esc(row.bottom || "")}">
+<input id="final_${m.key}_schedule" placeholder="일정" value="${esc(row.schedule || "")}">
       </div>
     `;
   });
@@ -10262,10 +10290,11 @@ async function confirmFinalBracketAdminInput(){
   const data = {};
 
   finalBracketMatches.forEach(m => {
-    data[m.key] = {
-      top: document.getElementById(`final_${m.key}_top`)?.value.trim() || "",
-      bottom: document.getElementById(`final_${m.key}_bottom`)?.value.trim() || ""
-    };
+data[m.key] = {
+  top: document.getElementById(`final_${m.key}_top`)?.value.trim() || "",
+  bottom: document.getElementById(`final_${m.key}_bottom`)?.value.trim() || "",
+  schedule: document.getElementById(`final_${m.key}_schedule`)?.value.trim() || ""
+};
   });
 
   await saveFinalBracketData(data);
@@ -10281,13 +10310,17 @@ function renderFinalBracketTexts(){
 
   finalBracketMatches.forEach(m => {
     const row = finalBracketData[m.key] || {};
-    const text = [row.top || "", row.bottom || ""].filter(Boolean).join("\n");
 
     const div = document.createElement("div");
     div.className = "final-bracket-team";
     div.style.left = m.x + "%";
     div.style.top = m.y + "%";
-    div.textContent = text;
+
+    div.innerHTML = `
+      <div>${esc(row.top || "")}</div>
+      <div>${esc(row.bottom || "")}</div>
+      <div class="final-bracket-schedule">${esc(row.schedule || "")}</div>
+    `;
 
     layer.appendChild(div);
   });
