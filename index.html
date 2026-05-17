@@ -4510,6 +4510,22 @@ body.pc-view #goPcBtn{
   font-weight:1000 !important;
   margin-top:1px !important;
 }
+
+  button[onclick="openCriticalNoticeImage('prelimBracket')"]{
+  background:linear-gradient(135deg,#a855f7,#7c3aed) !important;
+  color:#ffffff !important;
+  border:1px solid #6d28d9 !important;
+  box-shadow:0 5px 14px rgba(124,58,237,.28) !important;
+}
+
+  .critical-soop-btn{
+  background:linear-gradient(135deg,#fb923c,#ea580c) !important;
+  color:#ffffff !important;
+  border:none !important;
+  border-radius:14px !important;
+  font-weight:1000 !important;
+  box-shadow:0 5px 14px rgba(234,88,12,.28) !important;
+}
 </style>
 </head>
 
@@ -7789,7 +7805,7 @@ function openCriticalNoticePopup(){
   <div class="critical-group-title">- 방송 관련 -</div>
   <div class="critical-grid">
     <button class="tournament-apply-btn green-tournament-btn" onclick="window.open('https://chzzk.naver.com/2b88c012c87944c88d051ad7d92c2c32','_blank')">펭펭방송 보기</button>
-<button class="tournament-apply-btn disabled-tournament-btn" onclick="openCriticalNoticeImage('sufitReady')">수핏방송 보기</button>
+<button class="tournament-apply-btn sufit-live-btn" onclick="window.open('https://chzzk.naver.com/04dac6f80c83323ba8cbf4571f0e20ac','_blank')">수핏방송 보기</button>
   </div>
 
 </div>
@@ -10199,17 +10215,17 @@ function openFinalBracketPopup(){
   let finalBracketData = {};
 
 const finalBracketMatches = [
-  { key:"qf1", label:"8강 1경기", x:16.2, y:42.8 },
-  { key:"qf2", label:"8강 2경기", x:16.2, y:62.8 },
+  { key:"qf1", label:"8강 1경기", x:16.2, y:40.8 },
+  { key:"qf2", label:"8강 2경기", x:16.2, y:72.8 },
 
-  { key:"sf1", label:"4강 1경기", x:39.8, y:51.2 },
-  { key:"sf2", label:"4강 2경기", x:64.7, y:51.2 },
+  { key:"sf1", label:"4강 1경기", x:19.8, y:51.2 },
+  { key:"sf2", label:"4강 2경기", x:64.7, y:41.2 },
 
-  { key:"final", label:"결승전", x:52.0, y:60.8 },
-  { key:"third", label:"3위 결정전", x:52.0, y:82.8 },
+  { key:"final", label:"결승전", x:32.0, y:50.8 },
+  { key:"third", label:"3위 결정전", x:45.0, y:92.8 },
 
-  { key:"qf3", label:"8강 3경기", x:84.6, y:42.8 },
-  { key:"qf4", label:"8강 4경기", x:84.6, y:62.8 }
+  { key:"qf3", label:"8강 3경기", x:74.6, y:32.8 },
+  { key:"qf4", label:"8강 4경기", x:74.6, y:72.8 }
 ];
 
 async function loadFinalBracketData(){
