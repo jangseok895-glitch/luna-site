@@ -4491,19 +4491,24 @@ body.pc-view #goPcBtn{
   position:absolute !important;
   transform:translate(-50%, -50%) !important;
   color:#ffffff !important;
-  font-size:15px !important;
+  font-size:14px !important;
   font-weight:1000 !important;
   text-align:center !important;
-  line-height:1.25 !important;
+  line-height:1.08 !important;
   white-space:pre-line !important;
   text-shadow:0 2px 5px #000, 0 0 6px #000 !important;
 }
 
+.final-bracket-team div{
+  margin:0 !important;
+  padding:0 !important;
+}
+
 .final-bracket-schedule{
   color:#38bdf8 !important;
-  font-size:14px !important;
+  font-size:13px !important;
   font-weight:1000 !important;
-  margin-top:2px !important;
+  margin-top:1px !important;
 }
 </style>
 </head>
@@ -10194,17 +10199,17 @@ function openFinalBracketPopup(){
   let finalBracketData = {};
 
 const finalBracketMatches = [
-  { key:"qf1", label:"8강 1경기", x:16.0, y:43.5 },
-  { key:"qf2", label:"8강 2경기", x:16.0, y:63.8 },
+  { key:"qf1", label:"8강 1경기", x:16.2, y:42.8 },
+  { key:"qf2", label:"8강 2경기", x:16.2, y:62.8 },
 
-  { key:"sf1", label:"4강 1경기", x:39.0, y:50.8 },
-  { key:"sf2", label:"4강 2경기", x:64.5, y:50.8 },
+  { key:"sf1", label:"4강 1경기", x:39.8, y:51.2 },
+  { key:"sf2", label:"4강 2경기", x:64.7, y:51.2 },
 
-  { key:"final", label:"결승전", x:52.0, y:58.5 },
-  { key:"third", label:"3위 결정전", x:52.0, y:82.5 },
+  { key:"final", label:"결승전", x:52.0, y:60.8 },
+  { key:"third", label:"3위 결정전", x:52.0, y:82.8 },
 
-  { key:"qf3", label:"8강 3경기", x:83.8, y:43.5 },
-  { key:"qf4", label:"8강 4경기", x:83.8, y:63.8 }
+  { key:"qf3", label:"8강 3경기", x:84.6, y:42.8 },
+  { key:"qf4", label:"8강 4경기", x:84.6, y:62.8 }
 ];
 
 async function loadFinalBracketData(){
