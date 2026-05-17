@@ -4470,7 +4470,8 @@ body.pc-view #goPcBtn{
   display:block !important;
   width:100% !important;
   max-width:100% !important;
-  max-height:70vh !important;
+  height:auto !important;
+  max-height:none !important;
   object-fit:contain !important;
   margin:0 auto !important;
 }
@@ -4525,6 +4526,56 @@ body.pc-view #goPcBtn{
   border-radius:14px !important;
   font-weight:1000 !important;
   box-shadow:0 5px 14px rgba(234,88,12,.28) !important;
+}
+
+  .bracket-image-wrap{
+  position:relative !important;
+  display:block !important;
+  width:100% !important;
+  max-width:1140px !important;
+  margin:0 auto !important;
+}
+
+.bracket-image-wrap img{
+  display:block !important;
+  width:100% !important;
+  height:auto !important;
+}
+
+#finalBracketTextLayer{
+  position:absolute !important;
+  left:0 !important;
+  top:0 !important;
+  width:100% !important;
+  height:100% !important;
+  pointer-events:none !important;
+  z-index:30 !important;
+}
+
+.final-bracket-team{
+  position:absolute !important;
+  transform:translate(-50%, -50%) !important;
+}
+
+  .bracket-image-wrap{
+  position:relative !important;
+  display:block !important;
+  width:100% !important;
+  max-width:1140px !important;
+  margin:0 auto !important;
+}
+
+.bracket-image-wrap img{
+  display:block !important;
+  width:100% !important;
+  height:auto !important;
+}
+
+#finalBracketTextLayer{
+  position:absolute !important;
+  inset:0 !important;
+  pointer-events:none !important;
+  z-index:30 !important;
 }
 </style>
 </head>
@@ -10215,17 +10266,17 @@ function openFinalBracketPopup(){
   let finalBracketData = {};
 
 const finalBracketMatches = [
-  { key:"qf1", label:"8강 1경기", x:17.0, y:41.8 },
-  { key:"qf2", label:"8강 2경기", x:17.0, y:62.2 },
+  { key:"qf1", label:"8강 1경기", x:18.8, y:39.8 },
+  { key:"qf2", label:"8강 2경기", x:18.8, y:65.8 },
 
-  { key:"sf1", label:"4강 1경기", x:38.8, y:48.7 },
-  { key:"sf2", label:"4강 2경기", x:65.0, y:48.7 },
+  { key:"sf1", label:"4강 1경기", x:37.0, y:45.2 },
+  { key:"sf2", label:"4강 2경기", x:62.4, y:45.2 },
 
-  { key:"final", label:"결승전", x:52.0, y:59.8 },
-  { key:"third", label:"3위 결정전", x:52.0, y:81.0 },
+  { key:"final", label:"결승전", x:50.0, y:58.6 },
+  { key:"third", label:"3위 결정전", x:50.0, y:85.6 },
 
-  { key:"qf3", label:"8강 3경기", x:85.8, y:41.8 },
-  { key:"qf4", label:"8강 4경기", x:85.8, y:62.2 }
+  { key:"qf3", label:"8강 3경기", x:79.4, y:39.8 },
+  { key:"qf4", label:"8강 4경기", x:79.4, y:65.8 }
 ];
 
 async function loadFinalBracketData(){
