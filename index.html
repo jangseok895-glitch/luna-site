@@ -4627,6 +4627,26 @@ body.pc-view #goPcBtn{
   font-size:12px !important;
   font-weight:900 !important;
 }
+
+  .map-name-wrap{
+  position:relative !important;
+  display:inline-block !important;
+  padding-right:34px !important;
+}
+
+.map-new-badge{
+  display:inline-block !important;
+  margin-left:5px !important;
+  padding:2px 6px !important;
+  border-radius:999px !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+  font-size:11px !important;
+  font-weight:900 !important;
+  line-height:1.1 !important;
+  vertical-align:middle !important;
+  box-shadow:0 2px 6px rgba(239,68,68,.35) !important;
+}
 </style>
 </head>
 
@@ -5263,7 +5283,7 @@ function escMini4545(v){
 <div class="main-tabs">
   <button class="main-tab active" data-tab="gunpyo">군표</button>
   <button class="main-tab" data-tab="real">군 실명제</button>
-<button class="main-tab" data-tab="eventTournament">
+<button class="main-tab new-badge-wrap" data-tab="eventTournament">
   이벤트/대회
   <span class="new-badge">진행중</span>
 </button>
@@ -5290,10 +5310,7 @@ function escMini4545(v){
             <button class="btn" id="btnLoad">불러오기</button>
             <button class="btn" id="btnReset">초기화</button>
             <button class="btn" id="btnJpg">스크린샷</button>
-<div class="new-badge-wrap">
-  <button class="btn blue" id="btnRankGraph" onclick="openRankGraphPopup()">루칭방 그래프</button>
-  <span class="new-badge">HOT</span>
-</div>
+<button class="btn blue" id="btnRankGraph" onclick="openRankGraphPopup()">루칭방 그래프</button>
 
             <!-- ✅ 버튼 하나 -->
           </div>
@@ -5810,6 +5827,14 @@ function rowClassByDiff(d) {
     return "row-l-l1";
   return "";
 }
+  
+function newMapBadge(r){
+  const order = Number(r && r.sort_order);
+  return (order === 45 || order === 77)
+    ? ` <span class="map-new-badge">NEW</span>`
+    : "";
+}
+  
 function toast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg;
@@ -6022,7 +6047,9 @@ function renderPc() {
     tr.className = rowClassByDiff(r["난이도"]);
     tr.dataset.map = normName(r["맵이름"]);
     tr.innerHTML = `
-      <td class="map" title="${esc(r["맵이름"])}">${esc(r["맵이름"])}</td>
+<td class="map" title="${esc(r["맵이름"])}">
+  <span class="map-name-wrap">${esc(r["맵이름"])}${newMapBadge(r)}</span>
+</td>
       <td class="center">${chipHtml(key, "프로", r["프로"])}</td>
       <td class="center">${chipHtml(key, "강주력", r["강주력"])}</td>
       <td class="center">${chipHtml(key, "주력", r["주력"])}</td>
