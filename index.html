@@ -7318,8 +7318,10 @@ async function getBoardPostsSupabase(board){
       createdAt: r.created_at || r.createdAt || "",
 imageUrl: r.image_url || r.imageUrl || "",
 imageUrls: r.image_urls || [],
-      views: Number(r.views || 0),
-      adminReply: r.admin_reply || r.adminReply || "",
+views: Number(r.views || 0),
+likes: Number(r.likes || 0),
+dislikes: Number(r.dislikes || 0),
+adminReply: r.admin_reply || r.adminReply || "",
       adminReplyAt: r.admin_reply_at || r.adminReplyAt || ""
     }))
   };
@@ -8144,8 +8146,8 @@ async function renderBoardList(){
           <div class="board-answer-status">
             ${
               isPromo
-                ? `<span class="mini-like">좋아요 [${Number(p.likes || 0)}]</span>
-                   <span class="mini-dislike">싫어요 [${Number(p.dislikes || 0)}]</span>`
+                ? `<span class="mini-like">👍 [${Number(p.likes || 0)}]</span>
+                   <span class="mini-dislike">👎 [${Number(p.dislikes || 0)}]</span>`
                 : `${CURRENT_BOARD === "qna" && p.adminReply ? "[답변완료]" : ""}`
             }
           </div>
@@ -8282,6 +8284,15 @@ async function voteBoardPost(postId, type, idx){
     const p = CURRENT_BOARD_POSTS[idx];
     if(!p) return;
 
+    const key = `board_vote_${postId}_${type}`;
+    const lastVoteTime = Number(localStorage.getItem(key) || 0);
+    const now = Date.now();
+
+    if(now - lastVoteTime < 60 * 60 * 1000){
+      toast(type === "like" ? "이미 좋아요를 누르셨습니다." : "이미 싫어요를 누르셨습니다.");
+      return;
+    }
+
     const field = type === "like" ? "likes" : "dislikes";
     const nextValue = Number(p[field] || 0) + 1;
 
@@ -8295,6 +8306,8 @@ async function voteBoardPost(postId, type, idx){
     hideLoading();
 
     if(error) throw error;
+
+    localStorage.setItem(key, String(now));
 
     p[field] = nextValue;
     toast(type === "like" ? "좋아요 +1" : "싫어요 +1");
