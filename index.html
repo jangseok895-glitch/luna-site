@@ -4588,6 +4588,11 @@ body.pc-view #goPcBtn{
   color:#38bdf8 !important;
   margin-top:-1px !important;
 }
+
+  .new-badge,
+.new-badge-wrap .new-badge{
+  display:none !important;
+}
 </style>
 </head>
 
@@ -5122,6 +5127,46 @@ function escMini4545(v){
   /* ===== 크리티컬 히트 공지 팝업 이전/다음 강제 생성 ===== */
 
 
+  /* 모바일 뒤로가기: 사이트 종료 방지 + 이전 탭으로 이동 */
+(function(){
+  let ignoreHistory = false;
+
+  function getActiveTab(){
+    return document.querySelector(".main-tab.active")?.dataset.tab || "gunpyo";
+  }
+
+  function openTabByName(tabName, pushHistory = true){
+    const btn = document.querySelector(`.main-tab[data-tab="${tabName}"]`);
+    if(!btn) return;
+
+    ignoreHistory = !pushHistory;
+    btn.click();
+    ignoreHistory = false;
+
+    if(pushHistory){
+      history.pushState({ tab: tabName }, "", `#${tabName}`);
+    }
+  }
+
+  // 최초 진입 기록 저장
+  const firstTab = location.hash ? location.hash.replace("#", "") : getActiveTab();
+  history.replaceState({ tab: firstTab }, "", `#${firstTab}`);
+
+  // 탭 클릭할 때마다 기록 쌓기
+  document.addEventListener("click", function(e){
+    const tabBtn = e.target.closest(".main-tab[data-tab]");
+    if(!tabBtn || ignoreHistory) return;
+
+    const tabName = tabBtn.dataset.tab;
+    history.pushState({ tab: tabName }, "", `#${tabName}`);
+  });
+
+  // 모바일/브라우저 뒤로가기 처리
+  window.addEventListener("popstate", function(e){
+    const tabName = e.state?.tab || "gunpyo";
+    openTabByName(tabName, false);
+  });
+})();
 </script>
   
 <div id="imagePopup" class="image-popup hidden" onclick="closeImagePopup()">
@@ -7592,18 +7637,6 @@ if(board === "eventTournament"){
   list.innerHTML = `
     <div class="tournament-main-grid">
 
-<div class="tournament-thumb-card" onclick="openTournamentPoster('allstar')">
-  <div class="tournament-title">카러플 올스타전 (5/17)</div>
-  <div class="tournament-soon-badge">종료</div>
-
-  <img class="tournament-thumb-img" src="https://github.com/jangseok895-glitch/luna-site/blob/main/pictures/%ED%8C%AC%ED%95%A0.jpg?raw=true">
-
-<button class="tournament-apply-btn"
-        onclick="event.stopPropagation(); openTournamentPoster('allstar')">
-  대회 진행/공지
-</button>
-</div>
-
 <div class="tournament-thumb-card" onclick="openTournamentPoster('critical')">
   <div class="tournament-title">크리티컬히트 아이템전 대회 (5/15)</div>
   <div class="tournament-soon-badge">진행중</div>
@@ -7633,35 +7666,11 @@ if(board === "eventTournament"){
     </div>
 
     <div class="mini4545-grid-preview">
-      <div>7</div>
-      <div>18</div>
-      <div>2</div>
-      <div>25</div>
-      <div>11</div>
-
-      <div>14</div>
-      <div>1</div>
-      <div>20</div>
-      <div>5</div>
-      <div>9</div>
-
-      <div>22</div>
-      <div>3</div>
-      <div>17</div>
-      <div>8</div>
-      <div>24</div>
-
-      <div>12</div>
-      <div>19</div>
-      <div>6</div>
-      <div>21</div>
-      <div>4</div>
-
-      <div>13</div>
-      <div>16</div>
-      <div>10</div>
-      <div>23</div>
-      <div>15</div>
+      <div>7</div><div>18</div><div>2</div><div>25</div><div>11</div>
+      <div>14</div><div>1</div><div>20</div><div>5</div><div>9</div>
+      <div>22</div><div>3</div><div>17</div><div>8</div><div>24</div>
+      <div>12</div><div>19</div><div>6</div><div>21</div><div>4</div>
+      <div>13</div><div>16</div><div>10</div><div>23</div><div>15</div>
     </div>
 
     <div class="mini4545-speed-text">
@@ -7678,6 +7687,20 @@ if(board === "eventTournament"){
     게임해보기
   </button>
 </div>
+
+<div class="tournament-thumb-card" onclick="openTournamentPoster('allstar')">
+  <div class="tournament-title">카러플 올스타전 (5/17)</div>
+  <div class="tournament-soon-badge">종료</div>
+
+  <img class="tournament-thumb-img" src="https://github.com/jangseok895-glitch/luna-site/blob/main/pictures/%ED%8C%AC%ED%95%A0.jpg?raw=true">
+
+  <button class="tournament-apply-btn"
+          onclick="event.stopPropagation(); openTournamentPoster('allstar')">
+    대회 진행/공지
+  </button>
+</div>
+
+    </div>
   `;
 
   return;
