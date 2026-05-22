@@ -10157,27 +10157,28 @@ ctx.restore();
       }
 
       // 🔥 아래 라벨 (핵심 복구)
-const rankColor = {
-  "프로":"#ef4444",
-  "강주력":"#f97316",
-  "주력":"#22c55e",
-  "1군":"#3b82f6",
-  "2군":"#06b6d4",
-  "3군":"#84cc16",
-  "4군":"#eab308",
-  "5군":"#f59e0b",
-  "6군":"#9ca3af"
-};
-
+// 아래 군 라벨
 ctx.textAlign = "center";
 ctx.font = "900 18px Pretendard";
 
-ctx.lineWidth = 5;
+// 테두리
+ctx.lineWidth = 6;
 ctx.strokeStyle = "#ffffff";
 ctx.strokeText(label, centerX, H - 8);
 
-ctx.fillStyle = rankColor[label] || "#2563eb";
+// 검은 글씨
+ctx.fillStyle = "#111827";
 ctx.fillText(label, centerX, H - 8);
+
+// 얇은 외곽 그림자 느낌
+ctx.lineWidth = 1;
+ctx.shadowColor = "rgba(0,0,0,.25)";
+ctx.shadowBlur = 2;
+ctx.shadowOffsetY = 1;
+ctx.fillText(label, centerX, H - 8);
+
+ctx.shadowBlur = 0;
+ctx.shadowOffsetY = 0;
 
 ctx.lineWidth = 1;
 ctx.shadowBlur = 0;
