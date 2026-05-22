@@ -8145,9 +8145,9 @@ async function renderBoardList(){
           <div>${esc(p.title)}${commentBadge}</div>
           <div class="board-answer-status">
             ${
-              isPromo
-                ? `<span class="mini-like">👍 [${Number(p.likes || 0)}]</span>
-                   <span class="mini-dislike">👎 [${Number(p.dislikes || 0)}]</span>`
+isPromo
+  ? `<span class="mini-like">👍 ${Number(p.likes || 0)}</span>
+     <span class="mini-dislike">👎 ${Number(p.dislikes || 0)}</span>`
                 : `${CURRENT_BOARD === "qna" && p.adminReply ? "[답변완료]" : ""}`
             }
           </div>
