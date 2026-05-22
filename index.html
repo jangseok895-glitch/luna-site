@@ -4668,6 +4668,20 @@ body.pc-view #goPcBtn{
   box-shadow:0 3px 8px rgba(239,68,68,.35) !important;
   pointer-events:none !important;
 }
+
+.club-total-graph-card{
+  width:100% !important;
+  max-width:none !important;
+  min-height:620px !important;
+  padding:18px 24px !important;
+}
+
+#clubTotalCanvas{
+  width:100% !important;
+  height:560px !important;
+  display:block !important;
+}
+
 </style>
 </head>
 
@@ -9955,10 +9969,66 @@ function top10ClubGrowth(teamRows, profileRows){
     .slice(0,10);
 }
 
+
+
+function top20ClubTotalGraph(rows){
+  const startDate = new Date("2026-05-22T00:00:00+09:00");
+  const validRows = (rows || []).filter(r => r.team_name);
+  const scoreMap = new Map();
+
+  function addScore(team, score){
+    if(!team) return;
+    scoreMap.set(team, (scoreMap.get(team) || 0) + score);
+  }
+
+  // 1) 2026-05-22 이후 등록자: 1명당 1점
+  validRows.forEach(r => {
+    const created = new Date(r.created_at);
+    if(!isNaN(created) && created >= startDate){
+      addScore(r.team_name, 1);
+    }
+  });
+
+  // 2) total 순위: 1~20위 20~1점, 21~40위 0.5점, 41~100위 0.2점
+  [...validRows]
+    .filter(r => Number(r.total) > 0)
+    .sort((a,b) => Number(b.total || 0) - Number(a.total || 0))
+    .forEach((r, i) => {
+      const rank = i + 1;
+      let score = 0;
+      if(rank <= 20) score = 21 - rank;
+      else if(rank <= 40) score = 0.5;
+      else if(rank <= 100) score = 0.2;
+      addScore(r.team_name, score);
+    });
+
+  // 3) views 순위: 1위 10점, 2위 9.9점, 3위 9.8점...
+  [...validRows]
+    .filter(r => Number(r.views) > 0)
+    .sort((a,b) => Number(b.views || 0) - Number(a.views || 0))
+    .forEach((r, i) => {
+      const score = Math.max(0, 10 - (i * 0.1));
+      addScore(r.team_name, score);
+    });
+
+  return [...scoreMap.entries()]
+    .map(([team, score]) => {
+      const v = Math.round(score * 10) / 10;
+      return {
+        label: team,
+        value: v,
+        text: `${v}점`,
+        scoreText: `${v}점`
+      };
+    })
+    .sort((a,b) => b.value - a.value)
+    .slice(0,20);
+}
+
 async function openClubActivityGraph(){
   try{
     const teamRows = await sbSelect("team_members", q =>
-      q.select("team_name,nickname,pin5,total,selections,updated_at,created_at")
+      q.select("team_name,nickname,pin5,total,selections,updated_at,created_at,views")
         .not("team_name", "is", null)
     );
 
@@ -9975,6 +10045,7 @@ async function openClubActivityGraph(){
     const highRankData = top10ClubHighRank(teamRows);
     const growthData = top10ClubGrowth(teamRows, profileRows);
     const preferMapData = top10PreferMaps(teamRows, mapRows);
+    const totalClubData = top20ClubTotalGraph(teamRows);
 
     drawSimpleBarChart("clubRegisterRateCanvas", registerData, "#2563eb");
     drawSimpleBarChart("clubHighRankCanvas", highRankData, "#ef4444");
@@ -9984,6 +10055,7 @@ drawSimpleBarChart("preferRookieCanvas", preferMapData.rookie, "#d4a017");
 drawSimpleBarChart("preferL3Canvas", preferMapData.l3, "#22c55e");
 drawSimpleBarChart("preferL2Canvas", preferMapData.l2, "#2563eb");
 drawSimpleBarChart("preferL1Canvas", preferMapData.l1, "#ef4444");
+    drawSimpleBarChart("clubTotalCanvas", totalClubData, "#8b5cf6");
 
   }catch(e){
     console.error(e);
@@ -9995,56 +10067,50 @@ function showGraphTab(type){
   const rankSection = document.getElementById("rankGraphSection");
   const clubSection = document.getElementById("clubActivityGraphSection");
   const preferSection = document.getElementById("preferMapGraphSection");
+  const totalSection = document.getElementById("clubTotalGraphSection");
 
   const title = document.getElementById("rankGraphTitle");
 
   const btnRank = document.getElementById("btnGraphTabRank");
   const btnClub = document.getElementById("btnGraphTabClub");
   const btnPrefer = document.getElementById("btnGraphTabPrefer");
+  const btnTotal = document.getElementById("btnGraphTabTotal");
+
+  rankSection?.classList.add("hidden");
+  clubSection?.classList.add("hidden");
+  preferSection?.classList.add("hidden");
+  totalSection?.classList.add("hidden");
+
+  btnRank?.classList.remove("active");
+  btnClub?.classList.remove("active");
+  btnPrefer?.classList.remove("active");
+  btnTotal?.classList.remove("active");
 
   if(type === "club"){
-    rankSection?.classList.add("hidden");
-    preferSection?.classList.add("hidden");
     clubSection?.classList.remove("hidden");
-
-    btnRank?.classList.remove("active");
-    btnPrefer?.classList.remove("active");
     btnClub?.classList.add("active");
-
     if(title) title.textContent = "단체별 활동성 그래프";
-
-    setTimeout(() => {
-      openClubActivityGraph();
-    }, 50);
-
+    setTimeout(openClubActivityGraph, 50);
     return;
   }
 
   if(type === "prefer"){
-    rankSection?.classList.add("hidden");
-    clubSection?.classList.add("hidden");
     preferSection?.classList.remove("hidden");
-
-    btnRank?.classList.remove("active");
-    btnClub?.classList.remove("active");
     btnPrefer?.classList.add("active");
-
     if(title) title.textContent = "선호맵 그래프";
-
-    setTimeout(() => {
-      openClubActivityGraph();
-    }, 50);
-
+    setTimeout(openClubActivityGraph, 50);
     return;
   }
 
-  // 기본값: 군별 그래프
-  clubSection?.classList.add("hidden");
-  preferSection?.classList.add("hidden");
-  rankSection?.classList.remove("hidden");
+  if(type === "total"){
+    totalSection?.classList.remove("hidden");
+    btnTotal?.classList.add("active");
+    if(title) title.textContent = "단체별 종합그래프 TOP 20";
+    setTimeout(openClubActivityGraph, 50);
+    return;
+  }
 
-  btnClub?.classList.remove("active");
-  btnPrefer?.classList.remove("active");
+  rankSection?.classList.remove("hidden");
   btnRank?.classList.add("active");
 
   if(title) title.textContent = "루칭방 그래프";
@@ -10053,6 +10119,7 @@ function showGraphTab(type){
     drawRankGraphAnimated(window.lastSaveData, window.lastRealData);
   }
 }
+
 
 function drawRankGraphAnimated(dataBlue, dataRed){
   const canvas = document.getElementById("rankGraphCanvas");
@@ -10815,6 +10882,10 @@ function hideCriticalLoading(){
 <button class="graph-tab-btn" id="btnGraphTabPrefer" onclick="showGraphTab('prefer')">
   선호맵 그래프
 </button>
+
+  <button class="graph-tab-btn" id="btnGraphTabTotal" onclick="showGraphTab('total')">
+  단체별 종합그래프 TOP 20
+</button>
 </div>
 </div>
 
@@ -10867,6 +10938,13 @@ function hideCriticalLoading(){
       <h3>L1맵 TOP 5</h3>
       <canvas id="preferL1Canvas" width="520" height="250"></canvas>
     </div>
+  </div>
+</div>
+
+<div id="clubTotalGraphSection" class="hidden">
+  <div class="club-graph-card club-total-graph-card">
+    <h3>단체별 종합그래프 TOP 20</h3>
+    <canvas id="clubTotalCanvas" width="900" height="560"></canvas>
   </div>
 </div>
 </div>
