@@ -4628,24 +4628,45 @@ body.pc-view #goPcBtn{
   font-weight:900 !important;
 }
 
-  .map-name-wrap{
+.map-name-wrap{
   position:relative !important;
   display:inline-block !important;
-  padding-right:34px !important;
+  padding:0 !important;
 }
 
 .map-new-badge{
+  position:absolute !important;
+  left:-26px !important;
+  top:-12px !important;
   display:inline-block !important;
-  margin-left:5px !important;
   padding:2px 6px !important;
   border-radius:999px !important;
   background:#ef4444 !important;
   color:#ffffff !important;
-  font-size:11px !important;
+  font-size:10px !important;
   font-weight:900 !important;
   line-height:1.1 !important;
-  vertical-align:middle !important;
+  transform:rotate(-12deg) !important;
   box-shadow:0 2px 6px rgba(239,68,68,.35) !important;
+  pointer-events:none !important;
+}
+
+  .tab-status-badge{
+  position:absolute !important;
+  right:8px !important;
+  top:-10px !important;
+  z-index:20 !important;
+  padding:4px 9px !important;
+  border-radius:8px !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+  font-size:12px !important;
+  font-weight:900 !important;
+  line-height:1 !important;
+  transform:rotate(14deg) !important;
+  border:2px solid #ffffff !important;
+  box-shadow:0 3px 8px rgba(239,68,68,.35) !important;
+  pointer-events:none !important;
 }
 </style>
 </head>
@@ -5283,9 +5304,9 @@ function escMini4545(v){
 <div class="main-tabs">
   <button class="main-tab active" data-tab="gunpyo">군표</button>
   <button class="main-tab" data-tab="real">군 실명제</button>
-<button class="main-tab new-badge-wrap" data-tab="eventTournament">
+<button class="main-tab" data-tab="eventTournament">
   이벤트/대회
-  <span class="new-badge">진행중</span>
+  <span class="tab-status-badge">진행중</span>
 </button>
   <button class="main-tab" data-tab="promo">홍보/자유</button>
   <button class="main-tab" data-tab="qna">민원Q/A</button>
