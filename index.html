@@ -4593,6 +4593,40 @@ body.pc-view #goPcBtn{
 .new-badge-wrap .new-badge{
   display:none !important;
 }
+
+  .promo-reaction-box{
+  display:flex !important;
+  gap:10px !important;
+  margin:16px 0 !important;
+  padding:12px !important;
+  border:1px solid rgba(14,165,233,.28) !important;
+  border-radius:14px !important;
+  background:#f8fdff !important;
+}
+
+.promo-reaction-btn{
+  border:1px solid rgba(14,165,233,.35) !important;
+  border-radius:999px !important;
+  padding:10px 16px !important;
+  background:#ffffff !important;
+  color:#111827 !important;
+  font-size:15px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+}
+
+.mini-like{
+  color:#2563eb !important;
+  font-size:12px !important;
+  font-weight:900 !important;
+  margin-right:5px !important;
+}
+
+.mini-dislike{
+  color:#ef4444 !important;
+  font-size:12px !important;
+  font-weight:900 !important;
+}
 </style>
 </head>
 
@@ -8083,11 +8117,13 @@ async function renderBoardList(){
     posts.map(p => p.id).filter(Boolean)
   );
 
+  const isPromo = CURRENT_BOARD === "promo";
+
   list.innerHTML = `
     <div class="promo-board-head">
       <div>글번호</div>
       <div>글 제목</div>
-      <div>답변여부</div>
+      <div>${isPromo ? "반응" : "답변여부"}</div>
       <div>작성자</div>
       <div>작성일자</div>
       <div>조회수</div>
@@ -8106,7 +8142,12 @@ async function renderBoardList(){
           <div>${originalNo}</div>
           <div>${esc(p.title)}${commentBadge}</div>
           <div class="board-answer-status">
-            ${CURRENT_BOARD === "qna" && p.adminReply ? "[답변완료]" : ""}
+            ${
+              isPromo
+                ? `<span class="mini-like">좋아요 [${Number(p.likes || 0)}]</span>
+                   <span class="mini-dislike">싫어요 [${Number(p.dislikes || 0)}]</span>`
+                : `${CURRENT_BOARD === "qna" && p.adminReply ? "[답변완료]" : ""}`
+            }
           </div>
           <div>${esc(p.writer || "-")}</div>
           <div>${esc(formatBoardDate(p.createdAt))}</div>
@@ -8216,12 +8257,55 @@ ${p.imageUrls && p.imageUrls.length ? `
         <button class="btn gold" onclick="openBoardEdit(${idx})">수정</button>
         <button class="btn red" onclick="deleteBoardPost('${p.id}')">삭제</button>
 
+
+${CURRENT_BOARD === "promo" ? `
+  <div class="promo-reaction-box">
+    <button class="promo-reaction-btn" onclick="event.stopPropagation(); voteBoardPost('${p.id}', 'like', ${idx})">
+      👍 좋아요 <b>${Number(p.likes || 0)}</b>
+    </button>
+    <button class="promo-reaction-btn" onclick="event.stopPropagation(); voteBoardPost('${p.id}', 'dislike', ${idx})">
+      👎 싫어요 <b>${Number(p.dislikes || 0)}</b>
+    </button>
+  </div>
+` : ""}
+
         ${CURRENT_BOARD === "qna" ? `<button class="btn gold" onclick="openAdminReply(${idx})">운영진 답글달기</button>` : ""}
       </div>
     </div>
   `;
 
   loadBoardComments(p.id);
+}
+
+async function voteBoardPost(postId, type, idx){
+  try{
+    const p = CURRENT_BOARD_POSTS[idx];
+    if(!p) return;
+
+    const field = type === "like" ? "likes" : "dislikes";
+    const nextValue = Number(p[field] || 0) + 1;
+
+    showLoading("반응 등록 중입니다");
+
+    const { error } = await sb
+      .from("board_posts")
+      .update({ [field]: nextValue })
+      .eq("id", postId);
+
+    hideLoading();
+
+    if(error) throw error;
+
+    p[field] = nextValue;
+    toast(type === "like" ? "좋아요 +1" : "싫어요 +1");
+
+    openBoardPost(idx);
+
+  }catch(e){
+    hideLoading();
+    console.error(e);
+    toast("반응 등록 실패");
+  }
 }
 
 /* ===== 글쓰기 / 검색 / 계급표 버튼 ===== */
