@@ -9374,32 +9374,57 @@ async function deleteBoardComment(commentId, postId){
   return map;
 }
 
-  let mySessionId = null;
+let mySessionKey = sessionStorage.getItem("gunpyo_online_session_key");
+
+if(!mySessionKey){
+  mySessionKey = crypto.randomUUID();
+  sessionStorage.setItem("gunpyo_online_session_key", mySessionKey);
+}
 
 async function updateOnlineUser(){
   try{
-    if(!mySessionId){
-      const { data, error } = await sb
-        .from("online_users")
-        .insert({ last_seen: new Date().toISOString() })
-        .select()
-        .single();
-
-      if(error) throw error;
-      mySessionId = data.id;
-    }else{
-      await sb
-        .from("online_users")
-        .update({ last_seen: new Date().toISOString() })
-        .eq("id", mySessionId);
-    }
+    await sb
+      .from("online_users")
+      .upsert({
+        session_key: mySessionKey,
+        site_name: "gunpyo",
+        last_seen: new Date().toISOString()
+      }, {
+        onConflict: "session_key"
+      });
   }catch(e){
-    console.error(e);
+    console.error("접속자 업데이트 오류:", e);
   }
 }
 
-// 10초마다 갱신
+async function getOnlineCount(){
+  const limit = new Date(Date.now() - 60 * 1000).toISOString();
+
+  const { data, error } = await sb
+    .from("online_users")
+    .select("session_key")
+    .eq("site_name", "gunpyo")
+    .gte("last_seen", limit);
+
+  if(error){
+    console.error("접속자 수 불러오기 오류:", error);
+    return 0;
+  }
+
+  return new Set((data || []).map(r => r.session_key)).size;
+}
+
+async function refreshOnlineUI(){
+  const cnt = await getOnlineCount();
+  const el = document.getElementById("onlineCount");
+  if(el) el.textContent = cnt;
+}
+
+updateOnlineUser();
+refreshOnlineUI();
+
 setInterval(updateOnlineUser, 10000);
+setInterval(refreshOnlineUI, 10000);
 
   async function getOnlineCount(){
   const now = new Date();
