@@ -5294,7 +5294,7 @@ function escMini4545(v){
   <img class="main-title-image" src="https://i.ibb.co/PZs2pDCb/55555.jpg">
 
 <div id="onlineBox">
-<span class="online-label">오늘 총접속자</span>
+<span class="online-label">오늘 접속자TOTAL</span>
   <span id="onlineCount" class="online-count">-</span>
 </div>
 
@@ -9419,10 +9419,13 @@ function getTodayKstRange(){
 
 async function recordTodayVisitor(){
   try{
-    await sb.from("daily_visitors").insert({
+    const { error } = await sb.from("daily_visitors").insert({
       page: "gunpyo",
-      visitor_key: crypto.randomUUID()
+      visitor_key: crypto.randomUUID(),
+      visited_at: new Date().toISOString()
     });
+
+    if(error) throw error;
 
     await refreshOnlineUI();
   }catch(e){
@@ -9454,10 +9457,7 @@ async function refreshOnlineUI(){
   if(el) el.textContent = cnt;
 }
 
-recordTodayVisitor();
-refreshOnlineUI();
 
-setInterval(refreshOnlineUI, 10000);
 
 async function getRecentLiveLogs(){
   try{
@@ -9531,6 +9531,12 @@ async function startLiveLogNeon(){
 }
 
 setTimeout(startLiveLogNeon, 1200);
+
+  setTimeout(() => {
+  recordTodayVisitor();
+  refreshOnlineUI();
+  setInterval(refreshOnlineUI, 10000);
+}, 1500);
 
   const RANK_GRAPH_LABELS = ["프로","강주력","주력","1군","2군","3군","4군","5군","6군"];
 
