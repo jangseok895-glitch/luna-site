@@ -5294,7 +5294,7 @@ function escMini4545(v){
   <img class="main-title-image" src="https://i.ibb.co/PZs2pDCb/55555.jpg">
 
 <div id="onlineBox">
-<span class="online-label">오늘 접속자TOTAL</span>
+<span class="online-label">오늘접속자</span>
   <span id="onlineCount" class="online-count">-</span>
 </div>
 
@@ -9419,36 +9419,58 @@ function getTodayKstRange(){
 
 async function recordTodayVisitor(){
   try{
+    if(!sb){
+      alert("Supabase 연결 실패: sb가 없습니다.");
+      return;
+    }
+
     const { error } = await sb.from("daily_visitors").insert({
       page: "gunpyo",
       visitor_key: crypto.randomUUID(),
       visited_at: new Date().toISOString()
     });
 
-    if(error) throw error;
+    if(error){
+      alert("오늘접속자 기록 실패: " + error.message);
+      console.error("오늘접속자 기록 실패:", error);
+      return;
+    }
 
     await refreshOnlineUI();
   }catch(e){
-    console.error("오늘 누적접속자 기록 실패:", e);
+    alert("오늘접속자 기록 실패: " + (e.message || e));
+    console.error("오늘접속자 기록 실패:", e);
   }
 }
 
 async function getOnlineCount(){
-  const { start, end } = getTodayKstRange();
+  try{
+    if(!sb){
+      console.error("Supabase 연결 실패: sb가 없습니다.");
+      return 0;
+    }
 
-  const { count, error } = await sb
-    .from("daily_visitors")
-    .select("*", { count:"exact", head:true })
-    .eq("page", "gunpyo")
-    .gte("visited_at", start)
-    .lte("visited_at", end);
+    const { start, end } = getTodayKstRange();
 
-  if(error){
-    console.error("오늘 누적접속자 조회 실패:", error);
+    const { count, error } = await sb
+      .from("daily_visitors")
+      .select("*", { count:"exact", head:true })
+      .eq("page", "gunpyo")
+      .gte("visited_at", start)
+      .lte("visited_at", end);
+
+    if(error){
+      alert("오늘접속자 조회 실패: " + error.message);
+      console.error("오늘접속자 조회 실패:", error);
+      return 0;
+    }
+
+    return count || 0;
+  }catch(e){
+    alert("오늘접속자 조회 실패: " + (e.message || e));
+    console.error("오늘접속자 조회 실패:", e);
     return 0;
   }
-
-  return count || 0;
 }
 
 async function refreshOnlineUI(){
