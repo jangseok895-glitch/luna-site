@@ -9573,40 +9573,60 @@ async function getRecentLiveLogs(){
 
     (profileRows || []).forEach(r => {
       const nick = String(r.nickname || "").trim();
-      if(nick) logs.push(`${nick}님이 군표를 저장하셨습니다.`);
+      if(nick){
+        logs.push({
+          text:`${nick}님이 군표를 저장하셨습니다.`,
+          created_at:r.created_at
+        });
+      }
     });
 
     (memberRows || []).forEach(r => {
       const nick = String(r.nickname || "").trim();
-      if(nick) logs.push(`${nick}님이 군실명제를 등록하셨습니다.`);
+      if(nick){
+        logs.push({
+          text:`${nick}님이 군실명제를 등록하셨습니다.`,
+          created_at:r.created_at
+        });
+      }
     });
 
     (chatRows || []).forEach(r => {
       const msg = String(r.message || "").trim();
-      if(msg) logs.push(msg);
+      if(msg){
+        logs.push({
+          text:msg,
+          created_at:r.created_at
+        });
+      }
     });
 
-    return logs;
+    return logs
+      .sort((a,b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+      .map(v => v.text)
+      .filter(Boolean);
   }catch(e){
     console.warn("네온 로그 불러오기 실패:", e);
     return [];
   }
 }
+
 let liveLogTimer = null;
 let liveLogCache = [];
 
 function pickSyncedLiveLog(logs){
   if(!logs || !logs.length) return "";
 
+  // 8초 단위로 모든 접속자가 같은 문구를 보게 함
   const slot = Math.floor(Date.now() / 8000);
 
+  // 최근 10개가 더 자주 나오도록 가중치 부여
   const weighted = [
     ...logs.slice(0, 10),
     ...logs
   ];
 
-  const index = slot % weighted.length;
-  return weighted[index];
+  return weighted[slot % weighted.length];
 }
 
 async function startLiveLogNeon(){
@@ -9642,36 +9662,6 @@ async function startLiveLogNeon(){
     await refreshLogs();
     renderSyncedLog();
   }, 8000);
-}
-
-  function makeHTML(msg){
-    // "홍길동님이 ~~~" 분리
-    const nick = msg.split("님")[0];
-    const rest = msg.replace(nick, "");
-
-    return `<span class="live-nick">${nick}</span>${rest}`;
-  }
-
-  function showRandomLog(){
-    if(!logs.length){
-      track.innerHTML = "데이터 없음";
-    }else{
-      const msg = logs[Math.floor(Math.random() * logs.length)];
-      track.innerHTML = makeHTML(msg);
-    }
-  }
-
-  // 🔥 애니메이션 끝날 때만 교체 (버그 해결 핵심)
-  track.addEventListener("animationiteration", () => {
-    showRandomLog();
-  });
-
-  showRandomLog();
-
-  // 1분마다 데이터 갱신
-  setInterval(async () => {
-    logs = await getRecentLiveLogs();
-  }, 60000);
 }
 
 setTimeout(startLiveLogNeon, 1200);
@@ -11103,18 +11093,6 @@ function hideCriticalLoading(){
   }
 }
 
-  document.addEventListener("keydown", function(e){
-  const popup = document.getElementById("chatGoPopup");
-  const input = document.getElementById("chatGoInput");
-
-  if(!popup || popup.classList.contains("hidden")) return;
-  if(document.activeElement !== input) return;
-
-  if(e.key === "Enter"){
-    e.preventDefault();
-    submitChatGo();
-  }
-});
 </script>
   <div id="rankGraphPopup" class="hidden">
   <div class="rank-graph-box">
