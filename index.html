@@ -9633,30 +9633,27 @@ function pickFromPool(pool, slot){
 }
 
 function pickSyncedLiveLog(logs){
-  if(!logs || !logs.length) return null;
+  if(!logs || !logs.length) return "";
 
-  const realLogs = logs.filter(x => x.type === "real");
   const saveLogs = logs.filter(x => x.type === "save");
+  const realLogs = logs.filter(x => x.type === "real");
   const chatLogs = logs.filter(x => x.type === "chat");
 
-  // liveLogScroll 애니메이션이 11초라, 11초 단위로 모든 접속자가 같은 순서를 보게 함
   const slot = Math.floor(Date.now() / 11000);
-  const rate = slot % 10;
+  const pattern = slot % 10;
 
   let pool = [];
 
-  if(rate <= 3){
-    // 40% 군실명제 등록
-    pool = realLogs.length ? realLogs : logs;
-  }else if(rate <= 7){
-    // 40% 군표 저장
+  if([0,3,5,9].includes(pattern)){
     pool = saveLogs.length ? saveLogs : logs;
+  }else if([1,4,6,8].includes(pattern)){
+    pool = realLogs.length ? realLogs : logs;
   }else{
-    // 20% 챗GO
     pool = chatLogs.length ? chatLogs : logs;
   }
 
-  return pickFromPool(pool, slot);
+  const item = pool[slot % pool.length];
+  return item.text || "";
 }
 
 function makeLiveLogHTML(item){
