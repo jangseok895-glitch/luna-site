@@ -9583,7 +9583,7 @@ async function getRecentLiveLogs(){
 
     (chatRows || []).forEach(r => {
       const msg = String(r.message || "").trim();
-      if(msg) logs.push(`챗GO: ${msg}`);
+      if(msg) logs.push(msg);
     });
 
     return logs;
@@ -9592,11 +9592,57 @@ async function getRecentLiveLogs(){
     return [];
   }
 }
+let liveLogTimer = null;
+let liveLogCache = [];
+
+function pickSyncedLiveLog(logs){
+  if(!logs || !logs.length) return "";
+
+  // 8초마다 모든 접속자가 같은 번호를 보게 함
+  const slot = Math.floor(Date.now() / 8000);
+
+  // 최근 글이 더 자주 나오도록 최근 10개를 앞쪽에 한 번 더 추가
+  const weighted = [
+    ...logs.slice(0, 10),
+    ...logs
+  ];
+
+  const index = slot % weighted.length;
+  return weighted[index];
+}
+
 async function startLiveLogNeon(){
   const track = document.getElementById("liveLogTrack");
   if(!track) return;
 
-  let logs = await getRecentLiveLogs();
+  async function refreshLogs(){
+    const logs = await getRecentLiveLogs();
+
+    if(logs && logs.length){
+      liveLogCache = logs;
+    }
+  }
+
+  function renderSyncedLog(){
+    if(!liveLogCache.length) return;
+
+    const text = pickSyncedLiveLog(liveLogCache);
+    if(track.dataset.currentText === text) return;
+
+    track.dataset.currentText = text;
+    track.innerHTML = esc(text);
+  }
+
+  await refreshLogs();
+  renderSyncedLog();
+
+  if(liveLogTimer) clearInterval(liveLogTimer);
+
+  liveLogTimer = setInterval(async () => {
+    await refreshLogs();
+    renderSyncedLog();
+  }, 8000);
+}
 
   function makeHTML(msg){
     // "홍길동님이 ~~~" 분리
@@ -9681,10 +9727,6 @@ async function submitChatGo(){
     toast("챗GO 등록 완료");
     closeChatGoPopup();
 
-    if(typeof startLiveLogNeon === "function"){
-      const track = document.getElementById("liveLogTrack");
-      if(track) track.innerHTML = `챗GO: ${esc(msg)}`;
-    }
   }catch(e){
     console.error(e);
     toast(e.message || "챗GO 등록 실패");
@@ -11046,6 +11088,19 @@ function hideCriticalLoading(){
     window.open(data.broadcastUrl, "_blank");
   }
 }
+
+  document.addEventListener("keydown", function(e){
+  const popup = document.getElementById("chatGoPopup");
+  const input = document.getElementById("chatGoInput");
+
+  if(!popup || popup.classList.contains("hidden")) return;
+  if(document.activeElement !== input) return;
+
+  if(e.key === "Enter"){
+    e.preventDefault();
+    submitChatGo();
+  }
+});
 </script>
   <div id="rankGraphPopup" class="hidden">
   <div class="rank-graph-box">
