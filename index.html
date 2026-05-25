@@ -5294,7 +5294,7 @@ function escMini4545(v){
   <img class="main-title-image" src="https://i.ibb.co/PZs2pDCb/55555.jpg">
 
 <div id="onlineBox">
-  <span class="online-label">접속자</span>
+<span class="online-label">오늘 총접속자</span>
   <span id="onlineCount" class="online-count">-</span>
 </div>
 
@@ -5320,7 +5320,7 @@ function escMini4545(v){
   <button class="main-tab" data-tab="real">군 실명제</button>
 <button class="main-tab" data-tab="eventTournament">
   이벤트/대회
-  <span class="tab-status-badge">진행중</span>
+  <span class="tab-status-badge">종</span>
 </button>
   <button class="main-tab" data-tab="promo">홍보/자유</button>
   <button class="main-tab" data-tab="qna">민원Q/A</button>
@@ -9404,44 +9404,49 @@ async function deleteBoardComment(commentId, postId){
   return map;
 }
 
-let mySessionKey = sessionStorage.getItem("gunpyo_online_session_key");
+function getTodayKstRange(){
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
 
-if(!mySessionKey){
-  mySessionKey = crypto.randomUUID();
-  sessionStorage.setItem("gunpyo_online_session_key", mySessionKey);
+  const y = kst.getUTCFullYear();
+  const m = String(kst.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(kst.getUTCDate()).padStart(2, "0");
+
+  return {
+    start: new Date(`${y}-${m}-${d}T00:01:00+09:00`).toISOString(),
+    end: new Date(`${y}-${m}-${d}T23:59:59+09:00`).toISOString()
+  };
 }
 
-async function updateOnlineUser(){
+async function recordTodayVisitor(){
   try{
-    await sb
-      .from("online_users")
-      .upsert({
-        session_key: mySessionKey,
-        site_name: "gunpyo",
-        last_seen: new Date().toISOString()
-      }, {
-        onConflict: "session_key"
-      });
+    await sb.from("daily_visitors").insert({
+      page: "gunpyo",
+      visitor_key: crypto.randomUUID()
+    });
+
+    await refreshOnlineUI();
   }catch(e){
-    console.error("접속자 업데이트 오류:", e);
+    console.error("오늘 누적접속자 기록 실패:", e);
   }
 }
 
 async function getOnlineCount(){
-  const limit = new Date(Date.now() - 60 * 1000).toISOString();
+  const { start, end } = getTodayKstRange();
 
-  const { data, error } = await sb
-    .from("online_users")
-    .select("session_key")
-    .eq("site_name", "gunpyo")
-    .gte("last_seen", limit);
+  const { count, error } = await sb
+    .from("daily_visitors")
+    .select("*", { count:"exact", head:true })
+    .eq("page", "gunpyo")
+    .gte("visited_at", start)
+    .lte("visited_at", end);
 
   if(error){
-    console.error("접속자 수 불러오기 오류:", error);
+    console.error("오늘 누적접속자 조회 실패:", error);
     return 0;
   }
 
-  return new Set((data || []).map(r => r.session_key)).size;
+  return count || 0;
 }
 
 async function refreshOnlineUI(){
@@ -9450,43 +9455,8 @@ async function refreshOnlineUI(){
   if(el) el.textContent = cnt;
 }
 
-updateOnlineUser();
-refreshOnlineUI();
-
-setInterval(updateOnlineUser, 10000);
-setInterval(refreshOnlineUI, 10000);
-
-  async function getOnlineCount(){
-  const now = new Date();
-  const limit = new Date(now.getTime() - 60 * 1000); // 최근 1분
-
-  const { data, error } = await sb
-    .from("online_users")
-    .select("id")
-    .gte("last_seen", limit.toISOString());
-
-  if(error){
-    console.error(error);
-    return 0;
-  }
-
-  return data.length;
-}
-
-  async function refreshOnlineUI(){
-  const cnt = await getOnlineCount();
-  const el = document.getElementById("onlineCount");
-  if(el){
-el.textContent = cnt;
-  }
-}
-
-// 처음 + 10초마다
-updateOnlineUser();
-refreshOnlineUI();
-
-setInterval(updateOnlineUser, 10000);
-setInterval(refreshOnlineUI, 10000);
+recordTodayVisitor();
+setInterval(refreshOnlineUI, 30000);
 
 async function getRecentLiveLogs(){
   try{
