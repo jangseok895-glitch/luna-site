@@ -4682,6 +4682,60 @@ body.pc-view #goPcBtn{
   display:block !important;
 }
 
+  #chatGoPopup{
+  position:fixed !important;
+  inset:0 !important;
+  background:rgba(0,0,0,.55) !important;
+  z-index:2147483645 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+#chatGoPopup.hidden{
+  display:none !important;
+}
+
+.chat-go-box{
+  width:min(420px,92vw) !important;
+  background:#ffffff !important;
+  border-radius:18px !important;
+  padding:22px !important;
+  border:2px solid #38bdf8 !important;
+  box-shadow:0 12px 40px rgba(0,0,0,.35) !important;
+  text-align:center !important;
+}
+
+.chat-go-box h2{
+  margin:0 0 14px !important;
+  font-size:26px !important;
+  color:#0284c7 !important;
+}
+
+#chatGoInput{
+  width:100% !important;
+  height:48px !important;
+  font-size:20px !important;
+  font-weight:900 !important;
+  text-align:center !important;
+  border-radius:12px !important;
+  border:2px solid #38bdf8 !important;
+  background:#f0fbff !important;
+  color:#111827 !important;
+}
+
+.chat-go-help{
+  margin:8px 0 14px !important;
+  font-size:14px !important;
+  color:#64748b !important;
+  font-weight:800 !important;
+}
+
+.chat-go-actions{
+  display:flex !important;
+  gap:10px !important;
+  justify-content:center !important;
+}
 </style>
 </head>
 
@@ -5320,7 +5374,7 @@ function escMini4545(v){
   <button class="main-tab" data-tab="real">군 실명제</button>
 <button class="main-tab" data-tab="eventTournament">
   이벤트/대회
-  <span class="tab-status-badge">종</span>
+  <span class="tab-status-badge">종료</span>
 </button>
   <button class="main-tab" data-tab="promo">홍보/자유</button>
   <button class="main-tab" data-tab="qna">민원Q/A</button>
@@ -5346,6 +5400,7 @@ function escMini4545(v){
             <button class="btn" id="btnReset">초기화</button>
             <button class="btn" id="btnJpg">스크린샷</button>
 <button class="btn blue" id="btnRankGraph" onclick="openRankGraphPopup()">루칭방 그래프</button>
+            <button class="btn gold" id="btnChatGo" onclick="openChatGoPopup()">챗GO</button>
 
             <!-- ✅ 버튼 하나 -->
           </div>
@@ -5689,6 +5744,17 @@ user-select:none;
   </div>
 </div>
 
+  <div id="chatGoPopup" class="hidden" onclick="closeChatGoPopup()">
+  <div class="chat-go-box" onclick="event.stopPropagation()">
+    <h2>챗GO</h2>
+    <input id="chatGoInput" maxlength="19" placeholder="20자 미만 입력">
+    <div class="chat-go-help">입력한 문구가 상단 네온사인에 랜덤으로 표시됩니다.</div>
+    <div class="chat-go-actions">
+      <button class="btn gold" onclick="submitChatGo()">GO</button>
+      <button class="btn red" onclick="closeChatGoPopup()">닫기</button>
+    </div>
+  </div>
+</div>
   <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -9489,13 +9555,19 @@ async function getRecentLiveLogs(){
         .limit(20)
     );
 
-const memberRows = await sbSelect("team_members", q =>
-  q.select("nickname,created_at")
-    .not("nickname", "is", null)
-    .neq("nickname", "")
-    .order("created_at", { ascending:false })
-    .limit(20)
-);
+    const memberRows = await sbSelect("team_members", q =>
+      q.select("nickname,created_at")
+        .not("nickname", "is", null)
+        .neq("nickname", "")
+        .order("created_at", { ascending:false })
+        .limit(20)
+    );
+
+    const chatRows = await sbSelect("chat_go_messages", q =>
+      q.select("message,created_at")
+        .order("created_at", { ascending:false })
+        .limit(10)
+    );
 
     const logs = [];
 
@@ -9509,13 +9581,17 @@ const memberRows = await sbSelect("team_members", q =>
       if(nick) logs.push(`${nick}님이 군실명제를 등록하셨습니다.`);
     });
 
+    (chatRows || []).forEach(r => {
+      const msg = String(r.message || "").trim();
+      if(msg) logs.push(`챗GO: ${msg}`);
+    });
+
     return logs;
   }catch(e){
     console.warn("네온 로그 불러오기 실패:", e);
     return [];
   }
 }
-
 async function startLiveLogNeon(){
   const track = document.getElementById("liveLogTrack");
   if(!track) return;
@@ -9561,6 +9637,59 @@ setTimeout(startLiveLogNeon, 1200);
 }, 1500);
 
   const RANK_GRAPH_LABELS = ["프로","강주력","주력","1군","2군","3군","4군","5군","6군"];
+
+  function openChatGoPopup(){
+  const popup = document.getElementById("chatGoPopup");
+  const input = document.getElementById("chatGoInput");
+  if(popup) popup.classList.remove("hidden");
+  if(input){
+    input.value = "";
+    setTimeout(() => input.focus(), 50);
+  }
+}
+
+function closeChatGoPopup(){
+  document.getElementById("chatGoPopup")?.classList.add("hidden");
+}
+
+async function submitChatGo(){
+  try{
+    const input = document.getElementById("chatGoInput");
+    const msg = String(input?.value || "").trim();
+
+    if(!msg){
+      toast("메세지를 입력해주세요.");
+      return;
+    }
+
+    if(msg.length >= 20){
+      toast("20자 미만으로 입력해주세요.");
+      return;
+    }
+
+    if(!sb){
+      toast("Supabase 연결이 필요합니다.");
+      return;
+    }
+
+    const { error } = await sb
+      .from("chat_go_messages")
+      .insert([{ message: msg }]);
+
+    if(error) throw error;
+
+    toast("챗GO 등록 완료");
+    closeChatGoPopup();
+
+    if(typeof startLiveLogNeon === "function"){
+      const track = document.getElementById("liveLogTrack");
+      if(track) track.innerHTML = `챗GO: ${esc(msg)}`;
+    }
+  }catch(e){
+    console.error(e);
+    toast(e.message || "챗GO 등록 실패");
+  }
+}
 
 function getRankFromTotal(total){
   total = Number(total) || 0;
