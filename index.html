@@ -9598,10 +9598,8 @@ let liveLogCache = [];
 function pickSyncedLiveLog(logs){
   if(!logs || !logs.length) return "";
 
-  // 8초마다 모든 접속자가 같은 번호를 보게 함
   const slot = Math.floor(Date.now() / 8000);
 
-  // 최근 글이 더 자주 나오도록 최근 10개를 앞쪽에 한 번 더 추가
   const weighted = [
     ...logs.slice(0, 10),
     ...logs
@@ -9617,14 +9615,16 @@ async function startLiveLogNeon(){
 
   async function refreshLogs(){
     const logs = await getRecentLiveLogs();
-
     if(logs && logs.length){
       liveLogCache = logs;
     }
   }
 
   function renderSyncedLog(){
-    if(!liveLogCache.length) return;
+    if(!liveLogCache.length){
+      track.innerHTML = "데이터 없음";
+      return;
+    }
 
     const text = pickSyncedLiveLog(liveLogCache);
     if(track.dataset.currentText === text) return;
@@ -9733,6 +9733,20 @@ async function submitChatGo(){
   }
 }
 
+
+  document.addEventListener("keydown", function(e){
+  const popup = document.getElementById("chatGoPopup");
+  const input = document.getElementById("chatGoInput");
+
+  if(!popup || popup.classList.contains("hidden")) return;
+  if(document.activeElement !== input) return;
+
+  if(e.key === "Enter"){
+    e.preventDefault();
+    submitChatGo();
+  }
+});
+  
 function getRankFromTotal(total){
   total = Number(total) || 0;
 
