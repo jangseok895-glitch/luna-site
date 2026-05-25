@@ -5304,8 +5304,8 @@ function escMini4545(v){
 </div>
 <div class="row" style="gap:8px">
   <div id="gunpyoTopBtns" style="display:flex;gap:8px;">
-    <button class="btn link" id="goPcBtn">PC로 보기</button>
-    <button class="btn red" id="goMobileBtn">모바일로 보기</button>
+<button class="btn link" id="goPcBtn">PC버전</button>
+<button class="btn red" id="goMobileBtn">모바일버전</button>
   </div>
 
   <div id="realTopBtns" style="display:none;gap:8px;">
@@ -9068,25 +9068,24 @@ async function approveTeamRequestById(requestId){
   }
 }
 
-  async function deleteTeamRequestById(requestId){
+async function deleteTeamRequestById(requestId){
   try{
     await ensureTeamRequestTableReady();
     if(!checkAdminPw()) return;
 
-    if(!confirm("이 등록요청을 보류/삭제 처리하시겠습니까?\n삭제하면 현재 요청 목록에서 사라집니다.")) return;
+    if(!confirm("이 등록요청을 보류/삭제 처리하시겠습니까?\n목록에서 사라집니다.")) return;
 
     const { error } = await sb.from("team_register_requests")
-      .delete()
-      .eq("id", requestId)
-      .eq("status", "대기");
+      .update({ status:"보류" })
+      .eq("id", requestId);
 
     if(error) throw error;
 
-    alert("등록요청이 삭제되었습니다.");
+    alert("등록요청이 보류/삭제 처리되었습니다.");
     await loadTeamRequests();
   }catch(e){
     console.error(e);
-    alert(e.message || "등록요청 삭제 실패");
+    alert(e.message || "등록요청 보류/삭제 실패");
   }
 }
 
@@ -9456,7 +9455,9 @@ async function refreshOnlineUI(){
 }
 
 recordTodayVisitor();
-setInterval(refreshOnlineUI, 30000);
+refreshOnlineUI();
+
+setInterval(refreshOnlineUI, 10000);
 
 async function getRecentLiveLogs(){
   try{
