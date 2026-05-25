@@ -4741,6 +4741,34 @@ body.pc-view #goPcBtn{
   gap:10px !important;
   justify-content:center !important;
 }
+
+  .chatgo-new-wrap{
+  position:relative !important;
+  display:inline-block !important;
+}
+
+.chatgo-new-badge{
+  position:absolute !important;
+  top:-13px !important;
+  right:-10px !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+  font-size:12px !important;
+  font-weight:900 !important;
+  padding:3px 7px !important;
+  border-radius:6px !important;
+  transform:rotate(15deg) !important;
+  box-shadow:0 2px 8px rgba(0,0,0,.25) !important;
+  z-index:5 !important;
+}
+
+.main-btn-divider{
+  width:2px !important;
+  height:42px !important;
+  background:rgba(14,165,233,.45) !important;
+  border-radius:999px !important;
+  margin:0 4px !important;
+}
 </style>
 </head>
 
@@ -5404,8 +5432,12 @@ function escMini4545(v){
             <button class="btn" id="btnLoad">불러오기</button>
             <button class="btn" id="btnReset">초기화</button>
             <button class="btn" id="btnJpg">스크린샷</button>
+            <span class="main-btn-divider"></span>
 <button class="btn blue" id="btnRankGraph" onclick="openRankGraphPopup()">루칭방 그래프</button>
-            <button class="btn gold" id="btnChatGo" onclick="openChatGoPopup()">챗GO</button>
+<span class="chatgo-new-wrap">
+  <span class="chatgo-new-badge">NEW</span>
+  <button class="btn gold" id="btnChatGo" onclick="openChatGoPopup()">챗GO</button>
+</span>
 
             <!-- ✅ 버튼 하나 -->
           </div>
