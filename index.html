@@ -9652,8 +9652,9 @@ function pickSyncedLiveLog(logs){
     pool = chatLogs.length ? chatLogs : logs;
   }
 
-  const item = pool[slot % pool.length];
-  return item.text || "";
+const recentPool = pool.slice(0, 10);
+const item = recentPool[Math.floor(Math.random() * recentPool.length)];
+return item.text || "";
 }
 
 function makeLiveLogHTML(item){
