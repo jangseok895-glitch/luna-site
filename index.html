@@ -9617,16 +9617,27 @@ let liveLogCache = [];
 function pickSyncedLiveLog(logs){
   if(!logs || !logs.length) return "";
 
-  // 8초 단위로 모든 접속자가 같은 문구를 보게 함
-  const slot = Math.floor(Date.now() / 8000);
-
-  // 최근 10개가 더 자주 나오도록 가중치 부여
   const weighted = [
     ...logs.slice(0, 10),
     ...logs
   ];
 
+  const slot = Math.floor(Date.now() / 11000);
   return weighted[slot % weighted.length];
+}
+
+function makeLiveLogHTML(msg){
+  msg = String(msg || "").trim();
+
+  // 군표저장 / 군실명제등록 문구만 닉네임 파란색 강조
+  if(msg.includes("님이 ")){
+    const nick = msg.split("님이 ")[0];
+    const rest = msg.replace(nick, "");
+    return `<span class="live-nick">${esc(nick)}</span>${esc(rest)}`;
+  }
+
+  // 챗GO 문구는 그냥 글자만 표시
+  return esc(msg);
 }
 
 async function startLiveLogNeon(){
@@ -9640,28 +9651,26 @@ async function startLiveLogNeon(){
     }
   }
 
-  function renderSyncedLog(){
+  function showSyncedLog(){
     if(!liveLogCache.length){
       track.innerHTML = "데이터 없음";
       return;
     }
 
-    const text = pickSyncedLiveLog(liveLogCache);
-    if(track.dataset.currentText === text) return;
-
-    track.dataset.currentText = text;
-    track.innerHTML = esc(text);
+    const msg = pickSyncedLiveLog(liveLogCache);
+    track.innerHTML = makeLiveLogHTML(msg);
   }
 
   await refreshLogs();
-  renderSyncedLog();
+  showSyncedLog();
+
+  track.addEventListener("animationiteration", showSyncedLog);
 
   if(liveLogTimer) clearInterval(liveLogTimer);
 
   liveLogTimer = setInterval(async () => {
     await refreshLogs();
-    renderSyncedLog();
-  }, 8000);
+  }, 60000);
 }
 
 setTimeout(startLiveLogNeon, 1200);
