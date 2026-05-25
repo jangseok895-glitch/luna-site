@@ -2121,6 +2121,11 @@ body.pc-view #goPcBtn{
   font-weight:900;
 }
 
+.live-chat{
+  color:#111827 !important;
+  font-weight:900 !important;
+}
+
 .promo-board-head div, .promo-board-row div{
   text-align:center !important;
 }
@@ -9571,22 +9576,24 @@ async function getRecentLiveLogs(){
 
     const logs = [];
 
-    (profileRows || []).forEach(r => {
-      const nick = String(r.nickname || "").trim();
-      if(nick){
-        logs.push({
-          text:`${nick}님이 군표를 저장하셨습니다.`,
-          created_at:r.created_at
-        });
-      }
-    });
-
     (memberRows || []).forEach(r => {
       const nick = String(r.nickname || "").trim();
       if(nick){
         logs.push({
-          text:`${nick}님이 군실명제를 등록하셨습니다.`,
-          created_at:r.created_at
+          type:"real",
+          created_at:r.created_at || "",
+          text:`${nick}님이 군실명제를 등록하셨습니다.`
+        });
+      }
+    });
+
+    (profileRows || []).forEach(r => {
+      const nick = String(r.nickname || "").trim();
+      if(nick){
+        logs.push({
+          type:"save",
+          created_at:r.created_at || "",
+          text:`${nick}님이 군표를 저장하셨습니다.`
         });
       }
     });
@@ -9595,48 +9602,80 @@ async function getRecentLiveLogs(){
       const msg = String(r.message || "").trim();
       if(msg){
         logs.push({
-          text:msg,
-          created_at:r.created_at
+          type:"chat",
+          created_at:r.created_at || "",
+          text:msg
         });
       }
     });
 
-    return logs
-      .sort((a,b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
-      .map(v => v.text)
-      .filter(Boolean);
+    logs.sort((a,b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
+    return logs;
   }catch(e){
     console.warn("네온 로그 불러오기 실패:", e);
     return [];
   }
 }
 
-let liveLogTimer = null;
+let liveLogRefreshTimer = null;
 let liveLogCache = [];
 
-function pickSyncedLiveLog(logs){
-  if(!logs || !logs.length) return "";
+function pickFromPool(pool, slot){
+  if(!pool || !pool.length) return null;
 
-  const weighted = [
-    ...logs.slice(0, 10),
-    ...logs
+  const recentWeighted = [
+    ...pool.slice(0, 5),
+    ...pool.slice(0, 10),
+    ...pool
   ];
 
-  const slot = Math.floor(Date.now() / 11000);
-  return weighted[slot % weighted.length];
+  return recentWeighted[slot % recentWeighted.length] || pool[0];
 }
 
-function makeLiveLogHTML(msg){
-  msg = String(msg || "").trim();
+function pickSyncedLiveLog(logs){
+  if(!logs || !logs.length) return null;
 
-  // 군표저장 / 군실명제등록 문구만 닉네임 파란색 강조
+  const realLogs = logs.filter(x => x.type === "real");
+  const saveLogs = logs.filter(x => x.type === "save");
+  const chatLogs = logs.filter(x => x.type === "chat");
+
+  // liveLogScroll 애니메이션이 11초라, 11초 단위로 모든 접속자가 같은 순서를 보게 함
+  const slot = Math.floor(Date.now() / 11000);
+  const rate = slot % 10;
+
+  let pool = [];
+
+  if(rate <= 3){
+    // 40% 군실명제 등록
+    pool = realLogs.length ? realLogs : logs;
+  }else if(rate <= 7){
+    // 40% 군표 저장
+    pool = saveLogs.length ? saveLogs : logs;
+  }else{
+    // 20% 챗GO
+    pool = chatLogs.length ? chatLogs : logs;
+  }
+
+  return pickFromPool(pool, slot);
+}
+
+function makeLiveLogHTML(item){
+  if(!item) return "데이터 없음";
+
+  const msg = String(item.text || item || "").trim();
+
+  // 챗GO 문구는 검은색 굵은 글씨로만 표시, "챗GO:" 문구는 표시하지 않음
+  if(item.type === "chat"){
+    return `<span class="live-chat">${esc(msg)}</span>`;
+  }
+
+  // 군표저장 / 군실명제등록 문구는 닉네임만 파란색 굵게 표시
   if(msg.includes("님이 ")){
     const nick = msg.split("님이 ")[0];
-    const rest = msg.replace(nick, "");
+    const rest = msg.slice(nick.length);
     return `<span class="live-nick">${esc(nick)}</span>${esc(rest)}`;
   }
 
-  // 챗GO 문구는 그냥 글자만 표시
   return esc(msg);
 }
 
@@ -9652,25 +9691,21 @@ async function startLiveLogNeon(){
   }
 
   function showSyncedLog(){
-    if(!liveLogCache.length){
-      track.innerHTML = "데이터 없음";
-      return;
-    }
-
-    const msg = pickSyncedLiveLog(liveLogCache);
-    track.innerHTML = makeLiveLogHTML(msg);
+    const item = pickSyncedLiveLog(liveLogCache);
+    track.innerHTML = makeLiveLogHTML(item);
   }
 
   await refreshLogs();
   showSyncedLog();
 
-  track.addEventListener("animationiteration", showSyncedLog);
+  // 중복 이벤트 방지
+  if(track.dataset.liveLogBound !== "1"){
+    track.dataset.liveLogBound = "1";
+    track.addEventListener("animationiteration", showSyncedLog);
+  }
 
-  if(liveLogTimer) clearInterval(liveLogTimer);
-
-  liveLogTimer = setInterval(async () => {
-    await refreshLogs();
-  }, 60000);
+  if(liveLogRefreshTimer) clearInterval(liveLogRefreshTimer);
+  liveLogRefreshTimer = setInterval(refreshLogs, 60000);
 }
 
 setTimeout(startLiveLogNeon, 1200);
@@ -11102,6 +11137,18 @@ function hideCriticalLoading(){
   }
 }
 
+  document.addEventListener("keydown", function(e){
+  const popup = document.getElementById("chatGoPopup");
+  const input = document.getElementById("chatGoInput");
+
+  if(!popup || popup.classList.contains("hidden")) return;
+  if(document.activeElement !== input) return;
+
+  if(e.key === "Enter"){
+    e.preventDefault();
+    submitChatGo();
+  }
+});
 </script>
   <div id="rankGraphPopup" class="hidden">
   <div class="rank-graph-box">
