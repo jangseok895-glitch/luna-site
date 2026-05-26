@@ -7349,18 +7349,27 @@ async function getTeamMemberProfileSupabase(team, memberNickname){
     q => q.select("id,views,nickname").eq("nickname", n)
   );
 
-  const maxViews = Math.max(0, ...allNickRows.map(r => Number(r.views || 0)));
+  if(!allNickRows.length){
+    throw new Error("해당 닉네임의 등록정보를 찾지 못했습니다.");
+  }
+
+  const maxViews = Math.max(
+    0,
+    ...allNickRows.map(r => Number(r.views || 0))
+  );
+
   const newViews = maxViews + 1;
 
-  for(const r of allNickRows){
-    if(r.id !== undefined){
-      const { error } = await sb
-        .from("team_members")
-        .update({ views: newViews })
-        .eq("id", r.id);
+  const { data: updatedRows, error: updateError } = await sb
+    .from("team_members")
+    .update({ views: newViews })
+    .eq("nickname", n)
+    .select("id,views,nickname");
 
-      if(error) throw error;
-    }
+  if(updateError) throw updateError;
+
+  if(!updatedRows || !updatedRows.length){
+    throw new Error("조회수 업데이트가 반영되지 않았습니다. RLS UPDATE 정책을 확인하세요.");
   }
 
   const rows = await sbSelect(
@@ -7371,11 +7380,13 @@ async function getTeamMemberProfileSupabase(team, memberNickname){
   if(!rows.length) throw new Error("해당 멤버의 등록정보를 찾지 못했습니다.");
 
   const r = rows[0];
+
   const selections = typeof r.selections === "string"
     ? JSON.parse(r.selections || "{}")
     : (r.selections || {});
 
   const sheet = await getSheetDataSupabase();
+
   const safeSelections = (typeof normalizeSelectionKeys === "function")
     ? normalizeSelectionKeys(selections)
     : selections;
