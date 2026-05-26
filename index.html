@@ -7344,21 +7344,27 @@ async function getTeamMemberProfileSupabase(team, memberNickname){
   const n = String(memberNickname || "").trim();
   if(!t || !n) throw new Error("단체/멤버를 선택하세요.");
 
-  const allNickRows = await sbSelect("team_members", q => q.select("id,views,nickname").eq("nickname", n));
+  const allNickRows = await sbSelect(
+    "team_members",
+    q => q.select("id,views,nickname").eq("nickname", n)
+  );
+
   const maxViews = Math.max(0, ...allNickRows.map(r => Number(r.views || 0)));
   const newViews = maxViews + 1;
-  for(const r of allNickRows){
-    if(r.id !== undefined) for(const r of allNickRows){
-  if(r.id !== undefined){
-    const { error } = await sb
-      .from("team_members")
-      .update({ views: newViews })
-      .eq("id", r.id);
 
-    if(error) throw error;
+  for(const r of allNickRows){
+    if(r.id !== undefined){
+      const { error } = await sb
+        .from("team_members")
+        .update({ views: newViews })
+        .eq("id", r.id);
+
+      if(error) throw error;
+    }
   }
+
+  // 여기 아래 기존 코드 계속 유지
 }
-  }
 
   const rows = await sbSelect("team_members", q => q.select("*").eq("team_name", t).eq("nickname", n).limit(1));
   if(!rows.length) throw new Error("해당 멤버의 등록정보를 찾지 못했습니다.");
