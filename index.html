@@ -7373,33 +7373,15 @@ async function getTeamMemberProfileSupabase(team, memberNickname){
   const n = String(memberNickname || "").trim();
   if(!t || !n) throw new Error("단체/멤버를 선택하세요.");
 
-  const allNickRows = await sbSelect(
-    "team_members",
-    q => q.select("id,views,nickname").eq("nickname", n)
-  );
-
-  if(!allNickRows.length){
-    throw new Error("해당 닉네임의 등록정보를 찾지 못했습니다.");
+const { data: newViews, error: viewError } = await sb.rpc(
+  "increment_team_member_views",
+  {
+    p_team_name: t,
+    p_nickname: n
   }
+);
 
-  const maxViews = Math.max(
-    0,
-    ...allNickRows.map(r => Number(r.views || 0))
-  );
-
-  const newViews = maxViews + 1;
-
-  const { data: updatedRows, error: updateError } = await sb
-    .from("team_members")
-    .update({ views: newViews })
-    .eq("nickname", n)
-    .select("id,views,nickname");
-
-  if(updateError) throw updateError;
-
-  if(!updatedRows || !updatedRows.length){
-    throw new Error("조회수 업데이트가 반영되지 않았습니다. RLS UPDATE 정책을 확인하세요.");
-  }
+if(viewError) throw viewError;
 
   const rows = await sbSelect(
     "team_members",
