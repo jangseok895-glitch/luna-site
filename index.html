@@ -7363,24 +7363,32 @@ async function getTeamMemberProfileSupabase(team, memberNickname){
     }
   }
 
-  // 여기 아래 기존 코드 계속 유지
-}
+  const rows = await sbSelect(
+    "team_members",
+    q => q.select("*").eq("team_name", t).eq("nickname", n).limit(1)
+  );
 
-  const rows = await sbSelect("team_members", q => q.select("*").eq("team_name", t).eq("nickname", n).limit(1));
   if(!rows.length) throw new Error("해당 멤버의 등록정보를 찾지 못했습니다.");
+
   const r = rows[0];
-  const selections = typeof r.selections === "string" ? JSON.parse(r.selections || "{}") : (r.selections || {});
+  const selections = typeof r.selections === "string"
+    ? JSON.parse(r.selections || "{}")
+    : (r.selections || {});
+
   const sheet = await getSheetDataSupabase();
-  const safeSelections = (typeof normalizeSelectionKeys === "function") ? normalizeSelectionKeys(selections) : selections;
-return {
-  team:t,
-  nickname:n,
-  pin5:r.pin5 || "",
-  totalScore:calcTotalFromSelectionsSupabase(safeSelections, sheet.rows),
-  selections:safeSelections,
-  updatedAt:r.updated_at || r.updatedAt || r.created_at || "",
-  views:newViews
-};
+  const safeSelections = (typeof normalizeSelectionKeys === "function")
+    ? normalizeSelectionKeys(selections)
+    : selections;
+
+  return {
+    team:t,
+    nickname:n,
+    pin5:r.pin5 || "",
+    totalScore:calcTotalFromSelectionsSupabase(safeSelections, sheet.rows),
+    selections:safeSelections,
+    updatedAt:r.updated_at || r.updatedAt || r.created_at || "",
+    views:newViews
+  };
 }
 
 async function searchTeamMembersSupabase(keyword){
