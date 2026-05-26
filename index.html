@@ -7869,76 +7869,78 @@ list.innerHTML = "";
 if(board === "eventTournament"){
   writeBtn.style.display = "none";
 
-  list.innerHTML = `
-    <div class="tournament-main-grid">
+list.innerHTML = `
+  <div class="tournament-main-grid">
 
-<div class="tournament-thumb-card" onclick="openTournamentPoster('critical')">
-  <div class="tournament-title">크리티컬히트 아이템전 대회 (5/15)</div>
-  <div class="tournament-soon-badge">종 료</div>
+    <div class="tournament-thumb-card" onclick="openMini4545Game()">
+      <div class="tournament-title">
+        미니게임 - 빨리빨리4545
+      </div>
 
-  <img class="tournament-thumb-img" src="https://i.ibb.co/GQynf8vx/Kakao-Talk-20260507-220727153.jpg">
+      <div class="mini4545-poster">
+        <div class="mini4545-poster-glow"></div>
 
-  <button
-    type="button"
-    class="tournament-apply-btn"
-    onclick="event.stopPropagation(); openCriticalNoticePopup();"
-  >
-    대회 진행/공지
-  </button>
-</div>
+        <div class="mini4545-logo">
+          빨리빨리
+          <span>4545</span>
+        </div>
 
-<div class="tournament-thumb-card" onclick="openMini4545Game()">
-  <div class="tournament-title">
-    미니게임 - 빨리빨리4545
+        <div class="mini4545-grid-preview">
+          <div>7</div><div>18</div><div>2</div><div>25</div><div>11</div>
+          <div>14</div><div>1</div><div>20</div><div>5</div><div>9</div>
+          <div>22</div><div>3</div><div>17</div><div>8</div><div>24</div>
+          <div>12</div><div>19</div><div>6</div><div>21</div><div>4</div>
+          <div>13</div><div>16</div><div>10</div><div>23</div><div>15</div>
+        </div>
+
+        <div class="mini4545-speed-text">
+          1 → 45<br>
+          SPEED TOUCH GAME
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="tournament-apply-btn"
+        onclick="event.stopPropagation(); openMini4545Game();"
+      >
+        게임해보기
+      </button>
+    </div>
+
+    <div class="tournament-thumb-card" onclick="openTournamentPoster('allstar')">
+      <div class="tournament-title">카러플 올스타전 (5/17)</div>
+      <div class="tournament-soon-badge">종 료</div>
+
+      <img class="tournament-thumb-img" src="https://github.com/jangseok895-glitch/luna-site/blob/main/pictures/%ED%8C%AC%ED%95%A0.jpg?raw=true">
+
+      <button
+        class="tournament-apply-btn"
+        onclick="event.stopPropagation(); openTournamentPoster('allstar')"
+      >
+        대회 진행/공지
+      </button>
+    </div>
+
+    <div class="tournament-thumb-card" onclick="openTournamentPoster('critical')">
+      <div class="tournament-title">크리티컬히트 아이템전 대회 (5/15)</div>
+      <div class="tournament-soon-badge">종 료</div>
+
+      <img class="tournament-thumb-img" src="https://i.ibb.co/CK60FG98/2.png">
+
+      <button
+        type="button"
+        class="tournament-apply-btn"
+        onclick="event.stopPropagation(); openTournamentPoster('critical');"
+      >
+        결과 포스터
+      </button>
+    </div>
+
   </div>
+`;
 
-  <div class="mini4545-poster">
-    <div class="mini4545-poster-glow"></div>
-
-    <div class="mini4545-logo">
-      빨리빨리
-      <span>4545</span>
-    </div>
-
-    <div class="mini4545-grid-preview">
-      <div>7</div><div>18</div><div>2</div><div>25</div><div>11</div>
-      <div>14</div><div>1</div><div>20</div><div>5</div><div>9</div>
-      <div>22</div><div>3</div><div>17</div><div>8</div><div>24</div>
-      <div>12</div><div>19</div><div>6</div><div>21</div><div>4</div>
-      <div>13</div><div>16</div><div>10</div><div>23</div><div>15</div>
-    </div>
-
-    <div class="mini4545-speed-text">
-      1 → 45<br>
-      SPEED TOUCH GAME
-    </div>
-  </div>
-
-  <button
-    type="button"
-    class="tournament-apply-btn"
-    onclick="event.stopPropagation(); openMini4545Game();"
-  >
-    게임해보기
-  </button>
-</div>
-
-<div class="tournament-thumb-card" onclick="openTournamentPoster('allstar')">
-  <div class="tournament-title">카러플 올스타전 (5/17)</div>
-  <div class="tournament-soon-badge">종 료</div>
-
-  <img class="tournament-thumb-img" src="https://github.com/jangseok895-glitch/luna-site/blob/main/pictures/%ED%8C%AC%ED%95%A0.jpg?raw=true">
-
-  <button class="tournament-apply-btn"
-          onclick="event.stopPropagation(); openTournamentPoster('allstar')">
-    대회 진행/공지
-  </button>
-</div>
-
-    </div>
-  `;
-
-  return;
+return;
 }
 writeBtn.style.display = "none";
 if(board === "promo" || board === "qna"){
@@ -7965,12 +7967,12 @@ const TOURNAMENT_POSTERS = {
       "https://github.com/jangseok895-glitch/luna-site/blob/main/pictures/%EA%B7%9C%EC%A0%95.jpg?raw=true"
     ]
   },
-  critical: {
-    title: "크리티컬 히트 아이템전 대회 - 5월 15일",
-    images: [
-      "https://i.ibb.co/GQynf8vx/Kakao-Talk-20260507-220727153.jpg"
-    ]
-  }
+critical: {
+  title: "크리티컬 히트 아이템전 대회 결과",
+  images: [
+    "https://i.ibb.co/CK60FG98/2.png"
+  ]
+}
 };
 
 let tournamentKey = "";
@@ -8094,44 +8096,7 @@ const CRITICAL_NOTICE_ORDER = [
 let criticalNoticeIndex = 0;
 
 function openCriticalNoticePopup(){
-  document.getElementById("criticalNoticePopup")?.remove();
-
-  const popup = document.createElement("div");
-  popup.id = "criticalNoticePopup";
-  popup.innerHTML = `
-    <div class="tournament-popup-box">
-      <button class="tournament-close big-x-close" onclick="closeCriticalNoticePopup()">X</button>
-
-      <div class="tournament-popup-title">크리티컬 히트 대회 진행/공지</div>
-
-<div class="critical-notice-menu">
-
-  <div class="critical-group-title">- 규정 관련 -</div>
-  <div class="critical-grid">
-    <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('schedule')">대회일정보기</button>
-    <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('rule')">공식경기규정보기</button>
-    <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('kart')">카트규정보기</button>
-    <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('maps')">맵리스트보기</button>
-  </div>
-
-  <div class="critical-group-title">- 경기 관련 -</div>
-  <div class="critical-grid">
-    <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('teams')">대회참가팀보기</button>
-    <button class="tournament-apply-btn red-tournament-btn" onclick="openCriticalNoticeImage('bracket')">예선 조배정</button>
-<button class="tournament-apply-btn red-tournament-btn" onclick="openCriticalNoticeImage('prelimReady')">예선 대진표</button>
-    <button class="tournament-apply-btn" onclick="openCriticalNoticeImage('prelimBracket')">본선 대진표</button>
-  </div>
-
-  <div class="critical-group-title">- 방송 관련 -</div>
-  <div class="critical-grid">
-    <button class="tournament-apply-btn green-tournament-btn" onclick="window.open('https://chzzk.naver.com/2b88c012c87944c88d051ad7d92c2c32','_blank')">펭펭방송 보기</button>
-<button class="tournament-apply-btn sufit-live-btn" onclick="window.open('https://chzzk.naver.com/04dac6f80c83323ba8cbf4571f0e20ac','_blank')">수핏방송 보기</button>
-  </div>
-
-</div>
-  `;
-
-  document.body.appendChild(popup);
+  openTournamentPoster("critical");
 }
 
 function closeCriticalNoticePopup(){
