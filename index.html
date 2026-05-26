@@ -7348,7 +7348,16 @@ async function getTeamMemberProfileSupabase(team, memberNickname){
   const maxViews = Math.max(0, ...allNickRows.map(r => Number(r.views || 0)));
   const newViews = maxViews + 1;
   for(const r of allNickRows){
-    if(r.id !== undefined) await sb.from("team_members").update({views:newViews}).eq("id", r.id);
+    if(r.id !== undefined) for(const r of allNickRows){
+  if(r.id !== undefined){
+    const { error } = await sb
+      .from("team_members")
+      .update({ views: newViews })
+      .eq("id", r.id);
+
+    if(error) throw error;
+  }
+}
   }
 
   const rows = await sbSelect("team_members", q => q.select("*").eq("team_name", t).eq("nickname", n).limit(1));
