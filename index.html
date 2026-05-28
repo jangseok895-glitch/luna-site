@@ -7449,7 +7449,7 @@ async function deleteTeamMemberSupabase(team, memberNickname, pin){
   }
 
   // 1) 운영진 비밀번호 0523
-  const adminOk = (p === "0523");
+  const adminOk = (p === "0715");
 
   // 2) 해당 단체의 클럽/크루 비밀번호 4자리
   let clubPwOk = false;
@@ -7583,7 +7583,7 @@ async function checkBoardPostPinSupabase(id, pin){
 
 async function deleteBoardPostSupabase(id, pin){
   const rows = await sbSelect("board_posts", q => q.select("pin4").eq("id", id).limit(1));
-  if(rows.length && String(rows[0].pin4 || "") !== String(pin || "") && String(pin || "") !== "0523") throw new Error("비밀번호가 일치하지 않습니다.");
+  if(rows.length && String(rows[0].pin4 || "") !== String(pin || "") && String(pin || "") !== "0715") throw new Error("비밀번호가 일치하지 않습니다.");
   const { error } = await sb.from("board_posts").delete().eq("id", id);
   if(error) throw error;
   return { ok:true };
@@ -7591,7 +7591,7 @@ async function deleteBoardPostSupabase(id, pin){
 
 async function updateBoardPostSupabase(id, title, content, writer, pin, imageData){
   const rows = await sbSelect("board_posts", q => q.select("pin4").eq("id", id).limit(1));
-  if(rows.length && String(rows[0].pin4 || "") !== String(pin || "") && String(pin || "") !== "0523") throw new Error("비밀번호가 일치하지 않습니다.");
+  if(rows.length && String(rows[0].pin4 || "") !== String(pin || "") && String(pin || "") !== "0715") throw new Error("비밀번호가 일치하지 않습니다.");
   const patch = { title:String(title||""), content:String(content||""), writer:String(writer||"") };
   if(imageData && imageData.base64) patch.image_url = `data:${imageData.mimeType};base64,${imageData.base64}`;
   const { error } = await sb.from("board_posts").update(patch).eq("id", id);
@@ -7600,7 +7600,7 @@ async function updateBoardPostSupabase(id, title, content, writer, pin, imageDat
 }
 
 async function addAdminReplyToBoardSupabase(id, pin, reply){
-  if(String(pin || "") !== "0523") throw new Error("운영진 비밀번호가 일치하지 않습니다.");
+  if(String(pin || "") !== "0715") throw new Error("운영진 비밀번호가 일치하지 않습니다.");
   const { error } = await sb.from("board_posts").update({
     admin_reply:String(reply || "")
   }).eq("id", id);
@@ -8867,7 +8867,7 @@ function openAdminReply(idx){
   const pin = prompt("운영진 비밀번호를 입력하세요.");
   if(!pin) return;
 
-  if(pin !== "0523"){
+  if(pin !== "0715"){
     toast("운영진 비밀번호가 일치하지 않습니다.");
     return;
   }
@@ -8995,7 +8995,7 @@ function getTeamRequestName(){
 function checkAdminPw(){
   const adminPw = prompt("운영진 비밀번호를 입력하세요.");
   if(adminPw === null) return false;
-  if(String(adminPw).trim() !== "0523"){
+  if(String(adminPw).trim() !== "0715"){
     alert("운영진 비밀번호가 틀렸습니다.");
     return false;
   }
@@ -9506,7 +9506,7 @@ async function deleteBoardComment(commentId, postId){
       return;
     }
 
-    if(inputPw !== "0523" && String(c.pin4 || "").trim() !== inputPw){
+    if(inputPw !== "0715" && String(c.pin4 || "").trim() !== inputPw){
       alert("비밀번호가 일치하지 않습니다.");
       return;
     }
