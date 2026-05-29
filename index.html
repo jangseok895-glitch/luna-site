@@ -7449,7 +7449,7 @@ async function deleteTeamMemberSupabase(team, memberNickname, pin){
   }
 
   // 1) 운영진 비밀번호 0523
-  const adminOk = (p === "0715");
+const adminOk = await isAdminPwValue(p);
 
   // 2) 해당 단체의 클럽/크루 비밀번호 4자리
   let clubPwOk = false;
