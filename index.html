@@ -5997,9 +5997,16 @@ function rowClassByDiff(d) {
   
 function newMapBadge(r){
   const order = Number(r && r.sort_order);
-  return (order === 45 || order === 77)
-    ? ` <span class="map-new-badge">NEW</span>`
-    : "";
+
+  if(order === 44){
+    return ` <span class="map-new-badge">NEW</span>`;
+  }
+
+  if(order === 75){
+    return ` <span class="map-new-badge">BAN</span>`;
+  }
+
+  return "";
 }
   
 function toast(msg) {
