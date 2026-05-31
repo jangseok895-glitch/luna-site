@@ -5217,6 +5217,30 @@ tbody tr:hover{
   body.event-tournament-mode #btnOpenEventNotice{
   display:none !important;
 }
+
+  .main-tab[data-tab="eventTournament"]{
+  position:relative !important;
+  overflow:visible !important;
+}
+
+.main-tab[data-tab="eventTournament"]::after{
+  content:"진행중" !important;
+  position:absolute !important;
+  top:-12px !important;
+  right:-10px !important;
+  width:auto !important;
+  height:auto !important;
+  padding:4px 10px !important;
+  border-radius:999px !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+  transform:rotate(15deg) !important;
+  border:2px solid #ffffff !important;
+  box-shadow:0 3px 8px rgba(239,68,68,.45) !important;
+  clip-path:none !important;
+}
 </style> 바로 위
 ========================================================= */
 
