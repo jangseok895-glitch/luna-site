@@ -1459,7 +1459,7 @@ input, .select, .text, #gunpyoTopPanel .input-wrap input{
   background:linear-gradient(135deg,#bae6fd,#7dd3fc) !important;
 }
 
-.main-tab[data-tab="qna"]{
+.main-tab[data-tab="event"]{
   background:linear-gradient(135deg,#e0f2fe,#a5f3fc) !important;
 }
 
@@ -1607,7 +1607,7 @@ input, .select, .text, #gunpyoTopPanel .input-wrap input{
   content:"◔";
 }
 
-.main-tab[data-tab="qna"]::before{
+.main-tab[data-tab="event"]::before{
   content:"◌";
 }
 
@@ -4899,7 +4899,7 @@ html, body{
   background:linear-gradient(135deg,#4aa3ff,#8fb7ff) !important;
 }
 
-.main-tab[data-tab="qna"]{
+.main-tab[data-tab="event"]{
   background:linear-gradient(135deg,#ffd54a,#ffb36b) !important;
 }
 
@@ -5837,7 +5837,7 @@ function escMini4545(v){
   <span class="tab-status-badge">종료</span>
 </button>
   <button class="main-tab" data-tab="promo">홍보/자유</button>
-  <button class="main-tab" data-tab="qna">민원Q/A</button>
+  <button class="main-tab" data-tab="event">EVENT</button>
 </div>
 
 <!-- ===== 군표 상단 패널 ===== -->
@@ -6177,7 +6177,7 @@ user-select:none;
 
     <div class="board-top">
       <div></div>
-      <button class="btn gold" id="btnOpenBoardWrite">글쓰기</button>
+      <button class="btn gold" id="btnOpenBoardWrite">이벤트 참여하기</button>
     </div>
 
     <div id="boardList" class="board-list"></div>
@@ -6188,17 +6188,37 @@ user-select:none;
         <button class="btn red" id="btnCloseBoardWrite">닫기</button>
       </div>
 
-      <input id="boardWriter" class="text sm" placeholder="작성자"/>
-      <input id="boardTitleInput" class="text" placeholder="제목"/>
-      <textarea id="boardContentInput" class="text board-textarea" placeholder="내용"></textarea>
+      <div id="normalBoardWriteFields">
+        <input id="boardWriter" class="text sm" placeholder="작성자"/>
+        <input id="boardTitleInput" class="text" placeholder="제목"/>
+        <textarea id="boardContentInput" class="text board-textarea" placeholder="내용"></textarea>
+        <input id="boardImageInput" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" multiple/>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <input id="boardPinInput" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="비밀번호 4자리"/>
+        </div>
+      </div>
 
-<input id="boardImageInput" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" multiple/>
+      <div id="eventWriteFields" class="hidden" style="display:grid;gap:10px;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <select id="eventTeamSelect" class="select" style="width:220px;"><option value="">단체 선택</option></select>
+          <input id="eventClubPw" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="클럽 비번 4자리"/>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+          <input id="eventMember1" class="text" placeholder="1번 선수 아이디"/>
+          <input id="eventMember2" class="text" placeholder="2번 선수 아이디"/>
+          <input id="eventMember3" class="text" placeholder="3번 선수 아이디"/>
+          <input id="eventMember4" class="text" placeholder="4번 선수 아이디"/>
+        </div>
+        <div style="display:grid;gap:8px;">
+          <label><b>첫번째 사진:</b> 친선경기 스크린샷 <input id="eventShot1" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"></label>
+          <label><b>두번째 사진:</b> 1번선수 실명제 스크린샷 <input id="eventShot2" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"></label>
+          <label><b>세번째 사진:</b> 2번선수 실명제 스크린샷 <input id="eventShot3" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"></label>
+          <label><b>네번째 사진:</b> 3번선수 실명제 스크린샷 <input id="eventShot4" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"></label>
+          <label><b>다섯번째 사진:</b> 4번선수 실명제 스크린샷 <input id="eventShot5" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"></label>
+        </div>
+      </div>
 
-<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-  <input id="boardPinInput" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="비밀번호 4자리"/>
-</div>
-
-      <button class="btn gold" id="btnBoardWrite">등록하기</button>
+      <button class="btn gold" id="btnBoardWrite">올리기</button>
     </div>
     <div id="boardSearchBox" class="board-search-box hidden">
       <input id="boardSearchInput" class="board-search-input" placeholder="제목+내용 검색">
@@ -7459,7 +7479,7 @@ document.querySelectorAll(".main-tab").forEach(btn => {
     else if(tab === "real") showReal();
     else if(tab === "eventTournament") showBoard("eventTournament");
     else if(tab === "promo") showBoard("promo");
-    else if(tab === "qna") showBoard("qna");
+    else if(tab === "event") showBoard("event");
   });
 });
 
@@ -7972,6 +7992,83 @@ async function addBoardPostSupabase(board, title, content, writer, pin4, imageDa
   return { ok:true };
 }
 
+
+
+async function getEventPostsSupabase(){
+  const rows = await sbSelect("event", q =>
+    q.select("*").order("created_at", { ascending:false }).order("id", { ascending:false })
+  );
+  return { posts: rows.map((r, idx) => ({
+    id:r.id,
+    no:r.no || idx + 1,
+    board:"event",
+    title:r.title || `${r.team || "단체"} 이벤트 참여`,
+    content:r.content || "",
+    writer:r.team || "",
+    team:r.team || "",
+    members:r.members || [],
+    createdAt:r.created_at || "",
+    imageUrl:(r.image_urls || [])[0] || "",
+    imageUrls:r.image_urls || [],
+    views:Number(r.views || 0),
+    approved: String(r.approved || "0") === "1" || r.approved === true
+  }))};
+}
+
+async function verifyClubPwSupabase(team, pw){
+  const rows = await sbSelect("club_pw", q => q.select("club,pw").eq("club", String(team||"").trim()).limit(1));
+  if(!rows.length || String(rows[0].pw || "") !== String(pw || "")) throw new Error("단체 비밀번호가 일치하지 않습니다.");
+  return { ok:true };
+}
+
+async function addEventPostSupabase(payload){
+  const team = String(payload?.team || "").trim();
+  const pw = String(payload?.clubPw || "").trim();
+  const members = Array.isArray(payload?.members) ? payload.members.map(v => String(v||"").trim()).filter(Boolean) : [];
+  if(!team) throw new Error("단체를 선택해주세요.");
+  if(!/^\d{4}$/.test(pw)) throw new Error("클럽 비밀번호 4자리를 입력해주세요.");
+  if(members.length !== 4) throw new Error("멤버 4명의 아이디를 모두 입력해주세요.");
+  await verifyClubPwSupabase(team, pw);
+
+  const imageUrls = [];
+  (payload?.images || []).forEach(img => {
+    if(img && img.base64) imageUrls.push(`data:${img.mimeType};base64,${img.base64}`);
+  });
+  if(imageUrls.length !== 5) throw new Error("스크린샷 5장을 모두 올려주세요.");
+
+  const content = `단체: ${team}
+1번 선수: ${members[0]}
+2번 선수: ${members[1]}
+3번 선수: ${members[2]}
+4번 선수: ${members[3]}`;
+  const { error } = await sb.from("event").insert({
+    team,
+    members,
+    title:`${team} 이벤트 참여`,
+    content,
+    image_urls:imageUrls,
+    approved:0,
+    views:0,
+    created_at:new Date().toISOString()
+  });
+  if(error) throw error;
+  return { ok:true };
+}
+
+async function approveEventPostSupabase(id, pin){
+  if(!(await isAdminPwValue(pin))) throw new Error("운영진 비밀번호가 일치하지 않습니다.");
+  const { error } = await sb.from("event").update({ approved:1 }).eq("id", id);
+  if(error) throw error;
+  return { ok:true };
+}
+
+async function deleteEventPostSupabase(id, pin){
+  if(!(await isAdminPwValue(pin))) throw new Error("운영진 비밀번호가 일치하지 않습니다.");
+  const { error } = await sb.from("event").delete().eq("id", id);
+  if(error) throw error;
+  return { ok:true };
+}
+
 async function increaseBoardViewSupabase(id){
   const rows = await sbSelect("board_posts", q => q.select("views").eq("id", id).limit(1));
   const views = Number(rows[0]?.views || 0) + 1;
@@ -8037,12 +8134,13 @@ async function addAdminReplyToBoardSupabase(id, pin, reply){
     if(name === "getTeamMemberProfile") return await getTeamMemberProfileSupabase(...args);
     if(name === "searchTeamMembers") return await searchTeamMembersSupabase(...args);
     if(name === "deleteTeamMember") return await deleteTeamMemberSupabase(...args);
-    if(name === "getBoardPosts") return await getBoardPostsSupabase(...args);
-    if(name === "addBoardPost") return await addBoardPostSupabase(...args);
+    if(name === "getBoardPosts") return args[0] === "event" ? await getEventPostsSupabase(...args) : await getBoardPostsSupabase(...args);
+    if(name === "addBoardPost") return args[0] === "event" ? await addEventPostSupabase(args[1]) : await addBoardPostSupabase(...args);
     if(name === "increaseBoardView") return await increaseBoardViewSupabase(...args);
     if(name === "checkBoardPostPin") return await checkBoardPostPinSupabase(...args);
-    if(name === "deleteBoardPost") return await deleteBoardPostSupabase(...args);
+    if(name === "deleteBoardPost") return CURRENT_BOARD === "event" ? await deleteEventPostSupabase(...args) : await deleteBoardPostSupabase(...args);
     if(name === "updateBoardPost") return await updateBoardPostSupabase(...args);
+    if(name === "approveEventPost") return await approveEventPostSupabase(...args);
     if(name === "addAdminReplyToBoard") return await addAdminReplyToBoardSupabase(...args);
     return { ok:true };
   }
@@ -8291,6 +8389,11 @@ function showBoard(board){
   const writeBox = document.getElementById("boardWriteBox");
 
 writeBox.classList.add("hidden");
+const normalFields = document.getElementById("normalBoardWriteFields");
+const eventFields = document.getElementById("eventWriteFields");
+if(normalFields) normalFields.classList.toggle("hidden", board === "event");
+if(eventFields) eventFields.classList.toggle("hidden", board !== "event");
+if(writeBtn) writeBtn.textContent = board === "event" ? "이벤트 참여하기" : "글쓰기";
 list.innerHTML = "";
 
 if(board === "eventTournament"){
@@ -8367,8 +8470,8 @@ if(board === "eventTournament"){
 
   return;
 }
-writeBtn.style.display = "none";
-if(board === "promo" || board === "qna"){
+writeBtn.style.display = (board === "event") ? "inline-flex" : "none";
+if(board === "promo" || board === "event"){
   ensureBoardSearchBox()?.classList.remove("hidden");
 
   showLoading(board === "promo" ? "홍보 게시판을 불러오는 중입니다" : "민원Q/A 게시판을 불러오는 중입니다");
@@ -8747,12 +8850,22 @@ async function renderBoardList(){
   );
 
   const isPromo = CURRENT_BOARD === "promo";
+  const isEvent = CURRENT_BOARD === "event";
+
+  let rankHtml = "";
+  if(CURRENT_BOARD === "event"){
+    const countMap = {};
+    (CURRENT_BOARD_POSTS || []).forEach(x => { const t = x.team || x.writer || "-"; countMap[t] = (countMap[t] || 0) + 1; });
+    const ranks = Object.entries(countMap).sort((a,b)=>b[1]-a[1]).map((x,i)=>`<div style="padding:8px 10px;border:1px solid rgba(14,165,233,.25);border-radius:10px;background:#fff;"><b>${i+1}위</b> ${esc(x[0])} - ${x[1]}점</div>`).join("");
+    rankHtml = `<div class="panel" style="margin-bottom:10px;"><h3 style="margin:0 0 8px;">단체 순위</h3><div style="display:grid;gap:6px;">${ranks || "아직 참여 글이 없습니다."}</div></div>`;
+  }
 
   list.innerHTML = `
+    ${rankHtml}
     <div class="promo-board-head">
       <div>글번호</div>
       <div>글 제목</div>
-      <div>${isPromo ? "반응" : "답변여부"}</div>
+      <div>${isPromo ? "반응" : (isEvent ? "승인여부" : "답변여부")}</div>
       <div>작성자</div>
       <div>작성일자</div>
       <div>조회수</div>
@@ -8775,7 +8888,7 @@ async function renderBoardList(){
 isPromo
   ? `<span class="mini-like">👍 ${Number(p.likes || 0)}</span>
      <span class="mini-dislike">👎 ${Number(p.dislikes || 0)}</span>`
-                : `${CURRENT_BOARD === "qna" && p.adminReply ? "[답변완료]" : ""}`
+                : `${CURRENT_BOARD === "event" ? (p.approved ? "[승인완료]" : "[승인대기]") : ""}`
             }
           </div>
           <div>${esc(p.writer || "-")}</div>
@@ -8898,7 +9011,7 @@ ${CURRENT_BOARD === "promo" ? `
   </div>
 ` : ""}
 
-        ${CURRENT_BOARD === "qna" ? `<button class="btn gold" onclick="openAdminReply(${idx})">운영진 답글달기</button>` : ""}
+        ${CURRENT_BOARD === "event" ? `<button class="btn gold" onclick="approveEventPost('${p.id}')">승인</button>` : ""}
       </div>
     </div>
   `;
@@ -9021,6 +9134,7 @@ document.addEventListener("click", async function(e){
     e.preventDefault();
 
     document.getElementById("boardWriteBox")?.classList.remove("hidden");
+    if(CURRENT_BOARD === "event") fillEventTeamSelect();
     document.getElementById("boardWriteBox")?.scrollIntoView({
       behavior:"smooth",
       block:"start"
@@ -9039,6 +9153,32 @@ document.addEventListener("click", async function(e){
 
   if(writeBtn){
     e.preventDefault();
+
+    if(CURRENT_BOARD === "event"){
+      const team = document.getElementById("eventTeamSelect").value.trim();
+      const clubPw = document.getElementById("eventClubPw").value.trim();
+      const members = [1,2,3,4].map(n => document.getElementById("eventMember"+n).value.trim());
+      const images = [];
+      for(const n of [1,2,3,4,5]){
+        const f = document.getElementById("eventShot"+n).files?.[0];
+        if(!f){ alert("스크린샷 5장을 모두 올려주세요."); return; }
+        if(!["image/jpeg","image/png"].includes(f.type)){ toast("JPG 또는 PNG 파일만 업로드할 수 있습니다."); return; }
+        images.push(await fileToBase64Data(f));
+      }
+      showLoading("이벤트 참여글 등록 중입니다");
+      google.script.run
+        .withSuccessHandler(() => {
+          hideLoading(); toast("이벤트 참여글 등록 완료");
+          document.getElementById("eventClubPw").value = "";
+          [1,2,3,4].forEach(n => document.getElementById("eventMember"+n).value = "");
+          [1,2,3,4,5].forEach(n => document.getElementById("eventShot"+n).value = "");
+          document.getElementById("boardWriteBox").classList.add("hidden");
+          loadBoardPosts();
+        })
+        .withFailureHandler(e => { hideLoading(); toast(e.message || "등록 실패"); })
+        .addBoardPost("event", {team, clubPw, members, images});
+      return;
+    }
 
     const title = document.getElementById("boardTitleInput").value.trim();
     const content = document.getElementById("boardContentInput").value.trim();
@@ -9842,6 +9982,30 @@ document.addEventListener("click", async function(e){
     return;
   }
 });
+
+
+async function approveEventPost(id){
+  const pin = prompt("운영진 비밀번호를 입력하세요.");
+  if(!pin) return;
+  showLoading("승인 처리 중입니다");
+  google.script.run
+    .withSuccessHandler(() => { hideLoading(); toast("승인 완료"); loadBoardPosts(); })
+    .withFailureHandler(e => { hideLoading(); toast(e.message || "승인 실패"); })
+    .approveEventPost(id, pin);
+}
+
+async function fillEventTeamSelect(){
+  const sel = document.getElementById("eventTeamSelect");
+  if(!sel) return;
+  sel.innerHTML = `<option value="">단체 불러오는 중</option>`;
+  try{
+    const res = await getTeamListSupabase();
+    const teams = (res.teams || []).map(t => typeof t === "string" ? t : t.name);
+    sel.innerHTML = `<option value="">단체 선택</option>` + teams.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join("");
+  }catch(e){
+    sel.innerHTML = `<option value="">단체 로딩 실패</option>`;
+  }
+}
 
 async function loadBoardComments(postId){
   const rows = await sbSelect("board_comments", q =>
