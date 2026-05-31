@@ -6203,21 +6203,23 @@ user-select:none;
 
       <div id="eventWriteFields" class="hidden" style="display:grid;gap:10px;">
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <select id="eventMonth" class="select" style="width:110px;"><option value="">몇월</option></select>
+          <select id="eventDay" class="select" style="width:110px;"><option value="">몇일</option></select>
+          <select id="eventHour" class="select" style="width:120px;"><option value="">몇시</option></select>
+          <input id="eventOpponent" class="text" style="width:220px;" placeholder="상대단체 직접기입"/>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
           <select id="eventTeamSelect" class="select" style="width:220px;"><option value="">단체 선택</option></select>
           <input id="eventClubPw" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="클럽 비번 4자리"/>
         </div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
-          <input id="eventMember1" class="text" placeholder="1번 선수 아이디"/>
-          <input id="eventMember2" class="text" placeholder="2번 선수 아이디"/>
-          <input id="eventMember3" class="text" placeholder="3번 선수 아이디"/>
-          <input id="eventMember4" class="text" placeholder="4번 선수 아이디"/>
+          <select id="eventMember1" class="select" style="width:100%;"><option value="">1번 선수 선택</option></select>
+          <select id="eventMember2" class="select" style="width:100%;"><option value="">2번 선수 선택</option></select>
+          <select id="eventMember3" class="select" style="width:100%;"><option value="">3번 선수 선택</option></select>
+          <select id="eventMember4" class="select" style="width:100%;"><option value="">4번 선수 선택</option></select>
         </div>
         <div style="display:grid;gap:8px;">
-          <label><b>첫번째 사진:</b> 친선경기 스크린샷 <input id="eventShot1" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"></label>
-          <label><b>두번째 사진:</b> 1번선수 실명제 스크린샷 <input id="eventShot2" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"></label>
-          <label><b>세번째 사진:</b> 2번선수 실명제 스크린샷 <input id="eventShot3" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"></label>
-          <label><b>네번째 사진:</b> 3번선수 실명제 스크린샷 <input id="eventShot4" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"></label>
-          <label><b>다섯번째 사진:</b> 4번선수 실명제 스크린샷 <input id="eventShot5" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"></label>
+          <label><b>친선에 입장하여 8명 모두가 찍힌 스크린샷 올려주세요</b> <input id="eventShot1" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"></label>
         </div>
       </div>
 
@@ -6232,6 +6234,7 @@ user-select:none;
       <input id="eventNoticeAdminPw" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="운영진 비번 4자리"/>
       <input id="eventNoticeTitle" class="text" placeholder="공지 제목"/>
       <textarea id="eventNoticeContent" class="text board-textarea" placeholder="이벤트 설명/공지 내용을 입력하세요. 이 글은 EVENT 게시판 맨 위에 고정됩니다."></textarea>
+      <label><b>공지 첨부 이미지 1장</b> <input id="eventNoticeImage" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"></label>
       <button class="btn gold" id="btnSaveEventNotice">공지글 올리기</button>
     </div>
     <div id="boardSearchBox" class="board-search-box hidden">
@@ -8015,7 +8018,9 @@ async function getEventPostsSupabase(){
   return { posts: rows.map((r, idx) => {
     const isNotice = String(r.is_notice || "0") === "1" || r.is_notice === true;
     const teamName = r.team_name || r.team || "";
-    const imageUrls = r.image_urls || [r.screenshot1,r.screenshot2,r.screenshot3,r.screenshot4,r.screenshot5].filter(Boolean);
+    const savedImageUrls = Array.isArray(r.image_urls) ? r.image_urls.filter(Boolean) : [];
+    const screenshotUrls = [r.screenshot1,r.screenshot2,r.screenshot3,r.screenshot4,r.screenshot5].filter(Boolean);
+    const imageUrls = savedImageUrls.length ? savedImageUrls : screenshotUrls;
     return {
       id:r.id,
       no:r.no || idx + 1,
@@ -8023,6 +8028,10 @@ async function getEventPostsSupabase(){
       title:r.title || (isNotice ? "EVENT 공지" : `${teamName || "단체"} 이벤트 참여`),
       content:r.content || "",
       writer:isNotice ? "운영진" : teamName,
+      eventMonth:r.event_month || r.month || "",
+      eventDay:r.event_day || r.day || "",
+      eventHour:r.event_hour || r.hour || "",
+      opponent:r.opponent_team || r.opponent || "",
       team:teamName,
       members:r.members || [r.member1,r.member2,r.member3,r.member4].filter(Boolean),
       createdAt:r.created_at || "",
@@ -8044,19 +8053,27 @@ async function verifyClubPwSupabase(team, pw){
 async function addEventPostSupabase(payload){
   const team = String(payload?.team || "").trim();
   const pw = String(payload?.clubPw || "").trim();
+  const month = String(payload?.month || "").trim();
+  const day = String(payload?.day || "").trim();
+  const hour = String(payload?.hour || "").trim();
+  const opponent = String(payload?.opponent || "").trim();
   const members = Array.isArray(payload?.members) ? payload.members.map(v => String(v||"").trim()).filter(Boolean) : [];
+  if(!month || !day || !hour) throw new Error("몇월/몇일/몇시를 모두 선택해주세요.");
+  if(!opponent) throw new Error("상대단체를 입력해주세요.");
   if(!team) throw new Error("단체를 선택해주세요.");
   if(!/^\d{4}$/.test(pw)) throw new Error("클럽 비밀번호 4자리를 입력해주세요.");
-  if(members.length !== 4) throw new Error("멤버 4명의 아이디를 모두 입력해주세요.");
+  if(members.length !== 4) throw new Error("선수 4명을 모두 선택해주세요.");
   await verifyClubPwSupabase(team, pw);
 
   const imageUrls = [];
   (payload?.images || []).forEach(img => {
     if(img && img.base64) imageUrls.push(`data:${img.mimeType};base64,${img.base64}`);
   });
-  if(imageUrls.length !== 5) throw new Error("스크린샷 5장을 모두 올려주세요.");
+  if(imageUrls.length !== 1) throw new Error("친선 스크린샷 1장을 올려주세요.");
 
-  const content = `단체: ${team}
+  const content = `일시: ${month}월 ${day}일 ${hour}시
+상대단체: ${opponent}
+단체: ${team}
 1번 선수: ${members[0]}
 2번 선수: ${members[1]}
 3번 선수: ${members[2]}
@@ -8064,19 +8081,21 @@ async function addEventPostSupabase(payload){
   const { error } = await sb.from("event").insert({
     team_name:team,
     club_pw:pw,
+    event_month:month,
+    event_day:day,
+    event_hour:hour,
+    opponent_team:opponent,
     member1:members[0],
     member2:members[1],
     member3:members[2],
     member4:members[3],
     screenshot1:imageUrls[0],
-    screenshot2:imageUrls[1],
-    screenshot3:imageUrls[2],
-    screenshot4:imageUrls[3],
-    screenshot5:imageUrls[4],
-    title:`${team} 이벤트 참여`,
+    image_urls:imageUrls,
+    title:`${month}월 ${day}일 ${hour}시 ${team} vs ${opponent}`,
     content,
     is_notice:0,
     is_approved:0,
+    approved:0,
     views:0,
     created_at:new Date().toISOString()
   });
@@ -8088,6 +8107,10 @@ async function addEventNoticeSupabase(payload){
   const pin = String(payload?.pin || "").trim();
   const title = String(payload?.title || "").trim();
   const content = String(payload?.content || "").trim();
+  const imageUrls = [];
+  if(payload?.image && payload.image.base64){
+    imageUrls.push(`data:${payload.image.mimeType};base64,${payload.image.base64}`);
+  }
   if(!(await isAdminPwValue(pin))) throw new Error("운영진 비밀번호가 일치하지 않습니다.");
   if(!title) throw new Error("공지 제목을 입력해주세요.");
   if(!content) throw new Error("공지 내용을 입력해주세요.");
@@ -8096,8 +8119,11 @@ async function addEventNoticeSupabase(payload){
     team_name:"운영진",
     title,
     content,
+    screenshot1:imageUrls[0] || "",
+    image_urls:imageUrls,
     is_notice:1,
     is_approved:1,
+    approved:1,
     views:0,
     created_at:new Date().toISOString()
   });
@@ -8442,6 +8468,21 @@ function showBoard(board){
 writeBox.classList.add("hidden");
 const normalFields = document.getElementById("normalBoardWriteFields");
 const eventFields = document.getElementById("eventWriteFields");
+
+function updateEventShotLabels(){
+  for(let i=1;i<=4;i++){
+    const input = document.getElementById("eventMember"+i);
+    const label = document.getElementById("eventShotLabel"+(i+1));
+    if(!label) continue;
+    const name = input && input.value.trim() ? input.value.trim() : (i + "번선수");
+    label.textContent = name + " 선수 실명제 스크린샷";
+  }
+}
+[1,2,3,4].forEach(n => {
+  document.addEventListener("input", function(e){
+    if(e.target && e.target.id === "eventMember"+n) updateEventShotLabels();
+  });
+});
 if(normalFields) normalFields.classList.toggle("hidden", board === "event");
 if(eventFields) eventFields.classList.toggle("hidden", board !== "event");
 if(writeBtn) writeBtn.textContent = board === "event" ? "이벤트 참여하기" : "글쓰기";
@@ -9205,6 +9246,12 @@ document.addEventListener("click", async function(e){
     const pin = document.getElementById("eventNoticeAdminPw").value.trim();
     const title = document.getElementById("eventNoticeTitle").value.trim();
     const content = document.getElementById("eventNoticeContent").value.trim();
+    const noticeFile = document.getElementById("eventNoticeImage")?.files?.[0];
+    let image = null;
+    if(noticeFile){
+      if(!["image/jpeg","image/png"].includes(noticeFile.type)){ toast("공지 이미지는 JPG 또는 PNG만 가능합니다."); return; }
+      image = await fileToBase64Data(noticeFile);
+    }
     showLoading("운영진 공지글 등록 중입니다");
     google.script.run
       .withSuccessHandler(() => {
@@ -9212,11 +9259,12 @@ document.addEventListener("click", async function(e){
         document.getElementById("eventNoticeAdminPw").value = "";
         document.getElementById("eventNoticeTitle").value = "";
         document.getElementById("eventNoticeContent").value = "";
+        if(document.getElementById("eventNoticeImage")) document.getElementById("eventNoticeImage").value = "";
         document.getElementById("eventNoticeWriteBox")?.classList.add("hidden");
         loadBoardPosts();
       })
       .withFailureHandler(e => { hideLoading(); toast(e.message || "공지글 등록 실패"); })
-      .addEventNotice({pin,title,content});
+      .addEventNotice({pin,title,content,image});
     return;
   }
 
@@ -9224,7 +9272,7 @@ document.addEventListener("click", async function(e){
     e.preventDefault();
 
     document.getElementById("boardWriteBox")?.classList.remove("hidden");
-    if(CURRENT_BOARD === "event") fillEventTeamSelect();
+    if(CURRENT_BOARD === "event") { initEventDateSelects(); fillEventTeamSelect(); fillEventMemberSelects(document.getElementById("eventTeamSelect")?.value || ""); }
     document.getElementById("boardWriteBox")?.scrollIntoView({
       behavior:"smooth",
       block:"start"
@@ -9245,28 +9293,31 @@ document.addEventListener("click", async function(e){
     e.preventDefault();
 
     if(CURRENT_BOARD === "event"){
+      const month = document.getElementById("eventMonth").value.trim();
+      const day = document.getElementById("eventDay").value.trim();
+      const hour = document.getElementById("eventHour").value.trim();
+      const opponent = document.getElementById("eventOpponent").value.trim();
       const team = document.getElementById("eventTeamSelect").value.trim();
       const clubPw = document.getElementById("eventClubPw").value.trim();
       const members = [1,2,3,4].map(n => document.getElementById("eventMember"+n).value.trim());
       const images = [];
-      for(const n of [1,2,3,4,5]){
-        const f = document.getElementById("eventShot"+n).files?.[0];
-        if(!f){ alert("스크린샷 5장을 모두 올려주세요."); return; }
-        if(!["image/jpeg","image/png"].includes(f.type)){ toast("JPG 또는 PNG 파일만 업로드할 수 있습니다."); return; }
-        images.push(await fileToBase64Data(f));
-      }
+      const f = document.getElementById("eventShot1").files?.[0];
+      if(!f){ alert("친선 스크린샷 1장을 올려주세요."); return; }
+      if(!["image/jpeg","image/png"].includes(f.type)){ toast("JPG 또는 PNG 파일만 업로드할 수 있습니다."); return; }
+      images.push(await fileToBase64Data(f));
       showLoading("이벤트 참여글 등록 중입니다");
       google.script.run
         .withSuccessHandler(() => {
           hideLoading(); toast("이벤트 참여글 등록 완료");
+          document.getElementById("eventOpponent").value = "";
           document.getElementById("eventClubPw").value = "";
           [1,2,3,4].forEach(n => document.getElementById("eventMember"+n).value = "");
-          [1,2,3,4,5].forEach(n => document.getElementById("eventShot"+n).value = "");
+          document.getElementById("eventShot1").value = "";
           document.getElementById("boardWriteBox").classList.add("hidden");
           loadBoardPosts();
         })
         .withFailureHandler(e => { hideLoading(); toast(e.message || "등록 실패"); })
-        .addBoardPost("event", {team, clubPw, members, images});
+        .addBoardPost("event", {month, day, hour, opponent, team, clubPw, members, images});
       return;
     }
 
@@ -10118,9 +10169,34 @@ async function approveEventPost(id){
     .approveEventPost(id, pin);
 }
 
+
+function initEventDateSelects(){
+  const m=document.getElementById("eventMonth"), d=document.getElementById("eventDay"), h=document.getElementById("eventHour");
+  if(m && m.options.length <= 1) m.innerHTML = `<option value="">몇월</option>` + Array.from({length:12},(_,i)=>`<option value="${i+1}">${i+1}월</option>`).join("");
+  if(d && d.options.length <= 1) d.innerHTML = `<option value="">몇일</option>` + Array.from({length:31},(_,i)=>`<option value="${i+1}">${i+1}일</option>`).join("");
+  if(h && h.options.length <= 1) h.innerHTML = `<option value="">몇시</option>` + Array.from({length:24},(_,i)=>`<option value="${String(i+1).padStart(2,"0")}">${String(i+1).padStart(2,"0")}시</option>`).join("");
+}
+
+async function fillEventMemberSelects(team){
+  const selects=[1,2,3,4].map(n=>document.getElementById("eventMember"+n));
+  selects.forEach((sel,i)=>{ if(sel) sel.innerHTML = `<option value="">${i+1}번 선수 불러오는 중</option>`; });
+  if(!team){ selects.forEach((sel,i)=>{ if(sel) sel.innerHTML = `<option value="">${i+1}번 선수 선택</option>`; }); return; }
+  try{
+    const rows = await sbSelect("team_members", q => q.select("nickname").eq("team_name", team).order("nickname", { ascending:true }));
+    const names = rows.map(r=>r.nickname).filter(Boolean);
+    selects.forEach((sel,i)=>{ if(sel) sel.innerHTML = `<option value="">${i+1}번 선수 선택</option>` + names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join(""); });
+  }catch(e){
+    selects.forEach((sel,i)=>{ if(sel) sel.innerHTML = `<option value="">멤버 로딩 실패</option>`; });
+  }
+}
+
+document.addEventListener("change", function(e){
+  if(e.target && e.target.id === "eventTeamSelect") fillEventMemberSelects(e.target.value);
+});
 async function fillEventTeamSelect(){
   const sel = document.getElementById("eventTeamSelect");
   if(!sel) return;
+  initEventDateSelects();
   sel.innerHTML = `<option value="">단체 불러오는 중</option>`;
   try{
     const res = await getTeamListSupabase();
