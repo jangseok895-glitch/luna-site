@@ -8561,6 +8561,20 @@ if(board === "eventTournament"){
   list.innerHTML = `
     <div class="tournament-main-grid">
 
+      <div class="tournament-thumb-card" onclick="openTournamentPoster('sticker3839')">
+        <div class="tournament-title">38,39시즌 카트 스티커대회</div>
+
+        <img class="tournament-thumb-img" src="https://i.ibb.co/qLGLRSgV/70c24cb0-1a18-491b-af91-9b540a061c14.png">
+
+        <button
+          type="button"
+          class="tournament-apply-btn"
+          onclick="event.stopPropagation(); openTournamentPoster('sticker3839');"
+        >
+          이벤트 포스터보기
+        </button>
+      </div>
+
       <div class="tournament-thumb-card" onclick="openMini4545Game()">
         <div class="tournament-title">
           미니게임 - 빨리빨리4545
@@ -8648,6 +8662,14 @@ if(board === "promo" || board === "event"){
 
 /* ===== 대회 팝업 ===== */
 const TOURNAMENT_POSTERS = {
+  sticker3839: {
+    title: "38,39시즌 카트 스티커대회",
+    broadcastUrl: "https://rushplus.gg/community",
+    broadcastLabel: "메타바 사이트 가기",
+    images: [
+      "https://i.ibb.co/qLGLRSgV/70c24cb0-1a18-491b-af91-9b540a061c14.png"
+    ]
+  },
   allstar: {
     title: "카러플 올스타전 - 5월17일",
     broadcastUrl: "https://www.youtube.com/@liquidchalang/featured",
@@ -8953,12 +8975,34 @@ function updateTournamentPoster(){
     return;
   }
 
+  /* 스티커대회는 사이트 이동 버튼만 표시 */
+  if(tournamentKey === "sticker3839"){
+    if(nav) nav.style.display = "grid";
+    if(prevBtn) prevBtn.style.display = "none";
+    if(nextBtn) nextBtn.style.display = "none";
+    if(broadcastBtn){
+      broadcastBtn.style.display = "inline-flex";
+      broadcastBtn.textContent = data.broadcastLabel || "사이트 가기";
+    }
+    if(count) count.textContent = "";
+    return;
+  }
+
   /* 올스타전만 버튼 표시 */
   if(nav) nav.style.display = "grid";
 
-  if(prevBtn) prevBtn.textContent = "이전";
-  if(nextBtn) nextBtn.textContent = "다음";
-  if(broadcastBtn) broadcastBtn.style.display = data.broadcastUrl ? "inline-flex" : "none";
+  if(prevBtn){
+    prevBtn.style.display = "inline-flex";
+    prevBtn.textContent = "이전";
+  }
+  if(nextBtn){
+    nextBtn.style.display = "inline-flex";
+    nextBtn.textContent = "다음";
+  }
+  if(broadcastBtn){
+    broadcastBtn.style.display = data.broadcastUrl ? "inline-flex" : "none";
+    broadcastBtn.textContent = data.broadcastLabel || "방송보러가기";
+  }
 
   if(count) count.textContent = `${tournamentIndex + 1} / ${data.images.length}`;
 }
