@@ -10027,6 +10027,9 @@ async function deleteTeamRequestById(requestId){
 
 document.addEventListener("click", function(e){
   const openBtn = e.target.closest("#btnOpenTeamRequestPopup");
+  const openNoticeBtn = e.target.closest("#btnOpenEventNotice");
+  const closeNoticeBtn = e.target.closest("#btnCloseEventNotice");
+  const saveNoticeBtn = e.target.closest("#btnSaveEventNotice");
 
   if(openNoticeBtn){
     e.preventDefault();
