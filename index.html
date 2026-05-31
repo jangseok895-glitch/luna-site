@@ -5192,7 +5192,29 @@ tbody tr:hover{
 }
   /* =========================================================
    S39 BEACH THEME + MAIN BACKGROUND IMAGE
-   붙여넣는 위치: </style> 바로 위
+   붙여넣는 위치: 
+/* 게시판 본문 열람/저장 시 로딩 GIF 표시 */
+#loadingOverlay:not(.hidden){
+  display:flex !important;
+}
+#loadingOverlay.hidden{
+  display:none !important;
+}
+.board-inline-loading{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-height:260px !important;
+  background:#ffffff !important;
+  border:1px solid rgba(14,165,233,.28) !important;
+  border-radius:14px !important;
+}
+.board-inline-loading img{
+  width:min(220px,50vw) !important;
+  border-radius:18px !important;
+}
+
+</style> 바로 위
 ========================================================= */
 
 
@@ -5831,13 +5853,10 @@ function escMini4545(v){
 <!-- ===== 상단 메뉴 탭 ===== -->
 <div class="main-tabs">
   <button class="main-tab active" data-tab="gunpyo">군표</button>
-  <button class="main-tab" data-tab="real">군 실명제</button>
-<button class="main-tab" data-tab="eventTournament">
-  이벤트/대회
-  <span class="tab-status-badge">종료</span>
-</button>
-  <button class="main-tab" data-tab="promo">홍보/자유</button>
+  <button class="main-tab" data-tab="real">군실명제</button>
+  <button class="main-tab" data-tab="eventTournament">대회</button>
   <button class="main-tab" data-tab="event">EVENT</button>
+  <button class="main-tab" data-tab="promo">홍보/자유</button>
 </div>
 
 <!-- ===== 군표 상단 패널 ===== -->
@@ -6220,6 +6239,8 @@ user-select:none;
         </div>
         <div style="display:grid;gap:8px;">
           <label><b>친선에 입장하여 8명 모두가 찍힌 스크린샷 올려주세요</b> <input id="eventShot1" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"></label>
+          <label><b>추가 사진등록</b> <input id="eventShot2" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"></label>
+          <div style="font-size:13px;color:#64748b;font-weight:800;line-height:1.5;">사진은 자동 압축되어 Supabase DB 용량을 최대한 줄여 저장됩니다.</div>
         </div>
       </div>
 
@@ -8069,7 +8090,8 @@ async function addEventPostSupabase(payload){
   (payload?.images || []).forEach(img => {
     if(img && img.base64) imageUrls.push(`data:${img.mimeType};base64,${img.base64}`);
   });
-  if(imageUrls.length !== 1) throw new Error("친선 스크린샷 1장을 올려주세요.");
+  if(imageUrls.length < 1) throw new Error("친선 스크린샷 1장을 올려주세요.");
+  if(imageUrls.length > 2) throw new Error("사진은 기본 스크린샷 1장 + 추가 사진 1장까지만 가능합니다.");
 
   const content = `일시: ${month}월 ${day}일 ${hour}시
 상대단체: ${opponent}
@@ -8089,7 +8111,8 @@ async function addEventPostSupabase(payload){
     member2:members[1],
     member3:members[2],
     member4:members[3],
-    screenshot1:imageUrls[0],
+    screenshot1:imageUrls[0] || "",
+    screenshot2:imageUrls[1] || "",
     image_urls:imageUrls,
     title:`${month}월 ${day}일 ${hour}시 ${team} vs ${opponent}`,
     content,
@@ -8131,6 +8154,42 @@ async function addEventNoticeSupabase(payload){
   return { ok:true };
 }
 
+async function checkEventPostPinSupabase(id, pin){
+  const rows = await sbSelect("event", q => q.select("club_pw,is_notice").eq("id", id).limit(1));
+  const inputPin = String(pin || "").trim();
+  const adminOk = await isAdminPwValue(inputPin);
+  const ownerOk = rows.length && String(rows[0].club_pw || "").trim() === inputPin;
+  if(!rows.length || (!ownerOk && !adminOk)) throw new Error("비밀번호가 일치하지 않습니다.");
+  return { ok:true };
+}
+
+async function updateEventPostSupabase(id, title, content, writer, pin, imageData){
+  const rows = await sbSelect("event", q => q.select("club_pw,is_notice,image_urls,screenshot1,screenshot2").eq("id", id).limit(1));
+  const inputPin = String(pin || "").trim();
+  const adminOk = await isAdminPwValue(inputPin);
+  const ownerOk = rows.length && String(rows[0].club_pw || "").trim() === inputPin;
+  if(!rows.length || (!ownerOk && !adminOk)) throw new Error("비밀번호가 일치하지 않습니다.");
+
+  const patch = {
+    title:String(title || ""),
+    content:String(content || ""),
+    team_name:String(writer || "") || rows[0].team_name
+  };
+
+  if(imageData && imageData.base64){
+    const imgUrl = `data:${imageData.mimeType};base64,${imageData.base64}`;
+    const oldUrls = Array.isArray(rows[0].image_urls) ? rows[0].image_urls.filter(Boolean) : [rows[0].screenshot1, rows[0].screenshot2].filter(Boolean);
+    const newUrls = [imgUrl].concat(oldUrls.slice(1,2));
+    patch.screenshot1 = newUrls[0] || "";
+    patch.screenshot2 = newUrls[1] || "";
+    patch.image_urls = newUrls;
+  }
+
+  const { error } = await sb.from("event").update(patch).eq("id", id);
+  if(error) throw error;
+  return { ok:true };
+}
+
 async function approveEventPostSupabase(id, pin){
   if(!(await isAdminPwValue(pin))) throw new Error("운영진 비밀번호가 일치하지 않습니다.");
   const { error } = await sb.from("event").update({ is_approved:1 }).eq("id", id);
@@ -8143,6 +8202,14 @@ async function deleteEventPostSupabase(id, pin){
   const { error } = await sb.from("event").delete().eq("id", id);
   if(error) throw error;
   return { ok:true };
+}
+
+async function increaseEventViewSupabase(id){
+  const rows = await sbSelect("event", q => q.select("views").eq("id", id).limit(1));
+  const views = Number(rows[0]?.views || 0) + 1;
+  const { error } = await sb.from("event").update({views}).eq("id", id);
+  if(error) throw error;
+  return { views };
 }
 
 async function increaseBoardViewSupabase(id){
@@ -8212,10 +8279,10 @@ async function addAdminReplyToBoardSupabase(id, pin, reply){
     if(name === "deleteTeamMember") return await deleteTeamMemberSupabase(...args);
     if(name === "getBoardPosts") return args[0] === "event" ? await getEventPostsSupabase(...args) : await getBoardPostsSupabase(...args);
     if(name === "addBoardPost") return args[0] === "event" ? await addEventPostSupabase(args[1]) : await addBoardPostSupabase(...args);
-    if(name === "increaseBoardView") return await increaseBoardViewSupabase(...args);
-    if(name === "checkBoardPostPin") return await checkBoardPostPinSupabase(...args);
+    if(name === "increaseBoardView") return CURRENT_BOARD === "event" ? await increaseEventViewSupabase(...args) : await increaseBoardViewSupabase(...args);
+    if(name === "checkBoardPostPin") return CURRENT_BOARD === "event" ? await checkEventPostPinSupabase(...args) : await checkBoardPostPinSupabase(...args);
     if(name === "deleteBoardPost") return CURRENT_BOARD === "event" ? await deleteEventPostSupabase(...args) : await deleteBoardPostSupabase(...args);
-    if(name === "updateBoardPost") return await updateBoardPostSupabase(...args);
+    if(name === "updateBoardPost") return CURRENT_BOARD === "event" ? await updateEventPostSupabase(...args) : await updateBoardPostSupabase(...args);
     if(name === "approveEventPost") return await approveEventPostSupabase(...args);
     if(name === "addEventNotice") return await addEventNoticeSupabase(...args);
     if(name === "addAdminReplyToBoard") return await addAdminReplyToBoardSupabase(...args);
@@ -8282,9 +8349,9 @@ google.script.run
   .getSheetData();
 
 function showLoading(msg) {
-  // Cloudflare/Supabase 이전 후 속도가 빨라져 로딩 화면은 표시하지 않습니다.
   const overlay = document.getElementById("loadingOverlay");
-  if (overlay) overlay.classList.add("hidden");
+  if (!overlay) return;
+  overlay.classList.remove("hidden");
 }
 
 function hideLoading() {
@@ -8568,7 +8635,7 @@ if(noticeBtn) noticeBtn.style.display = (board === "event") ? "inline-flex" : "n
 if(board === "promo" || board === "event"){
   ensureBoardSearchBox()?.classList.remove("hidden");
 
-  showLoading(board === "promo" ? "홍보 게시판을 불러오는 중입니다" : "민원Q/A 게시판을 불러오는 중입니다");
+  showLoading(board === "promo" ? "홍보/자유 게시판을 불러오는 중입니다" : "EVENT 게시판을 불러오는 중입니다");
 
   writeBtn.style.display = "inline-block";
   document.getElementById("boardWriter").classList.remove("hidden");
@@ -9013,6 +9080,14 @@ function closeImagePopup(){
 }
 /* ===== 게시글 열기 ===== */
 function openBoardPost(idx){
+  const list = document.getElementById("boardList");
+  if(list){
+    list.innerHTML = `<div class="board-inline-loading"><img src="https://i.ibb.co/4ZRCDsDs/animation-03s-no-shadow.gif" alt="로딩중"></div>`;
+  }
+  setTimeout(() => renderBoardPostContent(idx), 40);
+}
+
+function renderBoardPostContent(idx){
   const p = CURRENT_BOARD_POSTS[idx];
   if(!p) return;
 
@@ -9112,6 +9187,7 @@ ${CURRENT_BOARD === "promo" ? `
 
   loadBoardComments(p.id);
 }
+
 
 async function voteBoardPost(postId, type, idx){
   try{
@@ -9302,9 +9378,12 @@ document.addEventListener("click", async function(e){
       const members = [1,2,3,4].map(n => document.getElementById("eventMember"+n).value.trim());
       const images = [];
       const f = document.getElementById("eventShot1").files?.[0];
+      const f2 = document.getElementById("eventShot2")?.files?.[0];
       if(!f){ alert("친선 스크린샷 1장을 올려주세요."); return; }
-      if(!["image/jpeg","image/png"].includes(f.type)){ toast("JPG 또는 PNG 파일만 업로드할 수 있습니다."); return; }
-      images.push(await fileToBase64Data(f));
+      for(const file of [f, f2].filter(Boolean)){
+        if(!["image/jpeg","image/png"].includes(file.type)){ toast("JPG 또는 PNG 파일만 업로드할 수 있습니다."); return; }
+        images.push(await fileToBase64Data(file));
+      }
       showLoading("이벤트 참여글 등록 중입니다");
       google.script.run
         .withSuccessHandler(() => {
@@ -9313,6 +9392,7 @@ document.addEventListener("click", async function(e){
           document.getElementById("eventClubPw").value = "";
           [1,2,3,4].forEach(n => document.getElementById("eventMember"+n).value = "");
           document.getElementById("eventShot1").value = "";
+          if(document.getElementById("eventShot2")) document.getElementById("eventShot2").value = "";
           document.getElementById("boardWriteBox").classList.add("hidden");
           loadBoardPosts();
         })
@@ -9381,7 +9461,7 @@ async function fileToBase64Data(file){
     throw new Error("JPG 또는 PNG 파일만 업로드할 수 있습니다.");
   }
 
-  const compressedFile = await compressImageUnder5MB(file);
+  const compressedFile = await compressImageForSupabase(file);
 
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -9402,9 +9482,9 @@ async function fileToBase64Data(file){
   });
 }
 
-async function compressImageUnder5MB(file){
-  const maxSize = 4.5 * 1024 * 1024; // base64 저장 때문에 5MB보다 살짝 낮게
-  if(file.size <= maxSize) return file;
+async function compressImageForSupabase(file){
+  const targetSize = 750 * 1024; // DB 저장용 목표: 약 750KB 이하
+  const hardLimit = 950 * 1024;  // 가능한 한 1MB 아래로 유지
 
   const img = new Image();
   const url = URL.createObjectURL(file);
@@ -9415,41 +9495,44 @@ async function compressImageUnder5MB(file){
     img.src = url;
   });
 
-  let maxWidth = 1600;
-  let quality = 0.85;
-  let blob = null;
+  let maxWidth = Math.min(1400, img.width);
+  let quality = 0.78;
+  let bestBlob = null;
 
-  while(true){
+  for(let attempt=0; attempt<14; attempt++){
     const scale = Math.min(1, maxWidth / img.width);
-
     const canvas = document.createElement("canvas");
-    canvas.width = Math.round(img.width * scale);
-    canvas.height = Math.round(img.height * scale);
+    canvas.width = Math.max(1, Math.round(img.width * scale));
+    canvas.height = Math.max(1, Math.round(img.height * scale));
 
     const ctx = canvas.getContext("2d");
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    blob = await new Promise(resolve => {
+    const blob = await new Promise(resolve => {
       canvas.toBlob(resolve, "image/jpeg", quality);
     });
 
-    if(!blob) break;
-
-    if(blob.size <= maxSize) break;
-
-    if(quality > 0.45){
-      quality -= 0.1;
-    }else{
-      maxWidth -= 200;
+    if(blob){
+      bestBlob = blob;
+      if(blob.size <= targetSize || (blob.size <= hardLimit && attempt >= 3)) break;
     }
 
-    if(maxWidth < 700) break;
+    if(quality > 0.5){
+      quality -= 0.08;
+    }else{
+      maxWidth -= 180;
+      quality = 0.62;
+    }
+
+    if(maxWidth < 760) break;
   }
 
   URL.revokeObjectURL(url);
 
+  if(!bestBlob) return file;
+
   return new File(
-    [blob],
+    [bestBlob],
     file.name.replace(/\.[^/.]+$/, "") + "_compressed.jpg",
     { type:"image/jpeg" }
   );
@@ -9491,7 +9574,7 @@ function openBoardEdit(idx){
       openBoardEditForm(idx, pin);
     })
     .withFailureHandler(e => {
-      alert("비번이 틀렸습니다");
+      alert(e?.message || "비번이 틀렸습니다");
     })
     .checkBoardPostPin(p.id, pin);
 }
@@ -9553,7 +9636,7 @@ async function submitBoardEdit(id, pin){
     })
 .withFailureHandler(e => {
   hideLoading();
-  alert("비번이 틀렸습니다");
+  alert(e?.message || "비번이 틀렸습니다");
 })
     .updateBoardPost(id, title, content, writer, pin, imageData);
 }
