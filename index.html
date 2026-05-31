@@ -5214,6 +5214,9 @@ tbody tr:hover{
   border-radius:18px !important;
 }
 
+  body.event-tournament-mode #btnOpenEventNotice{
+  display:none !important;
+}
 </style> 바로 위
 ========================================================= */
 
@@ -5327,78 +5330,7 @@ let mini4545State = {
   cells:[]
 };
 
-function openMini4545Game(){
-  let popup = document.getElementById("mini4545Popup");
 
-  if(!popup){
-    popup = document.createElement("div");
-    popup.id = "mini4545Popup";
-    popup.className = "hidden";
-
-    popup.innerHTML = `
-      <div class="mini4545-box">
-        <div class="mini4545-head">
-<div class="mini4545-title-wrap">
-  <div>
-    <div class="mini4545-title">빨리빨리4545</div>
-    <div class="mini4545-desc">1부터 45까지 순서대로 빠르게 누르세요.</div>
-  </div>
-
-  <div id="mini4545Timer" class="mini4545-timer">0.000초</div>
-</div>
-
-          <div style="display:flex;align-items:center;gap:10px;">
-            <button type="button" class="mini4545-close" onclick="closeMini4545Game()">닫기</button>
-          </div>
-        </div>
-
-        <div class="mini4545-layout">
-          <div>
-            <div class="mini4545-game-area">
-              <div id="mini4545Board" class="mini4545-board"></div>
-
-              <div id="mini4545StartCover" class="mini4545-start-cover">
-                <button type="button" class="mini4545-start-btn" onclick="startMini4545Timer()">
-                  게임시작
-                </button>
-              </div>
-            </div>
-
-            <div id="mini4545Result" class="mini4545-result hidden">
-              <div style="font-size:20px;font-weight:400;margin-bottom:10px;">
-                기록 완료 : <span id="mini4545FinalTime"></span>초
-              </div>
-
-              <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <input id="mini4545Nickname" class="text" placeholder="아이디 입력">
-                <button type="button" class="mini4545-save-btn" onclick="submitMini4545Score()">랭킹 등록</button>
-                <button type="button" class="mini4545-share-btn" onclick="shareMini4545()">공유하기</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="mini4545-side">
-            <div class="mini4545-panel">
-              <h3>현재랭킹 TOP 20</h3>
-              <div id="mini4545RankList"></div>
-            </div>
-
-            <div class="mini4545-panel">
-              <h3>오늘의 최고랭커</h3>
-              <div id="mini4545DailyList"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(popup);
-  }
-
-  popup.classList.remove("hidden");
-  resetMini4545Game();
-  loadMini4545Ranks();
-}
 
 function closeMini4545Game(){
   clearInterval(mini4545State.timerId);
@@ -8558,11 +8490,15 @@ list.innerHTML = "";
 if(board === "eventTournament"){
   writeBtn.style.display = "none";
 
+  const noticeBtn = document.getElementById("btnOpenEventNotice");
+  if(noticeBtn) noticeBtn.style.display = "none";
+
   list.innerHTML = `
     <div class="tournament-main-grid">
 
       <div class="tournament-thumb-card" onclick="openTournamentPoster('sticker3839')">
         <div class="tournament-title">38,39시즌 카트 스티커대회</div>
+          <div class="tournament-soon-badge">진행중</div>
 
         <img class="tournament-thumb-img" src="https://i.ibb.co/qLGLRSgV/70c24cb0-1a18-491b-af91-9b540a061c14.png">
 
@@ -8575,41 +8511,6 @@ if(board === "eventTournament"){
         </button>
       </div>
 
-      <div class="tournament-thumb-card" onclick="openMini4545Game()">
-        <div class="tournament-title">
-          미니게임 - 빨리빨리4545
-        </div>
-
-        <div class="mini4545-poster">
-          <div class="mini4545-poster-glow"></div>
-
-          <div class="mini4545-logo">
-            빨리빨리
-            <span>4545</span>
-          </div>
-
-          <div class="mini4545-grid-preview">
-            <div>7</div><div>18</div><div>2</div><div>25</div><div>11</div>
-            <div>14</div><div>1</div><div>20</div><div>5</div><div>9</div>
-            <div>22</div><div>3</div><div>17</div><div>8</div><div>24</div>
-            <div>12</div><div>19</div><div>6</div><div>21</div><div>4</div>
-            <div>13</div><div>16</div><div>10</div><div>23</div><div>15</div>
-          </div>
-
-          <div class="mini4545-speed-text">
-            1 → 45<br>
-            SPEED TOUCH GAME
-          </div>
-        </div>
-
-        <button
-          type="button"
-          class="tournament-apply-btn"
-          onclick="event.stopPropagation(); openMini4545Game();"
-        >
-          게임해보기
-        </button>
-      </div>
 
       <div class="tournament-thumb-card" onclick="openTournamentPoster('allstar')">
         <div class="tournament-title">카러플 올스타전 (5/17)</div>
