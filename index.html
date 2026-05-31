@@ -5218,28 +5218,30 @@ tbody tr:hover{
   display:none !important;
 }
 
-  .main-tab[data-tab="eventTournament"]{
+.main-tab[data-tab="eventTournament"]{
   position:relative !important;
   overflow:visible !important;
 }
 
-.main-tab[data-tab="eventTournament"]::after{
-  content:"진행중" !important;
+.main-tab[data-tab="eventTournament"] .tab-live-badge{
   position:absolute !important;
-  top:-12px !important;
-  right:-10px !important;
-  width:auto !important;
-  height:auto !important;
-  padding:4px 10px !important;
-  border-radius:999px !important;
+  top:-6px !important;
+  right:-6px !important;
+
   background:#ef4444 !important;
   color:#ffffff !important;
-  font-size:13px !important;
+
+  padding:3px 8px !important;
+  border-radius:8px !important;
+
+  font-size:11px !important;
   font-weight:900 !important;
-  transform:rotate(15deg) !important;
-  border:2px solid #ffffff !important;
-  box-shadow:0 3px 8px rgba(239,68,68,.45) !important;
-  clip-path:none !important;
+  line-height:1 !important;
+
+  transform:rotate(18deg) !important;
+  z-index:999 !important;
+
+  box-shadow:0 2px 6px rgba(0,0,0,.15) !important;
 }
 </style> 바로 위
 ========================================================= */
@@ -5811,6 +5813,8 @@ function escMini4545(v){
   <button class="main-tab active" data-tab="gunpyo">군표</button>
   <button class="main-tab" data-tab="real">군실명제</button>
   <button class="main-tab" data-tab="eventTournament">대회</button>
+    <span class="tab-live-badge">진행중</span>
+</div>
   <button class="main-tab" data-tab="event">EVENT</button>
   <button class="main-tab" data-tab="promo">홍보/자유</button>
 </div>
