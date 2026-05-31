@@ -6177,7 +6177,10 @@ user-select:none;
 
     <div class="board-top">
       <div></div>
-      <button class="btn gold" id="btnOpenBoardWrite">이벤트 참여하기</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+        <button class="btn blue" id="btnOpenEventNotice">운영진 공지글 작성</button>
+        <button class="btn gold" id="btnOpenBoardWrite">이벤트 참여하기</button>
+      </div>
     </div>
 
     <div id="boardList" class="board-list"></div>
@@ -6219,6 +6222,17 @@ user-select:none;
       </div>
 
       <button class="btn gold" id="btnBoardWrite">올리기</button>
+    </div>
+
+    <div id="eventNoticeWriteBox" class="hidden board-write-box">
+      <div class="board-write-head">
+        <b>운영진 공지글 작성</b>
+        <button class="btn red" id="btnCloseEventNotice">닫기</button>
+      </div>
+      <input id="eventNoticeAdminPw" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="운영진 비번 4자리"/>
+      <input id="eventNoticeTitle" class="text" placeholder="공지 제목"/>
+      <textarea id="eventNoticeContent" class="text board-textarea" placeholder="이벤트 설명/공지 내용을 입력하세요. 이 글은 EVENT 게시판 맨 위에 고정됩니다."></textarea>
+      <button class="btn gold" id="btnSaveEventNotice">공지글 올리기</button>
     </div>
     <div id="boardSearchBox" class="board-search-box hidden">
       <input id="boardSearchInput" class="board-search-input" placeholder="제목+내용 검색">
@@ -7996,23 +8010,29 @@ async function addBoardPostSupabase(board, title, content, writer, pin4, imageDa
 
 async function getEventPostsSupabase(){
   const rows = await sbSelect("event", q =>
-    q.select("*").order("created_at", { ascending:false }).order("id", { ascending:false })
+    q.select("*").order("is_notice", { ascending:false }).order("created_at", { ascending:false }).order("id", { ascending:false })
   );
-  return { posts: rows.map((r, idx) => ({
-    id:r.id,
-    no:r.no || idx + 1,
-    board:"event",
-    title:r.title || `${r.team || "단체"} 이벤트 참여`,
-    content:r.content || "",
-    writer:r.team || "",
-    team:r.team || "",
-    members:r.members || [],
-    createdAt:r.created_at || "",
-    imageUrl:(r.image_urls || [])[0] || "",
-    imageUrls:r.image_urls || [],
-    views:Number(r.views || 0),
-    approved: String(r.approved || "0") === "1" || r.approved === true
-  }))};
+  return { posts: rows.map((r, idx) => {
+    const isNotice = String(r.is_notice || "0") === "1" || r.is_notice === true;
+    const teamName = r.team_name || r.team || "";
+    const imageUrls = r.image_urls || [r.screenshot1,r.screenshot2,r.screenshot3,r.screenshot4,r.screenshot5].filter(Boolean);
+    return {
+      id:r.id,
+      no:r.no || idx + 1,
+      board:"event",
+      title:r.title || (isNotice ? "EVENT 공지" : `${teamName || "단체"} 이벤트 참여`),
+      content:r.content || "",
+      writer:isNotice ? "운영진" : teamName,
+      team:teamName,
+      members:r.members || [r.member1,r.member2,r.member3,r.member4].filter(Boolean),
+      createdAt:r.created_at || "",
+      imageUrl:imageUrls[0] || "",
+      imageUrls:imageUrls,
+      views:Number(r.views || 0),
+      approved: String(r.is_approved ?? r.approved ?? "0") === "1" || r.is_approved === true || r.approved === true,
+      isNotice
+    };
+  })};
 }
 
 async function verifyClubPwSupabase(team, pw){
@@ -8042,12 +8062,42 @@ async function addEventPostSupabase(payload){
 3번 선수: ${members[2]}
 4번 선수: ${members[3]}`;
   const { error } = await sb.from("event").insert({
-    team,
-    members,
+    team_name:team,
+    club_pw:pw,
+    member1:members[0],
+    member2:members[1],
+    member3:members[2],
+    member4:members[3],
+    screenshot1:imageUrls[0],
+    screenshot2:imageUrls[1],
+    screenshot3:imageUrls[2],
+    screenshot4:imageUrls[3],
+    screenshot5:imageUrls[4],
     title:`${team} 이벤트 참여`,
     content,
-    image_urls:imageUrls,
-    approved:0,
+    is_notice:0,
+    is_approved:0,
+    views:0,
+    created_at:new Date().toISOString()
+  });
+  if(error) throw error;
+  return { ok:true };
+}
+
+async function addEventNoticeSupabase(payload){
+  const pin = String(payload?.pin || "").trim();
+  const title = String(payload?.title || "").trim();
+  const content = String(payload?.content || "").trim();
+  if(!(await isAdminPwValue(pin))) throw new Error("운영진 비밀번호가 일치하지 않습니다.");
+  if(!title) throw new Error("공지 제목을 입력해주세요.");
+  if(!content) throw new Error("공지 내용을 입력해주세요.");
+
+  const { error } = await sb.from("event").insert({
+    team_name:"운영진",
+    title,
+    content,
+    is_notice:1,
+    is_approved:1,
     views:0,
     created_at:new Date().toISOString()
   });
@@ -8057,7 +8107,7 @@ async function addEventPostSupabase(payload){
 
 async function approveEventPostSupabase(id, pin){
   if(!(await isAdminPwValue(pin))) throw new Error("운영진 비밀번호가 일치하지 않습니다.");
-  const { error } = await sb.from("event").update({ approved:1 }).eq("id", id);
+  const { error } = await sb.from("event").update({ is_approved:1 }).eq("id", id);
   if(error) throw error;
   return { ok:true };
 }
@@ -8141,6 +8191,7 @@ async function addAdminReplyToBoardSupabase(id, pin, reply){
     if(name === "deleteBoardPost") return CURRENT_BOARD === "event" ? await deleteEventPostSupabase(...args) : await deleteBoardPostSupabase(...args);
     if(name === "updateBoardPost") return await updateBoardPostSupabase(...args);
     if(name === "approveEventPost") return await approveEventPostSupabase(...args);
+    if(name === "addEventNotice") return await addEventNoticeSupabase(...args);
     if(name === "addAdminReplyToBoard") return await addAdminReplyToBoardSupabase(...args);
     return { ok:true };
   }
@@ -8471,6 +8522,8 @@ if(board === "eventTournament"){
   return;
 }
 writeBtn.style.display = (board === "event") ? "inline-flex" : "none";
+const noticeBtn = document.getElementById("btnOpenEventNotice");
+if(noticeBtn) noticeBtn.style.display = (board === "event") ? "inline-flex" : "none";
 if(board === "promo" || board === "event"){
   ensureBoardSearchBox()?.classList.remove("hidden");
 
@@ -8855,7 +8908,7 @@ async function renderBoardList(){
   let rankHtml = "";
   if(CURRENT_BOARD === "event"){
     const countMap = {};
-    (CURRENT_BOARD_POSTS || []).forEach(x => { const t = x.team || x.writer || "-"; countMap[t] = (countMap[t] || 0) + 1; });
+    (CURRENT_BOARD_POSTS || []).filter(x => !x.isNotice).forEach(x => { const t = x.team || x.writer || "-"; countMap[t] = (countMap[t] || 0) + 1; });
     const ranks = Object.entries(countMap).sort((a,b)=>b[1]-a[1]).map((x,i)=>`<div style="padding:8px 10px;border:1px solid rgba(14,165,233,.25);border-radius:10px;background:#fff;"><b>${i+1}위</b> ${esc(x[0])} - ${x[1]}점</div>`).join("");
     rankHtml = `<div class="panel" style="margin-bottom:10px;"><h3 style="margin:0 0 8px;">단체 순위</h3><div style="display:grid;gap:6px;">${ranks || "아직 참여 글이 없습니다."}</div></div>`;
   }
@@ -8881,14 +8934,14 @@ async function renderBoardList(){
 
       return `
         <div class="promo-board-row" onclick="openBoardPost(${realIdx})">
-          <div>${originalNo}</div>
-          <div>${esc(p.title)}${commentBadge}</div>
+          <div>${p.isNotice ? "공지" : originalNo}</div>
+          <div>${p.isNotice ? "📌 " : ""}${esc(p.title)}${commentBadge}</div>
           <div class="board-answer-status">
             ${
 isPromo
   ? `<span class="mini-like">👍 ${Number(p.likes || 0)}</span>
      <span class="mini-dislike">👎 ${Number(p.dislikes || 0)}</span>`
-                : `${CURRENT_BOARD === "event" ? (p.approved ? "[승인완료]" : "[승인대기]") : ""}`
+                : `${CURRENT_BOARD === "event" ? (p.isNotice ? "[상위고정]" : (p.approved ? "[승인완료]" : "[승인대기]")) : ""}`
             }
           </div>
           <div>${esc(p.writer || "-")}</div>
@@ -9011,7 +9064,7 @@ ${CURRENT_BOARD === "promo" ? `
   </div>
 ` : ""}
 
-        ${CURRENT_BOARD === "event" ? `<button class="btn gold" onclick="approveEventPost('${p.id}')">승인</button>` : ""}
+        ${CURRENT_BOARD === "event" && !p.isNotice ? `<button class="btn gold" onclick="approveEventPost('${p.id}')">승인</button>` : ""}
       </div>
     </div>
   `;
@@ -9129,6 +9182,43 @@ document.addEventListener("click", async function(e){
   const openBtn = e.target.closest("#btnOpenBoardWrite");
   const closeBtn = e.target.closest("#btnCloseBoardWrite");
   const writeBtn = e.target.closest("#btnBoardWrite");
+  const openNoticeBtn = e.target.closest("#btnOpenEventNotice");
+  const closeNoticeBtn = e.target.closest("#btnCloseEventNotice");
+  const saveNoticeBtn = e.target.closest("#btnSaveEventNotice");
+
+
+  if(openNoticeBtn){
+    e.preventDefault();
+    document.getElementById("eventNoticeWriteBox")?.classList.remove("hidden");
+    document.getElementById("eventNoticeWriteBox")?.scrollIntoView({behavior:"smooth", block:"start"});
+    return;
+  }
+
+  if(closeNoticeBtn){
+    e.preventDefault();
+    document.getElementById("eventNoticeWriteBox")?.classList.add("hidden");
+    return;
+  }
+
+  if(saveNoticeBtn){
+    e.preventDefault();
+    const pin = document.getElementById("eventNoticeAdminPw").value.trim();
+    const title = document.getElementById("eventNoticeTitle").value.trim();
+    const content = document.getElementById("eventNoticeContent").value.trim();
+    showLoading("운영진 공지글 등록 중입니다");
+    google.script.run
+      .withSuccessHandler(() => {
+        hideLoading(); toast("운영진 공지글 등록 완료");
+        document.getElementById("eventNoticeAdminPw").value = "";
+        document.getElementById("eventNoticeTitle").value = "";
+        document.getElementById("eventNoticeContent").value = "";
+        document.getElementById("eventNoticeWriteBox")?.classList.add("hidden");
+        loadBoardPosts();
+      })
+      .withFailureHandler(e => { hideLoading(); toast(e.message || "공지글 등록 실패"); })
+      .addEventNotice({pin,title,content});
+    return;
+  }
 
   if(openBtn){
     e.preventDefault();
@@ -9803,6 +9893,40 @@ async function deleteTeamRequestById(requestId){
 
 document.addEventListener("click", function(e){
   const openBtn = e.target.closest("#btnOpenTeamRequestPopup");
+
+  if(openNoticeBtn){
+    e.preventDefault();
+    document.getElementById("eventNoticeWriteBox")?.classList.remove("hidden");
+    document.getElementById("eventNoticeWriteBox")?.scrollIntoView({behavior:"smooth", block:"start"});
+    return;
+  }
+
+  if(closeNoticeBtn){
+    e.preventDefault();
+    document.getElementById("eventNoticeWriteBox")?.classList.add("hidden");
+    return;
+  }
+
+  if(saveNoticeBtn){
+    e.preventDefault();
+    const pin = document.getElementById("eventNoticeAdminPw").value.trim();
+    const title = document.getElementById("eventNoticeTitle").value.trim();
+    const content = document.getElementById("eventNoticeContent").value.trim();
+    showLoading("운영진 공지글 등록 중입니다");
+    google.script.run
+      .withSuccessHandler(() => {
+        hideLoading(); toast("운영진 공지글 등록 완료");
+        document.getElementById("eventNoticeAdminPw").value = "";
+        document.getElementById("eventNoticeTitle").value = "";
+        document.getElementById("eventNoticeContent").value = "";
+        document.getElementById("eventNoticeWriteBox")?.classList.add("hidden");
+        loadBoardPosts();
+      })
+      .withFailureHandler(e => { hideLoading(); toast(e.message || "공지글 등록 실패"); })
+      .addEventNotice({pin,title,content});
+    return;
+  }
+
   if(openBtn){
     e.preventDefault();
     const pop = document.getElementById("teamRequestPopup");
