@@ -9321,7 +9321,7 @@ ${p.imageUrls && p.imageUrls.length ? `
           style="height:46px;"
         />
 
-        <button class="btn gold" onclick="openBoardEdit(${idx})">수정</button>
+        ${CURRENT_BOARD !== "event" ? `<button class="btn gold" onclick="openBoardEdit(${idx})">수정</button>` : ""}
         <button class="btn red" onclick="deleteBoardPost('${p.id}')">삭제</button>
 
 
