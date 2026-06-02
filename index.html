@@ -8082,31 +8082,25 @@ async function addBoardPostSupabase(board, title, content, writer, pin4, imageDa
 
 async function getEventPostsSupabase(){
   /*
-    EVENT 탭 속도 개선 핵심:
-    목록에서는 image_urls / screenshot1~5 같은 Base64 이미지 컬럼을 절대 가져오지 않습니다.
+    EVENT 탭 속도 개선 + 오류 수정:
+    실제 event 테이블에는 no 컬럼이 없으므로 no를 select하지 않습니다.
+    목록에서는 image_urls / screenshot 컬럼도 가져오지 않아 EVENT 탭 로딩을 가볍게 유지합니다.
     이미지는 게시글을 클릭했을 때 getEventPostDetailSupabase()로 해당 글 1개만 따로 불러옵니다.
   */
   const rows = await sbSelect("event", q =>
     q.select(`
       id,
-      no,
       title,
       content,
       team_name,
-      team,
       event_month,
       event_day,
       event_hour,
-      month,
-      day,
-      hour,
       opponent_team,
-      opponent,
       member1,
       member2,
       member3,
       member4,
-      members,
       created_at,
       views,
       is_notice,
@@ -8123,21 +8117,21 @@ async function getEventPostsSupabase(){
 
   return { posts: rows.map((r, idx) => {
     const isNotice = String(r.is_notice || "0") === "1" || r.is_notice === true;
-    const teamName = r.team_name || r.team || "";
+    const teamName = r.team_name || "";
 
     return {
       id:r.id,
-      no:r.no || idx + 1,
+      no:idx + 1,
       board:"event",
       title:r.title || (isNotice ? "EVENT 공지" : `${teamName || "단체"} 이벤트 참여`),
       content:r.content || "",
       writer:isNotice ? "운영진" : teamName,
-      eventMonth:r.event_month || r.month || "",
-      eventDay:r.event_day || r.day || "",
-      eventHour:r.event_hour || r.hour || "",
-      opponent:r.opponent_team || r.opponent || "",
+      eventMonth:r.event_month || "",
+      eventDay:r.event_day || "",
+      eventHour:r.event_hour || "",
+      opponent:r.opponent_team || "",
       team:teamName,
-      members:r.members || [r.member1,r.member2,r.member3,r.member4].filter(Boolean),
+      members:[r.member1,r.member2,r.member3,r.member4].filter(Boolean),
       createdAt:r.created_at || "",
       imageUrl:"",
       imageUrls:[],
@@ -8155,6 +8149,7 @@ async function getEventPostDetailSupabase(id){
   /*
     EVENT 상세보기 전용:
     무거운 이미지 컬럼은 게시글 1개를 열 때만 가져옵니다.
+    실제 사용 중인 screenshot1, screenshot2와 image_urls만 조회합니다.
   */
   const rows = await sbSelect("event", q =>
     q.select(`
@@ -8166,9 +8161,6 @@ async function getEventPostDetailSupabase(id){
       image_urls,
       screenshot1,
       screenshot2,
-      screenshot3,
-      screenshot4,
-      screenshot5,
       admin_reply,
       admin_reply_at
     `)
@@ -8180,7 +8172,7 @@ async function getEventPostDetailSupabase(id){
   if(!r) throw new Error("게시글을 찾을 수 없습니다.");
 
   const savedImageUrls = Array.isArray(r.image_urls) ? r.image_urls.filter(Boolean) : [];
-  const screenshotUrls = [r.screenshot1,r.screenshot2,r.screenshot3,r.screenshot4,r.screenshot5].filter(Boolean);
+  const screenshotUrls = [r.screenshot1,r.screenshot2].filter(Boolean);
   const imageUrls = savedImageUrls.length ? savedImageUrls : screenshotUrls;
 
   return {
