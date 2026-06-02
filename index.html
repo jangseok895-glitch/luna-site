@@ -8081,15 +8081,50 @@ async function addBoardPostSupabase(board, title, content, writer, pin4, imageDa
 
 
 async function getEventPostsSupabase(){
+  /*
+    EVENT 탭 속도 개선 핵심:
+    목록에서는 image_urls / screenshot1~5 같은 Base64 이미지 컬럼을 절대 가져오지 않습니다.
+    이미지는 게시글을 클릭했을 때 getEventPostDetailSupabase()로 해당 글 1개만 따로 불러옵니다.
+  */
   const rows = await sbSelect("event", q =>
-    q.select("*").order("is_notice", { ascending:false }).order("created_at", { ascending:false }).order("id", { ascending:false })
+    q.select(`
+      id,
+      no,
+      title,
+      content,
+      team_name,
+      team,
+      event_month,
+      event_day,
+      event_hour,
+      month,
+      day,
+      hour,
+      opponent_team,
+      opponent,
+      member1,
+      member2,
+      member3,
+      member4,
+      members,
+      created_at,
+      views,
+      is_notice,
+      is_approved,
+      approved,
+      admin_reply,
+      admin_reply_at
+    `)
+      .order("is_notice", { ascending:false })
+      .order("created_at", { ascending:false })
+      .order("id", { ascending:false })
+      .limit(50)
   );
+
   return { posts: rows.map((r, idx) => {
     const isNotice = String(r.is_notice || "0") === "1" || r.is_notice === true;
     const teamName = r.team_name || r.team || "";
-    const savedImageUrls = Array.isArray(r.image_urls) ? r.image_urls.filter(Boolean) : [];
-    const screenshotUrls = [r.screenshot1,r.screenshot2,r.screenshot3,r.screenshot4,r.screenshot5].filter(Boolean);
-    const imageUrls = savedImageUrls.length ? savedImageUrls : screenshotUrls;
+
     return {
       id:r.id,
       no:r.no || idx + 1,
@@ -8104,13 +8139,61 @@ async function getEventPostsSupabase(){
       team:teamName,
       members:r.members || [r.member1,r.member2,r.member3,r.member4].filter(Boolean),
       createdAt:r.created_at || "",
-      imageUrl:imageUrls[0] || "",
-      imageUrls:imageUrls,
+      imageUrl:"",
+      imageUrls:[],
+      _eventDetailLoaded:false,
       views:Number(r.views || 0),
       approved: String(r.is_approved ?? r.approved ?? "0") === "1" || r.is_approved === true || r.approved === true,
-      isNotice
+      isNotice,
+      adminReply:r.admin_reply || "",
+      adminReplyAt:r.admin_reply_at || ""
     };
   })};
+}
+
+async function getEventPostDetailSupabase(id){
+  /*
+    EVENT 상세보기 전용:
+    무거운 이미지 컬럼은 게시글 1개를 열 때만 가져옵니다.
+  */
+  const rows = await sbSelect("event", q =>
+    q.select(`
+      id,
+      title,
+      content,
+      team_name,
+      created_at,
+      image_urls,
+      screenshot1,
+      screenshot2,
+      screenshot3,
+      screenshot4,
+      screenshot5,
+      admin_reply,
+      admin_reply_at
+    `)
+      .eq("id", id)
+      .limit(1)
+  );
+
+  const r = rows[0];
+  if(!r) throw new Error("게시글을 찾을 수 없습니다.");
+
+  const savedImageUrls = Array.isArray(r.image_urls) ? r.image_urls.filter(Boolean) : [];
+  const screenshotUrls = [r.screenshot1,r.screenshot2,r.screenshot3,r.screenshot4,r.screenshot5].filter(Boolean);
+  const imageUrls = savedImageUrls.length ? savedImageUrls : screenshotUrls;
+
+  return {
+    id:r.id,
+    title:r.title || "",
+    content:r.content || "",
+    writer:r.team_name || "",
+    createdAt:r.created_at || "",
+    imageUrl:imageUrls[0] || "",
+    imageUrls:imageUrls,
+    adminReply:r.admin_reply || "",
+    adminReplyAt:r.admin_reply_at || ""
+  };
 }
 
 async function verifyClubPwSupabase(team, pw){
@@ -8326,6 +8409,7 @@ async function addAdminReplyToBoardSupabase(id, pin, reply){
     if(name === "searchTeamMembers") return await searchTeamMembersSupabase(...args);
     if(name === "deleteTeamMember") return await deleteTeamMemberSupabase(...args);
     if(name === "getBoardPosts") return args[0] === "event" ? await getEventPostsSupabase(...args) : await getBoardPostsSupabase(...args);
+    if(name === "getEventPostDetail") return await getEventPostDetailSupabase(...args);
     if(name === "addBoardPost") return args[0] === "event" ? await addEventPostSupabase(args[1]) : await addBoardPostSupabase(...args);
     if(name === "increaseBoardView") return CURRENT_BOARD === "event" ? await increaseEventViewSupabase(...args) : await increaseBoardViewSupabase(...args);
     if(name === "checkBoardPostPin") return CURRENT_BOARD === "event" ? await checkEventPostPinSupabase(...args) : await checkBoardPostPinSupabase(...args);
@@ -9247,13 +9331,38 @@ function renderBoardPostContent(idx){
   const p = CURRENT_BOARD_POSTS[idx];
   if(!p) return;
 
-  google.script.run
-    .withSuccessHandler((res) => {
-      if(res && res.views !== undefined){
-        p.views = res.views;
-      }
-    })
-    .increaseBoardView(p.id);
+  if(!p._viewIncreased){
+    p._viewIncreased = true;
+    google.script.run
+      .withSuccessHandler((res) => {
+        if(res && res.views !== undefined){
+          p.views = res.views;
+        }
+      })
+      .increaseBoardView(p.id);
+  }
+
+  if(CURRENT_BOARD === "event" && !p._eventDetailLoaded){
+    p._eventDetailLoaded = true;
+    google.script.run
+      .withSuccessHandler((detail) => {
+        if(detail){
+          p.title = detail.title || p.title;
+          p.content = detail.content || p.content;
+          p.writer = detail.writer || p.writer;
+          p.createdAt = detail.createdAt || p.createdAt;
+          p.imageUrl = detail.imageUrl || "";
+          p.imageUrls = Array.isArray(detail.imageUrls) ? detail.imageUrls : [];
+          p.adminReply = detail.adminReply || "";
+          p.adminReplyAt = detail.adminReplyAt || "";
+        }
+        renderBoardPostContent(idx);
+      })
+      .withFailureHandler(e => {
+        toast(e.message || "이미지 불러오기 실패");
+      })
+      .getEventPostDetail(p.id);
+  }
 
   const list = document.getElementById("boardList");
 
