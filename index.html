@@ -8082,10 +8082,11 @@ async function addBoardPostSupabase(board, title, content, writer, pin4, imageDa
 
 async function getEventPostsSupabase(){
   /*
-    EVENT 탭 속도 개선 + 오류 수정:
-    실제 event 테이블에는 no 컬럼이 없으므로 no를 select하지 않습니다.
-    목록에서는 image_urls / screenshot 컬럼도 가져오지 않아 EVENT 탭 로딩을 가볍게 유지합니다.
-    이미지는 게시글을 클릭했을 때 getEventPostDetailSupabase()로 해당 글 1개만 따로 불러옵니다.
+    EVENT 탭 복구/속도 개선 핵심:
+    실제 event 테이블에 존재하는 컬럼만 조회합니다.
+    no, team, month, day, hour, opponent, members, admin_reply, admin_reply_at 등
+    존재하지 않는 컬럼은 절대 SELECT 하지 않습니다.
+    이미지 Base64(image_urls/screenshot)는 목록에서 제외하고 상세 열 때만 불러옵니다.
   */
   const rows = await sbSelect("event", q =>
     q.select(`
@@ -8105,9 +8106,7 @@ async function getEventPostsSupabase(){
       views,
       is_notice,
       is_approved,
-      approved,
-      admin_reply,
-      admin_reply_at
+      approved
     `)
       .order("is_notice", { ascending:false })
       .order("created_at", { ascending:false })
@@ -8139,8 +8138,8 @@ async function getEventPostsSupabase(){
       views:Number(r.views || 0),
       approved: String(r.is_approved ?? r.approved ?? "0") === "1" || r.is_approved === true || r.approved === true,
       isNotice,
-      adminReply:r.admin_reply || "",
-      adminReplyAt:r.admin_reply_at || ""
+      adminReply:"",
+      adminReplyAt:""
     };
   })};
 }
@@ -8148,8 +8147,8 @@ async function getEventPostsSupabase(){
 async function getEventPostDetailSupabase(id){
   /*
     EVENT 상세보기 전용:
-    무거운 이미지 컬럼은 게시글 1개를 열 때만 가져옵니다.
-    실제 사용 중인 screenshot1, screenshot2와 image_urls만 조회합니다.
+    이미지 컬럼은 글 1개를 열 때만 가져옵니다.
+    실제 존재 확인된 image_urls, screenshot1, screenshot2만 조회합니다.
   */
   const rows = await sbSelect("event", q =>
     q.select(`
@@ -8160,9 +8159,7 @@ async function getEventPostDetailSupabase(id){
       created_at,
       image_urls,
       screenshot1,
-      screenshot2,
-      admin_reply,
-      admin_reply_at
+      screenshot2
     `)
       .eq("id", id)
       .limit(1)
@@ -8183,8 +8180,8 @@ async function getEventPostDetailSupabase(id){
     createdAt:r.created_at || "",
     imageUrl:imageUrls[0] || "",
     imageUrls:imageUrls,
-    adminReply:r.admin_reply || "",
-    adminReplyAt:r.admin_reply_at || ""
+    adminReply:"",
+    adminReplyAt:""
   };
 }
 
@@ -9314,7 +9311,7 @@ function closeImagePopup(){
 function openBoardPost(idx){
   const list = document.getElementById("boardList");
   if(list){
-    list.innerHTML = `<div class="board-inline-loading"><img src="https://i.ibb.co/4ZRCDsDs/animation-03s-no-shadow.gif" alt="로딩중"></div>`;
+    list.innerHTML = `<div class="board-inline-loading" style="padding:18px;text-align:center;font-weight:900;color:#2563eb;">로딩중...</div>`;
   }
   setTimeout(() => renderBoardPostContent(idx), 40);
 }
