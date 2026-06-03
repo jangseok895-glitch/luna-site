@@ -5328,6 +5328,43 @@ body.event-tournament-mode #btnOpenFullEventRank{
   display:none !important;
 }
 
+  .event-member-detail-box{
+  margin:14px 0 !important;
+  padding:12px !important;
+  border:1px solid rgba(14,165,233,.35) !important;
+  border-radius:14px !important;
+  background:#f0fbff !important;
+}
+
+.event-member-detail-title{
+  font-size:16px !important;
+  font-weight:900 !important;
+  color:#0284c7 !important;
+  margin-bottom:8px !important;
+}
+
+.event-member-detail-row{
+  display:flex !important;
+  justify-content:space-between !important;
+  align-items:center !important;
+  gap:10px !important;
+  padding:8px 0 !important;
+  border-bottom:1px dashed rgba(14,165,233,.25) !important;
+}
+
+.event-member-detail-row:last-child{
+  border-bottom:0 !important;
+}
+
+.event-member-detail-btn{
+  padding:7px 12px !important;
+  border-radius:10px !important;
+  border:1px solid #38bdf8 !important;
+  background:linear-gradient(135deg,#dff6ff,#9be3ff) !important;
+  color:#111827 !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+}
 </style> 바로 위
 ========================================================= */
 
@@ -9364,6 +9401,22 @@ function renderBoardPostContent(idx){
       </div>
 
       <div class="board-post-content">${linkifyText(p.content)}</div>
+      ${CURRENT_BOARD === "event" && !p.isNotice && p.members?.length ? `
+  <div class="event-member-detail-box">
+    <div class="event-member-detail-title">참여 멤버 상세보기</div>
+    ${p.members.map((nick, i) => `
+      <div class="event-member-detail-row">
+        <span>${i + 1}번 선수: <b>${esc(nick)}</b></span>
+        <button
+          class="event-member-detail-btn"
+          onclick="openEventMemberRealDetail('${esc(p.team || p.writer || "")}', '${esc(nick)}')"
+        >
+          상세보기
+        </button>
+      </div>
+    `).join("")}
+  </div>
+` : ""}
 
       ${p.adminReply ? `
         <div class="admin-reply-box">
@@ -12348,6 +12401,28 @@ function hideCriticalLoading(){
     submitChatGo();
   }
 });
+
+  function openEventMemberRealDetail(team, nick){
+  if(!team || !nick){
+    toast("단체명 또는 멤버명이 없습니다.");
+    return;
+  }
+
+  showReal();
+
+  setTimeout(() => {
+    const viewTeam = document.getElementById("viewTeam");
+    const viewMember = document.getElementById("viewMember");
+
+    ensureSelectOption(viewTeam, team, team);
+    fillSelect(viewMember, [nick], "멤버 선택");
+    ensureSelectOption(viewMember, nick, nick);
+
+    setTimeout(() => {
+      onLoadMember();
+    }, 100);
+  }, 400);
+}
 </script>
   <div id="rankGraphPopup" class="hidden">
   <div class="rank-graph-box">
