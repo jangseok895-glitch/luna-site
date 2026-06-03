@@ -5365,6 +5365,31 @@ body.event-tournament-mode #btnOpenFullEventRank{
   font-weight:900 !important;
   cursor:pointer !important;
 }
+
+  .event-member-rank{
+  display:inline-block !important;
+  margin-left:8px !important;
+  padding:3px 9px !important;
+  border-radius:999px !important;
+  background:#e0f7ff !important;
+  border:1px solid #38bdf8 !important;
+  color:#2563eb !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+  vertical-align:middle !important;
+}
+
+.event-member-rank.loaded{
+  background:linear-gradient(135deg,#fff7cc,#ffd54f) !important;
+  border-color:#eab308 !important;
+  color:#111827 !important;
+}
+
+.event-member-rank.empty{
+  background:#fee2e2 !important;
+  border-color:#ef4444 !important;
+  color:#dc2626 !important;
+}
 </style> 바로 위
 ========================================================= */
 
@@ -7188,7 +7213,9 @@ function showGunpyo() {
 }
 
 function showReal() {
-  showLoading("군 실명제 화면을 불러오는 중입니다");
+  if(!window.REAL_TEAM_CACHE || !window.REAL_TEAM_CACHE.length){
+    showLoading("군 실명제 화면을 불러오는 중입니다");
+  }
 
   try {
     document.body.classList.add("real-mode");
@@ -7206,7 +7233,6 @@ function showReal() {
     setActiveTab("real");
     refreshHeaderPush();
 
-    // 핵심: 들어올 때마다 단체 목록 새로 로딩
     initRealUI();
 
   } catch (err) {
@@ -7277,38 +7303,48 @@ function clearRealResult() {
       `<tr><td colspan="9">멤버를 선택하면 군표가 표시됩니다.</td></tr>`;
 }
 
-function initRealUI() {
+function initRealUI(forceReload = false) {
   const realTeam = document.getElementById("realTeam");
   const viewTeam = document.getElementById("viewTeam");
   const viewMember = document.getElementById("viewMember");
-
-  fillSelect(realTeam, [], "단체 불러오는 중");
-  fillSelect(viewTeam, [], "단체 불러오는 중");
-  fillSelect(viewMember, [], "멤버 선택");
 
   document.getElementById("btnRealRegister").onclick = onRealRegister;
   document.getElementById("viewTeam").onchange = onViewTeamChanged;
   document.getElementById("viewMember").onchange = onLoadMember;
   document.getElementById("btnViewDelete").onclick = onDeleteBtnClicked;
 
+  if(window.REAL_TEAM_CACHE && window.REAL_TEAM_CACHE.length && !forceReload){
+    fillSelect(realTeam, window.REAL_TEAM_CACHE, "단체 선택");
+    fillSelect(viewTeam, window.REAL_TEAM_CACHE, "단체 선택");
+    fillSelect(viewMember, [], "멤버 선택");
+    hideLoading();
+    return;
+  }
+
+  fillSelect(realTeam, [], "단체 불러오는 중");
+  fillSelect(viewTeam, [], "단체 불러오는 중");
+  fillSelect(viewMember, [], "멤버 선택");
+
   google.script.run
     .withSuccessHandler((res) => {
       hideLoading();
 
-const teamObjs = (res && res.teams) || [];
+      const teamObjs = (res && res.teams) || [];
 
-const teams = teamObjs.map(t => {
-  if(typeof t === "string") return t;
+      const teams = teamObjs.map(t => {
+        if(typeof t === "string") return t;
 
-  return {
-    value: t.name,
-label: t.certified ? `${t.name} 👍인증 크루` : t.name,
-certified: t.certified
-  };
-});
+        return {
+          value: t.name,
+          label: t.certified ? `${t.name} 👍인증 크루` : t.name,
+          certified: t.certified
+        };
+      });
 
-fillSelect(realTeam, teams, "단체 선택");
-fillSelect(viewTeam, teams, "단체 선택");
+      window.REAL_TEAM_CACHE = teams;
+
+      fillSelect(realTeam, teams, "단체 선택");
+      fillSelect(viewTeam, teams, "단체 선택");
       fillSelect(viewMember, [], "멤버 선택");
 
       if (!teams.length) {
@@ -7339,7 +7375,8 @@ function onRealRegister() {
       document.getElementById("realNick").value = "";
       document.getElementById("realPin").value = "";
 
-      initRealUI();
+      window.REAL_TEAM_CACHE = null;
+      initRealUI(true);
     })
     .withFailureHandler((e) => {
       hideLoading();
@@ -8669,6 +8706,26 @@ let CURRENT_BOARD = "";
 let CURRENT_BOARD_POSTS = [];
 
 /* ===== 게시판 / 이벤트대회 화면 전환 ===== */
+function updateEventShotLabels(){
+  for(let i=1;i<=4;i++){
+    const input = document.getElementById("eventMember"+i);
+    const label = document.getElementById("eventShotLabel"+(i+1));
+    if(!label) continue;
+    const name = input && input.value.trim() ? input.value.trim() : (i + "번선수");
+    label.textContent = name + " 선수 실명제 스크린샷";
+  }
+}
+
+document.addEventListener("input", function(e){
+  if(e.target && /^eventMember[1-4]$/.test(e.target.id)){
+    updateEventShotLabels();
+  }
+});
+
+let BOARD_CACHE = {};
+let BOARD_CACHE_TIME = {};
+const BOARD_CACHE_MAX_AGE = 60 * 1000;
+
 function showBoard(board){
   CURRENT_BOARD = board;
 
@@ -8680,7 +8737,6 @@ function showBoard(board){
 
   document.getElementById("gunpyoTopBtns").style.display = "none";
   document.getElementById("realTopBtns").style.display = "none";
-  document.getElementById("boardSearchBox")?.classList.remove("hidden");
   document.getElementById("boardSearchBox")?.classList.add("hidden");
 
   setActiveTab(board);
@@ -8690,38 +8746,23 @@ function showBoard(board){
   const writeBtn = document.getElementById("btnOpenBoardWrite");
   const fullRankBtn = document.getElementById("btnOpenFullEventRank");
   const writeBox = document.getElementById("boardWriteBox");
+  const normalFields = document.getElementById("normalBoardWriteFields");
+  const eventFields = document.getElementById("eventWriteFields");
 
-writeBox.classList.add("hidden");
-const normalFields = document.getElementById("normalBoardWriteFields");
-const eventFields = document.getElementById("eventWriteFields");
+  if(writeBox) writeBox.classList.add("hidden");
+  if(normalFields) normalFields.classList.toggle("hidden", board === "event");
+  if(eventFields) eventFields.classList.toggle("hidden", board !== "event");
+  if(writeBtn) writeBtn.textContent = board === "event" ? "이벤트 참여하기" : "글쓰기";
+  if(list) list.innerHTML = "";
 
-function updateEventShotLabels(){
-  for(let i=1;i<=4;i++){
-    const input = document.getElementById("eventMember"+i);
-    const label = document.getElementById("eventShotLabel"+(i+1));
-    if(!label) continue;
-    const name = input && input.value.trim() ? input.value.trim() : (i + "번선수");
-    label.textContent = name + " 선수 실명제 스크린샷";
-  }
-}
-[1,2,3,4].forEach(n => {
-  document.addEventListener("input", function(e){
-    if(e.target && e.target.id === "eventMember"+n) updateEventShotLabels();
-  });
-});
-if(normalFields) normalFields.classList.toggle("hidden", board === "event");
-if(eventFields) eventFields.classList.toggle("hidden", board !== "event");
-if(writeBtn) writeBtn.textContent = board === "event" ? "이벤트 참여하기" : "글쓰기";
-list.innerHTML = "";
+  if(board === "eventTournament"){
+    if(writeBtn) writeBtn.style.display = "none";
+    if(fullRankBtn) fullRankBtn.style.display = "none";
 
-if(board === "eventTournament"){
-  writeBtn.style.display = "none";
-  if(fullRankBtn) fullRankBtn.style.display = "none";
+    const noticeBtn = document.getElementById("btnOpenEventNotice");
+    if(noticeBtn) noticeBtn.style.display = "none";
 
-  const noticeBtn = document.getElementById("btnOpenEventNotice");
-  if(noticeBtn) noticeBtn.style.display = "none";
-
-  list.innerHTML = `
+    list.innerHTML = `
     <div class="tournament-main-grid">
 
       <div class="tournament-thumb-card" onclick="openTournamentPoster('sticker3839')">
@@ -8770,24 +8811,41 @@ if(board === "eventTournament"){
     </div>
   `;
 
-  return;
-}
-writeBtn.style.display = (board === "event") ? "inline-flex" : "none";
-if(fullRankBtn) fullRankBtn.style.display = (board === "event") ? "inline-flex" : "none";
-const noticeBtn = document.getElementById("btnOpenEventNotice");
-if(noticeBtn) noticeBtn.style.display = (board === "event") ? "inline-flex" : "none";
-if(board === "promo" || board === "event"){
-  ensureBoardSearchBox()?.classList.remove("hidden");
+    return;
+  }
 
-  showLoading(board === "promo" ? "홍보/자유 게시판을 불러오는 중입니다" : "EVENT 게시판을 불러오는 중입니다");
+  if(writeBtn) writeBtn.style.display = (board === "promo" || board === "event") ? "inline-block" : "none";
+  if(fullRankBtn) fullRankBtn.style.display = (board === "event") ? "inline-flex" : "none";
+  const noticeBtn = document.getElementById("btnOpenEventNotice");
+  if(noticeBtn) noticeBtn.style.display = (board === "event") ? "inline-flex" : "none";
 
-  writeBtn.style.display = "inline-block";
-  document.getElementById("boardWriter").classList.remove("hidden");
-  document.getElementById("boardPinInput").placeholder = "비밀번호 4자리";
+  if(board === "promo" || board === "event"){
+    ensureBoardSearchBox()?.classList.remove("hidden");
 
-  loadBoardPosts();
-  return;
-}
+    const writer = document.getElementById("boardWriter");
+    const pin = document.getElementById("boardPinInput");
+    if(writer) writer.classList.remove("hidden");
+    if(pin) pin.placeholder = "비밀번호 4자리";
+
+    const hasFreshCache =
+      BOARD_CACHE[board] &&
+      Array.isArray(BOARD_CACHE[board]) &&
+      Date.now() - (BOARD_CACHE_TIME[board] || 0) < BOARD_CACHE_MAX_AGE;
+
+    if(hasFreshCache){
+      CURRENT_BOARD_POSTS = BOARD_CACHE[board];
+      renderBoardList();
+      loadBoardPosts({ silent:true });
+      return;
+    }
+
+    if(list){
+      list.innerHTML = `<div class="board-inline-loading" style="padding:18px;text-align:center;font-weight:900;color:#2563eb;">게시글을 불러오는 중입니다.</div>`;
+    }
+
+    loadBoardPosts({ silent:false });
+    return;
+  }
 }
 
 /* ===== 대회 팝업 ===== */
@@ -9138,18 +9196,40 @@ function updateTournamentPoster(){
 }
 
 /* ===== 게시글 불러오기 ===== */
-function loadBoardPosts(){
+function loadBoardPosts(options = {}){
+  const silent = !!options.silent;
+  const board = CURRENT_BOARD;
+
+  if(!silent){
+    showLoading(board === "promo" ? "홍보/자유 게시판을 불러오는 중입니다" : "EVENT 게시판을 불러오는 중입니다");
+  }
+
   google.script.run
     .withSuccessHandler((res) => {
       hideLoading();
-      CURRENT_BOARD_POSTS = res.posts || [];
+
+      const posts = res.posts || [];
+      BOARD_CACHE[board] = posts;
+      BOARD_CACHE_TIME[board] = Date.now();
+
+      if(CURRENT_BOARD !== board) return;
+
+      CURRENT_BOARD_POSTS = posts;
       renderBoardList();
     })
     .withFailureHandler(e => {
       hideLoading();
+
+      if(BOARD_CACHE[board] && Array.isArray(BOARD_CACHE[board])){
+        CURRENT_BOARD_POSTS = BOARD_CACHE[board];
+        renderBoardList();
+        toast("최근에 불러온 게시글을 표시합니다.");
+        return;
+      }
+
       toast(e.message || "게시글 불러오기 실패");
     })
-    .getBoardPosts(CURRENT_BOARD);
+    .getBoardPosts(board);
 }
 
 /* ===== 게시글 목록 ===== */
@@ -9381,6 +9461,8 @@ function renderBoardPostContent(idx){
           p.imageUrls = Array.isArray(detail.imageUrls) ? detail.imageUrls : [];
           p.adminReply = detail.adminReply || "";
           p.adminReplyAt = detail.adminReplyAt || "";
+          p.team = detail.team || p.team || p.writer || "";
+          p.members = Array.isArray(detail.members) ? detail.members : (p.members || []);
         }
         renderBoardPostContent(idx);
       })
@@ -9388,9 +9470,11 @@ function renderBoardPostContent(idx){
         toast(e.message || "이미지 불러오기 실패");
       })
       .getEventPostDetail(p.id);
+    return;
   }
 
   const list = document.getElementById("boardList");
+  const eventTeamName = p.team || p.writer || "";
 
   list.innerHTML = `
     <div class="board-post-open">
@@ -9401,22 +9485,29 @@ function renderBoardPostContent(idx){
       </div>
 
       <div class="board-post-content">${linkifyText(p.content)}</div>
+
       ${CURRENT_BOARD === "event" && !p.isNotice && p.members?.length ? `
-  <div class="event-member-detail-box">
-    <div class="event-member-detail-title">참여 멤버 상세보기</div>
-    ${p.members.map((nick, i) => `
-      <div class="event-member-detail-row">
-        <span>${i + 1}번 선수: <b>${esc(nick)}</b></span>
-        <button
-          class="event-member-detail-btn"
-          onclick="openEventMemberRealDetail('${esc(p.team || p.writer || "")}', '${esc(nick)}')"
-        >
-          상세보기
-        </button>
-      </div>
-    `).join("")}
-  </div>
-` : ""}
+        <div class="event-member-detail-box">
+          <div class="event-member-detail-title">참여 멤버 상세보기</div>
+
+          ${p.members.map((nick, i) => `
+            <div class="event-member-detail-row">
+              <span>
+                ${i + 1}번 선수:
+                <b>${esc(nick)}</b>
+                <span class="event-member-rank" id="eventRank_${idx}_${i}">군 확인중</span>
+              </span>
+
+              <button
+                class="event-member-detail-btn"
+                onclick="openEventMemberRealDetail('${esc(eventTeamName)}', '${esc(nick)}')"
+              >
+                상세보기
+              </button>
+            </div>
+          `).join("")}
+        </div>
+      ` : ""}
 
       ${p.adminReply ? `
         <div class="admin-reply-box">
@@ -9426,17 +9517,17 @@ function renderBoardPostContent(idx){
         </div>
       ` : ""}
 
-${p.imageUrls && p.imageUrls.length ? `
-  <div class="board-post-images">
-    ${p.imageUrls.map(url => `
-<img class="board-post-img" src="${esc(url)}" alt="첨부 이미지" onclick="openImagePopup('${esc(url)}')">
-    `).join("")}
-  </div>
-` : p.imageUrl ? `
-  <div class="board-post-images">
-<img class="board-post-img" src="${esc(p.imageUrl)}" alt="첨부 이미지" onclick="openImagePopup('${esc(p.imageUrl)}')">
-  </div>
-` : ""}
+      ${p.imageUrls && p.imageUrls.length ? `
+        <div class="board-post-images">
+          ${p.imageUrls.map(url => `
+            <img class="board-post-img" src="${esc(url)}" alt="첨부 이미지" onclick="openImagePopup('${esc(url)}')">
+          `).join("")}
+        </div>
+      ` : p.imageUrl ? `
+        <div class="board-post-images">
+          <img class="board-post-img" src="${esc(p.imageUrl)}" alt="첨부 이미지" onclick="openImagePopup('${esc(p.imageUrl)}')">
+        </div>
+      ` : ""}
 
       <div class="comment-box">
         <div class="comment-title">댓글</div>
@@ -9445,18 +9536,18 @@ ${p.imageUrls && p.imageUrls.length ? `
           댓글을 불러오는 중입니다.
         </div>
 
-<div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;">
-  <b>작성자</b>
-  <input id="commentWriter" class="text sm" placeholder="작성자">
+        <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;">
+          <b>작성자</b>
+          <input id="commentWriter" class="text sm" placeholder="작성자">
 
-  <b>댓글</b>
-  <input id="commentContent" class="text" style="flex:1;min-width:260px;" placeholder="댓글 입력">
+          <b>댓글</b>
+          <input id="commentContent" class="text" style="flex:1;min-width:260px;" placeholder="댓글 입력">
 
-  <b>비번</b>
-  <input id="commentPin4" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="4자리">
+          <b>비번</b>
+          <input id="commentPin4" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="4자리">
 
-  <button class="btn gold" onclick="addBoardComment('${p.id}')">등록</button>
-</div>
+          <button class="btn gold" onclick="addBoardComment('${p.id}')">등록</button>
+        </div>
       </div>
 
       <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center;">
@@ -9475,24 +9566,31 @@ ${p.imageUrls && p.imageUrls.length ? `
         ${CURRENT_BOARD !== "event" ? `<button class="btn gold" onclick="openBoardEdit(${idx})">수정</button>` : ""}
         <button class="btn red" onclick="deleteBoardPost('${p.id}')">삭제</button>
 
+        ${CURRENT_BOARD === "promo" ? `
+          <div class="promo-reaction-box">
+            <button class="promo-reaction-btn" onclick="event.stopPropagation(); voteBoardPost('${p.id}', 'like', ${idx})">
+              👍 좋아요 <b>${Number(p.likes || 0)}</b>
+            </button>
+            <button class="promo-reaction-btn" onclick="event.stopPropagation(); voteBoardPost('${p.id}', 'dislike', ${idx})">
+              👎 싫어요 <b>${Number(p.dislikes || 0)}</b>
+            </button>
+          </div>
+        ` : ""}
 
-${CURRENT_BOARD === "promo" ? `
-  <div class="promo-reaction-box">
-    <button class="promo-reaction-btn" onclick="event.stopPropagation(); voteBoardPost('${p.id}', 'like', ${idx})">
-      👍 좋아요 <b>${Number(p.likes || 0)}</b>
-    </button>
-    <button class="promo-reaction-btn" onclick="event.stopPropagation(); voteBoardPost('${p.id}', 'dislike', ${idx})">
-      👎 싫어요 <b>${Number(p.dislikes || 0)}</b>
-    </button>
-  </div>
-` : ""}
+        ${CURRENT_BOARD === "event" && !p.isNotice ? `
+          <button class="btn gold" onclick="approveEventPost('${p.id}')">승인</button>
+        ` : ""}
 
-        ${CURRENT_BOARD === "event" && !p.isNotice ? `<button class="btn gold" onclick="approveEventPost('${p.id}')">승인</button>` : ""}
+        <button class="btn blue" onclick="openAdminReply(${idx})">운영진 답글</button>
       </div>
     </div>
   `;
 
   loadBoardComments(p.id);
+
+  if(CURRENT_BOARD === "event" && !p.isNotice && p.members?.length){
+    loadEventMemberRanks(idx, eventTeamName, p.members);
+  }
 }
 
 
@@ -12410,7 +12508,7 @@ function hideCriticalLoading(){
 
   showReal();
 
-  setTimeout(() => {
+  const jumpToMember = () => {
     const viewTeam = document.getElementById("viewTeam");
     const viewMember = document.getElementById("viewMember");
 
@@ -12420,8 +12518,119 @@ function hideCriticalLoading(){
 
     setTimeout(() => {
       onLoadMember();
-    }, 100);
-  }, 400);
+    }, 80);
+  };
+
+  if(window.REAL_TEAM_CACHE && window.REAL_TEAM_CACHE.length){
+    setTimeout(jumpToMember, 80);
+  }else{
+    setTimeout(jumpToMember, 700);
+  }
+}
+
+function getRankNameFromTotal(total){
+  total = Number(total) || 0;
+
+  const tiers = Array.isArray(TIERS_DESC) && TIERS_DESC.length ? TIERS_DESC : [
+    { label:"프로", min:5760 },
+    { label:"강주력", min:2880 },
+    { label:"주력", min:1440 },
+    { label:"1군", min:720 },
+    { label:"2군", min:360 },
+    { label:"3군", min:180 },
+    { label:"4군", min:90 },
+    { label:"5군", min:45 },
+    { label:"6군", min:0 }
+  ];
+
+  const found = tiers.find(t => total >= Number(t.min || 0));
+  return found ? found.label : "6군";
+}
+
+function normalizeEventName(v){
+  return String(v || "")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/\s+/g, "")
+    .trim();
+}
+
+async function getEventMemberRankDirect(team, nick){
+  const t = String(team || "").trim();
+  const n = String(nick || "").trim();
+  if(!n) return { ok:false, rank:"미등록", total:0 };
+
+  // EVENT 상세의 군 표시용입니다. 조회수 증가 RPC를 타지 않도록 team_members의 total만 빠르게 읽습니다.
+  let rows = [];
+
+  try{
+    if(typeof sbSelect === "function"){
+      rows = await sbSelect("team_members", q =>
+        q.select("team_name,nickname,total,selections").eq("team_name", t).eq("nickname", n).limit(1)
+      );
+
+      // 단체명 공백/특수문자 차이로 exact 조회가 실패하는 경우 대비
+      if(!rows.length){
+        const all = await sbSelect("team_members", q =>
+          q.select("team_name,nickname,total,selections").eq("nickname", n).limit(20)
+        );
+        const nt = normalizeEventName(t);
+        rows = all.filter(r => normalizeEventName(r.team_name) === nt);
+        if(!rows.length) rows = all;
+      }
+    }
+  }catch(e){
+    console.warn("event rank direct select failed", e);
+  }
+
+  if(rows && rows.length){
+    const r = rows[0];
+    let total = Number(r.total || 0);
+
+    // total 컬럼이 비어있는 예전 데이터는 selections로 다시 계산
+    if(!total && r.selections){
+      try{
+        const selections = typeof r.selections === "string" ? JSON.parse(r.selections || "{}") : r.selections;
+        if(typeof getSheetDataSupabase === "function" && typeof calcTotalFromSelectionsSupabase === "function"){
+          const sheet = await getSheetDataSupabase();
+          const safeSelections = typeof normalizeSelectionKeys === "function" ? normalizeSelectionKeys(selections) : selections;
+          total = calcTotalFromSelectionsSupabase(safeSelections, sheet.rows);
+        }
+      }catch(e){
+        console.warn("event rank total calc failed", e);
+      }
+    }
+
+    return { ok:true, rank:getRankNameFromTotal(total), total };
+  }
+
+  return { ok:false, rank:"미등록", total:0 };
+}
+
+function loadEventMemberRanks(postIdx, team, members){
+  members.forEach((nick, i) => {
+    const el = document.getElementById(`eventRank_${postIdx}_${i}`);
+    if(!el) return;
+
+    el.textContent = "군 확인중";
+    el.classList.remove("loaded", "empty");
+
+    getEventMemberRankDirect(team, nick)
+      .then(res => {
+        if(!el) return;
+        if(res && res.ok){
+          el.textContent = `[${res.rank}]`;
+          el.classList.add("loaded");
+        }else{
+          el.textContent = "[미등록]";
+          el.classList.add("empty");
+        }
+      })
+      .catch(() => {
+        if(!el) return;
+        el.textContent = "[미등록]";
+        el.classList.add("empty");
+      });
+  });
 }
 </script>
   <div id="rankGraphPopup" class="hidden">
