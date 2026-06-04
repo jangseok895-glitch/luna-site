@@ -1207,6 +1207,60 @@ input, .select, .text, #gunpyoTopPanel .input-wrap input{
   gap:10px;
 }
 
+.board-write-popup{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  z-index:2147483600 !important;
+  background:rgba(0,0,0,.48) !important;
+  display:flex !important;
+  align-items:flex-start !important;
+  justify-content:center !important;
+  padding:28px 16px !important;
+  overflow-y:auto !important;
+}
+
+.board-write-popup.hidden{
+  display:none !important;
+}
+
+.board-write-popup .board-write-box{
+  width:min(720px,94vw) !important;
+  max-height:none !important;
+  margin:0 auto 40px !important;
+  box-shadow:0 14px 45px rgba(0,0,0,.35) !important;
+}
+
+.board-pagination{
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+  gap:6px !important;
+  margin:14px 0 4px !important;
+  flex-wrap:wrap !important;
+}
+
+.board-page-btn{
+  min-width:38px !important;
+  height:34px !important;
+  padding:0 10px !important;
+  border-radius:10px !important;
+  border:1px solid rgba(14,165,233,.35) !important;
+  background:#ffffff !important;
+  color:#111827 !important;
+  font-size:14px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+}
+
+.board-page-btn.active{
+  background:linear-gradient(135deg,#38bdf8,#2563eb) !important;
+  color:#ffffff !important;
+  border-color:#2563eb !important;
+}
+
+
 .board-write-head{
   display:flex;
   justify-content:space-between;
@@ -8704,6 +8758,8 @@ function showAutoNotice(message, seconds = 5) {
 
 let CURRENT_BOARD = "";
 let CURRENT_BOARD_POSTS = [];
+let CURRENT_BOARD_PAGE = 1;
+const EVENT_POSTS_PER_PAGE = 13;
 
 /* ===== 게시판 / 이벤트대회 화면 전환 ===== */
 function updateEventShotLabels(){
@@ -8728,6 +8784,7 @@ const BOARD_CACHE_MAX_AGE = 60 * 1000;
 
 function showBoard(board){
   CURRENT_BOARD = board;
+  CURRENT_BOARD_PAGE = 1;
 
   document.getElementById("gunpyoTopPanel")?.classList.add("hidden");
   document.getElementById("gunpyoSection")?.classList.add("hidden");
@@ -9351,16 +9408,35 @@ async function renderBoardList(){
   }
 
   if(!posts.length){
+    CURRENT_BOARD_PAGE = 1;
     list.innerHTML = `<div class="board-title-item">검색 결과가 없습니다.</div>`;
     return;
   }
 
-  const commentCountMap = await getBoardCommentCountMap(
-    posts.map(p => p.id).filter(Boolean)
-  );
-
   const isPromo = CURRENT_BOARD === "promo";
   const isEvent = CURRENT_BOARD === "event";
+
+  let visiblePosts = posts;
+  let paginationHtml = "";
+
+  if(isEvent){
+    const noticePosts = posts.filter(p => p.isNotice);
+    const normalPosts = posts.filter(p => !p.isNotice);
+    const totalPages = Math.max(1, Math.ceil(normalPosts.length / EVENT_POSTS_PER_PAGE));
+
+    if(CURRENT_BOARD_PAGE > totalPages) CURRENT_BOARD_PAGE = totalPages;
+    if(CURRENT_BOARD_PAGE < 1) CURRENT_BOARD_PAGE = 1;
+
+    const start = (CURRENT_BOARD_PAGE - 1) * EVENT_POSTS_PER_PAGE;
+    const pagedNormalPosts = normalPosts.slice(start, start + EVENT_POSTS_PER_PAGE);
+
+    visiblePosts = [...noticePosts, ...pagedNormalPosts];
+    paginationHtml = makeBoardPaginationHtml(totalPages);
+  }
+
+  const commentCountMap = await getBoardCommentCountMap(
+    visiblePosts.map(p => p.id).filter(Boolean)
+  );
 
   let rankHtml = "";
   if(CURRENT_BOARD === "event"){
@@ -9378,9 +9454,9 @@ async function renderBoardList(){
       <div>조회수</div>
     </div>
 
-    ${posts.map((p) => {
+    ${visiblePosts.map((p) => {
       const realIdx = CURRENT_BOARD_POSTS.indexOf(p);
-      const originalNo = CURRENT_BOARD_POSTS.length - realIdx;
+      const originalNo = CURRENT_BOARD_POSTS.filter(x => !x.isNotice).length - CURRENT_BOARD_POSTS.filter((x, i) => !x.isNotice && i < realIdx).length;
       const commentCount = commentCountMap[p.id] || 0;
       const commentBadge = commentCount > 0
         ? ` <span style="color:#ef4444;font-weight:900;">[${commentCount}]</span>`
@@ -9404,8 +9480,27 @@ isPromo
         </div>
       `;
     }).join("")}
+    ${paginationHtml}
   `;
 }
+
+function makeBoardPaginationHtml(totalPages){
+  if(CURRENT_BOARD !== "event" || totalPages <= 1) return "";
+
+  let buttons = "";
+  for(let i = 1; i <= totalPages; i++){
+    buttons += `<button type="button" class="board-page-btn ${i === CURRENT_BOARD_PAGE ? "active" : ""}" onclick="setEventBoardPage(${i})">${i}</button>`;
+  }
+
+  return `<div class="board-pagination">${buttons}</div>`;
+}
+
+function setEventBoardPage(page){
+  CURRENT_BOARD_PAGE = Number(page) || 1;
+  renderBoardList();
+  document.getElementById("boardList")?.scrollIntoView({behavior:"smooth", block:"start"});
+}
+
 
   function openImagePopup(src){
   const popup = document.getElementById("imagePopup");
@@ -9699,6 +9794,50 @@ document.addEventListener("click", function(e){
 
 });
 
+
+function ensureBoardWritePopup(){
+  let popup = document.getElementById("boardWritePopup");
+  const box = document.getElementById("boardWriteBox");
+
+  if(!box) return null;
+
+  if(!popup){
+    popup = document.createElement("div");
+    popup.id = "boardWritePopup";
+    popup.className = "board-write-popup hidden";
+    document.body.appendChild(popup);
+
+    popup.addEventListener("click", function(e){
+      if(e.target === popup) closeBoardWritePopup();
+    });
+  }
+
+  if(box.parentElement !== popup){
+    popup.appendChild(box);
+  }
+
+  return popup;
+}
+
+function openBoardWritePopup(){
+  const popup = ensureBoardWritePopup();
+  const box = document.getElementById("boardWriteBox");
+
+  if(CURRENT_BOARD === "event"){
+    initEventDateSelects();
+    fillEventTeamSelect();
+    fillEventMemberSelects(document.getElementById("eventTeamSelect")?.value || "");
+  }
+
+  if(box) box.classList.remove("hidden");
+  if(popup) popup.classList.remove("hidden");
+}
+
+function closeBoardWritePopup(){
+  document.getElementById("boardWriteBox")?.classList.add("hidden");
+  document.getElementById("boardWritePopup")?.classList.add("hidden");
+}
+
 /* 글쓰기 버튼 / 닫기 버튼 / 작성 버튼 */
 document.addEventListener("click", async function(e){
   const openBtn = e.target.closest("#btnOpenBoardWrite");
@@ -9751,22 +9890,13 @@ document.addEventListener("click", async function(e){
 
   if(openBtn){
     e.preventDefault();
-
-    document.getElementById("boardWriteBox")?.classList.remove("hidden");
-    if(CURRENT_BOARD === "event") { initEventDateSelects(); fillEventTeamSelect(); fillEventMemberSelects(document.getElementById("eventTeamSelect")?.value || ""); }
-    document.getElementById("boardWriteBox")?.scrollIntoView({
-      behavior:"smooth",
-      block:"start"
-    });
-
+    openBoardWritePopup();
     return;
   }
 
   if(closeBtn){
     e.preventDefault();
-
-    document.getElementById("boardWriteBox")?.classList.add("hidden");
-
+    closeBoardWritePopup();
     return;
   }
 
@@ -9798,7 +9928,8 @@ document.addEventListener("click", async function(e){
           [1,2,3,4].forEach(n => document.getElementById("eventMember"+n).value = "");
           document.getElementById("eventShot1").value = "";
           if(document.getElementById("eventShot2")) document.getElementById("eventShot2").value = "";
-          document.getElementById("boardWriteBox").classList.add("hidden");
+          closeBoardWritePopup();
+          CURRENT_BOARD_PAGE = 1;
           loadBoardPosts();
         })
         .withFailureHandler(e => { hideLoading(); toast(e.message || "등록 실패"); })
@@ -9845,7 +9976,7 @@ document.addEventListener("click", async function(e){
         document.getElementById("boardPinInput").value = "";
         document.getElementById("boardImageInput").value = "";
 
-        document.getElementById("boardWriteBox").classList.add("hidden");
+        closeBoardWritePopup();
 
         loadBoardPosts();
       })
@@ -10147,6 +10278,7 @@ function linkifyText(text){
 document.addEventListener("click", function(e){
   if(e.target.closest("#btnBoardSearch")){
     e.preventDefault();
+    CURRENT_BOARD_PAGE = 1;
     renderBoardList();
   }
 
@@ -10154,6 +10286,7 @@ document.addEventListener("click", function(e){
     e.preventDefault();
     const input = document.getElementById("boardSearchInput");
     if(input) input.value = "";
+    CURRENT_BOARD_PAGE = 1;
     renderBoardList();
   }
 });
