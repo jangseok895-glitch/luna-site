@@ -859,6 +859,43 @@ body.real-manage-closed #manageOpenBox{
   color:#111827 !important;
 }
 
+/* ===== 군표 저장/불러오기 안내 메시지 박스 ===== */
+.gunpyo-action-msg{
+  display:none;
+  margin:8px auto -2px;
+  width:min(420px,92%);
+  min-height:42px;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:9px 18px;
+  border-radius:999px;
+  background:linear-gradient(135deg,#ffffff,#e0f7ff,#bae6fd) !important;
+  border:2px solid rgba(14,165,233,.55) !important;
+  color:#075985 !important;
+  font-size:20px;
+  font-weight:1000;
+  letter-spacing:.2px;
+  box-shadow:0 6px 16px rgba(14,165,233,.22), inset 0 2px 0 rgba(255,255,255,.85);
+  animation:gunpyoMsgPop .18s ease-out;
+}
+.gunpyo-action-msg.show{
+  display:flex;
+}
+.gunpyo-action-msg.success{
+  border-color:#38bdf8 !important;
+  color:#0369a1 !important;
+}
+.gunpyo-action-msg.error{
+  border-color:#fb7185 !important;
+  color:#be123c !important;
+  background:linear-gradient(135deg,#ffffff,#fff1f2,#ffe4e6) !important;
+}
+@keyframes gunpyoMsgPop{
+  from{ transform:translateY(-6px) scale(.96); opacity:0; }
+  to{ transform:translateY(0) scale(1); opacity:1; }
+}
+
 #toast{
   position:fixed;
   left:50%;
@@ -6061,6 +6098,7 @@ function escMini4545(v){
         <div class="rank-meter">
           <div class="meter-scale" id="meterScale"></div>
           <div class="meter-arrow" id="meterArrow"></div>
+          <div id="gunpyoActionMsg" class="gunpyo-action-msg"></div>
         </div>
       </div>
 
@@ -6629,9 +6667,38 @@ function newMapBadge(r){
   return "";
 }
   
+function showGunpyoActionMsg(msg, type = "success") {
+  const box = document.getElementById("gunpyoActionMsg");
+  if (!box) return false;
+
+  box.textContent = msg;
+  box.className = "gunpyo-action-msg show " + (type === "error" ? "error" : "success");
+
+  clearTimeout(window.__gunpyoActionMsgTimer);
+  window.__gunpyoActionMsgTimer = setTimeout(() => {
+    box.classList.remove("show");
+  }, 1800);
+
+  return true;
+}
+
 function toast(msg) {
+  const text = String(msg || "");
+  const isGunpyoSaveLoadMsg = [
+    "저장 완료",
+    "저장 실패",
+    "불러오기 완료",
+    "불러오기 실패",
+    "닉네임을 입력하세요.",
+    "비밀번호는 숫자 5자리입니다."
+  ].some((v) => text.includes(v));
+
+  if (isGunpyoSaveLoadMsg && showGunpyoActionMsg(text, text.includes("실패") || text.includes("입력") || text.includes("비밀번호") ? "error" : "success")) {
+    return;
+  }
+
   const t = document.getElementById("toast");
-  t.textContent = msg;
+  t.textContent = text;
   t.style.display = "block";
   setTimeout(() => (t.style.display = "none"), 1500);
 }
