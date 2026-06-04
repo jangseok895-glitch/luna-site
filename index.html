@@ -905,17 +905,21 @@ body.real-manage-closed #manageOpenBox{
 /* ===== 상단 패널과 표 사이 여백 최소화 ===== */
 #gunpyoTopPanel{
   margin-bottom:0 !important;
-  padding-bottom:8px !important;
+  padding-bottom:4px !important;
 }
 #gunpyoTopPanel .rank-meter{
   margin-bottom:0 !important;
 }
 #pcTableSection.panel,
 #realPcTableSection.panel{
-  margin-top:4px !important;
+  margin-top:0 !important;
+  padding-top:4px !important;
 }
-#pcTableSection.table-wrap,
-#realPcTableSection.table-wrap{
+#pcTableSection .table-wrap,
+#realPcTableSection .table-wrap{
+  margin-top:0 !important;
+}
+.table-wrap{
   margin-top:4px !important;
 }
 
@@ -5504,6 +5508,48 @@ body.event-tournament-mode #btnOpenFullEventRank{
   border-color:#ef4444 !important;
   color:#dc2626 !important;
 }
+
+
+/* ===== 최종 보정: 군표 상단 고정영역 아래 빈 여백 제거 ===== */
+.sticky-inner{
+  padding-bottom:0 !important;
+}
+#gunpyoTopPanel.panel{
+  margin-top:6px !important;
+  margin-bottom:0 !important;
+  padding-bottom:4px !important;
+}
+#gunpyoTopPanel .rank-meter{
+  margin-top:8px !important;
+  margin-bottom:0 !important;
+}
+#gunpyoTopPanel .meter-scale{
+  height:32px !important;
+}
+#pcTableSection.panel{
+  margin-top:-24px !important;
+  padding-top:4px !important;
+}
+#pcTableSection.table-wrap{
+  margin-top:-24px !important;
+}
+#realPcTableSection.panel{
+  margin-top:-18px !important;
+  padding-top:4px !important;
+}
+#realPcTableSection.table-wrap{
+  margin-top:-18px !important;
+}
+body.mobile-view #mobileSection{
+  margin-top:-18px !important;
+}
+body.capture-mode #pcTableSection.panel,
+body.capture-mode #pcTableSection.table-wrap,
+body.capture-mode #realPcTableSection.panel,
+body.capture-mode #realPcTableSection.table-wrap{
+  margin-top:4px !important;
+}
+
 </style> 바로 위
 ========================================================= */
 
@@ -6178,7 +6224,7 @@ function escMini4545(v){
   </button>
 </div>
 
-<div style="height:10px"></div>
+<div style="height:2px"></div>
 
 <div id="realScrollAwayArea">
 
@@ -6345,7 +6391,7 @@ user-select:none;
     </div>
   </div>
 
-  <div style="height:12px"></div>
+  <div style="height:2px"></div>
 
   <!-- 조회 -->
   <div class="real-row">
