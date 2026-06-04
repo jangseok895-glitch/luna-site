@@ -859,28 +859,34 @@ body.real-manage-closed #manageOpenBox{
   color:#111827 !important;
 }
 
-/* ===== 군표 저장/불러오기 안내 메시지 박스 ===== */
+/* ===== 군표 저장/불러오기 1초 자동 팝업 ===== */
 .gunpyo-action-msg{
+  position:fixed !important;
+  left:50% !important;
+  top:50% !important;
+  transform:translate(-50%,-50%) scale(.96) !important;
+  z-index:2147483647 !important;
   display:none;
-  margin:8px auto -2px;
-  width:min(420px,92%);
-  min-height:42px;
+  min-width:260px;
+  max-width:90vw;
+  min-height:54px;
   align-items:center;
   justify-content:center;
   text-align:center;
-  padding:9px 18px;
-  border-radius:999px;
+  padding:15px 28px;
+  border-radius:18px;
   background:linear-gradient(135deg,#ffffff,#e0f7ff,#bae6fd) !important;
-  border:2px solid rgba(14,165,233,.55) !important;
+  border:3px solid rgba(14,165,233,.65) !important;
   color:#075985 !important;
-  font-size:20px;
+  font-size:22px;
   font-weight:1000;
   letter-spacing:.2px;
-  box-shadow:0 6px 16px rgba(14,165,233,.22), inset 0 2px 0 rgba(255,255,255,.85);
-  animation:gunpyoMsgPop .18s ease-out;
+  box-shadow:0 14px 38px rgba(0,0,0,.22),0 0 0 9999px rgba(0,0,0,.12),inset 0 2px 0 rgba(255,255,255,.9);
+  pointer-events:none !important;
 }
 .gunpyo-action-msg.show{
   display:flex;
+  animation:gunpyoPopupPop .16s ease-out forwards;
 }
 .gunpyo-action-msg.success{
   border-color:#38bdf8 !important;
@@ -891,9 +897,26 @@ body.real-manage-closed #manageOpenBox{
   color:#be123c !important;
   background:linear-gradient(135deg,#ffffff,#fff1f2,#ffe4e6) !important;
 }
-@keyframes gunpyoMsgPop{
-  from{ transform:translateY(-6px) scale(.96); opacity:0; }
-  to{ transform:translateY(0) scale(1); opacity:1; }
+@keyframes gunpyoPopupPop{
+  from{ transform:translate(-50%,-50%) scale(.88); opacity:0; }
+  to{ transform:translate(-50%,-50%) scale(1); opacity:1; }
+}
+
+/* ===== 상단 패널과 표 사이 여백 최소화 ===== */
+#gunpyoTopPanel{
+  margin-bottom:0 !important;
+  padding-bottom:8px !important;
+}
+#gunpyoTopPanel .rank-meter{
+  margin-bottom:0 !important;
+}
+#pcTableSection.panel,
+#realPcTableSection.panel{
+  margin-top:4px !important;
+}
+#pcTableSection.table-wrap,
+#realPcTableSection.table-wrap{
+  margin-top:4px !important;
 }
 
 #toast{
@@ -6375,7 +6398,7 @@ user-select:none;
   <div id="realSection" class="hidden">
     <div class="member-box">
 
-      <div class="table-wrap panel" id="realPcTableSection" style="margin-top:14px">
+      <div class="table-wrap panel" id="realPcTableSection" style="margin-top:4px">
         <table id="realDataTable">
           <thead>
             <tr>
@@ -6677,7 +6700,7 @@ function showGunpyoActionMsg(msg, type = "success") {
   clearTimeout(window.__gunpyoActionMsgTimer);
   window.__gunpyoActionMsgTimer = setTimeout(() => {
     box.classList.remove("show");
-  }, 1800);
+  }, 1000);
 
   return true;
 }
