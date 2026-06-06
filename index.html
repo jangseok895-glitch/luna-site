@@ -8582,12 +8582,20 @@ async function approveEventPostSupabase(id, pin){
 }
 
 async function deleteEventPostSupabase(id, pin){
+  const inputPin = String(pin || "").trim();
+
+  if(!inputPin){
+    throw new Error("비밀번호를 입력해주세요.");
+  }
+
   const { data, error } = await sb.rpc("delete_event_post_secure", {
     p_id: Number(id),
-    p_pw: String(pin || "").trim()
+    p_pw: inputPin
   });
+
   if(error) throw error;
-  if(data !== true) throw new Error("비밀번호가 일치하지 않습니다.");
+  if(!data) throw new Error("비밀번호가 일치하지 않습니다.");
+
   return { ok:true };
 }
 
