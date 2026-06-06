@@ -8379,7 +8379,7 @@ async function getEventPostsSupabase(){
       .order("is_notice", { ascending:false })
       .order("created_at", { ascending:false })
       .order("id", { ascending:false })
-      .limit(50)
+      .range(0, 999)
   );
 
   return { posts: rows.map((r, idx) => {
@@ -8586,7 +8586,13 @@ async function approveEventPostSupabase(id, pin){
 }
 
 async function deleteEventPostSupabase(id, pin){
-  if(!(await isAdminPwValue(pin))) throw new Error("운영진 비밀번호가 일치하지 않습니다.");
+  const rows = await sbSelect("event", q => q.select("club_pw,is_notice").eq("id", id).limit(1));
+  const inputPin = String(pin || "").trim();
+  const adminOk = await isAdminPwValue(inputPin);
+  const ownerOk = rows.length && String(rows[0].club_pw || "").trim() === inputPin;
+
+  if(!rows.length || (!ownerOk && !adminOk)) throw new Error("비밀번호가 일치하지 않습니다.");
+
   const { error } = await sb.from("event").delete().eq("id", id);
   if(error) throw error;
   return { ok:true };
