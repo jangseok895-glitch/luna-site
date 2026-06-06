@@ -8594,7 +8594,7 @@ async function deleteEventPostSupabase(id, pin){
   });
 
   if(error) throw error;
-  if(!data) throw new Error("비밀번호가 일치하지 않습니다.");
+  if(data !== true) throw new Error("비밀번호가 일치하지 않습니다.");
 
   return { ok:true };
 }
