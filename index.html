@@ -8471,8 +8471,7 @@ async function addEventPostSupabase(payload){
 4번 선수: ${members[3]}`;
   const { error } = await sb.from("event").insert({
     team_name:team,
-    club_pw:pw,
-    event_month:month,
+        event_month:month,
     event_day:day,
     event_hour:hour,
     opponent_team:opponent,
@@ -8525,7 +8524,7 @@ async function addEventNoticeSupabase(payload){
 
 async function checkEventPostPinSupabase(id, pin){
   const { data, error } = await sb.rpc("check_event_post_pw_secure", {
-    p_id: Number(id),
+    p_id: String(id),
     p_pw: String(pin || "").trim()
   });
   if(error) throw error;
@@ -8557,7 +8556,7 @@ async function updateEventPostSupabase(id, title, content, writer, pin, imageDat
   }
 
   const { data, error } = await sb.rpc("update_event_post_secure", {
-    p_id: Number(id),
+    p_id: String(id),
     p_pw: String(pin || "").trim(),
     p_title: patch.title,
     p_content: patch.content,
@@ -8573,7 +8572,7 @@ async function updateEventPostSupabase(id, title, content, writer, pin, imageDat
 
 async function approveEventPostSupabase(id, pin){
   const { data, error } = await sb.rpc("approve_event_post_secure", {
-    p_id: Number(id),
+    p_id: String(id),
     p_admin_pw: String(pin || "").trim()
   });
   if(error) throw error;
@@ -8589,7 +8588,7 @@ async function deleteEventPostSupabase(id, pin){
   }
 
   const { data, error } = await sb.rpc("delete_event_post_secure", {
-    p_id: Number(id),
+    p_id: String(id),
     p_pw: inputPin
   });
 
