@@ -8059,11 +8059,20 @@ async function saveProfileSupabase(nickname, pin5, selections, total){
 async function loadProfileSupabase(nickname, pin5){
   const nick = String(nickname || "").trim();
   const pin = String(pin5 || "").trim();
+  if(!nick) throw new Error("닉네임을 입력하세요.");
   if(!/^\d{5}$/.test(pin)) throw new Error("비밀번호는 숫자 5자리여야 합니다.");
 
-  const data = await sbSelect("profiles", q => q.select("*").eq("nickname", nick).eq("pin5", pin).order("created_at", { ascending:false }).limit(1));
-  if(!data.length) throw new Error("일치하는 닉네임/비밀번호가 없습니다.");
-  const r = data[0];
+  // 보안 핵심: profiles.pin5도 브라우저 SELECT/필터로 노출하지 않고 RPC 내부에서만 비교합니다.
+  const { data, error } = await sb.rpc("load_profile_secure", {
+    p_nickname: nick,
+    p_pin5: pin
+  });
+  if(error) throw error;
+  if(!data) throw new Error("일치하는 닉네임/비밀번호가 없습니다.");
+
+  const r = Array.isArray(data) ? data[0] : data;
+  if(!r) throw new Error("일치하는 닉네임/비밀번호가 없습니다.");
+
   const selections = typeof r.selections === "string" ? JSON.parse(r.selections || "{}") : (r.selections || {});
   const sheet = await getSheetDataSupabase();
   const safeSelections = (typeof normalizeSelectionKeys === "function") ? normalizeSelectionKeys(selections) : selections;
@@ -8073,7 +8082,7 @@ async function loadProfileSupabase(nickname, pin5){
 async function getCertifiedClubMapSupabase(){
   const map = {};
   try{
-    const rows = await sbSelect("club_pw", q => q.select("*"));
+    const rows = await sbSelect("club_pw", q => q.select("club,is_certified"));
     rows.forEach(r => {
       const club = String(r.club ?? r.CLUB ?? r.team ?? r.name ?? "").trim();
       const certified = String(r.is_certified ?? r.certified ?? r["인증"] ?? r.cert ?? "").trim();
@@ -8164,7 +8173,7 @@ if(viewError) throw viewError;
 
   const rows = await sbSelect(
     "team_members",
-    q => q.select("*").eq("team_name", t).eq("nickname", n).limit(1)
+    q => q.select("id,team_name,nickname,total,selections,updated_at,created_at,views,mini_character").eq("team_name", t).eq("nickname", n).limit(1)
   );
 
   if(!rows.length) throw new Error("해당 멤버의 등록정보를 찾지 못했습니다.");
@@ -8184,7 +8193,7 @@ if(viewError) throw viewError;
   return {
     team:t,
     nickname:n,
-    pin5:r.pin5 || "",
+    pin5:"",
     totalScore:calcTotalFromSelectionsSupabase(safeSelections, sheet.rows),
     selections:safeSelections,
     updatedAt:r.updated_at || r.updatedAt || r.created_at || "",
@@ -8223,66 +8232,34 @@ async function deleteTeamMemberSupabase(team, memberNickname, pin){
   const p = String(pin || "").trim();
 
   if(!t || !n) throw new Error("단체/멤버를 선택하세요.");
-  if(!/^\d{4,5}$/.test(p)) {
-    throw new Error("비밀번호는 숫자 4자리 또는 5자리입니다.");
-  }
+  if(!/^\d{4,5}$/.test(p)) throw new Error("비밀번호는 숫자 4자리 또는 5자리입니다.");
 
-  // 1) 운영진 비밀번호 0523
-const adminOk = await isAdminPwValue(p);
-
-  // 2) 해당 단체의 클럽/크루 비밀번호 4자리
-  let clubPwOk = false;
-  if(!adminOk && /^\d{4}$/.test(p)){
-    const clubRows = await sbSelect("club_pw", q =>
-      q.select("*")
-        .eq("club", t)
-        .eq("pw", p)
-        .limit(1)
-    );
-
-    clubPwOk = clubRows.length > 0;
-  }
-
-  // 3) 해당 단체 + 해당 닉네임의 개인 비밀번호 5자리
-  const memberRows = await sbSelect("team_members", q =>
-    q.select("*")
-      .eq("team_name", t)
-      .eq("nickname", n)
-      .limit(1)
-  );
-
-  if(!memberRows.length){
-    throw new Error("해당 단체에서 멤버를 찾을 수 없습니다.");
-  }
-
-  const member = memberRows[0];
-  const personalOk = String(member.pin5 || member.pin || "").trim() === p;
-
-  if(!adminOk && !clubPwOk && !personalOk){
-    throw new Error("비밀번호가 일치하지 않습니다.");
-  }
-
-  const { error } = await sb
-    .from("team_members")
-    .delete()
-    .eq("team_name", t)
-    .eq("nickname", n);
+  // 보안 핵심: pw/pin5를 브라우저로 가져오지 않고 DB 함수 내부에서만 비교합니다.
+  const { data, error } = await sb.rpc("delete_team_member_secure", {
+    p_team_name: t,
+    p_nickname: n,
+    p_pw: p
+  });
 
   if(error) throw error;
-
+  if(data !== true) throw new Error("비밀번호가 일치하지 않습니다.");
   return { ok:true };
 }
 
 async function syncTeamByNicknameSupabase(nickname, pin5, total, selections){
-  const rows = await sbSelect("team_members", q => q.select("id,nickname,pin5").eq("nickname", nickname).eq("pin5", pin5));
-  for(const r of rows){
-    await sb.from("team_members").update({
-      total:Number(total) || 0,
-      selections:selections || {},
-      updated_at:new Date().toISOString()
-    }).eq("id", r.id);
-  }
-  return { ok:true, updated:rows.length };
+  const nick = String(nickname || "").trim();
+  const pin = String(pin5 || "").trim();
+  if(!nick || !pin) return { ok:false, updated:0 };
+
+  // 보안 핵심: team_members.pin5를 select하지 않고 DB 함수 내부에서만 비교합니다.
+  const { data, error } = await sb.rpc("sync_team_by_nickname_secure", {
+    p_nickname: nick,
+    p_pin5: pin,
+    p_total: Number(total) || 0,
+    p_selections: selections || {}
+  });
+  if(error) throw error;
+  return { ok:true, updated:Number(data || 0) };
 }
 
 async function getBoardPostsSupabase(board){
@@ -8454,8 +8431,12 @@ async function getEventPostDetailSupabase(id){
 }
 
 async function verifyClubPwSupabase(team, pw){
-  const rows = await sbSelect("club_pw", q => q.select("club,pw").eq("club", String(team||"").trim()).limit(1));
-  if(!rows.length || String(rows[0].pw || "") !== String(pw || "")) throw new Error("단체 비밀번호가 일치하지 않습니다.");
+  const { data, error } = await sb.rpc("check_club_pw_secure", {
+    p_club: String(team || "").trim(),
+    p_pw: String(pw || "").trim()
+  });
+  if(error) throw error;
+  if(data !== true) throw new Error("단체 비밀번호가 일치하지 않습니다.");
   return { ok:true };
 }
 
@@ -8543,20 +8524,22 @@ async function addEventNoticeSupabase(payload){
 }
 
 async function checkEventPostPinSupabase(id, pin){
-  const rows = await sbSelect("event", q => q.select("club_pw,is_notice").eq("id", id).limit(1));
-  const inputPin = String(pin || "").trim();
-  const adminOk = await isAdminPwValue(inputPin);
-  const ownerOk = rows.length && String(rows[0].club_pw || "").trim() === inputPin;
-  if(!rows.length || (!ownerOk && !adminOk)) throw new Error("비밀번호가 일치하지 않습니다.");
+  const { data, error } = await sb.rpc("check_event_post_pw_secure", {
+    p_id: Number(id),
+    p_pw: String(pin || "").trim()
+  });
+  if(error) throw error;
+  if(data !== true) throw new Error("비밀번호가 일치하지 않습니다.");
   return { ok:true };
 }
 
 async function updateEventPostSupabase(id, title, content, writer, pin, imageData){
-  const rows = await sbSelect("event", q => q.select("club_pw,is_notice,image_urls,screenshot1,screenshot2").eq("id", id).limit(1));
-  const inputPin = String(pin || "").trim();
-  const adminOk = await isAdminPwValue(inputPin);
-  const ownerOk = rows.length && String(rows[0].club_pw || "").trim() === inputPin;
-  if(!rows.length || (!ownerOk && !adminOk)) throw new Error("비밀번호가 일치하지 않습니다.");
+  await checkEventPostPinSupabase(id, pin);
+
+  const rows = await sbSelect("event", q =>
+    q.select("team_name,image_urls,screenshot1,screenshot2").eq("id", id).limit(1)
+  );
+  if(!rows.length) throw new Error("게시글을 찾을 수 없습니다.");
 
   const patch = {
     title:String(title || ""),
@@ -8573,28 +8556,38 @@ async function updateEventPostSupabase(id, title, content, writer, pin, imageDat
     patch.image_urls = newUrls;
   }
 
-  const { error } = await sb.from("event").update(patch).eq("id", id);
+  const { data, error } = await sb.rpc("update_event_post_secure", {
+    p_id: Number(id),
+    p_pw: String(pin || "").trim(),
+    p_title: patch.title,
+    p_content: patch.content,
+    p_team_name: patch.team_name,
+    p_screenshot1: patch.screenshot1 || null,
+    p_screenshot2: patch.screenshot2 || null,
+    p_image_urls: patch.image_urls || null
+  });
   if(error) throw error;
+  if(data !== true) throw new Error("비밀번호가 일치하지 않습니다.");
   return { ok:true };
 }
 
 async function approveEventPostSupabase(id, pin){
-  if(!(await isAdminPwValue(pin))) throw new Error("운영진 비밀번호가 일치하지 않습니다.");
-  const { error } = await sb.from("event").update({ is_approved:1 }).eq("id", id);
+  const { data, error } = await sb.rpc("approve_event_post_secure", {
+    p_id: Number(id),
+    p_admin_pw: String(pin || "").trim()
+  });
   if(error) throw error;
+  if(data !== true) throw new Error("운영진 비밀번호가 일치하지 않습니다.");
   return { ok:true };
 }
 
 async function deleteEventPostSupabase(id, pin){
-  const rows = await sbSelect("event", q => q.select("club_pw,is_notice").eq("id", id).limit(1));
-  const inputPin = String(pin || "").trim();
-  const adminOk = await isAdminPwValue(inputPin);
-  const ownerOk = rows.length && String(rows[0].club_pw || "").trim() === inputPin;
-
-  if(!rows.length || (!ownerOk && !adminOk)) throw new Error("비밀번호가 일치하지 않습니다.");
-
-  const { error } = await sb.from("event").delete().eq("id", id);
+  const { data, error } = await sb.rpc("delete_event_post_secure", {
+    p_id: Number(id),
+    p_pw: String(pin || "").trim()
+  });
   if(error) throw error;
+  if(data !== true) throw new Error("비밀번호가 일치하지 않습니다.");
   return { ok:true };
 }
 
@@ -11508,7 +11501,8 @@ const RANK_POWER_SCORE = {
 };
 
 function userKey(row){
-  return String(row.nickname || "").trim() + "_" + String(row.pin5 || row.pin || "").trim();
+  // 보안상 pin5를 조회하지 않습니다. 그래프 중복 판별은 닉네임 기준으로 처리합니다.
+  return String(row.nickname || "").trim();
 }
 
 let graphAnimId = null;
@@ -11930,14 +11924,13 @@ function top20ClubTotalGraph(rows){
 async function openClubActivityGraph(){
   try{
     const teamRows = await sbSelect("team_members", q =>
-      q.select("team_name,nickname,pin5,total,selections,updated_at,created_at,views")
+      q.select("team_name,nickname,total,selections,updated_at,created_at,views")
         .not("team_name", "is", null)
     );
 
-    const profileRows = await sbSelect("profiles", q =>
-      q.select("nickname,pin5,total,created_at")
-        .not("nickname", "is", null)
-    );
+    // profiles.pin5 보호를 위해 프론트에서 profiles 전체 이력 조회는 하지 않습니다.
+    // 성장 그래프는 보안 RPC를 별도로 만들기 전까지 빈 데이터로 처리됩니다.
+    const profileRows = [];
 
     const mapRows = await sbSelect("map_records", q =>
       q.select("id,map_name,difficulty")
@@ -12224,39 +12217,29 @@ async function updateRealTopPercentByTotal(selectedTotal, selectedNickname, sele
 
   if(!boxEl || !textEl) return;
 
-  const selectedKey =
-    String(selectedNickname || "").trim() + "__" + String(selectedPin5 || "").trim();
+  const selectedNick = String(selectedNickname || "").trim();
 
   const rows = await sbSelect("team_members", q =>
-    q.select("nickname,pin5,total").not("total", "is", null)
+    q.select("nickname,total").not("total", "is", null)
   );
 
-  const bestByPerson = new Map();
+  const bestByNickname = new Map();
 
   rows.forEach(r => {
     const nickname = String(r.nickname || "").trim();
-    const pin5 = String(r.pin5 || "").trim();
     const total = Number(r.total) || 0;
+    if(!nickname || total <= 0) return;
 
-    if(!nickname || !pin5 || total <= 0) return;
-
-    const key = `${nickname}__${pin5}`;
-    const prev = bestByPerson.get(key);
-
+    const prev = bestByNickname.get(nickname);
     if(!prev || total > prev.total){
-      bestByPerson.set(key, {
-        key,
-        nickname,
-        pin5,
-        total
-      });
+      bestByNickname.set(nickname, { key:nickname, nickname, total });
     }
   });
 
-  const rankingList = Array.from(bestByPerson.values())
+  const rankingList = Array.from(bestByNickname.values())
     .sort((a, b) => b.total - a.total);
 
-  const myIndex = rankingList.findIndex(item => item.key === selectedKey);
+  const myIndex = rankingList.findIndex(item => item.nickname === selectedNick);
 
   if(myIndex < 0){
     boxEl.style.setProperty("--percent-pos", "0.5");
