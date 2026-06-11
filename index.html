@@ -5554,6 +5554,19 @@ body.capture-mode #realPcTableSection.table-wrap{
 #realPcTableSection{
   margin-top:-38px !important;
 }
+
+  #teamAdminPopup{
+  align-items:flex-start !important;
+  justify-content:center !important;
+  padding-top:20px !important;
+  overflow-y:auto !important;
+}
+
+#teamAdminPopup .search-popup-box{
+  max-height:85vh !important;
+  overflow-y:auto !important;
+  margin-top:0 !important;
+}
 </style> 바로 위
 ========================================================= */
 
@@ -10978,15 +10991,17 @@ async function renameSelectedTeamAll(){
     const inputPw = prompt("단체 비번 혹은 운영진 비번을 기입해주세요");
     if(!inputPw) return;
 
-    if(!confirm(`[${oldTeamName}] 단체명을 [${newTeamName}](으)로 변경하시겠습니까?`)){
-      return;
-    }
+if(!confirm(`[${oldTeamName}] 단체명을 [${newTeamName}](으)로 변경하시겠습니까?`)){
+  return;
+}
 
-    const { error } = await sb.rpc("rename_team_all_auth", {
-      p_old_team_name: oldTeamName,
-      p_new_team_name: newTeamName,
-      p_pw: inputPw
-    });
+alert("변경하기까지는 최대 3분까지도 시간이 소요될수 있습니다.");
+
+const { error } = await sb.rpc("rename_team_all_auth", {
+  p_old_team_name: oldTeamName,
+  p_new_team_name: newTeamName,
+  p_pw: inputPw
+});
 
     if(error) throw error;
 
