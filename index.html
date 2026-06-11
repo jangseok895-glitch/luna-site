@@ -6733,7 +6733,7 @@ let SHEET_ROWS = [],
   WEIGHTS = {},
   RANKS = [];
 let ROW_BY_ID = {};
-const selections = {}; // { rowId: {tier:'프로', time:'1:23:456', savedTime:'1:23:456'} }
+const selections = {}; // { rowId: {tier:'프로', time:'1:23:456'} }
 let MEMBER_SEARCH_RESULTS = [];
 
 /* 등급 정의 */
@@ -6860,95 +6860,9 @@ function getSelectionKeyForRow(r) {
   return rowKey(r);
 }
 
-/* ===== 시즌 기준 자동 반영용 저장값 호환 처리 =====
-   - 구버전 저장값: { tier:"3군" } 또는 "3군" → 기존 군 그대로 사용
-   - 신버전 저장값: { tier:"3군", time:"1.33.99" } → 저장된 기록(time)을 현재 시즌 기준표와 비교해서 군 자동 재계산
-*/
-const TIER_TIME_FIELDS = {
-  "프로": "프로",
-  "강주력": "강주력",
-  "주력": "주력",
-  "1군": "_1군",
-  "2군": "_2군",
-  "3군": "_3군",
-  "4군": "_4군",
-  "5군": "_5군"
-};
-
-const AUTO_RECALC_TIERS = ["프로", "강주력", "주력", "1군", "2군", "3군", "4군", "5군"];
-
-function timeToCenti(v) {
-  const nums = String(v || "").match(/\d+/g);
-  if (!nums || !nums.length) return null;
-
-  let m = 0, s = 0, c = 0;
-
-  if (nums.length >= 3) {
-    m = Number(nums[0]);
-    s = Number(nums[1]);
-    c = Number(nums[2]);
-  } else if (nums.length === 2) {
-    s = Number(nums[0]);
-    c = Number(nums[1]);
-  } else {
-    s = Number(nums[0]);
-  }
-
-  if (![m, s, c].every(Number.isFinite)) return null;
-  return (m * 60 + s) * 100 + c;
-}
-
-function normalizePickedValue(val) {
-  if (!val) return null;
-
-  // 아주 예전 저장값이 "3군"처럼 문자열만 저장된 경우
-  if (typeof val === "string") {
-    return { tier: val };
-  }
-
-  if (typeof val === "object") {
-    const out = { ...val };
-    if (!out.tier && out.rank) out.tier = out.rank;
-    return out;
-  }
-
-  return null;
-}
-
-function recalcPickedBySavedTime(row, picked) {
-  const base = normalizePickedValue(picked);
-  if (!row || !base) return base;
-
-  // time이 없는 기존 저장값은 기존 군 그대로 유지
-  const savedTime = base.savedTime || base.recordTime || base.time;
-  const savedCenti = timeToCenti(savedTime);
-  if (savedCenti == null) return base;
-
-  for (const tier of AUTO_RECALC_TIERS) {
-    const field = TIER_TIME_FIELDS[tier];
-    const limitCenti = timeToCenti(row[field]);
-
-    // 기록은 낮을수록 빠름. 저장 기록이 현재 시즌 해당 군 기준 기록 이내면 그 군으로 인정
-    if (limitCenti != null && savedCenti <= limitCenti) {
-      return {
-        ...base,
-        tier,
-        time: savedTime,
-        savedTime,
-        originalTier: base.originalTier || base.tier || tier,
-        currentSeasonTier: tier
-      };
-    }
-  }
-
-  // 현재 시즌 5군 기준보다도 느려진 경우: 선택 해제 처리
-  return null;
-}
-
 function getPickedForRow(selObj, r) {
   if (!selObj || !r) return null;
-  const raw = selObj[rowKey(r)] || selObj[String(r.id)] || null;
-  return recalcPickedBySavedTime(r, raw);
+  return selObj[rowKey(r)] || selObj[String(r.id)] || null;
 }
 
 function normalizeSelectionKeys(selObj = {}) {
@@ -6956,8 +6870,7 @@ function normalizeSelectionKeys(selObj = {}) {
   Object.entries(selObj || {}).forEach(([key, val]) => {
     const row = ROW_BY_ID[String(key)] || null;
     const newKey = row ? rowKey(row) : String(key);
-    const normalized = recalcPickedBySavedTime(row || ROW_BY_ID[newKey], val);
-    if (normalized && normalized.tier) out[newKey] = normalized;
+    out[newKey] = val;
   });
   return out;
 }
@@ -7370,7 +7283,7 @@ function loadData() {
 
       hideLoading();
 
-      toast("불러오기 완료 · 현재 시즌 기준 자동반영");
+      toast("불러오기 완료");
     })
     .withFailureHandler((e) => {
       hideLoading();
@@ -8016,8 +7929,6 @@ document.querySelectorAll(".main-tab").forEach(btn => {
     selections[rowId] = {
       tier,
       time: chip.dataset.time,
-      savedTime: chip.dataset.time,
-      originalTier: tier
     };
 
     syncRowVisual(rowId);
