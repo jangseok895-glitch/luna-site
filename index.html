@@ -6993,13 +6993,33 @@ function makeAutoRecordSelectionsForSave(selObj = {}){
 
     const selectedTime = picked.time || getRowTimeByTier(row, picked.tier);
 
+    /*
+      중요 안전장치:
+      기존 저장값을 불러온 뒤 아무 변경 없이 다시 저장하는 경우까지
+      autoRecordMode:true 로 바꾸면 기존 사람들의 군이 자동 재계산되어 올라갈 수 있습니다.
+
+      따라서 저장할 때 무조건 autoRecordMode를 붙이지 않습니다.
+      - 이미 autoRecordMode:true 인 신규 방식 데이터
+      - 사용자가 화면에서 직접 다시 클릭해서 선택한 데이터
+      위 두 경우에만 기록 기준 자동반영 대상으로 저장합니다.
+    */
+    if(picked.autoRecordMode === true){
+      out[rowId] = {
+        ...picked,
+        tier: picked.tier,
+        time: selectedTime,
+        savedTime: picked.savedTime || selectedTime,
+        autoRecordMode: true,
+        autoRecordModeVersion: AUTO_RECORD_MODE_VERSION,
+      };
+      return;
+    }
+
+    // 기존 저장 방식 데이터는 기존 군 그대로 유지되도록 autoRecordMode를 붙이지 않음
     out[rowId] = {
       ...picked,
       tier: picked.tier,
       time: selectedTime,
-      savedTime: picked.savedTime || selectedTime,
-      autoRecordMode: true,
-      autoRecordModeVersion: AUTO_RECORD_MODE_VERSION,
     };
   });
 
