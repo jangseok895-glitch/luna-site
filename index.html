@@ -5555,22 +5555,35 @@ body.capture-mode #realPcTableSection.table-wrap{
   margin-top:-38px !important;
 }
 
-  #teamAdminPopup{
-  align-items:flex-start !important;
-  justify-content:center !important;
-  padding-top:20px !important;
-  overflow-y:auto !important;
+/* ===== 단체 변경/삭제 패널 위치 보정 =====
+   기존처럼 고정 팝업으로 띄우지 않고,
+   관리 영역 안에서 위쪽으로 당겨서 밑부분이 잘리지 않게 처리합니다.
+*/
+#realTopPanel{
+  position:relative !important;
 }
 
-#teamAdminPopup .search-popup-box{
-  max-height:85vh !important;
-  overflow-y:auto !important;
-  margin-top:0 !important;
+#teamAdminPopup:not(.hidden){
+  display:block !important;
+  position:relative !important;
+  z-index:5000 !important;
+  width:540px !important;
+  max-width:540px !important;
+  margin-top:-170px !important;
+  margin-left:0 !important;
+  margin-bottom:24px !important;
+  pointer-events:auto !important;
 }
-</style> 바로 위
-========================================================= */
 
-
+#teamAdminPopup .search-popup-box,
+#teamAdminPopup .team-request-box{
+  width:540px !important;
+  max-width:540px !important;
+  max-height:none !important;
+  height:auto !important;
+  overflow:visible !important;
+  margin:0 !important;
+}
 </style>
 </head>
 
