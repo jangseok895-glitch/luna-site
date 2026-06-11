@@ -6246,7 +6246,7 @@ function escMini4545(v){
     <button class="btn gold" id="btnOpenRegisterPopup">군실명제등록</button>
     <button class="btn gold" id="btnOpenTeamRequestPopup">단체 등록요청 <span class="team-request-badge" id="teamRequestCountBadge">0</span></button>
     <button class="btn red" id="btnOpenTeamAdminPopup" type="button">
-  단체 삭제
+  단체 변경/삭제
 </button>
     <label id="manageLockWrap" style="
 display:flex;
@@ -6359,16 +6359,16 @@ user-select:none;
       <div id="pendingTeamList"></div>
     </div>
   </div>
-  <!-- 운영진 패널 팝업 -->
+  <!-- 변경/삭제 패널 팝업 -->
 <div id="teamAdminPopup" class="hidden">
   <div class="search-popup-box team-request-box">
     <div class="search-popup-head">
-      <b>운영진 패널</b>
+      <b>변경/삭제 패널</b>
       <button type="button" id="btnCloseTeamAdminPopup">닫기</button>
     </div>
 
     <div class="team-request-help">
-      삭제할 단체를 선택하면 club_pw 와 team_members 에서 해당 단체가 전체 삭제됩니다.
+      변경하거나 삭제하고 싶은 단체를 선택해주세요
     </div>
 
     <div class="team-request-form-row">
@@ -6378,9 +6378,38 @@ user-select:none;
       </select>
     </div>
 
-    <button class="btn red" id="btnDeleteTeamAll" type="button">
-      삭제하기
-    </button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 12px;">
+      <button class="btn gold" id="btnShowRenameTeam" type="button">단체명 변경하기</button>
+      <button class="btn red" id="btnDeleteTeamAll" type="button">단체 삭제하기</button>
+      <button class="btn blue" id="btnShowChangeTeamPw" type="button">단체 비번 변경하기</button>
+    </div>
+
+    <div id="renameTeamBox" class="hidden" style="margin-top:12px;padding:12px;border:1px solid rgba(14,165,233,.28);border-radius:12px;background:#fff;">
+      <div class="team-request-form-row">
+        <b>구분</b>
+        <select id="renameTeamType" class="select" style="width:100%;">
+          <option value="[클럽]">[클럽]</option>
+          <option value="[크루]">[크루]</option>
+        </select>
+      </div>
+      <div class="team-request-form-row">
+        <b>변경명</b>
+        <input id="renameTeamName" class="text" placeholder="단체명만 입력 예: 네이비" style="width:100%;">
+      </div>
+      <button class="btn gold" id="btnRenameTeamAll" type="button">변경하기 확인</button>
+    </div>
+
+    <div id="changeTeamPwBox" class="hidden" style="margin-top:12px;padding:12px;border:1px solid rgba(14,165,233,.28);border-radius:12px;background:#fff;">
+      <div class="team-request-form-row">
+        <b>기존 비번</b>
+        <input id="oldTeamPwInput" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="4자리">
+      </div>
+      <div class="team-request-form-row">
+        <b>변경 비번</b>
+        <input id="newTeamPwInput" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="4자리">
+      </div>
+      <button class="btn blue" id="btnChangeTeamPw" type="button">확인</button>
+    </div>
   </div>
 </div>
 
@@ -10868,35 +10897,57 @@ setTimeout(loadTeamRequests, 800);
   });
 }
 
+function getSelectedAdminTeam(){
+  return String(document.getElementById("adminDeleteTeamSelect")?.value || "").trim();
+}
+
+function requireSelectedAdminTeam(){
+  const teamName = getSelectedAdminTeam();
+  if(!teamName){
+    alert("단체를 선택해주세요");
+    return "";
+  }
+  return teamName;
+}
+
+function normalizeTeamRenameName(raw){
+  return String(raw || "").trim().replace(/^\[(클럽|크루)\]\s*/, "");
+}
+
+function resetTeamAdminBoxes(){
+  document.getElementById("renameTeamBox")?.classList.add("hidden");
+  document.getElementById("changeTeamPwBox")?.classList.add("hidden");
+}
+
+async function refreshAfterTeamManage(){
+  await loadAdminDeleteTeams();
+  if(typeof loadClubCertificationMap === "function") await loadClubCertificationMap();
+  if(typeof initRealUI === "function") await initRealUI();
+  if(typeof loadViewTeams === "function") await loadViewTeams();
+}
+
 async function deleteSelectedTeamAll(){
   try{
-    const teamName = String(document.getElementById("adminDeleteTeamSelect")?.value || "").trim();
-    if(!teamName){
-      alert("삭제할 단체를 선택해주세요.");
+    const teamName = requireSelectedAdminTeam();
+    if(!teamName) return;
+
+    const inputPw = prompt("단체 비번 혹은 운영진 비번을 기입해주세요");
+    if(!inputPw) return;
+
+    if(!confirm(`[${teamName}] 단체의 모든 사항이 삭제됩니다. 계속하시겠습니까?`)){
       return;
     }
 
-    const adminPw = askAdminPw();
-    if(!adminPw) return;
-
-    if(!confirm(`[${teamName}] 단체를 정말 삭제하시겠습니까?\nclub_pw 와 team_members 에서 전체 삭제됩니다.`)){
-      return;
-    }
-
-    const { error } = await sb.rpc("delete_team_all_admin", {
+    const { error } = await sb.rpc("delete_team_all_auth", {
       p_team_name: teamName,
-      p_admin_pw: adminPw
+      p_pw: inputPw
     });
 
     if(error) throw error;
 
     alert("단체 삭제가 완료되었습니다.");
-
-    await loadAdminDeleteTeams();
-
-    if(typeof initRealUI === "function"){
-      initRealUI();
-    }
+    resetTeamAdminBoxes();
+    await refreshAfterTeamManage();
 
   }catch(e){
     console.error(e);
@@ -10904,13 +10955,95 @@ async function deleteSelectedTeamAll(){
   }
 }
 
+async function renameSelectedTeamAll(){
+  try{
+    const oldTeamName = requireSelectedAdminTeam();
+    if(!oldTeamName) return;
+
+    const type = String(document.getElementById("renameTeamType")?.value || "").trim();
+    const rawName = normalizeTeamRenameName(document.getElementById("renameTeamName")?.value);
+
+    if(!type || !rawName){
+      alert("변경할 단체명을 기입해주세요");
+      return;
+    }
+
+    const newTeamName = `${type}${rawName}`;
+
+    if(oldTeamName === newTeamName){
+      alert("기존 단체명과 변경할 단체명이 같습니다.");
+      return;
+    }
+
+    const inputPw = prompt("단체 비번 혹은 운영진 비번을 기입해주세요");
+    if(!inputPw) return;
+
+    if(!confirm(`[${oldTeamName}] 단체명을 [${newTeamName}](으)로 변경하시겠습니까?`)){
+      return;
+    }
+
+    const { error } = await sb.rpc("rename_team_all_auth", {
+      p_old_team_name: oldTeamName,
+      p_new_team_name: newTeamName,
+      p_pw: inputPw
+    });
+
+    if(error) throw error;
+
+    alert("단체명이 변경되었습니다.");
+    document.getElementById("renameTeamName").value = "";
+    resetTeamAdminBoxes();
+    await refreshAfterTeamManage();
+
+    const sel = document.getElementById("adminDeleteTeamSelect");
+    if(sel) sel.value = newTeamName;
+
+  }catch(e){
+    console.error(e);
+    alert(e.message || "단체명 변경 실패");
+  }
+}
+
+async function changeSelectedTeamPw(){
+  try{
+    const teamName = requireSelectedAdminTeam();
+    if(!teamName) return;
+
+    const oldPw = String(document.getElementById("oldTeamPwInput")?.value || "").trim();
+    const newPw = String(document.getElementById("newTeamPwInput")?.value || "").trim();
+
+    if(!/^\d{4}$/.test(oldPw) || !/^\d{4}$/.test(newPw)){
+      alert("비번은 숫자 4자리로 입력해주세요");
+      return;
+    }
+
+    const { error } = await sb.rpc("change_club_pw_auth", {
+      p_team_name: teamName,
+      p_old_pw: oldPw,
+      p_new_pw: newPw
+    });
+
+    if(error) throw error;
+
+    alert("단체 비번이 변경되었습니다.");
+    document.getElementById("oldTeamPwInput").value = "";
+    document.getElementById("newTeamPwInput").value = "";
+    resetTeamAdminBoxes();
+    await refreshAfterTeamManage();
+
+  }catch(e){
+    console.error(e);
+    alert(e.message || "단체 비번 변경 실패");
+  }
+}
+
 document.addEventListener("click", async function(e){
   if(e.target.closest("#btnOpenTeamAdminPopup")){
     e.preventDefault();
 
-    if(!(await checkAdminPw())) return;
-
+    // 비번 없이 팝업은 열리게 처리합니다. 실제 변경/삭제/비번변경 시점에만 비번을 확인합니다.
     document.getElementById("teamAdminPopup")?.classList.remove("hidden");
+    resetTeamAdminBoxes();
     await loadAdminDeleteTeams();
     return;
   }
@@ -10921,9 +11054,39 @@ document.addEventListener("click", async function(e){
     return;
   }
 
+  if(e.target.closest("#btnShowRenameTeam")){
+    e.preventDefault();
+    const teamName = requireSelectedAdminTeam();
+    if(!teamName) return;
+    document.getElementById("changeTeamPwBox")?.classList.add("hidden");
+    document.getElementById("renameTeamBox")?.classList.remove("hidden");
+    return;
+  }
+
+  if(e.target.closest("#btnShowChangeTeamPw")){
+    e.preventDefault();
+    const teamName = requireSelectedAdminTeam();
+    if(!teamName) return;
+    document.getElementById("renameTeamBox")?.classList.add("hidden");
+    document.getElementById("changeTeamPwBox")?.classList.remove("hidden");
+    return;
+  }
+
   if(e.target.closest("#btnDeleteTeamAll")){
     e.preventDefault();
     await deleteSelectedTeamAll();
+    return;
+  }
+
+  if(e.target.closest("#btnRenameTeamAll")){
+    e.preventDefault();
+    await renameSelectedTeamAll();
+    return;
+  }
+
+  if(e.target.closest("#btnChangeTeamPw")){
+    e.preventDefault();
+    await changeSelectedTeamPw();
     return;
   }
 });
