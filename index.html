@@ -6866,8 +6866,8 @@ function getPickedForRow(selObj, r) {
 }
 
 /* ===== 시즌 변경 자동 반영용 시간 계산 =====
-   - 기존 저장값은 유지
-   - autoRecordModeVersion === 2 인 값만 저장된 기록(savedTime) 기준으로 현재 시즌 군을 다시 계산
+   - 기존 저장값/신규 저장값 구분 없이 time 또는 savedTime이 있으면 해당 기록을 기준으로 현재 시즌 군을 다시 계산
+   - 즉, 예전부터 저장되어 있던 profiles / team_members 기록도 map_records 변경 시 자동 반영됨
 */
 const AUTO_RECORD_MODE_VERSION = 2;
 const TIER_TIME_FIELDS = [
@@ -6910,56 +6910,75 @@ function findTierBySavedTime(row, savedTime){
   return null;
 }
 
-function isAutoRecordV2(picked){
-  return !!(picked && picked.autoRecordMode === true && Number(picked.autoRecordModeVersion) === AUTO_RECORD_MODE_VERSION);
+function hasSavedRecordTime(picked){
+  return !!(picked && (picked.savedTime || picked.time));
 }
 
-function applyCurrentSeasonTier(rowId, picked){
+function applyCurrentSeasonTier(rowId, picked, rowMap){
   if(!picked) return picked;
-  if(!isAutoRecordV2(picked)) return picked;
 
-  const row = ROW_BY_ID[String(rowId)];
+  const map = rowMap || ROW_BY_ID || {};
+  const row = map[String(rowId)];
   const savedTime = picked.savedTime || picked.time;
+
+  // time/savedTime이 없는 아주 오래된 데이터는 기존 tier 그대로 유지
+  if(!row || !savedTime) return picked;
+
   const recalculated = findTierBySavedTime(row, savedTime);
 
+  // 저장 기록이 현재 5군 기준보다도 느리면 미선택 처리
   if(!recalculated) return null;
 
   return {
     ...picked,
     tier: recalculated.tier,
-    time: recalculated.time,
-    savedTime: savedTime
+    time: recalculated.time,      // 현재 시즌의 해당 군 기준 기록
+    savedTime: savedTime,        // 사용자가 원래 선택했던 기록은 계속 보존
+    autoRecordMode: true,
+    autoRecordModeVersion: AUTO_RECORD_MODE_VERSION
   };
 }
 
-function normalizeLoadedSelections(selObj = {}){
-  const normalized = normalizeSelectionKeys(selObj || {});
+function buildRowMapFromRows(rows){
+  const map = {};
+  (rows || SHEET_ROWS || []).forEach(r => {
+    if(!r) return;
+    map[String(r.id)] = r;
+    if(typeof rowKey === "function") map[rowKey(r)] = r;
+  });
+  return map;
+}
+
+function normalizeSelectionsByCurrentRecords(selObj = {}, rows){
+  const baseMap = buildRowMapFromRows(rows || SHEET_ROWS);
   const out = {};
 
-  Object.entries(normalized).forEach(([rowId, picked]) => {
-    const applied = applyCurrentSeasonTier(rowId, picked);
-    if(applied) out[rowId] = applied;
+  Object.entries(selObj || {}).forEach(([key, val]) => {
+    const row = baseMap[String(key)] || null;
+    const newKey = row ? rowKey(row) : String(key);
+    const applied = applyCurrentSeasonTier(newKey, val, baseMap);
+    if(applied) out[newKey] = applied;
   });
 
   return out;
 }
 
+function normalizeLoadedSelections(selObj = {}){
+  return normalizeSelectionsByCurrentRecords(selObj || {}, SHEET_ROWS);
+}
+
 function normalizeSelectionKeys(selObj = {}) {
-  const out = {};
-  Object.entries(selObj || {}).forEach(([key, val]) => {
-    const row = ROW_BY_ID[String(key)] || null;
-    const newKey = row ? rowKey(row) : String(key);
-    out[newKey] = val;
-  });
-  return out;
+  // 기존 숫자 id 키를 map:맵이름 키로 통일하고, time/savedTime이 있으면 현재 map_records 기준 군으로 자동 재계산
+  return normalizeSelectionsByCurrentRecords(selObj || {}, SHEET_ROWS);
 }
 
 function roundScore(value) {
   return Math.round((Number(value) || 0) * 100) / 100;
 }
 function getSelectionTotal(selObj = selections) {
+  const currentSel = normalizeSelectionsByCurrentRecords(selObj || {}, SHEET_ROWS);
   let total = 0;
-  Object.entries(selObj || {}).forEach(([rowId, picked]) => {
+  Object.entries(currentSel || {}).forEach(([rowId, picked]) => {
     const row = ROW_BY_ID[String(rowId)] || {};
     const bonusPercent = Number(String(row["추가점수"] || "").trim());
     const bonus =
@@ -8153,6 +8172,8 @@ function mapRecordToSheetRow(r, idx){
 }
 
 function calcTotalFromSelectionsSupabase(selections, rows){
+  const currentSel = normalizeSelectionsByCurrentRecords(selections || {}, rows || SHEET_ROWS);
+
   const rowMap = {};
   (rows || SHEET_ROWS || []).forEach(r => {
     rowMap[String(r.id)] = Number(r.bonusMultiplier || 1) || 1;
@@ -8160,7 +8181,7 @@ function calcTotalFromSelectionsSupabase(selections, rows){
   });
 
   let total = 0;
-  Object.entries(selections || {}).forEach(([rowId, picked]) => {
+  Object.entries(currentSel || {}).forEach(([rowId, picked]) => {
     const tier = picked && picked.tier;
     const weight = Number(LUNA_WEIGHTS[tier] || 0);
     const bonus = rowMap[String(rowId)] || 1;
@@ -8190,19 +8211,20 @@ async function saveProfileSupabase(nickname, pin5, selections, total){
   if(!/^\d{5}$/.test(pin)) throw new Error("비밀번호는 숫자 5자리여야 합니다.");
 
   const sheet = await getSheetDataSupabase();
-  const computedTotal = calcTotalFromSelectionsSupabase(selections, sheet.rows);
+  const currentSelections = normalizeSelectionsByCurrentRecords(selections || {}, sheet.rows);
+  const computedTotal = calcTotalFromSelectionsSupabase(currentSelections, sheet.rows);
 
   const row = {
     nickname: nick,
     pin5: pin,
     total: computedTotal,
-    selections: selections || {}
+    selections: currentSelections || {}
   };
 
   const { error } = await sb.from("profiles").insert(row);
   if(error) throw error;
 
-  await syncTeamByNicknameSupabase(nick, pin, computedTotal, selections || {}).catch(() => {});
+  await syncTeamByNicknameSupabase(nick, pin, computedTotal, currentSelections || {}).catch(() => {});
   return { ok:true };
 }
 
@@ -8225,7 +8247,7 @@ async function loadProfileSupabase(nickname, pin5){
 
   const selections = typeof r.selections === "string" ? JSON.parse(r.selections || "{}") : (r.selections || {});
   const sheet = await getSheetDataSupabase();
-  const safeSelections = (typeof normalizeSelectionKeys === "function") ? normalizeSelectionKeys(selections) : selections;
+  const safeSelections = normalizeSelectionsByCurrentRecords(selections || {}, sheet.rows);
   return { totalScore: calcTotalFromSelectionsSupabase(safeSelections, sheet.rows), selections: safeSelections };
 }
 
@@ -8336,9 +8358,7 @@ if(viewError) throw viewError;
 
   const sheet = await getSheetDataSupabase();
 
-  const safeSelections = (typeof normalizeSelectionKeys === "function")
-    ? normalizeSelectionKeys(selections)
-    : selections;
+  const safeSelections = normalizeSelectionsByCurrentRecords(selections || {}, sheet.rows);
 
   return {
     team:t,
