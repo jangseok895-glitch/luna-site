@@ -6875,6 +6875,182 @@ function normalizeSelectionKeys(selObj = {}) {
   return out;
 }
 
+
+/* ===== 시즌 변경 자동 반영 저장 방식 =====
+   중요: 기존 저장값은 autoRecordMode 표시가 없으므로 절대 자동 재계산하지 않습니다.
+   앞으로 새로 저장되는 값에만 autoRecordMode:true 를 붙여서 기록 기준 자동 반영합니다.
+*/
+const AUTO_RECORD_MODE_VERSION = 2;
+const AUTO_RECORD_DIRTY_ROWS = new Set();
+const TIER_TIME_FIELDS = [
+  ["프로", "프로"],
+  ["강주력", "강주력"],
+  ["주력", "주력"],
+  ["1군", "_1군"],
+  ["2군", "_2군"],
+  ["3군", "_3군"],
+  ["4군", "_4군"],
+  ["5군", "_5군"],
+];
+
+function timeToNumberForCompare(v){
+  const raw = String(v || "").trim();
+  if(!raw || raw === "-" || raw === "null" || raw === "undefined") return null;
+
+  const nums = raw.match(/\d+/g);
+  if(!nums || !nums.length) return null;
+
+  const n = nums.map(x => Number(x));
+  if(n.some(x => !Number.isFinite(x))) return null;
+
+  // 1.33.99 / 1:33:99 = 1분 33초 99 기준
+  if(n.length >= 3){
+    const min = n[0];
+    const sec = n[1];
+    const tailRaw = nums[2];
+    const tail = n[2];
+    const ms = tailRaw.length <= 2 ? tail * 10 : tail;
+    return min * 60000 + sec * 1000 + ms;
+  }
+
+  // 33.99 = 33초 99 기준
+  if(n.length === 2){
+    const sec = n[0];
+    const tailRaw = nums[1];
+    const tail = n[1];
+    const ms = tailRaw.length <= 2 ? tail * 10 : tail;
+    return sec * 1000 + ms;
+  }
+
+  return n[0];
+}
+
+function getRowTimeByTier(row, tier){
+  const pair = TIER_TIME_FIELDS.find(([label]) => label === tier);
+  if(!pair || !row) return "";
+  return row[pair[1]] || "";
+}
+
+function normalizeSelectionValue(val, row){
+  if(!val) return null;
+
+  if(typeof val === "string"){
+    const tier = val.trim();
+    if(!tier) return null;
+    return {
+      tier,
+      time: getRowTimeByTier(row, tier),
+    };
+  }
+
+  if(typeof val === "object"){
+    const tier = String(val.tier || val.rank || val["군"] || val.level || "").trim();
+    if(!tier) return null;
+    return {
+      ...val,
+      tier,
+      time: val.time || getRowTimeByTier(row, tier),
+    };
+  }
+
+  return null;
+}
+
+function findTierBySavedTime(row, savedTime){
+  if(!row) return null;
+
+  const saved = timeToNumberForCompare(savedTime);
+  if(saved === null) return null;
+
+  for(const [tier, field] of TIER_TIME_FIELDS){
+    const limitTime = row[field];
+    const limit = timeToNumberForCompare(limitTime);
+    if(limit === null) continue;
+
+    // 기록은 숫자가 작을수록 빠름. 저장 기록이 해당 군 기준 안에 들어오면 그 군으로 선택.
+    if(saved <= limit){
+      return {
+        tier,
+        time: limitTime,
+        savedTime: String(savedTime || ""),
+        autoRecordMode: true,
+        autoRecordModeVersion: AUTO_RECORD_MODE_VERSION,
+      };
+    }
+  }
+
+  // 5군 기준보다도 느리면 미선택 처리
+  return null;
+}
+
+function makeAutoRecordSelectionsForSave(selObj = {}){
+  const normalized = normalizeSelectionKeys(selObj || {});
+  const out = {};
+
+  Object.entries(normalized).forEach(([rowId, val]) => {
+    const row = ROW_BY_ID[String(rowId)] || null;
+    const picked = normalizeSelectionValue(val, row);
+    if(!picked || !picked.tier) return;
+
+    const selectedTime = picked.time || getRowTimeByTier(row, picked.tier);
+
+    /*
+      중요 안전장치:
+      기존 저장값을 불러온 뒤 아무 변경 없이 다시 저장하는 경우까지
+      autoRecordMode:true 로 바꾸면 기존 사람들의 군이 자동 재계산되어 올라갈 수 있습니다.
+
+      따라서 저장할 때 무조건 autoRecordMode를 붙이지 않습니다.
+      - 이미 autoRecordMode:true 인 신규 방식 데이터
+      - 사용자가 화면에서 직접 다시 클릭해서 선택한 데이터
+      위 두 경우에만 기록 기준 자동반영 대상으로 저장합니다.
+    */
+    if(AUTO_RECORD_DIRTY_ROWS.has(String(rowId))){
+      out[rowId] = {
+        ...picked,
+        tier: picked.tier,
+        time: selectedTime,
+        savedTime: selectedTime,
+        autoRecordMode: true,
+        autoRecordModeVersion: AUTO_RECORD_MODE_VERSION,
+      };
+      return;
+    }
+
+    // 기존 저장 방식 데이터는 기존 군 그대로 유지되도록 autoRecordMode를 붙이지 않음
+    out[rowId] = {
+      ...picked,
+      tier: picked.tier,
+      time: selectedTime,
+    };
+  });
+
+  return out;
+}
+
+function applyAutoRecordModeForLoad(selObj = {}){
+  const normalized = normalizeSelectionKeys(selObj || {});
+  const out = {};
+
+  Object.entries(normalized).forEach(([rowId, val]) => {
+    const row = ROW_BY_ID[String(rowId)] || null;
+    const picked = normalizeSelectionValue(val, row);
+    if(!picked || !picked.tier) return;
+
+    // 핵심 안전장치: autoRecordMode:true 가 있는 신규 저장값만 자동 재계산합니다.
+    // 기존 저장값에 time이 있어도 이 표시가 없으면 기존 군을 그대로 유지합니다.
+    if(picked.autoRecordMode === true && Number(picked.autoRecordModeVersion || 0) >= 2){
+      const savedTime = picked.savedTime || picked.time;
+      const recalculated = findTierBySavedTime(row, savedTime);
+      if(recalculated) out[rowId] = recalculated;
+      return;
+    }
+
+    out[rowId] = picked;
+  });
+
+  return out;
+}
+
 function roundScore(value) {
   return Math.round((Number(value) || 0) * 100) / 100;
 }
@@ -7251,10 +7427,13 @@ function saveData() {
   const p = document.getElementById("pin5").value.trim();
   if (!n) return toast("닉네임을 입력하세요.");
   if (!/^\d{5}$/.test(p)) return toast("비밀번호는 숫자 5자리입니다.");
-  const safeSelections = normalizeSelectionKeys(selections);
+  const safeSelections = makeAutoRecordSelectionsForSave(selections);
   const total = getSelectionTotal(safeSelections);
   google.script.run
-    .withSuccessHandler(() => toast("저장 완료"))
+    .withSuccessHandler(() => {
+      AUTO_RECORD_DIRTY_ROWS.clear();
+      toast("저장 완료");
+    })
     .withFailureHandler((e) => toast(e.message || "저장 실패"))
     .saveProfile(n, p, safeSelections, total);
 }
@@ -7270,8 +7449,9 @@ function loadData() {
   google.script.run
     .withSuccessHandler((d) => {
       resetSel();
+      AUTO_RECORD_DIRTY_ROWS.clear();
 
-      const loadedSelections = normalizeSelectionKeys(d?.selections || {});
+      const loadedSelections = applyAutoRecordModeForLoad(d?.selections || {});
       Object.entries(loadedSelections).forEach(
         ([rowId, val]) => {
           selections[rowId] = val;
@@ -7917,6 +8097,7 @@ document.querySelectorAll(".main-tab").forEach(btn => {
     if (chip.classList.contains("selected")) {
       chip.classList.remove("selected");
       delete selections[rowId];
+      AUTO_RECORD_DIRTY_ROWS.delete(String(rowId));
       syncRowVisual(rowId);
       calc();
       return;
@@ -7929,7 +8110,11 @@ document.querySelectorAll(".main-tab").forEach(btn => {
     selections[rowId] = {
       tier,
       time: chip.dataset.time,
+      savedTime: chip.dataset.time,
+      autoRecordMode: true,
+      autoRecordModeVersion: AUTO_RECORD_MODE_VERSION,
     };
+    AUTO_RECORD_DIRTY_ROWS.add(String(rowId));
 
     syncRowVisual(rowId);
     calc();
@@ -8143,7 +8328,7 @@ async function loadProfileSupabase(nickname, pin5){
 
   const selections = typeof r.selections === "string" ? JSON.parse(r.selections || "{}") : (r.selections || {});
   const sheet = await getSheetDataSupabase();
-  const safeSelections = (typeof normalizeSelectionKeys === "function") ? normalizeSelectionKeys(selections) : selections;
+  const safeSelections = (typeof applyAutoRecordModeForLoad === "function") ? applyAutoRecordModeForLoad(selections) : ((typeof normalizeSelectionKeys === "function") ? normalizeSelectionKeys(selections) : selections);
   return { totalScore: calcTotalFromSelectionsSupabase(safeSelections, sheet.rows), selections: safeSelections };
 }
 
