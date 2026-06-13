@@ -6797,11 +6797,15 @@ function rowClassByDiff(d) {
 function newMapBadge(r){
   const order = Number(r && r.sort_order);
 
-  if(order === 44){
+  if(order === 45){
     return ` <span class="map-new-badge">NEW</span>`;
   }
 
-  if(order === 75){
+  if(order === 76){
+    return ` <span class="map-new-badge">BAN</span>`;
+  }
+
+    if(order === 14){
     return ` <span class="map-new-badge">BAN</span>`;
   }
 
