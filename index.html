@@ -11412,27 +11412,9 @@ function getTodayKstRange(){
 
 async function recordTodayVisitor(){
   try{
-    if(!sb){
-      alert("Supabase 연결 실패: sb가 없습니다.");
-      return;
-    }
-
-    const { error } = await sb.from("daily_visitors").insert({
-      page: "gunpyo",
-      visitor_key: crypto.randomUUID(),
-      visited_at: new Date().toISOString()
-    });
-
-    if(error){
-      alert("오늘접속자 기록 실패: " + error.message);
-      console.error("오늘접속자 기록 실패:", error);
-      return;
-    }
-
     await refreshOnlineUI();
   }catch(e){
-    alert("오늘접속자 기록 실패: " + (e.message || e));
-    console.error("오늘접속자 기록 실패:", e);
+    console.log("방문자 표시 건너뜀:", e);
   }
 }
 
