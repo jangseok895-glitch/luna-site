@@ -5596,6 +5596,28 @@ body.capture-mode #realPcTableSection.table-wrap{
 #tbodyPc tr:first-child td{
   padding-top:8px !important;
 }
+
+
+/* ===== 상단 PC/모바일 버튼 높이 정렬 보정 ===== */
+.topbar > .row{
+  align-items:center !important;
+}
+#gunpyoTopBtns{
+  display:flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  height:54px !important;
+}
+#gunpyoTopBtns .btn{
+  height:50px !important;
+  min-height:50px !important;
+  padding:0 18px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  line-height:1 !important;
+  margin:0 !important;
+}
 </style>
 </head>
 
@@ -11046,40 +11068,6 @@ async function refreshAfterTeamManage(){
   if(typeof loadViewTeams === "function") await loadViewTeams();
 }
 
-async function deleteTeamAllClientFallback(teamName, inputPw){
-  const adminOk = await isAdminPwValue(inputPw);
-  let teamPwOk = false;
-
-  if(!adminOk){
-    try{
-      await verifyClubPwSupabase(teamName, inputPw);
-      teamPwOk = true;
-    }catch(e){
-      teamPwOk = false;
-    }
-  }
-
-  if(!adminOk && !teamPwOk){
-    throw new Error("단체 비번 또는 운영진 비번이 일치하지 않습니다.");
-  }
-
-  const delMembers = await sb
-    .from("team_members")
-    .delete()
-    .eq("team_name", teamName);
-
-  if(delMembers.error) throw delMembers.error;
-
-  const delClub = await sb
-    .from("club_pw")
-    .delete()
-    .eq("club", teamName);
-
-  if(delClub.error) throw delClub.error;
-
-  return { ok:true };
-}
-
 async function deleteSelectedTeamAll(){
   try{
     const teamName = requireSelectedAdminTeam();
@@ -11092,17 +11080,39 @@ async function deleteSelectedTeamAll(){
       return;
     }
 
-    // 기존 RPC(delete_team_all_auth)가 없는 프로젝트에서도 동작하도록
-    // 프론트에서 운영진 비번(system_pw) 또는 단체 비번(club_pw)을 확인한 뒤 직접 삭제합니다.
-    await deleteTeamAllClientFallback(teamName, inputPw);
+    showLoading("단체 삭제 중입니다");
 
+    /*
+      중요: team_members는 RLS 때문에 브라우저에서 직접 delete 하면
+      permission denied가 납니다. 그래서 SECURITY DEFINER RPC로 삭제합니다.
+      Supabase SQL Editor에 delete_team_all_auth 함수를 1회 생성해야 합니다.
+    */
+    const { data, error } = await sb.rpc("delete_team_all_auth", {
+      p_team_name: teamName,
+      p_pw: String(inputPw).trim()
+    });
+
+    if(error) throw error;
+    if(data !== true) throw new Error("단체 비번 또는 운영진 비번이 일치하지 않습니다.");
+
+    hideLoading();
     alert("단체 삭제가 완료되었습니다.");
+
+    document.getElementById("teamAdminPopup")?.classList.add("hidden");
     resetTeamAdminBoxes();
     await refreshAfterTeamManage();
 
   }catch(e){
+    hideLoading();
     console.error(e);
-    alert(e.message || "단체 삭제 실패");
+
+    const msg = String(e.message || e || "");
+    if(msg.includes("delete_team_all_auth") || msg.includes("Could not find the function")){
+      alert("Supabase에 delete_team_all_auth 함수가 아직 없습니다. 제가 드린 SQL을 먼저 1회 실행해주세요.");
+      return;
+    }
+
+    alert(msg || "단체 삭제 실패");
   }
 }
 
