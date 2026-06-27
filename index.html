@@ -5618,6 +5618,70 @@ body.capture-mode #realPcTableSection.table-wrap{
   line-height:1 !important;
   margin:0 !important;
 }
+
+
+/* ===== 최종 보정: 우측 상단 PC/모바일 버튼 튀어나옴 방지 ===== */
+.topbar{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:8px !important;
+  width:100% !important;
+  min-width:0 !important;
+}
+.topbar .title{
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  gap:8px !important;
+  overflow:hidden !important;
+}
+.topbar > .row{
+  flex:0 0 auto !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:6px !important;
+  margin:0 !important;
+  padding:0 !important;
+}
+.main-title-image{
+  flex:0 0 auto !important;
+  max-width:374px !important;
+}
+#liveLogBox{
+  flex:1 1 auto !important;
+  width:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+  margin-left:6px !important;
+}
+#gunpyoTopBtns{
+  flex:0 0 auto !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:6px !important;
+  height:50px !important;
+  margin:0 !important;
+  padding:0 !important;
+}
+#gunpyoTopBtns .btn{
+  width:102px !important;
+  height:50px !important;
+  min-height:50px !important;
+  padding:0 8px !important;
+  font-size:18px !important;
+  border-radius:14px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  line-height:1 !important;
+  margin:0 !important;
+}
+#goMobileBtn{
+  width:112px !important;
+}
+
 </style>
 </head>
 
