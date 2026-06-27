@@ -2213,17 +2213,18 @@ body.pc-view #goPcBtn{
 }
 
 #liveLogBox{
-  width:230px !important;
+  flex:1 1 auto !important;
+  width:auto !important;
+  min-width:520px !important;
   height:34px !important;
   margin-left:8px !important;
   overflow:hidden !important;
   border-radius:12px !important;
   background:#ffffff !important;
   border:2px solid #38bdf8 !important;
-  display:inline-flex !important;
+  display:flex !important;
   align-items:center !important;
-  padding:0 10px !important;
-  flex:0 0 230px !important;
+  padding:0 12px !important;
 }
 
 #liveLogTrack{
@@ -4167,7 +4168,7 @@ body.pc-view #goPcBtn{
 }
 
 @keyframes liveLogScroll{
-0%{ transform:translateX(230px); }
+0%{ transform:translateX(100%); }
   100%{ transform:translateX(-100%); }
 }
 
@@ -5234,14 +5235,12 @@ tbody tr:hover{
   backdrop-filter:blur(5px) !important;
 }
 
-/* 접속자 / 실시간 로그 */
-#onlineBox,
+/* 실시간 네온사인 */
 #liveLogBox{
   background:rgba(255,255,255,.82) !important;
   border:2px solid #62c7f5 !important;
 }
 
-.online-count,
 .real-views-count{
   background:linear-gradient(135deg,#fff08a,#ffd54a,#ffb36b) !important;
   color:#172033 !important;
@@ -6137,12 +6136,7 @@ function escMini4545(v){
 <div class="title">
   <img class="main-title-image" src="https://i.ibb.co/6cMN4rY1/s39-logo.png">
 
-<div id="onlineBox">
-<span class="online-label">오늘접속자</span>
-  <span id="onlineCount" class="online-count">-</span>
-</div>
-
-  <div id="liveLogBox">
+<div id="liveLogBox">
   <div id="liveLogTrack">최근 활동을 불러오는 중...</div>
 </div>
 </div>
@@ -11052,6 +11046,40 @@ async function refreshAfterTeamManage(){
   if(typeof loadViewTeams === "function") await loadViewTeams();
 }
 
+async function deleteTeamAllClientFallback(teamName, inputPw){
+  const adminOk = await isAdminPwValue(inputPw);
+  let teamPwOk = false;
+
+  if(!adminOk){
+    try{
+      await verifyClubPwSupabase(teamName, inputPw);
+      teamPwOk = true;
+    }catch(e){
+      teamPwOk = false;
+    }
+  }
+
+  if(!adminOk && !teamPwOk){
+    throw new Error("단체 비번 또는 운영진 비번이 일치하지 않습니다.");
+  }
+
+  const delMembers = await sb
+    .from("team_members")
+    .delete()
+    .eq("team_name", teamName);
+
+  if(delMembers.error) throw delMembers.error;
+
+  const delClub = await sb
+    .from("club_pw")
+    .delete()
+    .eq("club", teamName);
+
+  if(delClub.error) throw delClub.error;
+
+  return { ok:true };
+}
+
 async function deleteSelectedTeamAll(){
   try{
     const teamName = requireSelectedAdminTeam();
@@ -11064,12 +11092,9 @@ async function deleteSelectedTeamAll(){
       return;
     }
 
-    const { error } = await sb.rpc("delete_team_all_auth", {
-      p_team_name: teamName,
-      p_pw: inputPw
-    });
-
-    if(error) throw error;
+    // 기존 RPC(delete_team_all_auth)가 없는 프로젝트에서도 동작하도록
+    // 프론트에서 운영진 비번(system_pw) 또는 단체 비번(club_pw)을 확인한 뒤 직접 삭제합니다.
+    await deleteTeamAllClientFallback(teamName, inputPw);
 
     alert("단체 삭제가 완료되었습니다.");
     resetTeamAdminBoxes();
@@ -11396,64 +11421,8 @@ async function deleteBoardComment(commentId, postId){
   return map;
 }
 
-function getTodayKstRange(){
-  const now = new Date();
-  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
 
-  const y = kst.getUTCFullYear();
-  const m = String(kst.getUTCMonth() + 1).padStart(2, "0");
-  const d = String(kst.getUTCDate()).padStart(2, "0");
-
-  return {
-    start: new Date(`${y}-${m}-${d}T00:01:00+09:00`).toISOString(),
-    end: new Date(`${y}-${m}-${d}T23:59:59+09:00`).toISOString()
-  };
-}
-
-async function recordTodayVisitor(){
-  try{
-    await refreshOnlineUI();
-  }catch(e){
-    console.log("방문자 표시 건너뜀:", e);
-  }
-}
-
-async function getOnlineCount(){
-  try{
-    if(!sb){
-      console.error("Supabase 연결 실패: sb가 없습니다.");
-      return 0;
-    }
-
-    const { start, end } = getTodayKstRange();
-
-    const { count, error } = await sb
-      .from("daily_visitors")
-      .select("*", { count:"exact", head:true })
-      .eq("page", "gunpyo")
-      .gte("visited_at", start)
-      .lte("visited_at", end);
-
-    if(error){
-      alert("오늘접속자 조회 실패: " + error.message);
-      console.error("오늘접속자 조회 실패:", error);
-      return 0;
-    }
-
-    return count || 0;
-  }catch(e){
-    alert("오늘접속자 조회 실패: " + (e.message || e));
-    console.error("오늘접속자 조회 실패:", e);
-    return 0;
-  }
-}
-
-async function refreshOnlineUI(){
-  const cnt = await getOnlineCount();
-  const el = document.getElementById("onlineCount");
-  if(el) el.textContent = cnt;
-}
-
+/* 오늘 접속자 기능 제거됨: daily_visitors 조회/기록을 더 이상 실행하지 않습니다. */
 
 
 async function getRecentLiveLogs(){
@@ -11612,11 +11581,6 @@ async function startLiveLogNeon(){
 
 setTimeout(startLiveLogNeon, 1200);
 
-  setTimeout(() => {
-  recordTodayVisitor();
-  refreshOnlineUI();
-  setInterval(refreshOnlineUI, 10000);
-}, 1500);
 
   const RANK_GRAPH_LABELS = ["프로","강주력","주력","1군","2군","3군","4군","5군","6군"];
 
