@@ -13569,6 +13569,46 @@ async function getDeathmatchMembersByClub(club){
   return rows.map(r => String(r.nickname || "").trim()).filter(Boolean);
 }
 
+
+async function readDeathmatchAttachment(inputId, required = false){
+  const input = document.getElementById(inputId);
+  const file = input && input.files && input.files[0] ? input.files[0] : null;
+
+  if(!file){
+    if(required) throw new Error("클럽인증 첨부파일을 올려주세요.");
+    return "";
+  }
+
+  if(!["image/jpeg", "image/png"].includes(file.type)){
+    throw new Error("클럽인증 첨부파일은 JPG 또는 PNG 형식만 가능합니다.");
+  }
+
+  const imageData = await fileToBase64Data(file);
+  return `data:${imageData.mimeType};base64,${imageData.base64}`;
+}
+
+function openDeathmatchAttachment(url){
+  const src = String(url || "").trim();
+  if(!src){
+    alert("등록된 첨부파일이 없습니다.");
+    return;
+  }
+  window.open(src, "_blank");
+}
+
+async function openDeathmatchAttachmentById(id){
+  try{
+    const rows = await sbSelect(DEATHMATCH_TABLE, q =>
+      q.select("attachment_url").eq("id", id).limit(1)
+    );
+    const url = String(rows && rows[0] && rows[0].attachment_url ? rows[0].attachment_url : "").trim();
+    openDeathmatchAttachment(url);
+  }catch(e){
+    console.error(e);
+    alert("첨부파일을 불러오지 못했습니다.");
+  }
+}
+
 async function openDeathmatchApply(){
   const closed = await isDeathmatchClosed();
 
@@ -13615,6 +13655,16 @@ async function openDeathmatchApply(){
         <div class="deathmatch-player-box">
           <label>4번 출전선수</label>
           <select id="deathmatchPlayer4" class="select" style="width:100%;"><option value="">클럽 먼저 선택</option></select>
+        </div>
+      </div>
+
+      <div class="deathmatch-row">
+        <b>클럽인증 첨부파일</b>
+        <div>
+          <input id="deathmatchAttachment" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+          <div style="margin-top:6px;font-size:13px;font-weight:900;color:#64748b;line-height:1.4;">
+            클럽 가입되어 있다는 인증 첨부파일을 올려주세요. JPG/PNG만 가능하며, 첨부파일이 없으면 신청이 안 됩니다.
+          </div>
         </div>
       </div>
 
@@ -13691,6 +13741,8 @@ async function submitDeathmatchApply(){
     if(!/^\d{4}$/.test(pw)) throw new Error("클럽 비밀번호 4자리를 입력해주세요.");
     if(players.some(v => !v)) throw new Error("출전선수 4명을 모두 선택해주세요.");
 
+    const attachmentUrl = await readDeathmatchAttachment("deathmatchAttachment", true);
+
     const uniquePlayers = new Set(players);
     if(uniquePlayers.size !== 4) throw new Error("출전선수 4명은 서로 달라야 합니다.");
 
@@ -13710,6 +13762,7 @@ async function submitDeathmatchApply(){
       player2: players[1],
       player3: players[2],
       player4: players[3],
+      attachment_url: attachmentUrl,
       created_at: new Date().toISOString()
     });
 
@@ -13763,6 +13816,7 @@ async function renderDeathmatchClubList(){
       <div class="deathmatch-list-head">
         <div>클럽명</div>
         <div>출전선수 4명</div>
+        <div>첨부파일</div>
         <div>관리</div>
       </div>
 
@@ -13779,6 +13833,11 @@ async function renderDeathmatchClubList(){
           <div class="deathmatch-list-row">
             <div><b>${esc(club)}</b></div>
             <div>${players}</div>
+            <div style="text-align:center;">
+              ${String(r.attachment_url || "").trim()
+                ? `<button class="btn blue" style="font-size:14px !important;padding:8px 10px !important;" onclick="openDeathmatchAttachmentById('${esc(r.id)}')">첨부파일</button>`
+                : `<span style="font-size:13px;font-weight:900;color:#64748b;">없음</span>`}
+            </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
               <button class="btn blue" style="font-size:14px !important;padding:8px 10px !important;" onclick="openDeathmatchEdit('${esc(r.id)}')">수정</button>
               <button class="btn gold" style="font-size:14px !important;padding:8px 10px !important;" onclick="withdrawDeathmatchApply('${esc(r.id)}')">신청철회</button>
@@ -13841,6 +13900,19 @@ async function openDeathmatchEdit(id){
           </div>
         </div>
 
+        <div class="deathmatch-row">
+          <b>클럽인증 첨부파일</b>
+          <div>
+            ${String(r.attachment_url || "").trim()
+              ? `<button type="button" class="btn blue" style="font-size:14px !important;padding:8px 10px !important;margin-bottom:8px;" onclick="openDeathmatchAttachmentById('${esc(id)}')">기존 첨부파일 보기</button>`
+              : `<div style="font-size:13px;font-weight:900;color:#ef4444;margin-bottom:8px;">기존 첨부파일 없음</div>`}
+            <input id="deathmatchEditAttachment" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+            <div style="margin-top:6px;font-size:13px;font-weight:900;color:#64748b;line-height:1.4;">
+              새 파일을 선택하면 기존 첨부파일이 변경됩니다. 선택하지 않으면 기존 첨부파일이 유지됩니다.
+            </div>
+          </div>
+        </div>
+
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="tournament-apply-btn" style="flex:1;" onclick="submitDeathmatchEdit('${esc(id)}')">수정 완료</button>
           <button class="tournament-apply-btn red-tournament-btn" style="flex:1;" onclick="openDeathmatchClubList()">취소</button>
@@ -13884,7 +13956,7 @@ async function fillDeathmatchEditPlayerSelects(club, selectedPlayers){
 async function submitDeathmatchEdit(id){
   try{
     const rows = await sbSelect(DEATHMATCH_TABLE, q =>
-      q.select("club_name").eq("id", id).limit(1)
+      q.select("club_name,attachment_url").eq("id", id).limit(1)
     );
 
     if(!rows.length){
@@ -13903,12 +13975,20 @@ async function submitDeathmatchEdit(id){
 
     await verifyClubPwSupabase(club, pw);
 
-    const { error } = await sb.from(DEATHMATCH_TABLE).update({
+    const newAttachmentUrl = await readDeathmatchAttachment("deathmatchEditAttachment", false);
+
+    const updatePayload = {
       player1: players[0],
       player2: players[1],
       player3: players[2],
       player4: players[3]
-    }).eq("id", id);
+    };
+
+    if(newAttachmentUrl){
+      updatePayload.attachment_url = newAttachmentUrl;
+    }
+
+    const { error } = await sb.from(DEATHMATCH_TABLE).update(updatePayload).eq("id", id);
 
     if(error) throw error;
 
