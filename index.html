@@ -5781,7 +5781,7 @@ body.capture-mode #realPcTableSection.table-wrap{
 .deathmatch-list-head,
 .deathmatch-list-row{
   display:grid !important;
-  grid-template-columns:1fr 2.2fr 86px !important;
+  grid-template-columns:1fr 2.2fr 260px !important;
   gap:8px !important;
   align-items:center !important;
   padding:10px !important;
@@ -5810,11 +5810,42 @@ body.capture-mode #realPcTableSection.table-wrap{
 .deathmatch-image-view{
   max-width:100% !important;
   max-height:76vh !important;
+  width:auto !important;
+  height:auto !important;
   object-fit:contain !important;
   display:block !important;
   margin:0 auto !important;
   border-radius:14px !important;
   background:#ffffff !important;
+  cursor:zoom-in !important;
+}
+
+.deathmatch-image-box{
+  width:min(1400px,98vw) !important;
+  max-height:96vh !important;
+  padding:14px !important;
+}
+.deathmatch-image-large-wrap{
+  width:100% !important;
+  max-height:84vh !important;
+  overflow:auto !important;
+  -webkit-overflow-scrolling:touch !important;
+  touch-action:pan-x pan-y pinch-zoom !important;
+  background:#111827 !important;
+  border-radius:14px !important;
+  padding:8px !important;
+}
+.deathmatch-image-large{
+  display:block !important;
+  width:100% !important;
+  max-width:none !important;
+  height:auto !important;
+  max-height:none !important;
+  object-fit:contain !important;
+  margin:0 auto !important;
+  border-radius:10px !important;
+  background:#ffffff !important;
+  touch-action:pinch-zoom !important;
 }
 @media(max-width:700px){
   .deathmatch-menu-grid,
@@ -13427,7 +13458,16 @@ function openDeathmatchMainPopup(){
 
 function openDeathmatchImage(title, url){
   makeDeathmatchPopup(title, `
-    <img class="deathmatch-image-view" src="${url}" alt="${title}">
+    <img
+      class="deathmatch-image-view"
+      src="${url}"
+      alt="${title}"
+      onclick="window.open('${url}', '_blank')"
+      title="이미지를 클릭하면 원본 크기로 열립니다"
+    >
+    <div style="margin-top:10px;text-align:center;font-size:15px;font-weight:900;color:#2563eb;">
+      이미지를 클릭하면 원본 크기로 크게 볼 수 있습니다.
+    </div>
   `, true);
 }
 
@@ -13608,7 +13648,7 @@ async function renderDeathmatchClubList(){
       <div class="deathmatch-list-head">
         <div>클럽명</div>
         <div>출전선수 4명</div>
-        <div>삭제</div>
+        <div>관리</div>
       </div>
 
       ${rows.map(r => {
@@ -13624,7 +13664,11 @@ async function renderDeathmatchClubList(){
           <div class="deathmatch-list-row">
             <div><b>${esc(club)}</b></div>
             <div>${players}</div>
-            <div><button class="btn red" style="font-size:14px !important;padding:8px 10px !important;" onclick="deleteDeathmatchApply('${esc(r.id)}')">삭제</button></div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
+              <button class="btn blue" style="font-size:14px !important;padding:8px 10px !important;" onclick="openDeathmatchEdit('${esc(r.id)}')">수정</button>
+              <button class="btn gold" style="font-size:14px !important;padding:8px 10px !important;" onclick="withdrawDeathmatchApply('${esc(r.id)}')">신청철회</button>
+              <button class="btn red" style="font-size:14px !important;padding:8px 10px !important;" onclick="deleteDeathmatchApply('${esc(r.id)}')">운영진삭제</button>
+            </div>
           </div>
         `;
       }).join("")}
@@ -13633,6 +13677,167 @@ async function renderDeathmatchClubList(){
   }catch(e){
     console.error(e);
     box.innerHTML = `<div class="deathmatch-list-row">신청클럽을 불러오지 못했습니다. Supabase 테이블을 확인해주세요.</div>`;
+  }
+}
+
+
+async function openDeathmatchEdit(id){
+  try{
+    const rows = await sbSelect(DEATHMATCH_TABLE, q =>
+      q.select("*").eq("id", id).limit(1)
+    );
+
+    if(!rows.length){
+      alert("신청 정보를 찾지 못했습니다.");
+      return;
+    }
+
+    const r = rows[0];
+    const club = String(r.club_name || "");
+
+    makeDeathmatchPopup("2026 클럽배틀데스매치 신청 수정", `
+      <div class="deathmatch-form">
+        <div class="deathmatch-row">
+          <b>클럽명</b>
+          <div style="font-weight:1000;color:#2563eb;">${esc(club)}</div>
+        </div>
+
+        <div class="deathmatch-row">
+          <b>클럽 비번</b>
+          <input id="deathmatchEditClubPw" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="4자리">
+        </div>
+
+        <div class="deathmatch-player-grid">
+          <div class="deathmatch-player-box">
+            <label>1번 출전선수</label>
+            <select id="deathmatchEditPlayer1" class="select" style="width:100%;"><option value="">선수 불러오는 중</option></select>
+          </div>
+          <div class="deathmatch-player-box">
+            <label>2번 출전선수</label>
+            <select id="deathmatchEditPlayer2" class="select" style="width:100%;"><option value="">선수 불러오는 중</option></select>
+          </div>
+          <div class="deathmatch-player-box">
+            <label>3번 출전선수</label>
+            <select id="deathmatchEditPlayer3" class="select" style="width:100%;"><option value="">선수 불러오는 중</option></select>
+          </div>
+          <div class="deathmatch-player-box">
+            <label>4번 출전선수</label>
+            <select id="deathmatchEditPlayer4" class="select" style="width:100%;"><option value="">선수 불러오는 중</option></select>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="tournament-apply-btn" style="flex:1;" onclick="submitDeathmatchEdit('${esc(id)}')">수정 완료</button>
+          <button class="tournament-apply-btn red-tournament-btn" style="flex:1;" onclick="openDeathmatchClubList()">취소</button>
+        </div>
+      </div>
+    `, true);
+
+    await fillDeathmatchEditPlayerSelects(club, [r.player1, r.player2, r.player3, r.player4]);
+
+  }catch(e){
+    console.error(e);
+    alert(e.message || "수정 화면을 불러오지 못했습니다.");
+  }
+}
+
+async function fillDeathmatchEditPlayerSelects(club, selectedPlayers){
+  const selects = [1,2,3,4].map(n => document.getElementById("deathmatchEditPlayer" + n));
+
+  try{
+    const members = await getDeathmatchMembersByClub(club);
+
+    selects.forEach((sel, i) => {
+      if(!sel) return;
+      const current = String(selectedPlayers[i] || "");
+      const optionNames = Array.from(new Set([current, ...members].filter(Boolean)));
+
+      sel.innerHTML = `<option value="">${i + 1}번 선수 선택</option>` +
+        optionNames.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join("");
+
+      sel.value = current;
+    });
+
+  }catch(e){
+    console.error(e);
+    selects.forEach(sel => {
+      if(sel) sel.innerHTML = `<option value="">멤버 로딩 실패</option>`;
+    });
+  }
+}
+
+async function submitDeathmatchEdit(id){
+  try{
+    const rows = await sbSelect(DEATHMATCH_TABLE, q =>
+      q.select("club_name").eq("id", id).limit(1)
+    );
+
+    if(!rows.length){
+      throw new Error("신청 정보를 찾지 못했습니다.");
+    }
+
+    const club = String(rows[0].club_name || "").trim();
+    const pw = String(document.getElementById("deathmatchEditClubPw")?.value || "").trim();
+    const players = [1,2,3,4].map(n => String(document.getElementById("deathmatchEditPlayer" + n)?.value || "").trim());
+
+    if(!/^\d{4}$/.test(pw)) throw new Error("클럽 비밀번호 4자리를 입력해주세요.");
+    if(players.some(v => !v)) throw new Error("출전선수 4명을 모두 선택해주세요.");
+
+    const uniquePlayers = new Set(players);
+    if(uniquePlayers.size !== 4) throw new Error("출전선수 4명은 서로 달라야 합니다.");
+
+    await verifyClubPwSupabase(club, pw);
+
+    const { error } = await sb.from(DEATHMATCH_TABLE).update({
+      player1: players[0],
+      player2: players[1],
+      player3: players[2],
+      player4: players[3]
+    }).eq("id", id);
+
+    if(error) throw error;
+
+    alert("신청 순서가 수정되었습니다.");
+    await openDeathmatchClubList();
+
+  }catch(e){
+    console.error(e);
+    alert(e.message || "수정 실패");
+  }
+}
+
+async function withdrawDeathmatchApply(id){
+  try{
+    const rows = await sbSelect(DEATHMATCH_TABLE, q =>
+      q.select("club_name").eq("id", id).limit(1)
+    );
+
+    if(!rows.length){
+      throw new Error("신청 정보를 찾지 못했습니다.");
+    }
+
+    const club = String(rows[0].club_name || "").trim();
+    const pw = prompt(`${club} 신청을 철회하려면 클럽 비밀번호 4자리를 입력하세요.`);
+    if(!pw) return;
+
+    if(!/^\d{4}$/.test(String(pw).trim())){
+      alert("클럽 비밀번호 4자리를 입력해주세요.");
+      return;
+    }
+
+    await verifyClubPwSupabase(club, String(pw).trim());
+
+    if(!confirm("정말 신청을 철회하시겠습니까?")) return;
+
+    const { error } = await sb.from(DEATHMATCH_TABLE).delete().eq("id", id);
+    if(error) throw error;
+
+    alert("신청이 철회되었습니다.");
+    await renderDeathmatchClubList();
+
+  }catch(e){
+    console.error(e);
+    alert(e.message || "신청철회 실패");
   }
 }
 
