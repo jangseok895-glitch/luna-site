@@ -13414,6 +13414,88 @@ const DEATHMATCH_MAP_URL = "https://i.ibb.co/Wp7Bz7Kj/image.jpg";
 const DEATHMATCH_YOUTUBE_URL = "https://www.youtube.com/@liquidchalang";
 const DEATHMATCH_CHZZK_URL = "https://chzzk.naver.com/868376caa866a028a9e54fbfeaee56ca";
 const DEATHMATCH_TABLE = "club_battle_deathmatch_applications";
+const DEATHMATCH_CLOSE_MARKER = "__DEATHMATCH_CLOSED__";
+
+async function isDeathmatchClosed(){
+  try{
+    const rows = await sbSelect(DEATHMATCH_TABLE, q =>
+      q.select("id").eq("club_name", DEATHMATCH_CLOSE_MARKER).limit(1)
+    );
+    return rows.length > 0;
+  }catch(e){
+    console.error(e);
+    return false;
+  }
+}
+
+async function setDeathmatchClosed(closed){
+  if(closed){
+    const exists = await isDeathmatchClosed();
+    if(exists) return;
+
+    const { error } = await sb.from(DEATHMATCH_TABLE).insert({
+      club_name: DEATHMATCH_CLOSE_MARKER,
+      player1: "마감",
+      player2: "마감",
+      player3: "마감",
+      player4: "마감",
+      created_at: new Date().toISOString()
+    });
+    if(error) throw error;
+    return;
+  }
+
+  const { error } = await sb.from(DEATHMATCH_TABLE)
+    .delete()
+    .eq("club_name", DEATHMATCH_CLOSE_MARKER);
+  if(error) throw error;
+}
+
+async function adminCloseDeathmatchApply(){
+  try{
+    const pw = prompt("운영진 비밀번호 4자리를 입력하세요.");
+    if(!pw) return;
+
+    const ok = await isAdminPwValue(String(pw).trim());
+    if(!ok){
+      alert("운영진 비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    if(!confirm("대회 신청을 마감하시겠습니까?\n마감 후에는 더 이상 신청할 수 없습니다.")) return;
+
+    await setDeathmatchClosed(true);
+    alert("대회 신청이 마감되었습니다.");
+    await renderDeathmatchClubList();
+
+  }catch(e){
+    console.error(e);
+    alert(e.message || "마감 처리 실패");
+  }
+}
+
+async function adminOpenDeathmatchApply(){
+  try{
+    const pw = prompt("운영진 비밀번호 4자리를 입력하세요.");
+    if(!pw) return;
+
+    const ok = await isAdminPwValue(String(pw).trim());
+    if(!ok){
+      alert("운영진 비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    if(!confirm("대회 신청 마감을 해제하시겠습니까?")) return;
+
+    await setDeathmatchClosed(false);
+    alert("대회 신청이 다시 열렸습니다.");
+    await renderDeathmatchClubList();
+
+  }catch(e){
+    console.error(e);
+    alert(e.message || "마감 해제 실패");
+  }
+}
 
 function closeDeathmatchPopup(returnToMenu = false){
   document.getElementById("deathmatchPopup")?.remove();
@@ -13488,6 +13570,21 @@ async function getDeathmatchMembersByClub(club){
 }
 
 async function openDeathmatchApply(){
+  const closed = await isDeathmatchClosed();
+
+  if(closed){
+    makeDeathmatchPopup("2026 클럽배틀데스매치 신청하기", `
+      <div style="padding:42px 16px;text-align:center;font-size:52px;font-weight:1000;color:#ef4444;line-height:1.2;">
+        마감!
+      </div>
+      <div style="text-align:center;font-size:18px;font-weight:900;color:#111827;margin-bottom:18px;">
+        현재 대회 신청이 마감되어 더 이상 신청할 수 없습니다.
+      </div>
+      <button class="tournament-apply-btn" onclick="openDeathmatchClubList()">신청클럽보기</button>
+    `, true);
+    return;
+  }
+
   makeDeathmatchPopup("2026 클럽배틀데스매치 신청하기", `
     <div class="deathmatch-form">
       <div class="deathmatch-row">
@@ -13579,6 +13676,13 @@ async function fillDeathmatchPlayerSelects(club){
 
 async function submitDeathmatchApply(){
   try{
+    const closed = await isDeathmatchClosed();
+    if(closed){
+      alert("대회 신청이 마감되었습니다.");
+      openDeathmatchApply();
+      return;
+    }
+
     const club = String(document.getElementById("deathmatchClubSelect")?.value || "").trim();
     const pw = String(document.getElementById("deathmatchClubPw")?.value || "").trim();
     const players = [1,2,3,4].map(n => String(document.getElementById("deathmatchPlayer" + n)?.value || "").trim());
@@ -13635,16 +13739,27 @@ async function renderDeathmatchClubList(){
   if(!box) return;
 
   try{
-    const rows = await sbSelect(DEATHMATCH_TABLE, q =>
+    const allRows = await sbSelect(DEATHMATCH_TABLE, q =>
       q.select("*").order("created_at", { ascending:true })
     );
 
+    const closed = allRows.some(r => String(r.club_name || "") === DEATHMATCH_CLOSE_MARKER);
+    const rows = allRows.filter(r => String(r.club_name || "") !== DEATHMATCH_CLOSE_MARKER);
+
+    const statusHtml = closed
+      ? `<div style="padding:18px;text-align:center;font-size:42px;font-weight:1000;color:#ef4444;background:#fff1f2;border:2px solid #ef4444;border-radius:16px;margin-bottom:12px;">마감!</div>`
+      : `<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="btn red" style="font-size:15px !important;padding:10px 14px !important;" onclick="adminCloseDeathmatchApply()">운영진마감</button>
+        </div>`;
+
     if(!rows.length){
-      box.innerHTML = `<div class="deathmatch-list-row">아직 신청된 클럽이 없습니다.</div>`;
+      box.innerHTML = statusHtml + `<div class="deathmatch-list-row">아직 신청된 클럽이 없습니다.</div>`;
       return;
     }
 
     box.innerHTML = `
+      ${statusHtml}
+      ${closed ? `<div style="display:flex;justify-content:flex-end;margin-bottom:12px;"><button class="btn blue" style="font-size:15px !important;padding:10px 14px !important;" onclick="adminOpenDeathmatchApply()">운영진마감해제</button></div>` : ``}
       <div class="deathmatch-list-head">
         <div>클럽명</div>
         <div>출전선수 4명</div>
