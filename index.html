@@ -5778,14 +5778,36 @@ body.capture-mode #realPcTableSection.table-wrap{
   gap:10px !important;
   margin-top:12px !important;
 }
-.deathmatch-list-head,
-.deathmatch-list-row{
+.deathmatch-list-head{
   display:grid !important;
-  grid-template-columns:1fr 2.2fr 260px !important;
+  grid-template-columns:1fr 2.2fr !important;
   gap:8px !important;
   align-items:center !important;
   padding:10px !important;
   border-radius:12px !important;
+}
+.deathmatch-list-row{
+  display:grid !important;
+  grid-template-columns:1fr 2.2fr !important;
+  gap:8px !important;
+  align-items:center !important;
+  padding:10px !important;
+  border-radius:12px !important;
+}
+.deathmatch-row-actions{
+  grid-column:1 / -1 !important;
+  display:flex !important;
+  justify-content:center !important;
+  gap:8px !important;
+  flex-wrap:wrap !important;
+  padding-top:8px !important;
+  margin-top:6px !important;
+  border-top:1px dashed rgba(14,165,233,.25) !important;
+}
+.deathmatch-row-actions .btn{
+  min-width:112px !important;
+  font-size:14px !important;
+  padding:9px 12px !important;
 }
 .deathmatch-list-head{
   background:#dff6ff !important;
@@ -5797,15 +5819,18 @@ body.capture-mode #realPcTableSection.table-wrap{
   border:1px solid rgba(14,165,233,.25) !important;
 }
 .deathmatch-player-link{
-  display:inline-block !important;
-  margin:2px 5px 2px 0 !important;
-  padding:5px 9px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  margin:2px 2px 2px 0 !important;
+  padding:3px 7px 3px 3px !important;
   border-radius:999px !important;
   border:1px solid #38bdf8 !important;
   background:#e0f7ff !important;
   color:#2563eb !important;
+  font-size:14px !important;
   font-weight:900 !important;
   cursor:pointer !important;
+  white-space:nowrap !important;
 }
 .deathmatch-image-view{
   max-width:100% !important;
@@ -5858,6 +5883,83 @@ body.capture-mode #realPcTableSection.table-wrap{
   .deathmatch-list-head,
   .deathmatch-list-row{
     grid-template-columns:1fr !important;
+  }
+  .deathmatch-row-actions{
+    justify-content:flex-start !important;
+    flex-wrap:wrap !important;
+  }
+  .deathmatch-row-actions{
+    grid-column:1 !important;
+  }
+}
+
+
+
+/* ===== 데스매치 신청클럽보기 한 줄 정렬 보정 ===== */
+.deathmatch-list-head{
+  grid-template-columns:150px 1fr !important;
+  gap:6px !important;
+}
+.deathmatch-list-row{
+  grid-template-columns:150px minmax(0,1fr) auto !important;
+  gap:6px !important;
+}
+.deathmatch-row-actions{
+  grid-column:auto !important;
+  display:flex !important;
+  justify-content:flex-end !important;
+  align-items:center !important;
+  gap:5px !important;
+  flex-wrap:nowrap !important;
+  padding:0 !important;
+  margin:0 !important;
+  border-top:0 !important;
+}
+.deathmatch-row-actions .btn{
+  min-width:auto !important;
+  height:34px !important;
+  font-size:13px !important;
+  padding:0 8px !important;
+  border-radius:10px !important;
+}
+.deathmatch-players-line{
+  display:flex !important;
+  align-items:center !important;
+  gap:5px !important;
+  flex-wrap:wrap !important;
+  min-width:0 !important;
+}
+.deathmatch-player-link{
+  display:inline-flex !important;
+  align-items:center !important;
+  margin:2px 2px 2px 0 !important;
+  padding:3px 7px 3px 3px !important;
+  font-size:14px !important;
+  white-space:nowrap !important;
+}
+.deathmatch-player-no{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:24px !important;
+  height:24px !important;
+  margin-right:4px !important;
+  border-radius:50% !important;
+  border:2px solid #2563eb !important;
+  background:#ffffff !important;
+  color:#2563eb !important;
+  font-size:14px !important;
+  font-weight:1000 !important;
+  line-height:1 !important;
+}
+@media(max-width:700px){
+  .deathmatch-list-head,
+  .deathmatch-list-row{
+    grid-template-columns:1fr !important;
+  }
+  .deathmatch-row-actions{
+    justify-content:flex-start !important;
+    flex-wrap:wrap !important;
   }
 }
 
@@ -13593,6 +13695,14 @@ function openDeathmatchAttachment(url){
     alert("등록된 첨부파일이 없습니다.");
     return;
   }
+
+  // data URL 첨부파일은 새 창에서 차단되거나 빈 화면이 뜰 수 있어서
+  // 사이트 내부 이미지 팝업으로 바로 보여줍니다.
+  if(typeof openImagePopup === "function"){
+    openImagePopup(src);
+    return;
+  }
+
   window.open(src, "_blank");
 }
 
@@ -13815,33 +13925,30 @@ async function renderDeathmatchClubList(){
       ${closed ? `<div style="display:flex;justify-content:flex-end;margin-bottom:12px;"><button class="btn blue" style="font-size:15px !important;padding:10px 14px !important;" onclick="adminOpenDeathmatchApply()">운영진마감해제</button></div>` : ``}
       <div class="deathmatch-list-head">
         <div>클럽명</div>
-        <div>출전선수 4명</div>
-        <div>첨부파일</div>
-        <div>관리</div>
+        <div>출전선수</div>
       </div>
 
       ${rows.map(r => {
         const club = String(r.club_name || "");
+        const hasAttachment = String(r.attachment_url || "").trim();
         const players = [r.player1, r.player2, r.player3, r.player4]
           .map((p, i) => {
             const nick = String(p || "");
-            return `<span class="deathmatch-player-link" onclick="openDeathmatchPlayerReal('${esc(club)}','${esc(nick)}')">${i + 1}번 ${esc(nick)}</span>`;
+            return `<span class="deathmatch-player-link" onclick="openDeathmatchPlayerReal('${esc(club)}','${esc(nick)}')"><span class="deathmatch-player-no">${i + 1}</span>${esc(nick)}</span>`;
           })
           .join("");
 
         return `
           <div class="deathmatch-list-row">
             <div><b>${esc(club)}</b></div>
-            <div>${players}</div>
-            <div style="text-align:center;">
-              ${String(r.attachment_url || "").trim()
-                ? `<button class="btn blue" style="font-size:14px !important;padding:8px 10px !important;" onclick="openDeathmatchAttachmentById('${esc(r.id)}')">첨부파일</button>`
-                : `<span style="font-size:13px;font-weight:900;color:#64748b;">없음</span>`}
-            </div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
-              <button class="btn blue" style="font-size:14px !important;padding:8px 10px !important;" onclick="openDeathmatchEdit('${esc(r.id)}')">수정</button>
-              <button class="btn gold" style="font-size:14px !important;padding:8px 10px !important;" onclick="withdrawDeathmatchApply('${esc(r.id)}')">신청철회</button>
-              <button class="btn red" style="font-size:14px !important;padding:8px 10px !important;" onclick="deleteDeathmatchApply('${esc(r.id)}')">운영진삭제</button>
+            <div class="deathmatch-players-line">${players}</div>
+            <div class="deathmatch-row-actions">
+              ${hasAttachment
+                ? `<button class="btn blue" onclick="openDeathmatchAttachmentById('${esc(r.id)}')">첨부파일</button>`
+                : `<button class="btn link" type="button" disabled style="opacity:.45;cursor:not-allowed;">첨부없음</button>`}
+              <button class="btn blue" onclick="openDeathmatchEdit('${esc(r.id)}')">수정</button>
+              <button class="btn gold" onclick="withdrawDeathmatchApply('${esc(r.id)}')">신청취소</button>
+              <button class="btn red" onclick="deleteDeathmatchApply('${esc(r.id)}')">운영진삭제</button>
             </div>
           </div>
         `;
