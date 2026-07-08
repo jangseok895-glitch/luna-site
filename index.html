@@ -5682,6 +5682,154 @@ body.capture-mode #realPcTableSection.table-wrap{
   width:112px !important;
 }
 
+
+/* ===== 2026 클럽배틀 데스매치 ===== */
+.deathmatch-card-first{
+  order:-999 !important;
+}
+.deathmatch-menu-grid{
+  display:grid !important;
+  grid-template-columns:repeat(2,1fr) !important;
+  gap:12px !important;
+  margin-top:14px !important;
+}
+.deathmatch-poster{
+  width:100% !important;
+  max-height:430px !important;
+  object-fit:contain !important;
+  border-radius:14px !important;
+  background:#ffffff !important;
+  border:1px solid rgba(14,165,233,.28) !important;
+}
+.deathmatch-popup{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:1000000000 !important;
+  background:rgba(0,0,0,.58) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:18px !important;
+  overflow-y:auto !important;
+}
+.deathmatch-popup.hidden{
+  display:none !important;
+}
+.deathmatch-box{
+  width:min(880px,96vw) !important;
+  max-height:92vh !important;
+  overflow:auto !important;
+  background:#ffffff !important;
+  border-radius:20px !important;
+  padding:18px !important;
+  position:relative !important;
+  box-shadow:0 18px 54px rgba(0,0,0,.35) !important;
+}
+.deathmatch-close{
+  position:absolute !important;
+  right:14px !important;
+  top:14px !important;
+  width:58px !important;
+  height:58px !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+  font-size:30px !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+}
+.deathmatch-title{
+  margin:4px 70px 14px 0 !important;
+  font-size:28px !important;
+  font-weight:1000 !important;
+  color:#0f172a !important;
+  word-break:keep-all !important;
+}
+.deathmatch-form{
+  display:grid !important;
+  gap:12px !important;
+}
+.deathmatch-row{
+  display:grid !important;
+  grid-template-columns:130px 1fr !important;
+  gap:10px !important;
+  align-items:center !important;
+}
+.deathmatch-row b{
+  color:#111827 !important;
+}
+.deathmatch-player-grid{
+  display:grid !important;
+  grid-template-columns:repeat(2,1fr) !important;
+  gap:10px !important;
+}
+.deathmatch-player-box{
+  display:grid !important;
+  gap:5px !important;
+}
+.deathmatch-player-box label{
+  font-size:14px !important;
+  font-weight:900 !important;
+  color:#2563eb !important;
+}
+.deathmatch-list{
+  display:grid !important;
+  gap:10px !important;
+  margin-top:12px !important;
+}
+.deathmatch-list-head,
+.deathmatch-list-row{
+  display:grid !important;
+  grid-template-columns:1fr 2.2fr 86px !important;
+  gap:8px !important;
+  align-items:center !important;
+  padding:10px !important;
+  border-radius:12px !important;
+}
+.deathmatch-list-head{
+  background:#dff6ff !important;
+  border:1px solid rgba(14,165,233,.35) !important;
+  font-weight:1000 !important;
+}
+.deathmatch-list-row{
+  background:#ffffff !important;
+  border:1px solid rgba(14,165,233,.25) !important;
+}
+.deathmatch-player-link{
+  display:inline-block !important;
+  margin:2px 5px 2px 0 !important;
+  padding:5px 9px !important;
+  border-radius:999px !important;
+  border:1px solid #38bdf8 !important;
+  background:#e0f7ff !important;
+  color:#2563eb !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+}
+.deathmatch-image-view{
+  max-width:100% !important;
+  max-height:76vh !important;
+  object-fit:contain !important;
+  display:block !important;
+  margin:0 auto !important;
+  border-radius:14px !important;
+  background:#ffffff !important;
+}
+@media(max-width:700px){
+  .deathmatch-menu-grid,
+  .deathmatch-player-grid{
+    grid-template-columns:1fr !important;
+  }
+  .deathmatch-row{
+    grid-template-columns:1fr !important;
+  }
+  .deathmatch-list-head,
+  .deathmatch-list-row{
+    grid-template-columns:1fr !important;
+  }
+}
+
 </style>
 </head>
 
@@ -9202,6 +9350,21 @@ function showBoard(board){
 
     list.innerHTML = `
     <div class="tournament-main-grid">
+
+      <div class="tournament-thumb-card deathmatch-card-first" onclick="openDeathmatchMainPopup()">
+        <div class="tournament-title">2026 클럽배틀데스매치</div>
+        <div class="tournament-soon-badge">접수중</div>
+
+        <img class="tournament-thumb-img" src="https://i.ibb.co/FqxfqGjT/11.jpg">
+
+        <button
+          type="button"
+          class="tournament-apply-btn"
+          onclick="event.stopPropagation(); openDeathmatchMainPopup();"
+        >
+          대회/진행 공지
+        </button>
+      </div>
 
       <div class="tournament-thumb-card" onclick="openTournamentPoster('sticker3839')">
         <div class="tournament-title">38,39시즌 카트 스티커대회</div>
@@ -13212,6 +13375,297 @@ function loadEventMemberRanks(postIdx, team, members){
       });
   });
 }
+
+/* ===== 2026 클럽배틀 데스매치 ===== */
+const DEATHMATCH_POSTER_URL = "https://i.ibb.co/FqxfqGjT/11.jpg";
+const DEATHMATCH_RULE_URL = "https://i.ibb.co/pBjrFR3y/222.jpg";
+const DEATHMATCH_MAP_URL = "https://i.ibb.co/Wp7Bz7Kj/image.jpg";
+const DEATHMATCH_YOUTUBE_URL = "https://www.youtube.com/@liquidchalang";
+const DEATHMATCH_CHZZK_URL = "https://chzzk.naver.com/868376caa866a028a9e54fbfeaee56ca";
+const DEATHMATCH_TABLE = "club_battle_deathmatch_applications";
+
+function closeDeathmatchPopup(returnToMenu = false){
+  document.getElementById("deathmatchPopup")?.remove();
+
+  if(returnToMenu){
+    setTimeout(() => openDeathmatchMainPopup(), 0);
+  }
+}
+
+function makeDeathmatchPopup(title, bodyHtml, returnToMenuOnClose = false){
+  closeDeathmatchPopup(false);
+
+  const popup = document.createElement("div");
+  popup.id = "deathmatchPopup";
+  popup.className = "deathmatch-popup";
+  popup.innerHTML = `
+    <div class="deathmatch-box" onclick="event.stopPropagation()">
+      <button class="deathmatch-close" onclick="closeDeathmatchPopup(${returnToMenuOnClose ? 'true' : 'false'})">X</button>
+      <div class="deathmatch-title">${title}</div>
+      ${bodyHtml}
+    </div>
+  `;
+
+  popup.addEventListener("click", () => closeDeathmatchPopup(returnToMenuOnClose));
+  document.body.appendChild(popup);
+}
+
+function openDeathmatchMainPopup(){
+  makeDeathmatchPopup("2026 클럽배틀데스매치", `
+    <img class="deathmatch-poster" src="${DEATHMATCH_POSTER_URL}" alt="2026 클럽배틀데스매치 대표 포스터">
+
+    <div class="deathmatch-menu-grid">
+      <button class="tournament-apply-btn" onclick="openDeathmatchApply()">신청하기</button>
+      <button class="tournament-apply-btn" onclick="openDeathmatchClubList()">신청클럽보기</button>
+      <button class="tournament-apply-btn" onclick="openDeathmatchImage('대회규정보기', DEATHMATCH_RULE_URL)">대회규정보기</button>
+      <button class="tournament-apply-btn" onclick="openDeathmatchImage('맵 진행순서', DEATHMATCH_MAP_URL)">맵 진행순서</button>
+      <button class="tournament-apply-btn green-tournament-btn" onclick="window.open(DEATHMATCH_YOUTUBE_URL, '_blank')">방송보러가기/유튜브</button>
+      <button class="tournament-apply-btn critical-soop-btn" onclick="window.open(DEATHMATCH_CHZZK_URL, '_blank')">방송보러가기/치지직</button>
+    </div>
+  `);
+}
+
+function openDeathmatchImage(title, url){
+  makeDeathmatchPopup(title, `
+    <img class="deathmatch-image-view" src="${url}" alt="${title}">
+  `, true);
+}
+
+async function getDeathmatchClubOptions(){
+  const res = await getTeamListSupabase();
+  return (res.teams || [])
+    .map(t => typeof t === "string" ? t : t.name)
+    .filter(t => String(t || "").startsWith("[클럽]"))
+    .sort((a,b) => String(a).localeCompare(String(b), "ko"));
+}
+
+async function getDeathmatchMembersByClub(club){
+  const rows = await sbSelect("team_members", q =>
+    q.select("nickname").eq("team_name", club).order("nickname", { ascending:true })
+  );
+
+  return rows.map(r => String(r.nickname || "").trim()).filter(Boolean);
+}
+
+async function openDeathmatchApply(){
+  makeDeathmatchPopup("2026 클럽배틀데스매치 신청하기", `
+    <div class="deathmatch-form">
+      <div class="deathmatch-row">
+        <b>클럽 선택</b>
+        <select id="deathmatchClubSelect" class="select" style="width:100%;">
+          <option value="">클럽 불러오는 중</option>
+        </select>
+      </div>
+
+      <div class="deathmatch-row">
+        <b>클럽 비번</b>
+        <input id="deathmatchClubPw" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="4자리">
+      </div>
+
+      <div class="deathmatch-player-grid">
+        <div class="deathmatch-player-box">
+          <label>1번 출전선수</label>
+          <select id="deathmatchPlayer1" class="select" style="width:100%;"><option value="">클럽 먼저 선택</option></select>
+        </div>
+        <div class="deathmatch-player-box">
+          <label>2번 출전선수</label>
+          <select id="deathmatchPlayer2" class="select" style="width:100%;"><option value="">클럽 먼저 선택</option></select>
+        </div>
+        <div class="deathmatch-player-box">
+          <label>3번 출전선수</label>
+          <select id="deathmatchPlayer3" class="select" style="width:100%;"><option value="">클럽 먼저 선택</option></select>
+        </div>
+        <div class="deathmatch-player-box">
+          <label>4번 출전선수</label>
+          <select id="deathmatchPlayer4" class="select" style="width:100%;"><option value="">클럽 먼저 선택</option></select>
+        </div>
+      </div>
+
+      <button class="tournament-apply-btn" onclick="submitDeathmatchApply()">신청하기</button>
+    </div>
+  `, true);
+
+  await fillDeathmatchClubSelect();
+}
+
+async function fillDeathmatchClubSelect(){
+  const sel = document.getElementById("deathmatchClubSelect");
+  if(!sel) return;
+
+  try{
+    const clubs = await getDeathmatchClubOptions();
+
+    sel.innerHTML = `<option value="">클럽 선택</option>` +
+      clubs.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+
+    sel.onchange = () => fillDeathmatchPlayerSelects(sel.value);
+
+  }catch(e){
+    console.error(e);
+    sel.innerHTML = `<option value="">클럽 로딩 실패</option>`;
+  }
+}
+
+async function fillDeathmatchPlayerSelects(club){
+  const selects = [1,2,3,4].map(n => document.getElementById("deathmatchPlayer" + n));
+
+  selects.forEach((sel, i) => {
+    if(sel) sel.innerHTML = `<option value="">${i + 1}번 선수 불러오는 중</option>`;
+  });
+
+  if(!club){
+    selects.forEach((sel, i) => {
+      if(sel) sel.innerHTML = `<option value="">${i + 1}번 선수 선택</option>`;
+    });
+    return;
+  }
+
+  try{
+    const members = await getDeathmatchMembersByClub(club);
+
+    selects.forEach((sel, i) => {
+      if(!sel) return;
+      sel.innerHTML = `<option value="">${i + 1}번 선수 선택</option>` +
+        members.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join("");
+    });
+
+  }catch(e){
+    console.error(e);
+    selects.forEach(sel => {
+      if(sel) sel.innerHTML = `<option value="">멤버 로딩 실패</option>`;
+    });
+  }
+}
+
+async function submitDeathmatchApply(){
+  try{
+    const club = String(document.getElementById("deathmatchClubSelect")?.value || "").trim();
+    const pw = String(document.getElementById("deathmatchClubPw")?.value || "").trim();
+    const players = [1,2,3,4].map(n => String(document.getElementById("deathmatchPlayer" + n)?.value || "").trim());
+
+    if(!club) throw new Error("클럽을 선택해주세요.");
+    if(!/^\d{4}$/.test(pw)) throw new Error("클럽 비밀번호 4자리를 입력해주세요.");
+    if(players.some(v => !v)) throw new Error("출전선수 4명을 모두 선택해주세요.");
+
+    const uniquePlayers = new Set(players);
+    if(uniquePlayers.size !== 4) throw new Error("출전선수 4명은 서로 달라야 합니다.");
+
+    await verifyClubPwSupabase(club, pw);
+
+    const exists = await sbSelect(DEATHMATCH_TABLE, q =>
+      q.select("id").eq("club_name", club).limit(1)
+    );
+
+    if(exists.length){
+      throw new Error("이미 신청된 클럽입니다. 변경이 필요하면 기존 신청을 삭제 후 다시 신청해주세요.");
+    }
+
+    const { error } = await sb.from(DEATHMATCH_TABLE).insert({
+      club_name: club,
+      player1: players[0],
+      player2: players[1],
+      player3: players[2],
+      player4: players[3],
+      created_at: new Date().toISOString()
+    });
+
+    if(error) throw error;
+
+    alert("대회 신청이 완료되었습니다.");
+    openDeathmatchClubList();
+
+  }catch(e){
+    console.error(e);
+    alert(e.message || "신청 실패");
+  }
+}
+
+async function openDeathmatchClubList(){
+  makeDeathmatchPopup("2026 클럽배틀데스매치 신청클럽보기", `
+    <div id="deathmatchClubListBox" class="deathmatch-list">
+      신청클럽을 불러오는 중입니다.
+    </div>
+  `, true);
+
+  await renderDeathmatchClubList();
+}
+
+async function renderDeathmatchClubList(){
+  const box = document.getElementById("deathmatchClubListBox");
+  if(!box) return;
+
+  try{
+    const rows = await sbSelect(DEATHMATCH_TABLE, q =>
+      q.select("*").order("created_at", { ascending:true })
+    );
+
+    if(!rows.length){
+      box.innerHTML = `<div class="deathmatch-list-row">아직 신청된 클럽이 없습니다.</div>`;
+      return;
+    }
+
+    box.innerHTML = `
+      <div class="deathmatch-list-head">
+        <div>클럽명</div>
+        <div>출전선수 4명</div>
+        <div>삭제</div>
+      </div>
+
+      ${rows.map(r => {
+        const club = String(r.club_name || "");
+        const players = [r.player1, r.player2, r.player3, r.player4]
+          .map((p, i) => {
+            const nick = String(p || "");
+            return `<span class="deathmatch-player-link" onclick="openDeathmatchPlayerReal('${esc(club)}','${esc(nick)}')">${i + 1}번 ${esc(nick)}</span>`;
+          })
+          .join("");
+
+        return `
+          <div class="deathmatch-list-row">
+            <div><b>${esc(club)}</b></div>
+            <div>${players}</div>
+            <div><button class="btn red" style="font-size:14px !important;padding:8px 10px !important;" onclick="deleteDeathmatchApply('${esc(r.id)}')">삭제</button></div>
+          </div>
+        `;
+      }).join("")}
+    `;
+
+  }catch(e){
+    console.error(e);
+    box.innerHTML = `<div class="deathmatch-list-row">신청클럽을 불러오지 못했습니다. Supabase 테이블을 확인해주세요.</div>`;
+  }
+}
+
+function openDeathmatchPlayerReal(club, nick){
+  closeDeathmatchPopup();
+  openEventMemberRealDetail(club, nick);
+}
+
+async function deleteDeathmatchApply(id){
+  try{
+    const pw = prompt("운영진 비밀번호 4자리를 입력하세요.");
+    if(!pw) return;
+
+    const ok = await isAdminPwValue(pw);
+    if(!ok){
+      alert("운영진 비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    if(!confirm("해당 클럽 신청을 삭제하시겠습니까?")) return;
+
+    const { error } = await sb.from(DEATHMATCH_TABLE).delete().eq("id", id);
+    if(error) throw error;
+
+    alert("삭제 완료되었습니다.");
+    await renderDeathmatchClubList();
+
+  }catch(e){
+    console.error(e);
+    alert(e.message || "삭제 실패");
+  }
+}
+
 </script>
   <div id="rankGraphPopup" class="hidden">
   <div class="rank-graph-box">
