@@ -13886,6 +13886,10 @@ async function fillDeathmatchPlayerSelects(club){
       if(!sel) return;
       sel.innerHTML = `<option value="">${i + 1}번 선수 선택</option>` +
         members.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join("");
+      sel.onchange = () => {
+        const realInput = document.getElementById("deathmatchPlayer" + (i + 1) + "Real");
+        if(realInput && !String(realInput.value || "").trim()) realInput.value = sel.value || "";
+      };
     });
 
   }catch(e){
@@ -13908,7 +13912,11 @@ async function submitDeathmatchApply(){
     const club = String(document.getElementById("deathmatchClubSelect")?.value || "").trim();
     const pw = String(document.getElementById("deathmatchClubPw")?.value || "").trim();
     const players = [1,2,3,4].map(n => String(document.getElementById("deathmatchPlayer" + n)?.value || "").trim());
-    const realPlayers = [1,2,3,4].map(n => String(document.getElementById("deathmatchPlayer" + n + "Real")?.value || "").trim());
+    const realPlayers = [1,2,3,4].map(n => {
+      const selectedNick = String(document.getElementById("deathmatchPlayer" + n)?.value || "").trim();
+      const realNick = String(document.getElementById("deathmatchPlayer" + n + "Real")?.value || "").trim();
+      return realNick || selectedNick;
+    });
 
     if(!club) throw new Error("클럽을 선택해주세요.");
     if(!/^\d{4}$/.test(pw)) throw new Error("클럽 비밀번호 4자리를 입력해주세요.");
@@ -14001,8 +14009,8 @@ async function renderDeathmatchClubList(){
         const players = [r.player1, r.player2, r.player3, r.player4]
           .map((p, i) => {
             const nick = String(p || "");
-            const realNick = String(realNames[i] || "").trim();
-            return `<span class="deathmatch-player-stack"><span class="deathmatch-player-link" onclick="openDeathmatchPlayerReal('${esc(club)}','${esc(nick)}')"><span class="deathmatch-player-no">${i + 1}</span>${esc(nick)}</span>${realNick ? `<span class="deathmatch-player-real">실제: ${esc(realNick)}</span>` : ""}</span>`;
+            const realNick = String(realNames[i] || nick || "").trim();
+            return `<span class="deathmatch-player-stack"><span class="deathmatch-player-link" onclick="openDeathmatchPlayerReal('${esc(club)}','${esc(nick)}')"><span class="deathmatch-player-no">${i + 1}</span>${esc(nick)}</span><span class="deathmatch-player-real">실제: ${esc(realNick)}</span></span>`;
           })
           .join("");
 
@@ -14033,7 +14041,7 @@ async function renderDeathmatchClubList(){
 async function openDeathmatchEdit(id){
   try{
     const rows = await sbSelect(DEATHMATCH_TABLE, q =>
-      q.select("*").eq("id", id).limit(1)
+      q.select("id,club_name,player1,player2,player3,player4,player1_real,player2_real,player3_real,player4_real,attachment_url").eq("id", id).limit(1)
     );
 
     if(!rows.length){
@@ -14120,7 +14128,7 @@ async function fillDeathmatchEditPlayerSelects(club, selectedPlayers, selectedRe
   const realInputs = [1,2,3,4].map(n => document.getElementById("deathmatchEditPlayer" + n + "Real"));
 
   realInputs.forEach((input, i) => {
-    if(input) input.value = String(selectedRealPlayers[i] || "");
+    if(input) input.value = String(selectedRealPlayers[i] || selectedPlayers[i] || "");
   });
 
   try{
@@ -14135,6 +14143,10 @@ async function fillDeathmatchEditPlayerSelects(club, selectedPlayers, selectedRe
         optionNames.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join("");
 
       sel.value = current;
+      sel.onchange = () => {
+        const realInput = document.getElementById("deathmatchEditPlayer" + (i + 1) + "Real");
+        if(realInput && !String(realInput.value || "").trim()) realInput.value = sel.value || "";
+      };
     });
 
   }catch(e){
@@ -14148,7 +14160,7 @@ async function fillDeathmatchEditPlayerSelects(club, selectedPlayers, selectedRe
 async function submitDeathmatchEdit(id){
   try{
     const rows = await sbSelect(DEATHMATCH_TABLE, q =>
-      q.select("club_name,attachment_url").eq("id", id).limit(1)
+      q.select("club_name,attachment_url,player1_real,player2_real,player3_real,player4_real").eq("id", id).limit(1)
     );
 
     if(!rows.length){
@@ -14158,7 +14170,11 @@ async function submitDeathmatchEdit(id){
     const club = String(rows[0].club_name || "").trim();
     const pw = String(document.getElementById("deathmatchEditClubPw")?.value || "").trim();
     const players = [1,2,3,4].map(n => String(document.getElementById("deathmatchEditPlayer" + n)?.value || "").trim());
-    const realPlayers = [1,2,3,4].map(n => String(document.getElementById("deathmatchEditPlayer" + n + "Real")?.value || "").trim());
+    const realPlayers = [1,2,3,4].map(n => {
+      const selectedNick = String(document.getElementById("deathmatchEditPlayer" + n)?.value || "").trim();
+      const realNick = String(document.getElementById("deathmatchEditPlayer" + n + "Real")?.value || "").trim();
+      return realNick || selectedNick;
+    });
 
     if(!/^\d{4}$/.test(pw)) throw new Error("클럽 비밀번호 4자리를 입력해주세요.");
     if(players.some(v => !v)) throw new Error("출전선수 4명을 모두 선택해주세요.");
