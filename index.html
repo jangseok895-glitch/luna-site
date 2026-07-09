@@ -13660,31 +13660,21 @@ function makeDeathmatchPopup(title, bodyHtml, returnToMenuOnClose = false){
   popup.id = "deathmatchPopup";
   popup.className = "deathmatch-popup";
   popup.innerHTML = `
-    <div class="deathmatch-box" data-deathmatch-box="1">
+    <div class="deathmatch-box" onclick="event.stopPropagation()">
       <button type="button" class="deathmatch-close" onclick="event.preventDefault(); event.stopPropagation(); closeDeathmatchPopup(${returnToMenuOnClose ? 'true' : 'false'})">X</button>
       <div class="deathmatch-title">${title}</div>
       ${bodyHtml}
     </div>
   `;
 
-  // 팝업 자동 닫힘 방지:
-  // 수정창에서 input/select/file을 누를 때 배경 클릭 이벤트로 인식되어
-  // 창이 닫히는 현상을 막기 위해, 배경 클릭으로는 닫지 않고 X 버튼으로만 닫습니다.
-  const box = popup.querySelector("[data-deathmatch-box='1']");
-  if(box){
-    ["click", "mousedown", "mouseup", "pointerdown", "pointerup", "touchstart", "touchend"].forEach(evtName => {
-      box.addEventListener(evtName, function(e){
-        e.stopPropagation();
-      }, true);
-    });
-  }
-
+  // 배경 클릭으로는 닫히지 않게 처리합니다.
+  // 내부 버튼/입력창 클릭은 정상 작동하고, 닫기는 X 버튼으로만 가능합니다.
   popup.addEventListener("click", function(e){
     if(e.target === popup){
       e.preventDefault();
       e.stopPropagation();
     }
-  }, true);
+  });
 
   document.body.appendChild(popup);
 }
