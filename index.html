@@ -14357,6 +14357,9 @@ async function submitDeathmatchEdit(id){
       .select("id,club_name,player1,player2,player3,player4,player1_real,player2_real,player3_real,player4_real,attachment_url,created_at");
 
     if(error) throw error;
+    if(!updatedRows || !updatedRows.length){
+      throw new Error("수정 내용이 Supabase에 저장되지 않았습니다. update 정책 또는 권한을 확인해주세요.");
+    }
 
     // Supabase 반영 직후 목록에서 실제 닉네임이 바로 보이도록 임시 캐시에도 저장합니다.
     window.DEATHMATCH_REAL_CACHE = window.DEATHMATCH_REAL_CACHE || {};
