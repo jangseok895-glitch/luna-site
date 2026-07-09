@@ -5872,6 +5872,52 @@ body.capture-mode #realPcTableSection.table-wrap{
   background:#ffffff !important;
   touch-action:pinch-zoom !important;
 }
+
+.deathmatch-real-input{
+  width:100% !important;
+  height:38px !important;
+  font-size:14px !important;
+  padding:7px 9px !important;
+  border-radius:10px !important;
+}
+.deathmatch-real-label{
+  margin-top:4px !important;
+  font-size:12px !important;
+  font-weight:900 !important;
+  color:#64748b !important;
+}
+.deathmatch-player-stack{
+  display:inline-flex !important;
+  flex-direction:column !important;
+  align-items:flex-start !important;
+  gap:2px !important;
+  margin:2px 4px 2px 0 !important;
+}
+.deathmatch-player-real{
+  margin-left:31px !important;
+  font-size:11px !important;
+  font-weight:900 !important;
+  color:#64748b !important;
+  line-height:1.15 !important;
+  white-space:nowrap !important;
+}
+.deathmatch-team-no{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:26px !important;
+  height:26px !important;
+  margin-left:6px !important;
+  border-radius:50% !important;
+  border:2px solid #ef4444 !important;
+  background:#fff7ed !important;
+  color:#ef4444 !important;
+  font-size:15px !important;
+  font-weight:1000 !important;
+  vertical-align:middle !important;
+  box-shadow:0 2px 6px rgba(239,68,68,.18) !important;
+}
+
 @media(max-width:700px){
   .deathmatch-menu-grid,
   .deathmatch-player-grid{
@@ -13753,18 +13799,26 @@ async function openDeathmatchApply(){
         <div class="deathmatch-player-box">
           <label>1번 출전선수</label>
           <select id="deathmatchPlayer1" class="select" style="width:100%;"><option value="">클럽 먼저 선택</option></select>
+          <div class="deathmatch-real-label">실제 닉네임</div>
+          <input id="deathmatchPlayer1Real" class="text deathmatch-real-input" placeholder="실제 닉네임 입력">
         </div>
         <div class="deathmatch-player-box">
           <label>2번 출전선수</label>
           <select id="deathmatchPlayer2" class="select" style="width:100%;"><option value="">클럽 먼저 선택</option></select>
+          <div class="deathmatch-real-label">실제 닉네임</div>
+          <input id="deathmatchPlayer2Real" class="text deathmatch-real-input" placeholder="실제 닉네임 입력">
         </div>
         <div class="deathmatch-player-box">
           <label>3번 출전선수</label>
           <select id="deathmatchPlayer3" class="select" style="width:100%;"><option value="">클럽 먼저 선택</option></select>
+          <div class="deathmatch-real-label">실제 닉네임</div>
+          <input id="deathmatchPlayer3Real" class="text deathmatch-real-input" placeholder="실제 닉네임 입력">
         </div>
         <div class="deathmatch-player-box">
           <label>4번 출전선수</label>
           <select id="deathmatchPlayer4" class="select" style="width:100%;"><option value="">클럽 먼저 선택</option></select>
+          <div class="deathmatch-real-label">실제 닉네임</div>
+          <input id="deathmatchPlayer4Real" class="text deathmatch-real-input" placeholder="실제 닉네임 입력">
         </div>
       </div>
 
@@ -13846,10 +13900,12 @@ async function submitDeathmatchApply(){
     const club = String(document.getElementById("deathmatchClubSelect")?.value || "").trim();
     const pw = String(document.getElementById("deathmatchClubPw")?.value || "").trim();
     const players = [1,2,3,4].map(n => String(document.getElementById("deathmatchPlayer" + n)?.value || "").trim());
+    const realPlayers = [1,2,3,4].map(n => String(document.getElementById("deathmatchPlayer" + n + "Real")?.value || "").trim());
 
     if(!club) throw new Error("클럽을 선택해주세요.");
     if(!/^\d{4}$/.test(pw)) throw new Error("클럽 비밀번호 4자리를 입력해주세요.");
     if(players.some(v => !v)) throw new Error("출전선수 4명을 모두 선택해주세요.");
+    if(realPlayers.some(v => !v)) throw new Error("실제 닉네임 4명을 모두 입력해주세요.");
 
     const attachmentUrl = await readDeathmatchAttachment("deathmatchAttachment", true);
 
@@ -13858,13 +13914,7 @@ async function submitDeathmatchApply(){
 
     await verifyClubPwSupabase(club, pw);
 
-    const exists = await sbSelect(DEATHMATCH_TABLE, q =>
-      q.select("id").eq("club_name", club).limit(1)
-    );
-
-    if(exists.length){
-      throw new Error("이미 신청된 클럽입니다. 변경이 필요하면 기존 신청을 삭제 후 다시 신청해주세요.");
-    }
+    // 같은 클럽도 여러 팀으로 중복 신청 가능하게 허용합니다.
 
     const { error } = await sb.from(DEATHMATCH_TABLE).insert({
       club_name: club,
@@ -13872,6 +13922,10 @@ async function submitDeathmatchApply(){
       player2: players[1],
       player3: players[2],
       player4: players[3],
+      player1_real: realPlayers[0],
+      player2_real: realPlayers[1],
+      player3_real: realPlayers[2],
+      player4_real: realPlayers[3],
       attachment_url: attachmentUrl,
       created_at: new Date().toISOString()
     });
@@ -13928,19 +13982,25 @@ async function renderDeathmatchClubList(){
         <div>출전선수</div>
       </div>
 
-      ${rows.map(r => {
+      ${(() => {
+        const clubCount = {};
+        return rows.map(r => {
         const club = String(r.club_name || "");
+        clubCount[club] = (clubCount[club] || 0) + 1;
+        const teamNo = clubCount[club];
         const hasAttachment = String(r.attachment_url || "").trim();
+        const realNames = [r.player1_real, r.player2_real, r.player3_real, r.player4_real];
         const players = [r.player1, r.player2, r.player3, r.player4]
           .map((p, i) => {
             const nick = String(p || "");
-            return `<span class="deathmatch-player-link" onclick="openDeathmatchPlayerReal('${esc(club)}','${esc(nick)}')"><span class="deathmatch-player-no">${i + 1}</span>${esc(nick)}</span>`;
+            const realNick = String(realNames[i] || "").trim();
+            return `<span class="deathmatch-player-stack"><span class="deathmatch-player-link" onclick="openDeathmatchPlayerReal('${esc(club)}','${esc(nick)}')"><span class="deathmatch-player-no">${i + 1}</span>${esc(nick)}</span>${realNick ? `<span class="deathmatch-player-real">실제: ${esc(realNick)}</span>` : ""}</span>`;
           })
           .join("");
 
         return `
           <div class="deathmatch-list-row">
-            <div><b>${esc(club)}</b></div>
+            <div><b>${esc(club)}</b><span class="deathmatch-team-no">${teamNo}</span></div>
             <div class="deathmatch-players-line">${players}</div>
             <div class="deathmatch-row-actions">
               ${hasAttachment
@@ -13952,7 +14012,7 @@ async function renderDeathmatchClubList(){
             </div>
           </div>
         `;
-      }).join("")}
+      }).join("")})()}
     `;
 
   }catch(e){
@@ -13992,18 +14052,26 @@ async function openDeathmatchEdit(id){
           <div class="deathmatch-player-box">
             <label>1번 출전선수</label>
             <select id="deathmatchEditPlayer1" class="select" style="width:100%;"><option value="">선수 불러오는 중</option></select>
+            <div class="deathmatch-real-label">실제 닉네임</div>
+            <input id="deathmatchEditPlayer1Real" class="text deathmatch-real-input" placeholder="실제 닉네임 입력">
           </div>
           <div class="deathmatch-player-box">
             <label>2번 출전선수</label>
             <select id="deathmatchEditPlayer2" class="select" style="width:100%;"><option value="">선수 불러오는 중</option></select>
+            <div class="deathmatch-real-label">실제 닉네임</div>
+            <input id="deathmatchEditPlayer2Real" class="text deathmatch-real-input" placeholder="실제 닉네임 입력">
           </div>
           <div class="deathmatch-player-box">
             <label>3번 출전선수</label>
             <select id="deathmatchEditPlayer3" class="select" style="width:100%;"><option value="">선수 불러오는 중</option></select>
+            <div class="deathmatch-real-label">실제 닉네임</div>
+            <input id="deathmatchEditPlayer3Real" class="text deathmatch-real-input" placeholder="실제 닉네임 입력">
           </div>
           <div class="deathmatch-player-box">
             <label>4번 출전선수</label>
             <select id="deathmatchEditPlayer4" class="select" style="width:100%;"><option value="">선수 불러오는 중</option></select>
+            <div class="deathmatch-real-label">실제 닉네임</div>
+            <input id="deathmatchEditPlayer4Real" class="text deathmatch-real-input" placeholder="실제 닉네임 입력">
           </div>
         </div>
 
@@ -14027,7 +14095,11 @@ async function openDeathmatchEdit(id){
       </div>
     `, true);
 
-    await fillDeathmatchEditPlayerSelects(club, [r.player1, r.player2, r.player3, r.player4]);
+    await fillDeathmatchEditPlayerSelects(
+      club,
+      [r.player1, r.player2, r.player3, r.player4],
+      [r.player1_real, r.player2_real, r.player3_real, r.player4_real]
+    );
 
   }catch(e){
     console.error(e);
@@ -14035,8 +14107,13 @@ async function openDeathmatchEdit(id){
   }
 }
 
-async function fillDeathmatchEditPlayerSelects(club, selectedPlayers){
+async function fillDeathmatchEditPlayerSelects(club, selectedPlayers, selectedRealPlayers = []){
   const selects = [1,2,3,4].map(n => document.getElementById("deathmatchEditPlayer" + n));
+  const realInputs = [1,2,3,4].map(n => document.getElementById("deathmatchEditPlayer" + n + "Real"));
+
+  realInputs.forEach((input, i) => {
+    if(input) input.value = String(selectedRealPlayers[i] || "");
+  });
 
   try{
     const members = await getDeathmatchMembersByClub(club);
@@ -14073,9 +14150,11 @@ async function submitDeathmatchEdit(id){
     const club = String(rows[0].club_name || "").trim();
     const pw = String(document.getElementById("deathmatchEditClubPw")?.value || "").trim();
     const players = [1,2,3,4].map(n => String(document.getElementById("deathmatchEditPlayer" + n)?.value || "").trim());
+    const realPlayers = [1,2,3,4].map(n => String(document.getElementById("deathmatchEditPlayer" + n + "Real")?.value || "").trim());
 
     if(!/^\d{4}$/.test(pw)) throw new Error("클럽 비밀번호 4자리를 입력해주세요.");
     if(players.some(v => !v)) throw new Error("출전선수 4명을 모두 선택해주세요.");
+    if(realPlayers.some(v => !v)) throw new Error("실제 닉네임 4명을 모두 입력해주세요.");
 
     const uniquePlayers = new Set(players);
     if(uniquePlayers.size !== 4) throw new Error("출전선수 4명은 서로 달라야 합니다.");
@@ -14088,7 +14167,11 @@ async function submitDeathmatchEdit(id){
       player1: players[0],
       player2: players[1],
       player3: players[2],
-      player4: players[3]
+      player4: players[3],
+      player1_real: realPlayers[0],
+      player2_real: realPlayers[1],
+      player3_real: realPlayers[2],
+      player4_real: realPlayers[3]
     };
 
     if(newAttachmentUrl){
