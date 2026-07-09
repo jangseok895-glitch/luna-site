@@ -6009,6 +6009,133 @@ body.capture-mode #realPcTableSection.table-wrap{
   }
 }
 
+
+/* ===== 데스매치 신청클럽보기 표 정렬 보정 ===== */
+.deathmatch-list-head,
+.deathmatch-list-row{
+  display:grid !important;
+  grid-template-columns:170px repeat(4, minmax(95px, 1fr)) 286px !important;
+  gap:0 !important;
+  align-items:stretch !important;
+  padding:0 !important;
+  overflow:hidden !important;
+}
+.deathmatch-list-head > div,
+.deathmatch-list-row > div{
+  display:flex !important;
+  align-items:center !important;
+  min-height:54px !important;
+  padding:8px 10px !important;
+  border-right:1px solid rgba(14,165,233,.18) !important;
+}
+.deathmatch-list-head > div:last-child,
+.deathmatch-list-row > div:last-child{
+  border-right:0 !important;
+}
+.deathmatch-list-head{
+  background:#dff6ff !important;
+  border:1px solid rgba(14,165,233,.35) !important;
+  border-radius:12px !important;
+  font-weight:1000 !important;
+  text-align:center !important;
+}
+.deathmatch-list-head > div{
+  justify-content:center !important;
+  color:#0f172a !important;
+}
+.deathmatch-list-row{
+  background:#ffffff !important;
+  border:1px solid rgba(14,165,233,.25) !important;
+  border-radius:12px !important;
+}
+.deathmatch-club-cell{
+  justify-content:flex-start !important;
+  font-size:15px !important;
+  font-weight:1000 !important;
+  word-break:keep-all !important;
+}
+.deathmatch-player-cell{
+  justify-content:center !important;
+  text-align:center !important;
+}
+.deathmatch-player-stack{
+  width:100% !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:3px !important;
+  margin:0 !important;
+}
+.deathmatch-player-link{
+  margin:0 !important;
+  max-width:100% !important;
+  justify-content:center !important;
+}
+.deathmatch-player-real{
+  margin-left:0 !important;
+  width:100% !important;
+  max-width:110px !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  text-align:center !important;
+  font-size:10px !important;
+  color:#64748b !important;
+}
+.deathmatch-row-actions{
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+  gap:5px !important;
+  flex-wrap:nowrap !important;
+  padding:8px 8px !important;
+}
+.deathmatch-row-actions .btn{
+  height:32px !important;
+  font-size:12px !important;
+  padding:0 7px !important;
+  border-radius:9px !important;
+  min-width:auto !important;
+}
+@media(max-width:900px){
+  .deathmatch-list-head,
+  .deathmatch-list-row{
+    grid-template-columns:1fr !important;
+  }
+  .deathmatch-list-head > div,
+  .deathmatch-list-row > div{
+    border-right:0 !important;
+    border-bottom:1px solid rgba(14,165,233,.15) !important;
+  }
+  .deathmatch-list-head > div:last-child,
+  .deathmatch-list-row > div:last-child{
+    border-bottom:0 !important;
+  }
+  .deathmatch-row-actions{
+    flex-wrap:wrap !important;
+  }
+}
+
+
+/* ===== 데스매치 신청클럽보기 최종 정렬 보정 ===== */
+.deathmatch-club-cell{
+  justify-content:center !important;
+  text-align:center !important;
+}
+.deathmatch-player-link{
+  padding:3px 8px !important;
+}
+.image-popup{
+  z-index:2147483647 !important;
+}
+.image-popup-box{
+  z-index:2147483647 !important;
+}
+.image-popup-close{
+  z-index:2147483647 !important;
+}
+
 </style>
 </head>
 
@@ -10231,6 +10358,9 @@ function setEventBoardPage(page){
 
   if(!popup || !img) return;
 
+  // 다른 팝업보다 항상 제일 앞에 보이도록 body 맨 뒤로 이동 + 최고 z-index 적용
+  try{ document.body.appendChild(popup); }catch(e){}
+  popup.style.zIndex = "2147483647";
   img.src = src;
   popup.classList.remove("hidden");
 }
@@ -13995,7 +14125,11 @@ async function renderDeathmatchClubList(){
       ${closed ? `<div style="display:flex;justify-content:flex-end;margin-bottom:12px;"><button class="btn blue" style="font-size:15px !important;padding:10px 14px !important;" onclick="adminOpenDeathmatchApply()">운영진마감해제</button></div>` : ``}
       <div class="deathmatch-list-head">
         <div>클럽명</div>
-        <div>출전선수</div>
+        <div>1번 선수</div>
+        <div>2번 선수</div>
+        <div>3번 선수</div>
+        <div>4번 선수</div>
+        <div>관리</div>
       </div>
 
       ${(() => {
@@ -14012,18 +14146,18 @@ async function renderDeathmatchClubList(){
           cachedReal.player3_real || r.player3_real,
           cachedReal.player4_real || r.player4_real
         ];
-        const players = [r.player1, r.player2, r.player3, r.player4]
+        const playerCells = [r.player1, r.player2, r.player3, r.player4]
           .map((p, i) => {
             const nick = String(p || "");
             const realNick = String(realNames[i] || nick || "").trim();
-            return `<span class="deathmatch-player-stack"><span class="deathmatch-player-link" onclick="openDeathmatchPlayerReal('${esc(club)}','${esc(nick)}')"><span class="deathmatch-player-no">${i + 1}</span>${esc(nick)}</span><span class="deathmatch-player-real">실제: ${esc(realNick)}</span></span>`;
+            return `<div class="deathmatch-player-cell"><span class="deathmatch-player-stack"><span class="deathmatch-player-link" onclick="openDeathmatchPlayerReal('${esc(club)}','${esc(nick)}')">${esc(nick)}</span><span class="deathmatch-player-real">실제: ${esc(realNick)}</span></span></div>`;
           })
           .join("");
 
         return `
           <div class="deathmatch-list-row">
-            <div><b>${esc(club)}</b><span class="deathmatch-team-no">${teamNo}</span></div>
-            <div class="deathmatch-players-line">${players}</div>
+            <div class="deathmatch-club-cell"><b>${esc(club)}</b><span class="deathmatch-team-no">${teamNo}</span></div>
+            ${playerCells}
             <div class="deathmatch-row-actions">
               ${hasAttachment
                 ? `<button class="btn blue" onclick="openDeathmatchAttachmentById('${esc(r.id)}')">첨부파일</button>`
