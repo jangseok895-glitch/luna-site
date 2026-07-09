@@ -14005,7 +14005,13 @@ async function renderDeathmatchClubList(){
         clubCount[club] = (clubCount[club] || 0) + 1;
         const teamNo = clubCount[club];
         const hasAttachment = String(r.attachment_url || "").trim();
-        const realNames = [r.player1_real, r.player2_real, r.player3_real, r.player4_real];
+        const cachedReal = (window.DEATHMATCH_REAL_CACHE && window.DEATHMATCH_REAL_CACHE[String(r.id)]) || {};
+        const realNames = [
+          cachedReal.player1_real || r.player1_real,
+          cachedReal.player2_real || r.player2_real,
+          cachedReal.player3_real || r.player3_real,
+          cachedReal.player4_real || r.player4_real
+        ];
         const players = [r.player1, r.player2, r.player3, r.player4]
           .map((p, i) => {
             const nick = String(p || "");
@@ -14114,7 +14120,15 @@ async function openDeathmatchEdit(id){
     await fillDeathmatchEditPlayerSelects(
       club,
       [r.player1, r.player2, r.player3, r.player4],
-      [r.player1_real, r.player2_real, r.player3_real, r.player4_real]
+      (() => {
+        const cachedReal = (window.DEATHMATCH_REAL_CACHE && window.DEATHMATCH_REAL_CACHE[String(id)]) || {};
+        return [
+          cachedReal.player1_real || r.player1_real,
+          cachedReal.player2_real || r.player2_real,
+          cachedReal.player3_real || r.player3_real,
+          cachedReal.player4_real || r.player4_real
+        ];
+      })()
     );
 
   }catch(e){
@@ -14202,11 +14216,24 @@ async function submitDeathmatchEdit(id){
       updatePayload.attachment_url = newAttachmentUrl;
     }
 
-    const { error } = await sb.from(DEATHMATCH_TABLE).update(updatePayload).eq("id", id);
+    const { data: updatedRows, error } = await sb
+      .from(DEATHMATCH_TABLE)
+      .update(updatePayload)
+      .eq("id", id)
+      .select("id,club_name,player1,player2,player3,player4,player1_real,player2_real,player3_real,player4_real,attachment_url,created_at");
 
     if(error) throw error;
 
-    alert("신청 순서가 수정되었습니다.");
+    // Supabase 반영 직후 목록에서 실제 닉네임이 바로 보이도록 임시 캐시에도 저장합니다.
+    window.DEATHMATCH_REAL_CACHE = window.DEATHMATCH_REAL_CACHE || {};
+    window.DEATHMATCH_REAL_CACHE[String(id)] = {
+      player1_real: realPlayers[0],
+      player2_real: realPlayers[1],
+      player3_real: realPlayers[2],
+      player4_real: realPlayers[3]
+    };
+
+    alert("신청 정보가 수정되었습니다.");
     await openDeathmatchClubList();
 
   }catch(e){
