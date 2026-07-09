@@ -13667,7 +13667,15 @@ function makeDeathmatchPopup(title, bodyHtml, returnToMenuOnClose = false){
     </div>
   `;
 
-  popup.addEventListener("click", () => closeDeathmatchPopup(returnToMenuOnClose));
+  // 배경을 직접 눌렀을 때만 닫히게 처리합니다.
+  // 기존처럼 popup 전체 click으로 닫으면, 신청클럽보기에서 [수정] 버튼을 누른 직후
+  // 이전 팝업의 click 이벤트가 새 수정창까지 닫아버리는 문제가 생길 수 있습니다.
+  popup.addEventListener("click", (e) => {
+    if(e.target === popup){
+      closeDeathmatchPopup(returnToMenuOnClose);
+    }
+  });
+
   document.body.appendChild(popup);
 }
 
