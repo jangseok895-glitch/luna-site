@@ -3,12 +3,17 @@
   "main": "src/index.js",
   "compatibility_date": "2026-07-11",
 
+  "placement": {
+    "region": "aws:ap-northeast-1"
+  },
+
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
     "run_worker_first": [
       "/analyze",
-      "/api/health"
+      "/api/health",
+      "/api/test"
     ]
   },
 
