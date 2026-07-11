@@ -359,21 +359,63 @@ async function analyzeImages(request, env) {
     );
   }
 
-  const result = await openAIResponse.json().catch(() => null);
+  // 오류 응답이 JSON이 아닐 수도 있으므로 먼저 원문 텍스트로 읽습니다.
+  const responseText = await openAIResponse.text().catch(() => "");
+  let result = null;
+
+  if (responseText) {
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      result = null;
+    }
+  }
 
   if (!openAIResponse.ok) {
-    console.error("AI API error:", result);
-
     const upstreamMessage = String(
-      result?.error?.message || "",
+      result?.error?.message ||
+      result?.message ||
+      responseText ||
+      "",
+    )
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 1200);
+
+    const upstreamCode = String(
+      result?.error?.code ||
+      result?.code ||
+      "",
     ).trim();
+
+    const upstreamType = String(
+      result?.error?.type ||
+      result?.type ||
+      "",
+    ).trim();
+
+    console.error("AI API error:", {
+      status: openAIResponse.status,
+      message: upstreamMessage,
+      code: upstreamCode,
+      type: upstreamType,
+    });
+
+    const detailParts = [
+      upstreamMessage,
+      upstreamCode ? `오류 코드: ${upstreamCode}` : "",
+      upstreamType ? `오류 유형: ${upstreamType}` : "",
+      `상태코드: ${openAIResponse.status}`,
+    ].filter(Boolean);
 
     return jsonResponse(
       {
         ok: false,
-        error:
-          upstreamMessage ||
-          `AI 분석 요청에 실패했습니다. 상태코드: ${openAIResponse.status}`,
+        error: detailParts.join("\n"),
+        status: openAIResponse.status,
+        code: upstreamCode || null,
+        type: upstreamType || null,
       },
       openAIResponse.status >= 400 && openAIResponse.status < 600
         ? openAIResponse.status
