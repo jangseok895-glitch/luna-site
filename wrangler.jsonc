@@ -1,7 +1,17 @@
 {
   "name": "luna-site",
-  "compatibility_date": "2026-07-08",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-11",
+
   "assets": {
-    "directory": "."
+    "directory": ".",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/analyze"
+    ]
+  },
+
+  "vars": {
+    "OPENAI_MODEL": "gpt-5.6"
   }
 }
