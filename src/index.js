@@ -481,6 +481,27 @@ function buildUpstreamError(openAIResponse, responseText, parsed, requestId) {
 }
 
 async function detectScreenAndSelectedRank({ env, image }) {
+  const openCvRank = Number(image?.openCvThumbSelectedRank);
+  const openCvConfidence = Number(image?.openCvThumbConfidence || 0);
+
+  if(
+    image?.openCvThumbFound === true &&
+    Number.isInteger(openCvRank) &&
+    openCvRank >= 1 &&
+    openCvRank <= 8 &&
+    openCvConfidence >= 0.82
+  ){
+    return {
+      ok:true,
+      screenType:"ranked_result",
+      selectedRank:openCvRank,
+      confidence:openCvConfidence,
+      evidence:String(image?.openCvThumbReason || `OpenCV로 ${openCvRank}등 확정`),
+      requestId:null,
+      selectionSource:"opencv_thumb"
+    };
+  }
+
   const pixelRank = Number(image?.thumbPixelSelectedRank);
   const pixelConfidence = Number(image?.thumbPixelConfidence || 0);
 
@@ -491,7 +512,7 @@ async function detectScreenAndSelectedRank({ env, image }) {
     Number.isInteger(pixelRank) &&
     pixelRank >= 1 &&
     pixelRank <= 8 &&
-    pixelConfidence >= 0.52
+    pixelConfidence >= 0.88
   ){
     return {
       ok:true,
@@ -510,6 +531,13 @@ async function detectScreenAndSelectedRank({ env, image }) {
       text: `
 이 이미지는 카트라이더 러쉬플러스 화면입니다.
 먼저 화면 유형을 분류하고, 랭킹전 결과표이면 본인 등수를 판별하세요.
+
+OpenCV 반복 패턴 탐지 참고:
+- 확정 여부: ${image?.openCvThumbFound === true ? "확정" : "보류"}
+- 후보 등수: ${Number.isInteger(Number(image?.openCvThumbCandidateRank)) ? `${Number(image.openCvThumbCandidateRank)}등` : "없음"}
+- 신뢰도: ${Number(image?.openCvThumbConfidence || 0).toFixed(3)}
+- 1~8등 부재 점수: ${Array.isArray(image?.openCvThumbScores) ? image.openCvThumbScores.join(", ") : "없음"}
+- OpenCV가 보류한 경우 임의 확정하지 말고 rankedCandidates 전체를 반환하세요.
 
 브라우저 픽셀 탐지 참고:
 - 후보 등수: ${Number.isInteger(Number(image?.thumbPixelCandidateRank)) ? `${Number(image.thumbPixelCandidateRank)}등` : "없음"}
@@ -954,6 +982,13 @@ async function analyzeImages(request, env) {
       thumbPixelDebugMimeType:sanitizeMimeType(image?.thumbPixelDebugMimeType || "image/jpeg"),
       thumbPixelReason:String(image?.thumbPixelReason || ""),
       thumbPixelDetectorVersion:String(image?.thumbPixelDetectorVersion || ""),
+      openCvThumbFound:Boolean(image?.openCvThumbFound),
+      openCvThumbSelectedRank:Number.isInteger(Number(image?.openCvThumbSelectedRank)) ? Number(image.openCvThumbSelectedRank) : null,
+      openCvThumbCandidateRank:Number.isInteger(Number(image?.openCvThumbCandidateRank)) ? Number(image.openCvThumbCandidateRank) : null,
+      openCvThumbConfidence:Number(image?.openCvThumbConfidence || 0),
+      openCvThumbScores:Array.isArray(image?.openCvThumbScores) ? image.openCvThumbScores.map(Number) : [],
+      openCvThumbReason:String(image?.openCvThumbReason || ""),
+      openCvThumbDetectorVersion:String(image?.openCvThumbDetectorVersion || ""),
       sourceImage: index + 1,
     });
   });
@@ -1060,6 +1095,12 @@ async function analyzeImages(request, env) {
       thumbPixelConfidence:image.thumbPixelConfidence,
       thumbPixelScores:image.thumbPixelScores,
       thumbPixelReason:image.thumbPixelReason,
+      openCvThumbFound:Boolean(image.openCvThumbFound),
+      openCvThumbSelectedRank:image.openCvThumbSelectedRank,
+      openCvThumbCandidateRank:image.openCvThumbCandidateRank,
+      openCvThumbConfidence:image.openCvThumbConfidence,
+      openCvThumbScores:image.openCvThumbScores,
+      openCvThumbReason:image.openCvThumbReason,
     })),
   });
 }
