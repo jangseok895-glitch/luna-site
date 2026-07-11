@@ -14901,7 +14901,7 @@ function aquaNear(data, width, height, x, y, radius = 2){
 
 async function detectAndCropAquaRow(file){
   const img = await loadImageFromFile(file);
-  const maxDetectWidth = 1400;
+  const maxDetectWidth = 1600;
   const scale = Math.min(1, maxDetectWidth / img.naturalWidth);
   const width = Math.max(1, Math.round(img.naturalWidth * scale));
   const height = Math.max(1, Math.round(img.naturalHeight * scale));
@@ -14911,183 +14911,161 @@ async function detectAndCropAquaRow(file){
   canvas.height = height;
   const ctx = canvas.getContext("2d", { willReadFrequently:true });
   ctx.drawImage(img, 0, 0, width, height);
-
   const data = ctx.getImageData(0, 0, width, height).data;
 
-  // 본인 행의 가장 신뢰도 높은 표식은 '왼쪽의 조금 두꺼운 아쿠아 세로 테두리'입니다.
-  // 사진이 기울어져도 잡히도록 왼쪽 2~22% 영역을 넓게 검사합니다.
-  const leftX0 = Math.max(0, Math.floor(width * 0.015));
-  const leftX1 = Math.max(leftX0 + 1, Math.floor(width * 0.22));
-  const fullX0 = Math.floor(width * 0.02);
-  const fullX1 = Math.floor(width * 0.94);
+  /*
+   * 랭전 본인 표식은 행 전체 밝기가 아니라 표 왼쪽 끝의 굵은 아쿠아 세로선입니다.
+   * 기존 방식은 아이콘·밝은 배경까지 넓게 검사하여 1등/인접 행을 잘못 고를 수 있었습니다.
+   * 이번 방식은 화면 왼쪽 2~12% 안에서 "행 높이 정도로만 이어지는 굵은 세로선"을 직접 찾습니다.
+   */
+  const x0 = Math.max(0, Math.floor(width * 0.018));
+  const x1 = Math.max(x0 + 2, Math.floor(width * 0.12));
+  const y0 = Math.floor(height * 0.08);
+  const y1 = Math.floor(height * 0.88);
+  const minRun = Math.max(24, Math.round(height * 0.035));
+  const maxRun = Math.max(minRun + 5, Math.round(height * 0.13));
 
-  const horizontal = new Float32Array(height);
-  const leftHorizontal = new Float32Array(height);
-
-  for(let y = 0; y < height; y++){
-    let fullCount = 0;
-    let fullLongest = 0;
-    let run = 0;
-    for(let x = fullX0; x < fullX1; x++){
-      if(aquaAt(data, width, height, x, y)){
-        fullCount++;
-        run++;
-        if(run > fullLongest) fullLongest = run;
-      }else{
-        run = 0;
+  function verticalAquaStrength(x, y){
+    let hit = 0;
+    let total = 0;
+    // 굵은 선인지 확인하기 위해 주변 7픽셀 폭을 함께 검사합니다.
+    for(let dx = -3; dx <= 3; dx++){
+      for(let dy = -1; dy <= 1; dy++){
+        total++;
+        if(aquaAt(data, width, height, x + dx, y + dy)) hit++;
       }
     }
+    return hit / Math.max(1, total);
+  }
 
-    let leftCount = 0;
-    let leftLongest = 0;
-    run = 0;
-    for(let x = leftX0; x < leftX1; x++){
-      if(aquaAt(data, width, height, x, y)){
-        leftCount++;
-        run++;
-        if(run > leftLongest) leftLongest = run;
-      }else{
-        run = 0;
+  const candidates = [];
+  for(let x = x0; x < x1; x++){
+    let runStart = -1;
+    let sumStrength = 0;
+    let strongCount = 0;
+
+    for(let y = y0; y <= y1; y++){
+      const strength = verticalAquaStrength(x, y);
+      const active = strength >= 0.20;
+
+      if(active){
+        if(runStart < 0){
+          runStart = y;
+          sumStrength = 0;
+          strongCount = 0;
+        }
+        sumStrength += strength;
+        if(strength >= 0.38) strongCount++;
       }
-    }
 
-    const fw = Math.max(1, fullX1 - fullX0);
-    const lw = Math.max(1, leftX1 - leftX0);
-    horizontal[y] = (fullCount / fw) * 0.55 + (fullLongest / fw) * 0.45;
-    leftHorizontal[y] = (leftCount / lw) * 0.55 + (leftLongest / lw) * 0.45;
-  }
+      if((!active || y === y1) && runStart >= 0){
+        const runEnd = active && y === y1 ? y : y - 1;
+        const runH = runEnd - runStart + 1;
 
-  function smoothArray(source, radius){
-    const out = new Float32Array(source.length);
-    for(let y = 0; y < source.length; y++){
-      let sum = 0;
-      let count = 0;
-      for(let k = -radius; k <= radius; k++){
-        const yy = y + k;
-        if(yy >= 0 && yy < source.length){ sum += source[yy]; count++; }
-      }
-      out[y] = sum / Math.max(1, count);
-    }
-    return out;
-  }
+        if(runH >= minRun && runH <= maxRun){
+          const avgStrength = sumStrength / Math.max(1, runH);
+          const strongRatio = strongCount / Math.max(1, runH);
 
-  const hSmooth = smoothArray(horizontal, 2);
-  const leftSmooth = smoothArray(leftHorizontal, 2);
-
-  // 테두리 위/아래 가로선 후보. 전체 화면 밝기보다 왼쪽 연결성을 더 크게 봅니다.
-  const peaks = [];
-  for(let y = 3; y < height - 3; y++){
-    const score = hSmooth[y] * 0.35 + leftSmooth[y] * 0.65;
-    if(score < 0.035) continue;
-    if(score >= (hSmooth[y - 1] * 0.35 + leftSmooth[y - 1] * 0.65) &&
-       score >= (hSmooth[y + 1] * 0.35 + leftSmooth[y + 1] * 0.65)){
-      peaks.push({ y, score });
-    }
-  }
-  peaks.sort((a,b) => b.score - a.score);
-  const topPeaks = peaks.slice(0, 70);
-
-  const minBandH = Math.max(28, Math.round(height * 0.038));
-  const maxBandH = Math.min(250, Math.round(height * 0.19));
-  let best = null;
-
-  for(const a of topPeaks){
-    for(const b of topPeaks){
-      if(b.y <= a.y) continue;
-      const bandH = b.y - a.y;
-      if(bandH < minBandH || bandH > maxBandH) continue;
-
-      // 왼쪽 세로 테두리 점수: 한 x열에서 위~아래가 얼마나 연속된 아쿠아인지 측정합니다.
-      let bestWall = 0;
-      let bestWallX = leftX0;
-      for(let x = leftX0; x < leftX1; x++){
-        let hits = 0;
-        let longest = 0;
-        let run = 0;
-        for(let y = a.y; y <= b.y; y++){
-          if(aquaNear(data, width, height, x, y, 2)){
-            hits++;
-            run++;
-            if(run > longest) longest = run;
-          }else{
-            run = 0;
+          // 같은 높이에서 주변 열에도 아쿠아 픽셀이 있어 실제로 '굵은' 선인지 확인합니다.
+          let thicknessHits = 0;
+          let thicknessTotal = 0;
+          const midY = Math.round((runStart + runEnd) / 2);
+          for(let dx = -7; dx <= 7; dx++){
+            thicknessTotal++;
+            if(aquaNear(data, width, height, x + dx, midY, 1)) thicknessHits++;
           }
+          const thickness = thicknessHits / Math.max(1, thicknessTotal);
+
+          // 선의 위·아래 끝에서 오른쪽으로 이어지는 가로 경계가 있는지 확인합니다.
+          const joinWidth = Math.max(24, Math.round(width * 0.10));
+          const joinRadius = Math.max(2, Math.round(runH * 0.07));
+          let topJoin = 0;
+          let bottomJoin = 0;
+          let joinTotal = 0;
+          for(let xx = Math.max(0, x - 3); xx < Math.min(width, x + joinWidth); xx++){
+            for(let dy = -joinRadius; dy <= joinRadius; dy++){
+              joinTotal++;
+              if(aquaAt(data, width, height, xx, runStart + dy)) topJoin++;
+              if(aquaAt(data, width, height, xx, runEnd + dy)) bottomJoin++;
+            }
+          }
+          topJoin /= Math.max(1, joinTotal);
+          bottomJoin /= Math.max(1, joinTotal);
+
+          // 화면 바깥 테두리처럼 너무 왼쪽에 붙은 긴 선은 감점합니다.
+          const edgePenalty = x < width * 0.025 ? 0.18 : 0;
+          const score =
+            avgStrength * 1.75 +
+            strongRatio * 1.25 +
+            thickness * 1.10 +
+            Math.min(topJoin, bottomJoin) * 1.30 +
+            (topJoin + bottomJoin) * 0.35 -
+            edgePenalty;
+
+          candidates.push({
+            x,
+            top:runStart,
+            bottom:runEnd,
+            runH,
+            avgStrength,
+            strongRatio,
+            thickness,
+            topJoin,
+            bottomJoin,
+            score
+          });
         }
-        const ratio = hits / Math.max(1, bandH + 1);
-        const continuity = longest / Math.max(1, bandH + 1);
-        const wall = ratio * 0.35 + continuity * 0.65;
-        if(wall > bestWall){
-          bestWall = wall;
-          bestWallX = x;
-        }
-      }
 
-      // 선택 테두리는 왼쪽 세로선이 위/아래 가로선과 연결되어야 합니다.
-      let topJoin = 0;
-      let bottomJoin = 0;
-      const joinRadiusY = Math.max(2, Math.round(bandH * 0.08));
-      const joinWidth = Math.max(18, Math.round(width * 0.11));
-      for(let x = Math.max(0, bestWallX - 4); x < Math.min(width, bestWallX + joinWidth); x++){
-        for(let dy = -joinRadiusY; dy <= joinRadiusY; dy++){
-          if(aquaAt(data, width, height, x, a.y + dy)) topJoin++;
-          if(aquaAt(data, width, height, x, b.y + dy)) bottomJoin++;
-        }
-      }
-      const joinTotal = Math.max(1, joinWidth * (joinRadiusY * 2 + 1));
-      topJoin /= joinTotal;
-      bottomJoin /= joinTotal;
-
-      // 행 내부 전체 밝기는 오판 가능성이 있으므로 아주 약한 보조 점수로만 사용합니다.
-      const midY = Math.floor((a.y + b.y) / 2);
-      const interior = hSmooth[midY] || 0;
-      const edgePair = Math.min(a.score, b.score);
-
-      // 왼쪽 세로 테두리를 압도적으로 우선합니다.
-      const score =
-        bestWall * 2.60 +
-        edgePair * 0.65 +
-        (topJoin + bottomJoin) * 0.70 +
-        interior * 0.05;
-
-      if(!best || score > best.score){
-        best = {
-          top:a.y,
-          bottom:b.y,
-          score,
-          wallScore:bestWall,
-          wallX:bestWallX,
-          topJoin,
-          bottomJoin,
-          edgePair
-        };
+        runStart = -1;
+        sumStrength = 0;
+        strongCount = 0;
       }
     }
   }
 
-  // 왼쪽 세로 테두리가 충분하지 않으면 잘못 자르는 것보다 원본 판독이 안전합니다.
-  if(!best || best.wallScore < 0.42 || best.score < 1.25){
+  // 동일한 세로선을 여러 x열에서 중복 검출하므로 서로 가까운 후보를 묶고 최고점만 남깁니다.
+  candidates.sort((a,b) => b.score - a.score);
+  const merged = [];
+  for(const c of candidates){
+    const duplicate = merged.some(m =>
+      Math.abs(m.x - c.x) <= 10 &&
+      Math.abs(m.top - c.top) <= Math.max(12, c.runH * 0.25) &&
+      Math.abs(m.bottom - c.bottom) <= Math.max(12, c.runH * 0.25)
+    );
+    if(!duplicate) merged.push(c);
+    if(merged.length >= 12) break;
+  }
+
+  const best = merged[0] || null;
+
+  // 강한 세로선 + 충분한 굵기 또는 위·아래 연결이 없으면 Crop을 강제하지 않습니다.
+  if(
+    !best ||
+    best.avgStrength < 0.25 ||
+    best.strongRatio < 0.18 ||
+    best.thickness < 0.20 ||
+    best.score < 1.35
+  ){
     return {
       found:false,
       confidence:0,
       cropBase64:"",
       cropMimeType:"",
-      detectionReason:"왼쪽 아쿠아 세로 테두리를 확실히 찾지 못함"
+      detectionReason:"왼쪽의 굵은 아쿠아 선택 세로선을 확실히 찾지 못함"
     };
   }
 
-  const bandH = best.bottom - best.top;
-  const padY = Math.max(8, Math.round(bandH * 0.16));
-  const cropTop = Math.max(0, best.top - padY);
-  const cropBottom = Math.min(height, best.bottom + padY);
-
-  // 왼쪽 테두리부터 기록/속도 영역까지 넉넉하게 포함합니다.
-  const cropLeft = Math.max(0, best.wallX - Math.round(width * 0.025));
+  // 세로선 자체는 행의 일부만 보일 수 있으므로 추정 행 높이를 조금 확장합니다.
+  const rowH = best.runH;
+  const cropTop = Math.max(0, best.top - Math.round(rowH * 0.20));
+  const cropBottom = Math.min(height, best.bottom + Math.round(rowH * 0.20));
+  const cropLeft = Math.max(0, best.x - Math.round(width * 0.018));
   const cropRight = Math.min(width, Math.round(width * 0.97));
   const cropW = Math.max(1, cropRight - cropLeft);
   const cropH = Math.max(1, cropBottom - cropTop);
 
   const cropCanvas = document.createElement("canvas");
-  const outputScale = Math.max(1, Math.min(2.8, 1600 / cropW));
+  const outputScale = Math.max(1, Math.min(3.2, 1800 / cropW));
   cropCanvas.width = Math.round(cropW * outputScale);
   cropCanvas.height = Math.round(cropH * outputScale);
   const cropCtx = cropCanvas.getContext("2d");
@@ -15099,11 +15077,14 @@ async function detectAndCropAquaRow(file){
     0, 0, cropCanvas.width, cropCanvas.height
   );
 
-  const dataUrl = canvasToDataUrl(cropCanvas, "image/jpeg", 0.97);
+  // Crop의 왼쪽 선택선을 AI가 놓치지 않도록 얇은 안내선을 덧그리지 않습니다.
+  // 원본 픽셀을 보존해야 색상 판독이 왜곡되지 않습니다.
+  const dataUrl = canvasToDataUrl(cropCanvas, "image/jpeg", 0.98);
   const confidence = Math.max(0, Math.min(1,
-    best.wallScore * 0.72 +
-    Math.min(1, best.edgePair * 4) * 0.18 +
-    Math.min(1, (best.topJoin + best.bottomJoin) * 2) * 0.10
+    best.avgStrength * 0.34 +
+    best.strongRatio * 0.24 +
+    best.thickness * 0.24 +
+    Math.min(1, (best.topJoin + best.bottomJoin) * 4) * 0.18
   ));
 
   return {
@@ -15111,17 +15092,19 @@ async function detectAndCropAquaRow(file){
     confidence,
     cropBase64:dataUrl.split(",")[1] || "",
     cropMimeType:"image/jpeg",
-    detectionReason:"왼쪽 두꺼운 아쿠아 세로 테두리와 위·아래 연결선 탐지",
+    detectionReason:"화면 왼쪽 2~12% 영역에서 행 높이만큼 이어지는 굵은 아쿠아 선택 세로선 탐지",
     cropBox:{
       x:Math.round(cropLeft / scale),
       y:Math.round(cropTop / scale),
       width:Math.round(cropW / scale),
       height:Math.round(cropH / scale)
     },
-    aquaWallX:Math.round(best.wallX / scale)
+    aquaWallX:Math.round(best.x / scale),
+    aquaLineTop:Math.round(best.top / scale),
+    aquaLineBottom:Math.round(best.bottom / scale),
+    detectorVersion:"left-wall-v3"
   };
 }
-
 async function aiFileToPayload(file){
   let converted = file;
 
@@ -15159,6 +15142,9 @@ async function aiFileToPayload(file){
     aquaCropBox:aquaCrop.cropBox || null,
     aquaCropDetectionReason:aquaCrop.detectionReason || "",
     aquaWallX:aquaCrop.aquaWallX || null,
+    aquaLineTop:aquaCrop.aquaLineTop || null,
+    aquaLineBottom:aquaCrop.aquaLineBottom || null,
+    aquaDetectorVersion:aquaCrop.detectorVersion || "",
     analysisMode:"auto",
     preserveAllVisibleRecords:true
   };
