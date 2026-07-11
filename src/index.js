@@ -72,6 +72,32 @@ const RECORD_RESPONSE_SCHEMA = {
   required: ["records", "warnings"],
 };
 
+const RANK_SELECTION_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    screenType: {
+      type: "string",
+      enum: ["ranked_result", "profile_records", "time_attack", "unknown"],
+    },
+    selectedRank: {
+      anyOf: [
+        { type: "integer", minimum: 1, maximum: 8 },
+        { type: "null" },
+      ],
+    },
+    confidence: {
+      type: "number",
+      minimum: 0,
+      maximum: 1,
+    },
+    evidence: {
+      type: "string",
+    },
+  },
+  required: ["screenType", "selectedRank", "confidence", "evidence"],
+};
+
 function jsonResponse(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
@@ -259,90 +285,92 @@ function normalizeRecords(data) {
   return Array.from(bestByMap.values());
 }
 
-function buildVisionPrompt(imageNumber, retryMode = false, hasAquaCrop = false) {
+function buildVisionPrompt({
+  imageNumber,
+  retryMode = false,
+  hasAquaCrop = false,
+  selectedRank = null,
+  screenType = "unknown",
+  allowedMapNames = [],
+}) {
+  const allowedList = Array.isArray(allowedMapNames) && allowedMapNames.length
+    ? allowedMapNames.map((name) => `- ${name}`).join("\n")
+    : "- 허용된 맵 목록이 제공되지 않음";
+
   return `
 당신은 카트라이더 러쉬플러스 기록 스크린샷 판독기입니다.
 현재 이미지는 ${imageNumber}번입니다.
-한 이미지에 보이는 모든 유효한 맵 이름과 기록을 빠짐없이 추출하세요.
+화면에 보이는 유효한 맵 이름과 기록을 정확히 추출하세요.
 
-절대 규칙
-- "사진 1장 = 기록 1개"라고 가정하지 마세요.
-- 한 화면에 기록 카드가 2개, 6개, 10개 이상 보이면 보이는 유효 기록을 모두 records 배열에 넣으세요.
-- 첫 번째 기록 하나를 찾았다고 분석을 끝내지 마세요. 화면 전체를 왼쪽 위부터 오른쪽 아래까지 끝까지 훑으세요.
-- 같은 맵이 중복되면 가장 빠른 기록만 남기세요.
-- '미완료', 기록 없음, 잠금 상태는 반환하지 마세요.
-- 노란색 글씨는 1등 표시일 수 있으므로 본인 판별 근거로 사용하지 마세요.
+가장 중요한 금지사항
+- 카트/차량 이름을 맵 이름으로 반환하지 마세요.
+- "아쿠아 비틀", "에어리 코튼", "이그니스 비틀", "세이버 오라클" 같은 값은 차량 이름이므로 절대 mapName으로 반환하면 안 됩니다.
+- 랭전에서 1등 노란색 기록은 본인 표시가 아닙니다.
+- 허용 맵 목록에 없는 이름은 반환하지 마세요.
 
-먼저 화면 유형을 구분하세요.
+허용 맵 목록
+${allowedList}
 
-A. 프로필 → 기록 / 마스터 기록 / 트랙 기록 카드 목록 화면
-- 화면에 여러 개의 맵 카드가 격자 형태로 배치됩니다.
-- 각 카드에는 맵 이름과 '기록 01:14:37' 같은 값이 함께 표시됩니다.
-- 이 화면에서는 아쿠아 선택 행을 찾지 않습니다.
-- 각 카드의 맵 이름과 바로 그 카드 안의 기록을 정확히 한 쌍으로 묶습니다.
-- 왼쪽 열과 오른쪽 열을 모두 읽고, 다음 행까지 계속 내려가며 화면에 보이는 모든 카드를 추출합니다.
-- 예: 6개 카드가 보이면 records도 원칙적으로 6개여야 합니다.
-- 카드 일부가 잘렸거나 기록이 불명확한 카드만 제외하고, 나머지는 모두 반환합니다.
-- sourceType은 time_attack으로 반환합니다.
+영어 맵 처리
+- 화면의 맵 이름이 영어면 의미를 번역하고, 위 허용 맵 목록에서 정확히 대응하는 한글 맵 이름으로 반환하세요.
+- 예: "Skull Castle (Tomb)"처럼 영어로 표시되면 허용 목록의 대응 한글 이름을 선택하세요.
+- 대응되는 한글 맵을 확실히 찾지 못하면 records에 넣지 말고 warning에 적으세요.
 
-B. 타임어택 / 개인 기록 상세 화면
-- 개인 최고기록, 내 기록 등 본인 기록임이 명확한 값을 추출합니다.
-- 한 화면에 여러 맵과 기록이 있으면 역시 모두 추출합니다.
-- sourceType은 time_attack으로 반환합니다.
+화면 유형별 규칙
+
+A. 프로필 기록 / 마스터 기록 카드 목록
+- 한 장에 여러 기록 카드가 보이면 모두 읽으세요.
+- 카드의 맵 이름과 같은 카드 안의 기록만 한 쌍으로 묶으세요.
+- 첫 번째 카드 하나만 읽고 끝내지 마세요.
+- sourceType은 time_attack입니다.
+
+B. 타임어택 / 개인 기록 상세
+- 본인 기록임이 명확한 값만 추출하세요.
+- sourceType은 time_attack입니다.
 
 C. 랭킹전 / 경기 종료 순위표
-- 이 화면에서만 본인 행 선택 표시를 사용합니다.
-- 1등의 기록·닉네임·평균속도가 노란색이어도 본인이라는 뜻이 아닙니다. 노란색은 절대 사용하지 마세요.
-- 본인 표식은 순위표 맨 왼쪽에 있는 굵고 진한 아쿠아색 선택 경계입니다.
-- 선택 행 왼쪽에 '승리' 또는 '패배' 문구가 있으면, 그 문구 뒤쪽까지 진한 아쿠아색 배경이나 경계가 이어질 수 있습니다. 이것은 매우 강한 본인 행 단서입니다.
-- 이 굵은 경계가 붙어 있는 정확한 가로 행만 본인 행입니다. 바로 위나 바로 아래의 더 밝은 행을 선택하지 마세요.
-- 1등의 노란 기록, 노란 평균속도, 노란 순위 숫자는 본인 표시가 아닙니다. 본인 판별에 절대 사용하지 마세요.
-- 원본에서 세로 강조선이 3위 행에 붙어 있으면, 1위 기록이 노란색이어도 반드시 3위 행 기록을 선택합니다.
-- 선택된 동일 행의 완주 기록만 읽고, '미완료'면 반환하지 않습니다.
-- 상단 맵 이름과 본인 행 기록을 한 쌍으로 반환합니다.
-- sourceType은 ranked_result로 반환합니다.
+- 본인 행은 등수 숫자 바로 왼쪽에 붙은 굵고 진한 아쿠아색 세로 강조선으로 판별합니다.
+- 행 전체가 밝은지, 닉네임이나 기록이 노란색인지로 판별하지 마세요.
+- 선택 세로선은 1~8 등수 숫자 중 정확히 하나의 왼쪽에 붙습니다.
+- 왼쪽의 승리/패배 글자 배경색은 보조 단서일 뿐이며, 최종 기준은 등수 숫자 바로 왼쪽 세로 강조선입니다.
+- 사전 판별 단계에서 선택된 등수는 ${selectedRank === null ? "확정되지 않음" : `${selectedRank}등`}입니다.
+- 화면 유형 판별 결과는 ${screenType}입니다.
+${selectedRank !== null ? `- 반드시 ${selectedRank}등 행의 완주 기록만 읽으세요. 다른 행 기록은 반환하지 마세요.` : "- 선택 등수가 확정되지 않았다면 임의로 1등을 선택하지 말고 기록을 반환하지 마세요."}
+- 맵 이름은 화면 상단 왼쪽 제목 영역에서만 읽으세요.
+- 카트 열, 차량 열, 평균 속도 열의 글자는 mapName 후보가 아닙니다.
+- sourceType은 ranked_result입니다.
 
-${hasAquaCrop ? `
 첨부 이미지 안내
-- 첫 번째 이미지는 전체 원본입니다. 화면 유형 판별, 맵 이름, 여러 기록 카드 전체 판독은 반드시 원본을 기준으로 합니다.
-- 두 번째 이미지는 브라우저 자동 탐지 본인 행 후보 Crop입니다. 사진 기울기나 배경 때문에 한 행 위·아래로 빗나갈 수 있으므로 무조건 확정값으로 취급하지 마세요.
-- 세 번째 이미지가 제공되면 순위표 맨 왼쪽 약 36%를 통째로 확대한 비교용 안내 이미지입니다.
-- 랭전에서는 세 번째 왼쪽 확대 이미지에서 1~8행을 모두 비교하여 가장 굵고 진한 아쿠아 경계가 붙은 행을 최종 선택하세요.
-- '승리/패배' 문구 뒤쪽까지 진한 아쿠아색이 이어지는 행이 있으면 그 행을 강하게 우선하세요.
-- 자동 Crop과 왼쪽 확대 이미지가 충돌하면 왼쪽 확대 이미지 판독을 우선하세요.
-- 1등 노란 기록은 완전히 무시하세요.
-- 원본이 여러 기록 카드 화면이라면 모든 보조 이미지를 무시하고 원본에 보이는 기록 카드를 전부 추출하세요.
-` : `
-보조 이미지가 없습니다. 랭전이라면 원본 맨 왼쪽의 굵고 진한 아쿠아 선택 경계를 찾고, 승리/패배 문구 뒤쪽 강조까지 확인하세요. 1등 노란 기록은 무시하세요. 기록 카드 화면이라면 모든 카드를 읽으세요.
-`}
+- 첫 번째 이미지는 전체 원본입니다.
+- 두 번째 이미지는 자동 탐지한 본인 행 후보 Crop일 수 있습니다.
+- 세 번째 이미지는 등수 숫자와 그 왼쪽 세로선이 보이도록 왼쪽 영역을 확대한 안내 이미지일 수 있습니다.
+- 보조 이미지보다 사전 판별된 selectedRank를 우선하세요.
 
 기록 형식
 - 01:53:77 → 1.53.77
 - 00:58:68 → 0.58.68
 - 03:20:75 → 3.20.75
-- 맵 이름과 기록이 서로 다른 카드나 행에서 섞이지 않도록 하세요.
+- 미완료는 반환하지 마세요.
 
 반환 전 자체 점검
-1. 화면에 보이는 유효 기록 개수를 다시 셉니다.
-2. records 배열 개수가 그 수와 대체로 일치하는지 확인합니다.
-3. 6개 카드 화면인데 1개만 반환했다면 화면을 다시 훑어 나머지 5개를 찾습니다.
-4. 왼쪽 열뿐 아니라 오른쪽 열도 읽었는지 확인합니다.
-5. 화면 아래쪽 카드까지 빠짐없이 확인합니다.
+1. mapName이 허용 맵 목록에 정확히 존재하는지 확인하세요.
+2. mapName이 카트/차량 이름이 아닌지 확인하세요.
+3. 랭전이면 selectedRank와 같은 행의 기록인지 확인하세요.
+4. 프로필 기록 화면이면 화면에 보이는 모든 카드를 빠짐없이 읽었는지 확인하세요.
 
 필수 반환 규칙
 - sourceImage는 ${imageNumber}입니다.
 - sourceType은 time_attack, ranked_result, unknown 중 하나입니다.
-- evidence에는 판독 근거를 간단히 적습니다.
-  예: "마스터 기록 카드의 맵 이름과 기록을 같은 카드에서 판독"
-  예: "왼쪽의 굵은 아쿠아 세로 강조선이 3위 행에 붙어 있고, 보조 Crop에서도 3위 기록을 확인함"
-- 확인할 수 없는 항목은 억지로 추측하지 말고 warning에 적습니다.
+- evidence에는 선택 근거를 구체적으로 적으세요.
+- 확실하지 않은 항목은 반환하지 말고 warning에 적으세요.
 - 지정된 JSON 스키마 외 텍스트는 출력하지 마세요.
 
 ${retryMode ? `
 재검토 모드
-- 첫 판독에서 기록을 하나도 찾지 못했습니다.
-- 프로필 기록 카드 화면인지 먼저 다시 확인하고, 카드가 여러 개면 모두 읽으세요.
-- 랭킹전 화면일 때만 왼쪽 아쿠아 테두리를 다시 추적하세요.
+- 첫 판독에서 유효한 결과가 없었습니다.
+- 차량 이름을 맵으로 잘못 읽지 않았는지 확인하세요.
+- 랭전이면 selectedRank가 확정된 경우 그 행만 다시 확대해서 읽으세요.
+- 프로필 기록 화면이면 카드 전체를 다시 훑으세요.
 ` : ""}
   `.trim();
 }
@@ -400,18 +428,140 @@ function buildUpstreamError(openAIResponse, responseText, parsed, requestId) {
   };
 }
 
+async function detectScreenAndSelectedRank({ env, image }) {
+  const model = env.OPENAI_MODEL || "gpt-4.1-mini";
+  const content = [
+    {
+      type: "input_text",
+      text: `
+이 이미지는 카트라이더 러쉬플러스 화면입니다.
+먼저 화면 유형을 분류하고, 랭킹전 결과표이면 본인 등수를 판별하세요.
+
+본인 등수 판별의 유일한 핵심 기준
+- 1~8 등수 숫자 바로 왼쪽에 붙은 굵고 진한 아쿠아색 세로 강조선입니다.
+- 행 전체 밝기, 노란 기록, 노란 닉네임, 노란 평균속도는 모두 무시하세요.
+- 세로선이 숫자 3의 바로 왼쪽에 붙으면 selectedRank는 3입니다.
+- 세로선이 숫자 7의 바로 왼쪽에 붙으면 selectedRank는 7입니다.
+- 승리/패배 글자 뒤쪽의 아쿠아 배경은 보조 단서이며, 최종 기준은 등수 숫자 바로 왼쪽 세로선입니다.
+- 확실하지 않으면 selectedRank는 null로 반환하세요. 임의로 1등을 선택하지 마세요.
+
+screenType 분류
+- 순위 1~8과 여러 선수 행이 보이면 ranked_result
+- 여러 맵 카드와 기록이 격자로 보이면 profile_records
+- 개인 단일 기록 화면이면 time_attack
+- 그 외 unknown
+      `.trim(),
+    },
+    {
+      type: "input_image",
+      image_url: `data:${image.mimeType};base64,${image.base64}`,
+      detail: "high",
+    },
+  ];
+
+  if (image.aquaGuideBase64) {
+    content.push(
+      {
+        type: "input_text",
+        text: "아래 확대 이미지는 등수 숫자와 그 바로 왼쪽의 아쿠아 세로 강조선을 비교하기 위한 것입니다. 숫자 왼쪽 세로선이 가장 굵고 진한 행의 등수를 선택하세요.",
+      },
+      {
+        type: "input_image",
+        image_url: `data:${image.aquaGuideMimeType || "image/jpeg"};base64,${image.aquaGuideBase64}`,
+        detail: "high",
+      },
+    );
+  }
+
+  let response;
+  try {
+    response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${env.OPENAI_API_KEY}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        store: false,
+        input: [{ role: "user", content }],
+        text: {
+          format: {
+            type: "json_schema",
+            name: "rank_selection",
+            strict: true,
+            schema: RANK_SELECTION_SCHEMA,
+          },
+        },
+        max_output_tokens: 500,
+      }),
+    });
+  } catch (error) {
+    return {
+      ok: false,
+      screenType: "unknown",
+      selectedRank: null,
+      confidence: 0,
+      evidence: String(error?.message || error || "선택 행 판별 실패"),
+    };
+  }
+
+  const { responseText, parsed, requestId } = await readOpenAIResponse(response);
+  if (!response.ok) {
+    return {
+      ok: false,
+      screenType: "unknown",
+      selectedRank: null,
+      confidence: 0,
+      evidence: parsed?.error?.message || responseText || "선택 행 판별 실패",
+      requestId,
+    };
+  }
+
+  const output = parseJsonText(extractOutputText(parsed));
+  if (!output) {
+    return {
+      ok: false,
+      screenType: "unknown",
+      selectedRank: null,
+      confidence: 0,
+      evidence: "선택 행 판별 결과를 읽지 못함",
+      requestId,
+    };
+  }
+
+  return {
+    ok: true,
+    screenType: String(output.screenType || "unknown"),
+    selectedRank: Number.isInteger(output.selectedRank) ? output.selectedRank : null,
+    confidence: Number(output.confidence || 0),
+    evidence: String(output.evidence || ""),
+    requestId,
+  };
+}
+
 async function callVisionForSingleImage({
   env,
   image,
   imageNumber,
   retryMode = false,
+  selectedRank = null,
+  screenType = "unknown",
+  allowedMapNames = [],
 }) {
   const model = env.OPENAI_MODEL || "gpt-4.1-mini";
 
   const inputContent = [
     {
       type: "input_text",
-      text: buildVisionPrompt(imageNumber, retryMode, Boolean(image.aquaCropBase64 || image.aquaGuideBase64)),
+      text: buildVisionPrompt({
+        imageNumber,
+        retryMode,
+        hasAquaCrop: Boolean(image.aquaCropBase64 || image.aquaGuideBase64),
+        selectedRank,
+        screenType,
+        allowedMapNames,
+      }),
     },
     {
       type: "input_text",
@@ -442,7 +592,7 @@ async function callVisionForSingleImage({
     inputContent.push(
       {
         type: "input_text",
-        text: "아래 이미지는 원본 순위표의 맨 왼쪽 약 36%를 확대한 비교용 안내 이미지입니다. 1~8행의 왼쪽 경계를 모두 비교하세요. 가장 굵고 진한 아쿠아 경계가 붙은 행, 특히 승리/패배 문구 뒤쪽까지 진한 아쿠아색이 이어지는 행이 본인 행입니다. 1등 노란 기록은 무시하세요.",
+        text: "아래 이미지는 등수 숫자와 그 바로 왼쪽의 세로 강조선을 확대한 안내 이미지입니다. 행 배경이나 노란 글씨는 무시하고, 등수 숫자 바로 왼쪽에 붙은 굵고 진한 아쿠아 세로선만 확인하세요.",
       },
       {
         type: "input_image",
@@ -562,6 +712,9 @@ async function analyzeImages(request, env) {
   }
 
   const images = Array.isArray(body?.images) ? body.images : [];
+  const allowedMapNames = Array.isArray(body?.allowedMapNames)
+    ? Array.from(new Set(body.allowedMapNames.map((name) => String(name || "").trim()).filter(Boolean))).slice(0, 300)
+    : [];
 
   if (!images.length) {
     return jsonResponse(
@@ -666,6 +819,8 @@ async function analyzeImages(request, env) {
       aquaGuideMimeType,
       aquaGuideBox: image?.aquaGuideBox || null,
       aquaGuideVersion: String(image?.aquaGuideVersion || ""),
+      aquaCenterYRatio: Number.isFinite(Number(image?.aquaCenterYRatio)) ? Number(image.aquaCenterYRatio) : null,
+      aquaXRatio: Number.isFinite(Number(image?.aquaXRatio)) ? Number(image.aquaXRatio) : null,
       sourceImage: index + 1,
     });
   });
@@ -688,11 +843,28 @@ async function analyzeImages(request, env) {
 
   // 여러 이미지를 한 요청에 섞지 않고 한 장씩 분석하여 행/기록 혼동을 줄입니다.
   for (const image of acceptedImages) {
+    const selection = await detectScreenAndSelectedRank({ env, image });
+
+    if (selection.requestId) {
+      requestIds.push(selection.requestId);
+    }
+
+    if (
+      selection.screenType === "ranked_result" &&
+      selection.selectedRank === null
+    ) {
+      warnings.push(`${image.name}: 등수 숫자 바로 왼쪽의 아쿠아 세로 강조선을 확실히 찾지 못해 랭전 기록을 제외했습니다.`);
+      continue;
+    }
+
     let result = await callVisionForSingleImage({
       env,
       image,
       imageNumber: image.sourceImage,
       retryMode: false,
+      selectedRank: selection.selectedRank,
+      screenType: selection.screenType,
+      allowedMapNames,
     });
 
     // 첫 판독에서 기록을 못 찾은 경우 화면 유형을 다시 판별하여 한 번 더 재검토합니다.
@@ -702,6 +874,9 @@ async function analyzeImages(request, env) {
         image,
         imageNumber: image.sourceImage,
         retryMode: true,
+        selectedRank: selection.selectedRank,
+        screenType: selection.screenType,
+        allowedMapNames,
       });
 
       if (retryResult.ok && retryResult.records.length) {
@@ -745,6 +920,7 @@ async function analyzeImages(request, env) {
     analyzedImages: acceptedImages.length,
     aquaCropsUsed: acceptedImages.filter((image) => image.aquaCropBase64).length,
     aquaGuidesUsed: acceptedImages.filter((image) => image.aquaGuideBase64).length,
+    allowedMapCount: allowedMapNames.length,
     rejectedImages,
     requestIds,
   });
