@@ -14852,10 +14852,181 @@ function setAiRecordStatus(message, show = true, loading = false){
     : esc(message).replace(/\n/g, "<br>");
 }
 
+async function loadImageFromFile(file){
+  const url = URL.createObjectURL(file);
+  try{
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error(`${file.name} 이미지를 불러오지 못했습니다.`));
+      img.src = url;
+    });
+    return img;
+  }finally{
+    // 이미지가 완전히 로드된 뒤 호출되므로 해제해도 안전합니다.
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+}
+
+function canvasToDataUrl(canvas, type = "image/jpeg", quality = 0.94){
+  return canvas.toDataURL(type, quality);
+}
+
+function isAquaPixel(r, g, b){
+  // 선택 행 테두리는 밝은 청록/아쿠아 계열입니다.
+  // 게임 화면 전체의 짙은 파란색은 최대한 제외합니다.
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  return (
+    b >= 145 &&
+    g >= 105 &&
+    b - r >= 30 &&
+    g - r >= 8 &&
+    max - min >= 35 &&
+    (g + b) >= 285
+  );
+}
+
+async function detectAndCropAquaRow(file){
+  const img = await loadImageFromFile(file);
+  const maxDetectWidth = 1200;
+  const scale = Math.min(1, maxDetectWidth / img.naturalWidth);
+  const width = Math.max(1, Math.round(img.naturalWidth * scale));
+  const height = Math.max(1, Math.round(img.naturalHeight * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { willReadFrequently:true });
+  ctx.drawImage(img, 0, 0, width, height);
+
+  const imageData = ctx.getImageData(0, 0, width, height).data;
+  const xStart = Math.floor(width * 0.035);
+  const xEnd = Math.floor(width * 0.965);
+  const scanWidth = Math.max(1, xEnd - xStart);
+  const rowScores = new Float32Array(height);
+
+  // 각 가로줄에서 밝은 아쿠아 픽셀이 얼마나 연속적으로 존재하는지 계산합니다.
+  for(let y = 0; y < height; y++){
+    let aqua = 0;
+    let longest = 0;
+    let run = 0;
+    for(let x = xStart; x < xEnd; x++){
+      const i = (y * width + x) * 4;
+      if(isAquaPixel(imageData[i], imageData[i + 1], imageData[i + 2])){
+        aqua++;
+        run++;
+        if(run > longest) longest = run;
+      }else{
+        run = 0;
+      }
+    }
+    rowScores[y] = (aqua / scanWidth) * 0.72 + (longest / scanWidth) * 0.28;
+  }
+
+  // 3픽셀 이동평균으로 사진 노이즈를 줄입니다.
+  const smooth = new Float32Array(height);
+  for(let y = 0; y < height; y++){
+    let total = 0;
+    let count = 0;
+    for(let k = -2; k <= 2; k++){
+      const yy = y + k;
+      if(yy >= 0 && yy < height){ total += rowScores[yy]; count++; }
+    }
+    smooth[y] = total / Math.max(1, count);
+  }
+
+  const peaks = [];
+  for(let y = 3; y < height - 3; y++){
+    if(smooth[y] < 0.055) continue;
+    if(smooth[y] >= smooth[y - 1] && smooth[y] >= smooth[y + 1]){
+      peaks.push({ y, score:smooth[y] });
+    }
+  }
+  peaks.sort((a,b) => b.score - a.score);
+  const topPeaks = peaks.slice(0, 45);
+
+  const minBandH = Math.max(30, Math.round(height * 0.045));
+  const maxBandH = Math.min(Math.round(height * 0.24), 230);
+  let best = null;
+
+  for(const a of topPeaks){
+    for(const b of topPeaks){
+      if(b.y <= a.y) continue;
+      const bandH = b.y - a.y;
+      if(bandH < minBandH || bandH > maxBandH) continue;
+
+      const midY = Math.floor((a.y + b.y) / 2);
+      const edgeW = Math.max(5, Math.round(width * 0.025));
+      let sideAqua = 0;
+      let sideTotal = 0;
+
+      // 선택 행은 좌우 가장자리에도 아쿠아 테두리가 나타나는 경우가 많습니다.
+      for(let y = a.y; y <= b.y; y += 2){
+        for(let x = xStart; x < xStart + edgeW; x += 2){
+          const i = (y * width + x) * 4;
+          sideTotal++;
+          if(isAquaPixel(imageData[i], imageData[i+1], imageData[i+2])) sideAqua++;
+        }
+        for(let x = xEnd - edgeW; x < xEnd; x += 2){
+          const i = (y * width + x) * 4;
+          sideTotal++;
+          if(isAquaPixel(imageData[i], imageData[i+1], imageData[i+2])) sideAqua++;
+        }
+      }
+
+      const sideScore = sideAqua / Math.max(1, sideTotal);
+      const centerScore = smooth[midY] || 0;
+      const score = a.score + b.score + sideScore * 0.75 + centerScore * 0.10;
+
+      if(!best || score > best.score){
+        best = { top:a.y, bottom:b.y, score, sideScore, topScore:a.score, bottomScore:b.score };
+      }
+    }
+  }
+
+  // 확실한 테두리를 찾지 못하면 Crop을 만들지 않고 원본만 보냅니다.
+  if(!best || best.score < 0.17){
+    return { found:false, confidence:0, cropBase64:"", cropMimeType:"" };
+  }
+
+  const padY = Math.max(10, Math.round((best.bottom - best.top) * 0.22));
+  const cropTop = Math.max(0, best.top - padY);
+  const cropBottom = Math.min(height, best.bottom + padY);
+  const cropLeft = Math.max(0, Math.round(width * 0.015));
+  const cropRight = Math.min(width, Math.round(width * 0.985));
+  const cropW = cropRight - cropLeft;
+  const cropH = cropBottom - cropTop;
+
+  const cropCanvas = document.createElement("canvas");
+  // AI가 작은 글자를 읽기 쉽도록 Crop은 최소 1200px 폭으로 확대합니다.
+  const outputScale = Math.max(1, Math.min(2.4, 1400 / Math.max(1, cropW)));
+  cropCanvas.width = Math.round(cropW * outputScale);
+  cropCanvas.height = Math.round(cropH * outputScale);
+  const cropCtx = cropCanvas.getContext("2d");
+  cropCtx.imageSmoothingEnabled = true;
+  cropCtx.imageSmoothingQuality = "high";
+  cropCtx.drawImage(canvas, cropLeft, cropTop, cropW, cropH, 0, 0, cropCanvas.width, cropCanvas.height);
+
+  const dataUrl = canvasToDataUrl(cropCanvas, "image/jpeg", 0.96);
+  return {
+    found:true,
+    confidence:Math.max(0, Math.min(1, best.score * 2.2)),
+    cropBase64:dataUrl.split(",")[1] || "",
+    cropMimeType:"image/jpeg",
+    cropBox:{
+      x:Math.round(cropLeft / scale),
+      y:Math.round(cropTop / scale),
+      width:Math.round(cropW / scale),
+      height:Math.round(cropH / scale)
+    }
+  };
+}
+
 async function aiFileToPayload(file){
   let converted = file;
 
-  // 큰 이미지는 전송속도와 API 비용을 줄이기 위해 기존 압축 함수를 사용합니다.
+  // 원본 전체 화면은 기존 방식으로 압축해 전송합니다.
   if(file.type !== "image/webp" && typeof compressImageForSupabase === "function"){
     try{
       converted = await compressImageForSupabase(file);
@@ -14871,10 +15042,22 @@ async function aiFileToPayload(file){
     reader.readAsDataURL(converted);
   });
 
+  let aquaCrop = { found:false, confidence:0, cropBase64:"", cropMimeType:"" };
+  try{
+    aquaCrop = await detectAndCropAquaRow(file);
+  }catch(e){
+    console.warn("아쿠아 행 자동 Crop 실패, 원본 판독으로 계속합니다.", e);
+  }
+
   return {
     name:file.name,
     mimeType:converted.type || file.type || "image/jpeg",
-    base64:dataUrl.split(",")[1] || ""
+    base64:dataUrl.split(",")[1] || "",
+    aquaCropFound:!!aquaCrop.found,
+    aquaCropConfidence:Number(aquaCrop.confidence || 0),
+    aquaCropBase64:aquaCrop.cropBase64 || "",
+    aquaCropMimeType:aquaCrop.cropMimeType || "",
+    aquaCropBox:aquaCrop.cropBox || null
   };
 }
 
