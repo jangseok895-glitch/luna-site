@@ -62,6 +62,22 @@ const RECORD_RESPONSE_SCHEMA = {
         ],
       },
     },
+    rankedCandidates: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          mapName: { type: "string" },
+          nickname: { type: "string" },
+          rank: { type: "integer", minimum: 1, maximum: 8 },
+          record: { type: "string" },
+          confidence: { type: "number", minimum: 0, maximum: 1 },
+          sourceImage: { type: "integer", minimum: 1 }
+        },
+        required: ["mapName","nickname","rank","record","confidence","sourceImage"]
+      }
+    },
     warnings: {
       type: "array",
       items: {
@@ -69,7 +85,7 @@ const RECORD_RESPONSE_SCHEMA = {
       },
     },
   },
-  required: ["records", "warnings"],
+  required: ["records", "rankedCandidates", "warnings"],
 };
 
 const RANK_SELECTION_SCHEMA = {
@@ -285,6 +301,39 @@ function normalizeRecords(data) {
   return Array.from(bestByMap.values());
 }
 
+
+function normalizeRankedCandidates(result) {
+  const source = Array.isArray(result?.rankedCandidates) ? result.rankedCandidates : [];
+  const output = [];
+  const seen = new Set();
+
+  for (const item of source) {
+    const mapName = String(item?.mapName || "").trim();
+    const nickname = String(item?.nickname || "").trim();
+    const rank = Number(item?.rank);
+    const record = normalizeRecordTime(item?.record || "");
+    const sourceImage = Math.max(1, Math.trunc(Number(item?.sourceImage || 1)));
+
+    if (!mapName || !nickname || !record) continue;
+    if (!Number.isInteger(rank) || rank < 1 || rank > 8) continue;
+
+    const key = `${sourceImage}|${normalizeMapKey(mapName)}|${rank}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    output.push({
+      mapName,
+      nickname,
+      rank,
+      record,
+      confidence: Math.max(0, Math.min(1, Number(item?.confidence ?? 0.75))),
+      sourceImage,
+    });
+  }
+
+  return output.sort((a,b) => a.sourceImage - b.sourceImage || a.rank - b.rank);
+}
+
 function buildVisionPrompt({
   imageNumber,
   retryMode = false,
@@ -329,14 +378,17 @@ B. 타임어택 / 개인 기록 상세
 - sourceType은 time_attack입니다.
 
 C. 랭킹전 / 경기 종료 순위표
-- 사전 판별 selectedRank는 맨 오른쪽 엄지척이 없는 유일한 행을 기준으로 결정되었습니다.
-- 사전 판별 selectedRank가 존재하면 반드시 그 등수 행의 완주 기록만 읽으세요.
-- 다른 행의 기록이 노란색이거나 더 빠르더라도 절대로 선택하지 마세요.
-- selectedRank가 null이면 임의로 1등이나 2등 기록을 반환하지 마세요.
-- 엄지척 부재가 절대 1순위이며, 방패 효과는 2순위, 아쿠아 테두리는 3순위입니다.
-- 맵 이름은 화면 상단 왼쪽의 맵 제목에서만 읽으세요.
-- 카트 이름, 차량 이름, 평균속도, 닉네임은 mapName이 아닙니다.
-- 허용된 군표 맵 이름과 일치하지 않는 이름은 반환하지 마세요.
+- 화면 상단 왼쪽의 맵 이름을 먼저 읽으세요.
+- 완주한 모든 선수의 등수, 닉네임, 기록을 rankedCandidates에 빠짐없이 넣으세요.
+- 미완료 행은 rankedCandidates에 넣지 마세요.
+- 닉네임은 화면에 보이는 글자를 최대한 그대로 반환하세요.
+- 기록은 01:53:77 → 1.53.77 형식으로 반환하세요.
+- selectedRank가 확실하면 해당 행 기록을 records에도 넣으세요.
+- selectedRank가 null이거나 애매하면 records는 비우고 rankedCandidates만 반환하세요.
+- 노란 기록이나 1등을 본인으로 임의 선택하지 마세요.
+- mapName은 상단 왼쪽 제목에서만 읽으세요.
+- 카트 이름, 차량 이름, 평균속도는 mapName이 아닙니다.
+- rankedCandidates의 mapName은 허용된 한글 맵 이름으로 맞추세요.
 - sourceType은 ranked_result입니다.
 
 첨부 이미지 안내
@@ -362,6 +414,7 @@ C. 랭킹전 / 경기 종료 순위표
 - sourceType은 time_attack, ranked_result, unknown 중 하나입니다.
 - evidence에는 선택 근거를 구체적으로 적으세요.
 - 확실하지 않은 항목은 반환하지 말고 warning에 적으세요.
+- 랭전이면 rankedCandidates에 완주한 선수 후보 전체를 반환하세요.
 - 지정된 JSON 스키마 외 텍스트는 출력하지 마세요.
 
 ${retryMode ? `
@@ -747,6 +800,7 @@ async function callVisionForSingleImage({
     ok: true,
     status: 200,
     records: normalizeRecords(parsedResult),
+    rankedCandidates: normalizeRankedCandidates(parsedResult),
     warnings: Array.isArray(parsedResult?.warnings)
       ? parsedResult.warnings
           .map((item) => String(item || "").trim())
@@ -917,6 +971,7 @@ async function analyzeImages(request, env) {
   }
 
   const allRecords = [];
+  const allRankedCandidates = [];
   const warnings = [];
   const requestIds = [];
 
@@ -928,13 +983,6 @@ async function analyzeImages(request, env) {
       requestIds.push(selection.requestId);
     }
 
-    if (
-      selection.screenType === "ranked_result" &&
-      selection.selectedRank === null
-    ) {
-      warnings.push(`${image.name}: 맨 오른쪽 엄지척이 없는 유일한 행을 확실히 판별하지 못해 랭전 기록을 제외했습니다.`);
-      continue;
-    }
 
     let result = await callVisionForSingleImage({
       env,
@@ -981,6 +1029,7 @@ async function analyzeImages(request, env) {
     }
 
     allRecords.push(...result.records);
+    allRankedCandidates.push(...(result.rankedCandidates || []));
     warnings.push(...result.warnings);
 
     if (result.requestId) {
@@ -994,6 +1043,7 @@ async function analyzeImages(request, env) {
   return jsonResponse({
     ok: true,
     records,
+    rankedCandidates: normalizeRankedCandidates({ rankedCandidates: allRankedCandidates }),
     warnings: Array.from(new Set(warnings)),
     model: env.OPENAI_MODEL || "gpt-4.1-mini",
     analyzedImages: acceptedImages.length,
