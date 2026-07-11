@@ -326,28 +326,103 @@ async function analyzeImages(request, env) {
 
   const model = env.OPENAI_MODEL || "gpt-4.1-mini";
 
-const openAIResponse = await fetch(
-  "https://api.openai.com/v1/responses",
-  {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      input: "hello"
-    })
+  let openAIResponse;
+
+  try {
+    openAIResponse = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${env.OPENAI_API_KEY}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        input: [
+          {
+            role: "user",
+            content: inputContent,
+          },
+        ],
+        temperature: 0,
+        max_output_tokens: 3000,
+      }),
+    });
+  } catch (error) {
+    console.error("AI connection error:", error);
+
+    return jsonResponse(
+      {
+        ok: false,
+        error: "AI 분석 서버에 연결하지 못했습니다.",
+      },
+      502,
+    );
   }
-);
 
-const responseText = await openAIResponse.text();
+  // 오류 응답이 JSON이 아닐 수도 있으므로 먼저 원문 텍스트로 읽습니다.
+  const responseText = await openAIResponse.text().catch(() => "");
+  let result = null;
 
-return jsonResponse({
-  ok: openAIResponse.ok,
-  status: openAIResponse.status,
-  response: responseText
-});
+  if (responseText) {
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      result = null;
+    }
+  }
+
+  if (!openAIResponse.ok) {
+    const upstreamMessage = String(
+      result?.error?.message ||
+      result?.message ||
+      responseText ||
+      "",
+    )
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 1200);
+
+    const upstreamCode = String(
+      result?.error?.code ||
+      result?.code ||
+      "",
+    ).trim();
+
+    const upstreamType = String(
+      result?.error?.type ||
+      result?.type ||
+      "",
+    ).trim();
+
+    console.error("AI API error:", {
+      status: openAIResponse.status,
+      message: upstreamMessage,
+      code: upstreamCode,
+      type: upstreamType,
+    });
+
+    const detailParts = [
+      upstreamMessage,
+      upstreamCode ? `오류 코드: ${upstreamCode}` : "",
+      upstreamType ? `오류 유형: ${upstreamType}` : "",
+      `상태코드: ${openAIResponse.status}`,
+    ].filter(Boolean);
+
+    return jsonResponse(
+      {
+        ok: false,
+        error: detailParts.join("\n"),
+        status: openAIResponse.status,
+        code: upstreamCode || null,
+        type: upstreamType || null,
+      },
+      openAIResponse.status >= 400 && openAIResponse.status < 600
+        ? openAIResponse.status
+        : 502,
+    );
+  }
+
   const outputText = extractOutputText(result);
   const parsed = parseJsonText(outputText);
 
@@ -406,6 +481,87 @@ export default {
       }
 
       return analyzeImages(request, env);
+    }
+
+    if (url.pathname === "/api/test") {
+      if (!env.OPENAI_API_KEY) {
+        return jsonResponse(
+          {
+            ok: false,
+            error: "OPENAI_API_KEY가 등록되지 않았습니다.",
+          },
+          500,
+        );
+      }
+
+      let testResponse;
+
+      try {
+        testResponse = await fetch("https://api.openai.com/v1/responses", {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${env.OPENAI_API_KEY}`,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            model: env.OPENAI_MODEL || "gpt-4.1-mini",
+            input: "Reply with exactly: TEST_OK",
+            max_output_tokens: 20,
+          }),
+        });
+      } catch (error) {
+        return jsonResponse(
+          {
+            ok: false,
+            stage: "connection",
+            error: String(error?.message || error || "연결 실패"),
+          },
+          502,
+        );
+      }
+
+      const responseText = await testResponse.text().catch(() => "");
+      let parsed = null;
+
+      if (responseText) {
+        try {
+          parsed = JSON.parse(responseText);
+        } catch {
+          parsed = null;
+        }
+      }
+
+      const message = String(
+        parsed?.error?.message ||
+        parsed?.message ||
+        responseText ||
+        "",
+      )
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 1200);
+
+      const outputText = parsed ? extractOutputText(parsed) : "";
+
+      return jsonResponse(
+        {
+          ok: testResponse.ok,
+          status: testResponse.status,
+          model: env.OPENAI_MODEL || "gpt-4.1-mini",
+          output: outputText || null,
+          error: testResponse.ok ? null : message || "알 수 없는 오류",
+          code: parsed?.error?.code || null,
+          type: parsed?.error?.type || null,
+          cf: {
+            country: request.cf?.country || null,
+            city: request.cf?.city || null,
+            region: request.cf?.region || null,
+            colo: request.cf?.colo || null,
+          },
+        },
+        testResponse.status,
+      );
     }
 
     if (url.pathname === "/api/health") {
