@@ -1,6 +1,7 @@
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
   "cache-control": "no-store",
+  "access-control-allow-origin": "*",
 };
 
 const ALLOWED_IMAGE_TYPES = new Set([
@@ -10,7 +11,66 @@ const ALLOWED_IMAGE_TYPES = new Set([
 ]);
 
 const MAX_IMAGES = 10;
+
+// Base64 문자열 기준 약 12MB입니다.
+// 일반적으로 원본 이미지 약 9MB 정도에 해당합니다.
 const MAX_BASE64_CHARS_PER_IMAGE = 12_000_000;
+
+// 여러 장을 한 번에 올릴 때 Worker/OpenAI 요청이 지나치게 커지는 것을 방지합니다.
+const MAX_TOTAL_BASE64_CHARS = 45_000_000;
+
+const RECORD_RESPONSE_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    records: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          mapName: {
+            type: "string",
+          },
+          record: {
+            type: "string",
+          },
+          confidence: {
+            type: "number",
+            minimum: 0,
+            maximum: 1,
+          },
+          sourceImage: {
+            type: "integer",
+            minimum: 1,
+          },
+          sourceType: {
+            type: "string",
+            enum: ["time_attack", "ranked_result", "unknown"],
+          },
+          evidence: {
+            type: "string",
+          },
+        },
+        required: [
+          "mapName",
+          "record",
+          "confidence",
+          "sourceImage",
+          "sourceType",
+          "evidence",
+        ],
+      },
+    },
+    warnings: {
+      type: "array",
+      items: {
+        type: "string",
+      },
+    },
+  },
+  required: ["records", "warnings"],
+};
 
 function jsonResponse(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -28,6 +88,13 @@ function cleanBase64(value) {
     .replace(/\s/g, "");
 }
 
+function sanitizeMimeType(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .split(";")[0];
+}
+
 function extractOutputText(result) {
   if (typeof result?.output_text === "string" && result.output_text.trim()) {
     return result.output_text.trim();
@@ -41,7 +108,8 @@ function extractOutputText(result) {
     for (const content of contents) {
       if (
         (content?.type === "output_text" || content?.type === "text") &&
-        typeof content?.text === "string"
+        typeof content?.text === "string" &&
+        content.text.trim()
       ) {
         return content.text.trim();
       }
@@ -82,14 +150,22 @@ function normalizeRecordTime(value) {
   const raw = String(value || "").trim();
   if (!raw) return "";
 
+  // 1:23:45 / 1.23.45 / 1'23"45처럼 구분자가 달라도 처리합니다.
   const match = raw.match(/(\d{1,2})\D+(\d{1,2})\D+(\d{1,3})/);
-  if (!match) return raw;
+  if (!match) return "";
 
   const minutes = Number(match[1]);
   const seconds = Number(match[2]);
   let fraction = String(match[3]);
 
-  if (!Number.isFinite(minutes) || !Number.isFinite(seconds)) return raw;
+  if (
+    !Number.isFinite(minutes) ||
+    !Number.isFinite(seconds) ||
+    seconds < 0 ||
+    seconds > 59
+  ) {
+    return "";
+  }
 
   if (fraction.length === 1) fraction += "0";
   if (fraction.length > 2) fraction = fraction.slice(0, 2);
@@ -100,6 +176,7 @@ function normalizeRecordTime(value) {
 function recordToMilliseconds(value) {
   const normalized = normalizeRecordTime(value);
   const match = normalized.match(/^(\d+)\.(\d{2})\.(\d{2})$/);
+
   if (!match) return Number.POSITIVE_INFINITY;
 
   return (
@@ -107,6 +184,13 @@ function recordToMilliseconds(value) {
     Number(match[2]) * 1_000 +
     Number(match[3]) * 10
   );
+}
+
+function normalizeMapKey(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[^\p{Letter}\p{Number}]/gu, "");
 }
 
 function normalizeRecords(data) {
@@ -118,7 +202,7 @@ function normalizeRecords(data) {
 
   const bestByMap = new Map();
 
-  source.forEach((record) => {
+  for (const record of source) {
     const mapName = String(
       record?.mapName ??
         record?.map_name ??
@@ -134,31 +218,32 @@ function normalizeRecords(data) {
         "",
     );
 
-    if (!mapName || !time) return;
+    if (!mapName || !time) continue;
+
+    const confidenceValue = Number(record?.confidence ?? 0);
 
     const normalized = {
       mapName,
       record: time,
-      confidence: Math.max(
-        0,
-        Math.min(1, Number(record?.confidence ?? 0)),
-      ),
+      confidence: Number.isFinite(confidenceValue)
+        ? Math.max(0, Math.min(1, confidenceValue))
+        : 0,
       sourceImage: Math.max(
         1,
-        Number(record?.sourceImage ?? record?.imageIndex ?? 1),
+        Math.trunc(
+          Number(record?.sourceImage ?? record?.imageIndex ?? 1) || 1,
+        ),
       ),
-      sourceType: String(
-        record?.sourceType ??
-          record?.source_type ??
-          "unknown",
-      ).trim(),
-      evidence: String(record?.evidence ?? "").trim(),
+      sourceType: ["time_attack", "ranked_result", "unknown"].includes(
+        String(record?.sourceType || ""),
+      )
+        ? String(record.sourceType)
+        : "unknown",
+      evidence: String(record?.evidence || "").trim(),
     };
 
-    const key = mapName
-      .toLowerCase()
-      .replace(/\s+/g, "")
-      .replace(/[^\p{Letter}\p{Number}]/gu, "");
+    const key = normalizeMapKey(mapName);
+    if (!key) continue;
 
     const previous = bestByMap.get(key);
 
@@ -169,66 +254,104 @@ function normalizeRecords(data) {
     ) {
       bestByMap.set(key, normalized);
     }
-  });
+  }
 
   return Array.from(bestByMap.values());
 }
 
 function buildVisionPrompt() {
   return `
-당신은 카트라이더 러쉬플러스 기록 스크린샷 판독기입니다.
-첨부된 각 이미지에서 맵 이름과 사용자의 본인 기록을 판독하세요.
+당신은 카트라이더 러쉬플러스 기록 스크린샷을 판독하는 전문 분석기입니다.
+첨부된 각 이미지에서 맵 이름과 사용자의 본인 기록만 정확하게 추출하세요.
 
-지원 화면 유형:
+지원 화면 유형
 
-A. 타임어택/개인 기록 화면
-- 화면에 표시된 맵 이름과 사용자의 기록을 추출합니다.
-- 최고 기록, 개인 기록, 내 기록처럼 사용자의 기록임이 명확한 값만 사용합니다.
+A. 타임어택 또는 개인 기록 화면
+- 화면에 표시된 맵 이름을 읽습니다.
+- 개인 최고 기록, 내 기록, 본인 기록처럼 사용자의 기록임이 명확한 값만 추출합니다.
+- 다른 사람의 기록이나 비교 기록은 제외합니다.
 
-B. 랭킹전 또는 경기 종료 결과표
-- 한 화면에 최대 8명의 선수와 기록이 표시될 수 있습니다.
-- 기록과 평균 속도(내 속도)가 모두 노란색 또는 금색으로 강조된 행을 사용자의 행으로 판단합니다.
-- 노란색 강조가 명확하지 않으면 억지로 다른 선수 기록을 선택하지 않습니다.
-- 상단에 표시된 맵 이름과 노란색 본인 행의 완주 기록을 한 쌍으로 추출합니다.
-- 평균 속도 숫자는 본인 판별에만 사용하며 record 값으로 반환하지 않습니다.
+B. 랭킹전 또는 경기 종료 순위표
+- 한 화면에 여러 선수의 닉네임, 순위, 기록, 카트, 평균 속도가 표시될 수 있습니다.
+- 사용자의 행은 보통 기록 숫자와 평균 속도 숫자가 노란색 또는 금색으로 강조됩니다.
+- 기록과 평균 속도가 함께 노란색/금색인 동일한 행을 우선적으로 본인 행으로 판단합니다.
+- 상단 왼쪽 또는 상단 영역에 표시된 맵 이름과 본인 행의 완주 기록을 한 쌍으로 추출합니다.
+- 평균 속도는 본인 행을 찾는 근거로만 사용하며 record 값에는 넣지 않습니다.
+- 노란색 강조가 불명확하거나 여러 행이 동시에 후보라면 추측하지 말고 제외합니다.
+- '미완료', 리타이어, 완주 기록 없음은 기록으로 반환하지 않습니다.
 
-필수 규칙:
+필수 판독 규칙
 
-1. 이미지에서 실제로 확인되는 맵 이름과 기록만 반환합니다.
-2. 기록 형식은 반드시 "분.초.센티초"로 통일합니다.
-   예: 1.32.57, 0.58.99, 2.01.30
+1. 이미지에서 실제로 확인되는 정보만 사용합니다.
+2. 기록 형식은 반드시 "분.초.센티초"로 반환합니다.
+   예: 1.32.57 / 0.58.99 / 2.01.30
 3. 같은 맵이 여러 이미지에 있으면 가장 빠른 기록만 남깁니다.
-4. 맵 이름이나 본인 기록이 불명확하면 추측하지 않습니다.
-5. 다른 선수의 기록을 절대 본인 기록으로 반환하지 않습니다.
-6. sourceImage는 첨부 이미지 순번이며 첫 번째 이미지는 1입니다.
-7. sourceType은 타임어택이면 "time_attack", 랭전/결과표이면 "ranked_result"로 작성합니다.
-8. evidence에는 본인 기록이라고 판단한 짧은 근거를 작성합니다.
-   예: "개인 최고기록 표시", "기록과 평균속도가 노란색인 행"
-9. 설명문이나 마크다운 없이 JSON 객체만 반환합니다.
-
-반환 형식:
-
-{
-  "records": [
-    {
-      "mapName": "맵 이름",
-      "record": "1.32.57",
-      "confidence": 0.95,
-      "sourceImage": 1,
-      "sourceType": "time_attack",
-      "evidence": "개인 최고기록 표시"
-    }
-  ],
-  "warnings": []
-}
-
-확인 가능한 본인 기록이 없으면:
-
-{
-  "records": [],
-  "warnings": ["확인 가능한 본인 기록을 찾지 못했습니다."]
-}
+4. 맵 이름이나 본인 기록이 불명확하면 억지로 추측하지 않습니다.
+5. 다른 선수의 기록을 본인 기록으로 반환하지 않습니다.
+6. sourceImage는 첨부 이미지의 순번이며 첫 번째 이미지는 1입니다.
+7. sourceType:
+   - 타임어택/개인 기록 화면: time_attack
+   - 랭킹전/경기 결과 순위표: ranked_result
+   - 구분 불가: unknown
+8. evidence에는 본인 기록이라고 판단한 짧은 근거를 적습니다.
+   예: "개인 최고기록 표시"
+   예: "기록과 평균속도가 노란색인 동일 행"
+9. 확인 가능한 본인 기록이 없으면 records를 빈 배열로 반환하고 warnings에 이유를 적습니다.
+10. 반드시 지정된 JSON 형식으로만 응답합니다.
   `.trim();
+}
+
+function getCloudflareLocation(request) {
+  return {
+    country: request.cf?.country || null,
+    city: request.cf?.city || null,
+    region: request.cf?.region || null,
+    colo: request.cf?.colo || null,
+  };
+}
+
+async function readOpenAIResponse(openAIResponse) {
+  const responseText = await openAIResponse.text().catch(() => "");
+  let parsed = null;
+
+  if (responseText) {
+    try {
+      parsed = JSON.parse(responseText);
+    } catch {
+      parsed = null;
+    }
+  }
+
+  return {
+    responseText,
+    parsed,
+    requestId:
+      openAIResponse.headers.get("x-request-id") ||
+      openAIResponse.headers.get("request-id") ||
+      null,
+  };
+}
+
+function buildUpstreamError(openAIResponse, responseText, parsed, requestId) {
+  const message = String(
+    parsed?.error?.message ||
+      parsed?.message ||
+      responseText ||
+      "AI 분석 요청에 실패했습니다.",
+  )
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 1500);
+
+  return {
+    ok: false,
+    error: message,
+    status: openAIResponse.status,
+    code: parsed?.error?.code || parsed?.code || null,
+    type: parsed?.error?.type || parsed?.type || null,
+    requestId,
+  };
 }
 
 async function analyzeImages(request, env) {
@@ -286,26 +409,48 @@ async function analyzeImages(request, env) {
   ];
 
   let acceptedImages = 0;
+  let totalBase64Chars = 0;
+  const rejectedImages = [];
 
   images.forEach((image, index) => {
-    const mimeType = String(
+    const mimeType = sanitizeMimeType(
       image?.mimeType || image?.type || "image/jpeg",
-    ).toLowerCase();
+    );
 
     const base64 = cleanBase64(image?.base64 || image?.data || "");
+    const displayName = String(
+      image?.name || `screenshot-${index + 1}`,
+    );
 
-    if (!ALLOWED_IMAGE_TYPES.has(mimeType)) return;
-    if (!base64 || base64.length > MAX_BASE64_CHARS_PER_IMAGE) return;
+    if (!ALLOWED_IMAGE_TYPES.has(mimeType)) {
+      rejectedImages.push(`${displayName}: 지원하지 않는 파일 형식`);
+      return;
+    }
+
+    if (!base64) {
+      rejectedImages.push(`${displayName}: 이미지 데이터 없음`);
+      return;
+    }
+
+    if (base64.length > MAX_BASE64_CHARS_PER_IMAGE) {
+      rejectedImages.push(`${displayName}: 파일 용량이 너무 큼`);
+      return;
+    }
+
+    if (totalBase64Chars + base64.length > MAX_TOTAL_BASE64_CHARS) {
+      rejectedImages.push(`${displayName}: 전체 첨부 용량 제한 초과`);
+      return;
+    }
 
     acceptedImages += 1;
+    totalBase64Chars += base64.length;
 
     inputContent.push({
       type: "input_text",
-      text: `첨부 이미지 ${index + 1}번: ${String(
-        image?.name || `screenshot-${index + 1}`,
-      )}`,
+      text: `첨부 이미지 ${index + 1}번 파일명: ${displayName}`,
     });
 
+    // OpenAI Responses API의 공식 Vision 입력 형식입니다.
     inputContent.push({
       type: "input_image",
       image_url: `data:${mimeType};base64,${base64}`,
@@ -319,13 +464,13 @@ async function analyzeImages(request, env) {
         ok: false,
         error:
           "사용할 수 있는 이미지가 없습니다. JPG, PNG 또는 WEBP 파일을 올려주세요.",
+        rejectedImages,
       },
       400,
     );
   }
 
   const model = env.OPENAI_MODEL || "gpt-4.1-mini";
-
   let openAIResponse;
 
   try {
@@ -337,110 +482,90 @@ async function analyzeImages(request, env) {
       },
       body: JSON.stringify({
         model,
+        store: false,
         input: [
           {
             role: "user",
             content: inputContent,
           },
         ],
-        temperature: 0,
+        text: {
+          format: {
+            type: "json_schema",
+            name: "kart_record_analysis",
+            description:
+              "카트라이더 러쉬플러스 스크린샷에서 본인 맵 기록을 추출한 결과",
+            strict: true,
+            schema: RECORD_RESPONSE_SCHEMA,
+          },
+        },
         max_output_tokens: 3000,
       }),
     });
   } catch (error) {
-    console.error("AI connection error:", error);
+    console.error("OpenAI connection error:", error);
 
     return jsonResponse(
       {
         ok: false,
         error: "AI 분석 서버에 연결하지 못했습니다.",
+        detail: String(error?.message || error || ""),
       },
       502,
     );
   }
 
-  // 오류 응답이 JSON이 아닐 수도 있으므로 먼저 원문 텍스트로 읽습니다.
-  const responseText = await openAIResponse.text().catch(() => "");
-  let result = null;
-
-  if (responseText) {
-    try {
-      result = JSON.parse(responseText);
-    } catch {
-      result = null;
-    }
-  }
+  const {
+    responseText,
+    parsed: openAIResult,
+    requestId,
+  } = await readOpenAIResponse(openAIResponse);
 
   if (!openAIResponse.ok) {
-    const upstreamMessage = String(
-      result?.error?.message ||
-      result?.message ||
-      responseText ||
-      "",
-    )
-      .replace(/<[^>]*>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 1200);
+    const upstreamError = buildUpstreamError(
+      openAIResponse,
+      responseText,
+      openAIResult,
+      requestId,
+    );
 
-    const upstreamCode = String(
-      result?.error?.code ||
-      result?.code ||
-      "",
-    ).trim();
-
-    const upstreamType = String(
-      result?.error?.type ||
-      result?.type ||
-      "",
-    ).trim();
-
-    console.error("AI API error:", {
-      status: openAIResponse.status,
-      message: upstreamMessage,
-      code: upstreamCode,
-      type: upstreamType,
-    });
-
-    const detailParts = [
-      upstreamMessage,
-      upstreamCode ? `오류 코드: ${upstreamCode}` : "",
-      upstreamType ? `오류 유형: ${upstreamType}` : "",
-      `상태코드: ${openAIResponse.status}`,
-    ].filter(Boolean);
+    console.error("OpenAI API error:", upstreamError);
 
     return jsonResponse(
       {
-        ok: false,
-        error: detailParts.join("\n"),
-        status: openAIResponse.status,
-        code: upstreamCode || null,
-        type: upstreamType || null,
+        ...upstreamError,
+        model,
+        cf: getCloudflareLocation(request),
       },
-      openAIResponse.status >= 400 && openAIResponse.status < 600
-        ? openAIResponse.status
-        : 502,
+      openAIResponse.status,
     );
   }
 
-  const outputText = extractOutputText(result);
-  const parsed = parseJsonText(outputText);
+  const outputText = extractOutputText(openAIResult);
+  const parsedResult = parseJsonText(outputText);
 
-  if (!parsed) {
-    console.error("Invalid AI JSON:", outputText);
+  if (!parsedResult) {
+    console.error("Invalid structured output:", {
+      requestId,
+      outputText,
+      openAIResult,
+    });
 
     return jsonResponse(
       {
         ok: false,
         error: "AI 분석 결과를 읽지 못했습니다. 다시 시도해주세요.",
+        requestId,
       },
       502,
     );
   }
 
-  const records = normalizeRecords(parsed);
-  const warnings = Array.isArray(parsed?.warnings)
-    ? parsed.warnings.map((item) => String(item || "").trim()).filter(Boolean)
+  const records = normalizeRecords(parsedResult);
+  const warnings = Array.isArray(parsedResult?.warnings)
+    ? parsedResult.warnings
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
     : [];
 
   return jsonResponse({
@@ -449,6 +574,80 @@ async function analyzeImages(request, env) {
     warnings,
     model,
     analyzedImages: acceptedImages,
+    rejectedImages,
+    requestId,
+  });
+}
+
+async function testOpenAIConnection(request, env) {
+  if (!env.OPENAI_API_KEY) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: "OPENAI_API_KEY가 등록되지 않았습니다.",
+      },
+      500,
+    );
+  }
+
+  const model = env.OPENAI_MODEL || "gpt-4.1-mini";
+  let testResponse;
+
+  try {
+    testResponse = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${env.OPENAI_API_KEY}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        store: false,
+        input: "Reply with exactly: TEST_OK",
+        max_output_tokens: 20,
+      }),
+    });
+  } catch (error) {
+    return jsonResponse(
+      {
+        ok: false,
+        stage: "connection",
+        error: String(error?.message || error || "연결 실패"),
+        cf: getCloudflareLocation(request),
+      },
+      502,
+    );
+  }
+
+  const {
+    responseText,
+    parsed,
+    requestId,
+  } = await readOpenAIResponse(testResponse);
+
+  if (!testResponse.ok) {
+    return jsonResponse(
+      {
+        ...buildUpstreamError(
+          testResponse,
+          responseText,
+          parsed,
+          requestId,
+        ),
+        model,
+        cf: getCloudflareLocation(request),
+      },
+      testResponse.status,
+    );
+  }
+
+  return jsonResponse({
+    ok: true,
+    status: testResponse.status,
+    model,
+    output: extractOutputText(parsed) || null,
+    requestId,
+    cf: getCloudflareLocation(request),
   });
 }
 
@@ -476,7 +675,9 @@ export default {
             error: "POST 요청만 사용할 수 있습니다.",
           },
           405,
-          { allow: "POST" },
+          {
+            allow: "POST",
+          },
         );
       }
 
@@ -484,84 +685,20 @@ export default {
     }
 
     if (url.pathname === "/api/test") {
-      if (!env.OPENAI_API_KEY) {
+      if (request.method !== "GET") {
         return jsonResponse(
           {
             ok: false,
-            error: "OPENAI_API_KEY가 등록되지 않았습니다.",
+            error: "GET 요청만 사용할 수 있습니다.",
           },
-          500,
-        );
-      }
-
-      let testResponse;
-
-      try {
-        testResponse = await fetch("https://api.openai.com/v1/responses", {
-          method: "POST",
-          headers: {
-            authorization: `Bearer ${env.OPENAI_API_KEY}`,
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({
-            model: env.OPENAI_MODEL || "gpt-4.1-mini",
-            input: "Reply with exactly: TEST_OK",
-            max_output_tokens: 20,
-          }),
-        });
-      } catch (error) {
-        return jsonResponse(
+          405,
           {
-            ok: false,
-            stage: "connection",
-            error: String(error?.message || error || "연결 실패"),
+            allow: "GET",
           },
-          502,
         );
       }
 
-      const responseText = await testResponse.text().catch(() => "");
-      let parsed = null;
-
-      if (responseText) {
-        try {
-          parsed = JSON.parse(responseText);
-        } catch {
-          parsed = null;
-        }
-      }
-
-      const message = String(
-        parsed?.error?.message ||
-        parsed?.message ||
-        responseText ||
-        "",
-      )
-        .replace(/<[^>]*>/g, " ")
-        .replace(/\s+/g, " ")
-        .trim()
-        .slice(0, 1200);
-
-      const outputText = parsed ? extractOutputText(parsed) : "";
-
-      return jsonResponse(
-        {
-          ok: testResponse.ok,
-          status: testResponse.status,
-          model: env.OPENAI_MODEL || "gpt-4.1-mini",
-          output: outputText || null,
-          error: testResponse.ok ? null : message || "알 수 없는 오류",
-          code: parsed?.error?.code || null,
-          type: parsed?.error?.type || null,
-          cf: {
-            country: request.cf?.country || null,
-            city: request.cf?.city || null,
-            region: request.cf?.region || null,
-            colo: request.cf?.colo || null,
-          },
-        },
-        testResponse.status,
-      );
+      return testOpenAIConnection(request, env);
     }
 
     if (url.pathname === "/api/health") {
@@ -570,6 +707,7 @@ export default {
         service: "luna-site",
         model: env.OPENAI_MODEL || "gpt-4.1-mini",
         hasOpenAIKey: Boolean(env.OPENAI_API_KEY),
+        cf: getCloudflareLocation(request),
       });
     }
 
