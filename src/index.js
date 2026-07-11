@@ -326,8 +326,6 @@ async function analyzeImages(request, env) {
 
   const model = env.OPENAI_MODEL || "gpt-4.1-mini";
 
-const model = env.OPENAI_MODEL || "gpt-4.1-mini";
-
 const openAIResponse = await fetch(
   "https://api.openai.com/v1/responses",
   {
