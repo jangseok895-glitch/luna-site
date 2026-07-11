@@ -6136,6 +6136,208 @@ body.capture-mode #realPcTableSection.table-wrap{
   z-index:2147483647 !important;
 }
 
+
+/* ===== AI 기록측정 ===== */
+.ai-measure-new-wrap{
+  position:relative !important;
+  display:inline-block !important;
+}
+.ai-measure-new-badge{
+  position:absolute !important;
+  top:-13px !important;
+  right:-10px !important;
+  z-index:7 !important;
+  padding:3px 7px !important;
+  border-radius:6px !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+  font-size:12px !important;
+  font-weight:900 !important;
+  transform:rotate(15deg) !important;
+  box-shadow:0 2px 8px rgba(0,0,0,.25) !important;
+}
+#topChatGoWrap{
+  flex:0 0 auto !important;
+  margin-left:4px !important;
+  margin-right:2px !important;
+}
+#topChatGoWrap .btn{
+  height:42px !important;
+  padding:0 15px !important;
+  font-size:16px !important;
+  border-radius:13px !important;
+}
+#aiRecordPopup{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:2147483646 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:18px !important;
+  background:rgba(15,23,42,.62) !important;
+  backdrop-filter:blur(5px) !important;
+}
+#aiRecordPopup.hidden{ display:none !important; }
+.ai-record-box{
+  width:min(720px,95vw) !important;
+  max-height:92vh !important;
+  overflow-y:auto !important;
+  padding:22px !important;
+  border-radius:22px !important;
+  background:#ffffff !important;
+  border:2px solid #38bdf8 !important;
+  box-shadow:0 18px 54px rgba(0,0,0,.38) !important;
+  color:#111827 !important;
+}
+.ai-record-head{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:12px !important;
+  margin-bottom:10px !important;
+}
+.ai-record-title{
+  margin:0 !important;
+  font-size:28px !important;
+  font-weight:1000 !important;
+  color:#0369a1 !important;
+}
+.ai-record-close{
+  flex:0 0 auto !important;
+  width:48px !important;
+  height:48px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+  font-size:27px !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+}
+.ai-record-guide{
+  margin:8px 0 16px !important;
+  padding:13px 14px !important;
+  border-radius:14px !important;
+  background:#f0f9ff !important;
+  border:1px solid #7dd3fc !important;
+  font-size:17px !important;
+  font-weight:900 !important;
+  line-height:1.55 !important;
+  color:#111827 !important;
+}
+.ai-upload-area{
+  padding:18px !important;
+  border:3px dashed #38bdf8 !important;
+  border-radius:16px !important;
+  background:#f8fdff !important;
+  text-align:center !important;
+  cursor:pointer !important;
+}
+.ai-upload-area.dragover{
+  background:#e0f2fe !important;
+  border-color:#2563eb !important;
+}
+.ai-upload-main{
+  font-size:19px !important;
+  font-weight:1000 !important;
+  color:#0369a1 !important;
+}
+.ai-upload-sub{
+  margin-top:6px !important;
+  font-size:13px !important;
+  font-weight:800 !important;
+  color:#64748b !important;
+}
+.ai-file-list{
+  display:grid !important;
+  gap:7px !important;
+  margin-top:12px !important;
+}
+.ai-file-item{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:10px !important;
+  padding:9px 11px !important;
+  border-radius:11px !important;
+  background:#f8fafc !important;
+  border:1px solid #cbd5e1 !important;
+  font-size:14px !important;
+  font-weight:800 !important;
+}
+.ai-file-remove{
+  width:28px !important;
+  height:28px !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:#ef4444 !important;
+  color:#fff !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+}
+.ai-record-actions{
+  display:flex !important;
+  justify-content:center !important;
+  gap:10px !important;
+  margin-top:16px !important;
+  flex-wrap:wrap !important;
+}
+.ai-record-status{
+  margin-top:14px !important;
+  padding:12px !important;
+  border-radius:12px !important;
+  background:#f8fafc !important;
+  border:1px solid #cbd5e1 !important;
+  font-size:14px !important;
+  font-weight:800 !important;
+  line-height:1.55 !important;
+  white-space:pre-wrap !important;
+}
+.ai-record-status.hidden{ display:none !important; }
+.ai-result-table{
+  width:100% !important;
+  margin-top:14px !important;
+  border-collapse:separate !important;
+  border-spacing:0 !important;
+  overflow:hidden !important;
+  border:1px solid #bae6fd !important;
+  border-radius:12px !important;
+  table-layout:auto !important;
+}
+.ai-result-table th,
+.ai-result-table td{
+  position:static !important;
+  padding:9px 8px !important;
+  font-size:13px !important;
+  text-align:center !important;
+  border-bottom:1px solid #e2e8f0 !important;
+  color:#111827 !important;
+  background:#ffffff !important;
+}
+.ai-result-table th{
+  font-weight:1000 !important;
+  background:#dff6ff !important;
+}
+.ai-result-ok{ color:#16a34a !important; font-weight:1000 !important; }
+.ai-result-fail{ color:#dc2626 !important; font-weight:1000 !important; }
+.ai-record-loading{
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:8px !important;
+}
+.ai-record-loading::before{
+  content:"" !important;
+  width:18px !important;
+  height:18px !important;
+  border:3px solid #bae6fd !important;
+  border-top-color:#2563eb !important;
+  border-radius:50% !important;
+  animation:aiRecordSpin .8s linear infinite !important;
+}
+@keyframes aiRecordSpin{ to{ transform:rotate(360deg); } }
+
 </style>
 </head>
 
@@ -6676,6 +6878,11 @@ function escMini4545(v){
 <div class="title">
   <img class="main-title-image" src="https://i.ibb.co/6cMN4rY1/s39-logo.png">
 
+<span class="chatgo-new-wrap" id="topChatGoWrap">
+  <span class="chatgo-new-badge">NEW</span>
+  <button class="btn gold" id="btnChatGo" onclick="openChatGoPopup()">챗GO</button>
+</span>
+
 <div id="liveLogBox">
   <div id="liveLogTrack">최근 활동을 불러오는 중...</div>
 </div>
@@ -6725,9 +6932,9 @@ function escMini4545(v){
             <button class="btn" id="btnJpg">스크린샷</button>
             <span class="main-btn-divider"></span>
 <button class="btn blue" id="btnRankGraph" onclick="openRankGraphPopup()">루칭방 그래프</button>
-<span class="chatgo-new-wrap">
-  <span class="chatgo-new-badge">NEW</span>
-  <button class="btn gold" id="btnChatGo" onclick="openChatGoPopup()">챗GO</button>
+<span class="ai-measure-new-wrap">
+  <span class="ai-measure-new-badge">NEW</span>
+  <button class="btn gold" id="btnAiRecord" onclick="openAiRecordPopup()">AI측정</button>
 </span>
 
             <!-- ✅ 버튼 하나 -->
@@ -7140,6 +7347,38 @@ user-select:none;
       <button id="btnBoardSearch" class="board-search-btn">검색</button>
       <button id="btnBoardSearchReset" class="board-search-btn">초기화</button>
     </div>
+  </div>
+</div>
+
+
+<div id="aiRecordPopup" class="hidden" onclick="closeAiRecordPopup()">
+  <div class="ai-record-box" onclick="event.stopPropagation()">
+    <div class="ai-record-head">
+      <h2 class="ai-record-title">AI기록측정</h2>
+      <button type="button" class="ai-record-close" onclick="closeAiRecordPopup()">×</button>
+    </div>
+
+    <div class="ai-record-guide">
+      카러플 본인 기록이 보이도록 스크린샷을 업로드해주세요.<br>
+      JPG·PNG·WEBP 파일을 최대 10장까지 첨부할 수 있습니다.
+    </div>
+
+    <div id="aiUploadArea" class="ai-upload-area" onclick="document.getElementById('aiRecordFiles').click()">
+      <div class="ai-upload-main">스크린샷 선택하기</div>
+      <div class="ai-upload-sub">여기를 누르거나 파일을 끌어다 놓으세요.</div>
+      <input id="aiRecordFiles" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple class="hidden">
+    </div>
+
+    <div id="aiFileList" class="ai-file-list"></div>
+
+    <div class="ai-record-actions">
+      <button type="button" class="btn blue" id="btnRunAiRecord" onclick="runAiRecordAnalysis()">AI 측정 시작</button>
+      <button type="button" class="btn link" onclick="clearAiRecordFiles()">첨부 초기화</button>
+      <button type="button" class="btn red" onclick="closeAiRecordPopup()">닫기</button>
+    </div>
+
+    <div id="aiRecordStatus" class="ai-record-status hidden"></div>
+    <div id="aiRecordResult"></div>
   </div>
 </div>
 
@@ -14443,6 +14682,373 @@ async function deleteDeathmatchApply(id){
     alert(e.message || "삭제 실패");
   }
 }
+
+
+/* ===== AI 기록측정 ===== */
+const AI_ANALYZE_ENDPOINT = "/analyze";
+let AI_RECORD_FILES = [];
+let AI_LAST_APPLIED_COUNT = 0;
+
+function openAiRecordPopup(){
+  const popup = document.getElementById("aiRecordPopup");
+  if(!popup) return;
+  popup.classList.remove("hidden");
+  renderAiRecordFiles();
+}
+
+function closeAiRecordPopup(){
+  document.getElementById("aiRecordPopup")?.classList.add("hidden");
+}
+
+function clearAiRecordFiles(){
+  AI_RECORD_FILES = [];
+  const input = document.getElementById("aiRecordFiles");
+  if(input) input.value = "";
+  const result = document.getElementById("aiRecordResult");
+  if(result) result.innerHTML = "";
+  setAiRecordStatus("", false);
+  renderAiRecordFiles();
+}
+
+function addAiRecordFiles(fileList){
+  const incoming = Array.from(fileList || []);
+  const allowed = ["image/jpeg", "image/png", "image/webp"];
+
+  for(const file of incoming){
+    if(!allowed.includes(file.type)){
+      toast(`${file.name}: JPG, PNG, WEBP만 가능합니다.`);
+      continue;
+    }
+
+    const duplicate = AI_RECORD_FILES.some(f =>
+      f.name === file.name && f.size === file.size && f.lastModified === file.lastModified
+    );
+    if(duplicate) continue;
+
+    if(AI_RECORD_FILES.length >= 10){
+      toast("스크린샷은 최대 10장까지 첨부할 수 있습니다.");
+      break;
+    }
+
+    AI_RECORD_FILES.push(file);
+  }
+
+  renderAiRecordFiles();
+}
+
+function removeAiRecordFile(index){
+  AI_RECORD_FILES.splice(Number(index), 1);
+  renderAiRecordFiles();
+}
+
+function renderAiRecordFiles(){
+  const box = document.getElementById("aiFileList");
+  if(!box) return;
+
+  if(!AI_RECORD_FILES.length){
+    box.innerHTML = `<div style="text-align:center;color:#64748b;font-size:13px;font-weight:800;padding:8px;">선택된 스크린샷이 없습니다. (0/10)</div>`;
+    return;
+  }
+
+  box.innerHTML = AI_RECORD_FILES.map((file, i) => `
+    <div class="ai-file-item">
+      <span>${i + 1}. ${esc(file.name)} · ${(file.size / 1024 / 1024).toFixed(2)}MB</span>
+      <button type="button" class="ai-file-remove" onclick="removeAiRecordFile(${i})">×</button>
+    </div>
+  `).join("") + `<div style="text-align:right;color:#2563eb;font-size:13px;font-weight:900;">${AI_RECORD_FILES.length}/10장</div>`;
+}
+
+function setAiRecordStatus(message, show = true, loading = false){
+  const box = document.getElementById("aiRecordStatus");
+  if(!box) return;
+
+  if(!show || !message){
+    box.classList.add("hidden");
+    box.innerHTML = "";
+    return;
+  }
+
+  box.classList.remove("hidden");
+  box.innerHTML = loading
+    ? `<span class="ai-record-loading">${esc(message)}</span>`
+    : esc(message).replace(/\n/g, "<br>");
+}
+
+async function aiFileToPayload(file){
+  let converted = file;
+
+  // 큰 이미지는 전송속도와 API 비용을 줄이기 위해 기존 압축 함수를 사용합니다.
+  if(file.type !== "image/webp" && typeof compressImageForSupabase === "function"){
+    try{
+      converted = await compressImageForSupabase(file);
+    }catch(e){
+      converted = file;
+    }
+  }
+
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error(`${file.name} 파일을 읽지 못했습니다.`));
+    reader.readAsDataURL(converted);
+  });
+
+  return {
+    name:file.name,
+    mimeType:converted.type || file.type || "image/jpeg",
+    base64:dataUrl.split(",")[1] || ""
+  };
+}
+
+function normalizeAiMapName(value){
+  return String(value || "")
+    .toLowerCase()
+    .replace(/카트라이더|러쉬플러스|기록|타임어택/g, "")
+    .replace(/[\s\-_/·ㆍ.,:()\[\]{}'\"!?]/g, "")
+    .replace(/r해적로비절벽의전투/g, "해적로비절벽의전투")
+    .replace(/r포레스트지그재그/g, "포레스트지그재그");
+}
+
+function aiBigrams(text){
+  const s = normalizeAiMapName(text);
+  const set = new Set();
+  if(s.length < 2){
+    if(s) set.add(s);
+    return set;
+  }
+  for(let i = 0; i < s.length - 1; i++) set.add(s.slice(i, i + 2));
+  return set;
+}
+
+function aiMapSimilarity(a, b){
+  const na = normalizeAiMapName(a);
+  const nb = normalizeAiMapName(b);
+  if(!na || !nb) return 0;
+  if(na === nb) return 1;
+  if(na.includes(nb) || nb.includes(na)){
+    return Math.min(0.98, Math.min(na.length, nb.length) / Math.max(na.length, nb.length) + 0.25);
+  }
+
+  const aa = aiBigrams(na);
+  const bb = aiBigrams(nb);
+  let same = 0;
+  aa.forEach(x => { if(bb.has(x)) same++; });
+  return (2 * same) / Math.max(1, aa.size + bb.size);
+}
+
+function findBestAiMapRow(aiMapName){
+  let best = null;
+  let bestScore = 0;
+
+  (SHEET_ROWS || []).forEach(row => {
+    const score = aiMapSimilarity(aiMapName, row["맵이름"]);
+    if(score > bestScore){
+      best = row;
+      bestScore = score;
+    }
+  });
+
+  return bestScore >= 0.58 ? { row:best, score:bestScore } : null;
+}
+
+function normalizeAiRecordTime(value){
+  const raw = String(value || "").trim();
+  if(!raw) return "";
+
+  const nums = raw.match(/\d+/g);
+  if(!nums || nums.length < 3) return "";
+
+  const m = Number(nums[0]);
+  const s = Number(nums[1]);
+  const cs = Number(nums[2]);
+  if(!Number.isFinite(m) || !Number.isFinite(s) || !Number.isFinite(cs)) return "";
+  if(s > 59 || cs > 99) return "";
+
+  return `${m}.${String(s).padStart(2,"0")}.${String(cs).padStart(2,"0")}`;
+}
+
+function applyAiRecordToSelection(record){
+  const matched = findBestAiMapRow(record.mapName);
+  if(!matched){
+    return { ok:false, mapName:record.mapName, record:record.record, reason:"군표의 맵 이름과 일치하지 않음" };
+  }
+
+  const savedTime = normalizeAiRecordTime(record.record);
+  if(!savedTime){
+    return { ok:false, mapName:record.mapName, record:record.record, matchedMap:matched.row["맵이름"], reason:"기록 형식을 읽지 못함" };
+  }
+
+  const tierInfo = findTierBySavedTime(matched.row, savedTime);
+  if(!tierInfo){
+    return { ok:false, mapName:record.mapName, record:savedTime, matchedMap:matched.row["맵이름"], reason:"5군 기준 기록보다 느림" };
+  }
+
+  const key = getSelectionKeyForRow(matched.row);
+  const old = selections[key];
+
+  // 같은 맵이 이미 선택되어 있다면 더 빠른 기록만 반영합니다.
+  if(old && old.savedTime && timeToMs(old.savedTime) !== null && timeToMs(old.savedTime) <= timeToMs(savedTime)){
+    return {
+      ok:false,
+      skipped:true,
+      mapName:record.mapName,
+      record:savedTime,
+      matchedMap:matched.row["맵이름"],
+      reason:`기존 기록 ${old.savedTime}이 더 빠름`
+    };
+  }
+
+  selections[key] = {
+    tier:tierInfo.tier,
+    time:tierInfo.time,
+    savedTime,
+    autoRecordMode:true,
+    autoRecordModeVersion:AUTO_RECORD_MODE_VERSION,
+    aiMeasured:true,
+    aiConfidence:Number(record.confidence || 0)
+  };
+
+  syncRowVisual(key);
+
+  return {
+    ok:true,
+    mapName:record.mapName,
+    record:savedTime,
+    matchedMap:matched.row["맵이름"],
+    tier:tierInfo.tier,
+    confidence:Number(record.confidence || 0),
+    similarity:matched.score
+  };
+}
+
+function renderAiRecordResults(results, warnings){
+  const box = document.getElementById("aiRecordResult");
+  if(!box) return;
+
+  const rows = (results || []).map(r => `
+    <tr>
+      <td>${esc(r.mapName || "-")}</td>
+      <td>${esc(r.record || "-")}</td>
+      <td>${esc(r.matchedMap || "-")}</td>
+      <td>${r.ok ? esc(r.tier || "-") : "-"}</td>
+      <td class="${r.ok ? "ai-result-ok" : "ai-result-fail"}">${r.ok ? "반영완료" : esc(r.reason || "미반영")}</td>
+    </tr>
+  `).join("");
+
+  const warningHtml = Array.isArray(warnings) && warnings.length
+    ? `<div class="ai-record-status" style="margin-top:10px;background:#fff7ed !important;border-color:#fdba74 !important;">${warnings.map(w => `• ${esc(w)}`).join("<br>")}</div>`
+    : "";
+
+  box.innerHTML = `
+    <table class="ai-result-table">
+      <thead><tr><th>AI 판독 맵</th><th>본인 기록</th><th>군표 매칭</th><th>판정</th><th>처리결과</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="5">확인 가능한 기록이 없습니다.</td></tr>`}</tbody>
+    </table>
+    ${warningHtml}
+  `;
+}
+
+async function runAiRecordAnalysis(){
+  const runBtn = document.getElementById("btnRunAiRecord");
+
+  try{
+    if(!AI_RECORD_FILES.length){
+      toast("스크린샷을 1장 이상 첨부해주세요.");
+      return;
+    }
+
+    if(AI_RECORD_FILES.length > 10){
+      toast("스크린샷은 최대 10장까지 첨부할 수 있습니다.");
+      return;
+    }
+
+    if(runBtn){
+      runBtn.disabled = true;
+      runBtn.style.opacity = ".55";
+      runBtn.textContent = "AI 분석중...";
+    }
+
+    document.getElementById("aiRecordResult").innerHTML = "";
+    setAiRecordStatus(`${AI_RECORD_FILES.length}장의 스크린샷을 AI가 분석하고 있습니다. 잠시만 기다려주세요.`, true, true);
+
+    const images = [];
+    for(let i = 0; i < AI_RECORD_FILES.length; i++){
+      setAiRecordStatus(`${i + 1}/${AI_RECORD_FILES.length} 스크린샷을 준비하고 있습니다.`, true, true);
+      images.push(await aiFileToPayload(AI_RECORD_FILES[i]));
+    }
+
+    setAiRecordStatus("OpenAI가 맵 이름과 본인 기록을 판독하고 있습니다.", true, true);
+
+    const response = await fetch(AI_ANALYZE_ENDPOINT, {
+      method:"POST",
+      headers:{ "content-type":"application/json" },
+      body:JSON.stringify({ images })
+    });
+
+    const data = await response.json().catch(() => null);
+    if(!response.ok || !data?.ok){
+      throw new Error(data?.error || `AI 분석 요청 실패 (${response.status})`);
+    }
+
+    const records = Array.isArray(data.records) ? data.records : [];
+    const appliedResults = records.map(applyAiRecordToSelection);
+    AI_LAST_APPLIED_COUNT = appliedResults.filter(r => r.ok).length;
+
+    calc();
+    renderAiRecordResults(appliedResults, data.warnings || []);
+
+    const failed = appliedResults.filter(r => !r.ok).length;
+    setAiRecordStatus(
+      `AI 측정 완료\n군표 자동 반영: ${AI_LAST_APPLIED_COUNT}개\n미반영 또는 확인필요: ${failed}개\n결과를 확인한 뒤 군표 저장하기 버튼을 눌러주세요.`,
+      true,
+      false
+    );
+
+    if(AI_LAST_APPLIED_COUNT > 0){
+      toast(`AI 기록 ${AI_LAST_APPLIED_COUNT}개가 군표에 반영되었습니다.`);
+      setTimeout(() => {
+        document.getElementById("pcTableSection")?.scrollIntoView({ behavior:"smooth", block:"start" });
+      }, 400);
+    }
+
+  }catch(e){
+    console.error(e);
+    setAiRecordStatus(`AI 측정 실패\n${e.message || e}`, true, false);
+    toast(e.message || "AI 측정 실패");
+  }finally{
+    if(runBtn){
+      runBtn.disabled = false;
+      runBtn.style.opacity = "1";
+      runBtn.textContent = "AI 측정 시작";
+    }
+  }
+}
+
+(function bindAiRecordUpload(){
+  const input = document.getElementById("aiRecordFiles");
+  const area = document.getElementById("aiUploadArea");
+
+  input?.addEventListener("change", function(){
+    addAiRecordFiles(this.files);
+    this.value = "";
+  });
+
+  if(area){
+    ["dragenter", "dragover"].forEach(name => area.addEventListener(name, e => {
+      e.preventDefault();
+      e.stopPropagation();
+      area.classList.add("dragover");
+    }));
+
+    ["dragleave", "drop"].forEach(name => area.addEventListener(name, e => {
+      e.preventDefault();
+      e.stopPropagation();
+      area.classList.remove("dragover");
+    }));
+
+    area.addEventListener("drop", e => addAiRecordFiles(e.dataTransfer?.files));
+  }
+})();
 
 </script>
   <div id="rankGraphPopup" class="hidden">
