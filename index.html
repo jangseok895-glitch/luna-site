@@ -15102,9 +15102,52 @@ async function detectAndCropAquaRow(file){
     aquaWallX:Math.round(best.x / scale),
     aquaLineTop:Math.round(best.top / scale),
     aquaLineBottom:Math.round(best.bottom / scale),
-    detectorVersion:"left-wall-v3"
+    detectorVersion:"left-wall-v4"
   };
 }
+async function createAquaLeftGuide(file){
+  const img = await loadImageFromFile(file);
+  const maxWidth = 1700;
+  const scale = Math.min(1, maxWidth / img.naturalWidth);
+  const width = Math.max(1, Math.round(img.naturalWidth * scale));
+  const height = Math.max(1, Math.round(img.naturalHeight * scale));
+
+  const sourceCanvas = document.createElement("canvas");
+  sourceCanvas.width = width;
+  sourceCanvas.height = height;
+  const sourceCtx = sourceCanvas.getContext("2d");
+  sourceCtx.drawImage(img, 0, 0, width, height);
+
+  const guideLeft = 0;
+  const guideTop = Math.max(0, Math.round(height * 0.035));
+  const guideRight = Math.min(width, Math.round(width * 0.36));
+  const guideBottom = Math.min(height, Math.round(height * 0.91));
+  const guideW = Math.max(1, guideRight - guideLeft);
+  const guideH = Math.max(1, guideBottom - guideTop);
+
+  const guideCanvas = document.createElement("canvas");
+  const outputScale = Math.max(1.5, Math.min(3.5, 1250 / guideW));
+  guideCanvas.width = Math.round(guideW * outputScale);
+  guideCanvas.height = Math.round(guideH * outputScale);
+  const guideCtx = guideCanvas.getContext("2d");
+  guideCtx.imageSmoothingEnabled = true;
+  guideCtx.imageSmoothingQuality = "high";
+  guideCtx.drawImage(sourceCanvas, guideLeft, guideTop, guideW, guideH, 0, 0, guideCanvas.width, guideCanvas.height);
+
+  const dataUrl = canvasToDataUrl(guideCanvas, "image/jpeg", 0.98);
+  return {
+    base64:dataUrl.split(",")[1] || "",
+    mimeType:"image/jpeg",
+    box:{
+      x:Math.round(guideLeft / scale),
+      y:Math.round(guideTop / scale),
+      width:Math.round(guideW / scale),
+      height:Math.round(guideH / scale)
+    },
+    version:"left-guide-v4"
+  };
+}
+
 async function aiFileToPayload(file){
   let converted = file;
 
@@ -15131,6 +15174,13 @@ async function aiFileToPayload(file){
     console.warn("아쿠아 행 자동 Crop 실패, 원본 판독으로 계속합니다.", e);
   }
 
+  let aquaGuide = { base64:"", mimeType:"", box:null, version:"" };
+  try{
+    aquaGuide = await createAquaLeftGuide(file);
+  }catch(e){
+    console.warn("랭전 왼쪽 확대 안내 이미지 생성 실패, 원본 판독으로 계속합니다.", e);
+  }
+
   return {
     name:file.name,
     mimeType:converted.type || file.type || "image/jpeg",
@@ -15145,6 +15195,10 @@ async function aiFileToPayload(file){
     aquaLineTop:aquaCrop.aquaLineTop || null,
     aquaLineBottom:aquaCrop.aquaLineBottom || null,
     aquaDetectorVersion:aquaCrop.detectorVersion || "",
+    aquaGuideBase64:aquaGuide.base64 || "",
+    aquaGuideMimeType:aquaGuide.mimeType || "",
+    aquaGuideBox:aquaGuide.box || null,
+    aquaGuideVersion:aquaGuide.version || "",
     analysisMode:"auto",
     preserveAllVisibleRecords:true
   };
