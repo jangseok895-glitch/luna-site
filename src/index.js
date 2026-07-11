@@ -259,14 +259,27 @@ function normalizeRecords(data) {
   return Array.from(bestByMap.values());
 }
 
-function buildVisionPrompt(imageNumber, retryMode = false) {
+function buildVisionPrompt(imageNumber, retryMode = false, hasAquaCrop = false) {
   return `
 당신은 카트라이더 러쉬플러스 기록 스크린샷을 판독하는 전문 분석기입니다.
-현재 첨부된 이미지는 ${imageNumber}번 이미지입니다.
+현재 첨부된 원본 이미지는 ${imageNumber}번 이미지입니다.
 이 이미지 한 장에서 맵 이름과 사용자의 본인 기록만 정확하게 추출하세요.
 
-중요: 랭킹전/경기 종료 순위표에서는 "노란색 평균 속도"만 보고 행을 선택하면 안 됩니다.
-반드시 "완주 기록 숫자 자체"가 노란색 또는 금색인지 먼저 확인해야 합니다.
+가장 중요한 변경 규칙
+- 노란색 글씨는 본인 표시가 아닙니다. 1등 기록이나 강조 수치가 노란색일 수 있으므로 노란색을 본인 판별 근거로 사용하지 마세요.
+- 랭킹전/경기 종료 순위표에서 사용자의 행은 행 둘레에 있는 밝은 아쿠아색/청록색 선택 테두리로 판별합니다.
+- 선택 테두리는 행의 위·아래 가로선 또는 좌·우 가장자리에 조금 더 밝고 두꺼운 아쿠아색 선으로 보일 수 있습니다.
+- 아쿠아색 선택 테두리 안에 들어 있는 동일한 가로행의 닉네임과 완주 기록을 읽으세요.
+- 1등 행, 노란색 기록, 노란색 평균속도만 보고 본인 행이라고 판단하면 안 됩니다.
+
+${hasAquaCrop ? `
+두 번째 첨부 이미지는 브라우저가 아쿠아색 테두리 후보를 감지하여 확대 Crop한 보조 이미지입니다.
+- 원본 이미지에서 맵 이름과 전체 문맥을 확인하세요.
+- 보조 Crop에서 선택된 행의 닉네임과 완주 기록을 크게 확인하세요.
+- Crop이 잘못 잘렸다고 판단되면 원본의 실제 아쿠아 테두리 행을 우선하세요.
+` : `
+보조 Crop이 없으므로 원본에서 밝은 아쿠아색 선택 테두리가 둘러진 행을 직접 찾으세요.
+`}
 
 지원 화면 유형
 
@@ -277,30 +290,23 @@ A. 타임어택 또는 개인 기록 화면
 
 B. 랭킹전 또는 경기 종료 순위표
 - 표를 위에서 아래까지 행 단위로 확인합니다.
-- 각 행에서 닉네임, 완주 기록, 점수, 카트, 평균 속도가 같은 가로줄에 있는지 확인합니다.
-- 사용자의 행은 "완주 기록 숫자"가 노란색/금색으로 표시된 행입니다.
-- 가능하면 같은 행의 평균 속도도 노란색/금색인지 추가로 확인합니다.
-- 평균 속도만 노란색이고 완주 기록 숫자가 흰색이면 그 행은 본인 행으로 선택하지 않습니다.
-- 여러 행의 평균 속도가 노란색처럼 보여도, 완주 기록 숫자까지 노란색인 행 하나를 우선 선택합니다.
-- 예: 첫 번째 행 기록이 01:58:68이고 노란색이며, 두 번째 행 기록 02:00:68은 흰색이라면 반드시 01:58:68을 선택해야 합니다.
-- 상단 왼쪽 또는 상단 영역의 맵 이름과 선택한 동일 행의 완주 기록을 한 쌍으로 추출합니다.
-- 평균 속도는 본인 행을 찾는 근거로만 사용하며 record 값에는 넣지 않습니다.
+- 먼저 밝은 아쿠아색/청록색 테두리가 둘러진 선택 행을 찾습니다.
+- 그 선택 행 안에서 닉네임, 완주 기록, 카트, 평균 속도가 같은 가로줄에 있는지 확인합니다.
+- 선택 행의 완주 기록만 추출합니다.
+- 노란색 여부는 무시합니다.
 - '미완료', 리타이어, 완주 기록 없음은 반환하지 않습니다.
 
 판독 절차
-
-1. 맵 이름을 찾습니다.
-2. 순위표 화면이면 각 행의 완주 기록 숫자 색상을 먼저 비교합니다.
-3. 노란색/금색 완주 기록 숫자가 있는 행을 찾습니다.
-4. 그 행의 기록을 정확히 문자 단위로 읽습니다.
-5. 기록은 화면의 01:58:68을 1.58.68로 변환하는 식으로 반환합니다.
-6. 다른 행의 기록과 섞지 않습니다.
-7. 기록 숫자가 작거나 흐려도 확대해서 다시 확인하듯 신중하게 읽습니다.
-8. 후보가 정확히 하나이고 색상 근거가 충분하면 confidence 0.70 이상으로 반환합니다.
-9. 완주 기록 숫자의 색상을 전혀 구분할 수 없을 때만 제외합니다.
+1. 원본 상단 또는 좌측에서 맵 이름을 찾습니다.
+2. 순위표 화면이면 아쿠아색 선택 테두리가 둘러진 행을 찾습니다.
+3. 선택 행 내부의 완주 기록을 문자 단위로 정확히 읽습니다.
+4. 화면의 01:58:68은 1.58.68 형식으로 변환합니다.
+5. 다른 행의 기록과 섞지 않습니다.
+6. 아쿠아 테두리와 행 연결이 명확하면 confidence 0.75 이상으로 반환합니다.
+7. 테두리가 약하지만 한 행만 선택되어 보이면 confidence 0.55~0.74로 반환합니다.
+8. 본인 선택 행을 구분할 수 없으면 억지로 추측하지 않습니다.
 
 필수 규칙
-
 1. 이미지에서 실제로 확인되는 정보만 사용합니다.
 2. 기록 형식은 반드시 "분.초.센티초"로 반환합니다.
 3. 다른 선수의 기록을 본인 기록으로 반환하지 않습니다.
@@ -310,15 +316,16 @@ B. 랭킹전 또는 경기 종료 순위표
    - 랭킹전/경기 결과 순위표: ranked_result
    - 구분 불가: unknown
 6. evidence에는 판독 근거를 구체적으로 적습니다.
-   예: "완주 기록 01:58:68이 노란색이고 같은 행 평균속도도 노란색"
+   예: "밝은 아쿠아색 테두리가 둘러진 3위 행 내부의 완주 기록 01:53:77"
 7. 확인 가능한 본인 기록이 없으면 records를 빈 배열로 반환하고 warnings에 이유를 적습니다.
 8. 반드시 지정된 JSON 형식으로만 응답합니다.
 
 ${retryMode ? `
 재검토 모드:
-- 첫 판독에서 기록을 찾지 못했으므로, 이번에는 완주 기록 숫자의 노란색/금색 여부를 가장 우선해서 다시 확인하세요.
-- 평균 속도 색상만으로 포기하지 말고, 각 행의 기록 숫자를 한 줄씩 비교하세요.
-- 노란색 기록 후보가 하나라면 낮은 confidence라도 반환하세요.
+- 첫 판독에서 기록을 찾지 못했습니다.
+- 노란색은 완전히 무시하고, 행 위·아래 및 좌·우의 밝은 아쿠아색 선택 테두리를 다시 찾으세요.
+- 보조 Crop이 있으면 Crop 중앙의 행과 원본의 같은 행을 대조하세요.
+- 선택 행이 하나로 보이면 낮은 confidence라도 반환하되, 다른 행 기록은 반환하지 마세요.
 ` : ""}
   `.trim();
 }
@@ -387,7 +394,7 @@ async function callVisionForSingleImage({
   const inputContent = [
     {
       type: "input_text",
-      text: buildVisionPrompt(imageNumber, retryMode),
+      text: buildVisionPrompt(imageNumber, retryMode, Boolean(image.aquaCropBase64)),
     },
     {
       type: "input_text",
@@ -399,6 +406,20 @@ async function callVisionForSingleImage({
       detail: "high",
     },
   ];
+
+  if (image.aquaCropBase64) {
+    inputContent.push(
+      {
+        type: "input_text",
+        text: "아래 이미지는 원본에서 감지한 아쿠아색 선택 행 후보를 확대 Crop한 보조 이미지입니다.",
+      },
+      {
+        type: "input_image",
+        image_url: `data:${image.aquaCropMimeType || "image/jpeg"};base64,${image.aquaCropBase64}`,
+        detail: "high",
+      },
+    );
+  }
 
   let openAIResponse;
 
@@ -563,11 +584,33 @@ async function analyzeImages(request, env) {
       return;
     }
 
-    totalBase64Chars += base64.length;
+    let aquaCropBase64 = cleanBase64(image?.aquaCropBase64 || "");
+    let aquaCropMimeType = sanitizeMimeType(image?.aquaCropMimeType || "image/jpeg");
+
+    if (!ALLOWED_IMAGE_TYPES.has(aquaCropMimeType)) {
+      aquaCropBase64 = "";
+      aquaCropMimeType = "";
+    }
+
+    if (aquaCropBase64 && aquaCropBase64.length > MAX_BASE64_CHARS_PER_IMAGE) {
+      aquaCropBase64 = "";
+      aquaCropMimeType = "";
+    }
+
+    if (aquaCropBase64 && totalBase64Chars + base64.length + aquaCropBase64.length > MAX_TOTAL_BASE64_CHARS) {
+      aquaCropBase64 = "";
+      aquaCropMimeType = "";
+    }
+
+    totalBase64Chars += base64.length + aquaCropBase64.length;
     acceptedImages.push({
       name,
       mimeType,
       base64,
+      aquaCropBase64,
+      aquaCropMimeType,
+      aquaCropFound: Boolean(image?.aquaCropFound && aquaCropBase64),
+      aquaCropConfidence: Number(image?.aquaCropConfidence || 0),
       sourceImage: index + 1,
     });
   });
@@ -645,6 +688,7 @@ async function analyzeImages(request, env) {
     warnings: Array.from(new Set(warnings)),
     model: env.OPENAI_MODEL || "gpt-4.1-mini",
     analyzedImages: acceptedImages.length,
+    aquaCropsUsed: acceptedImages.filter((image) => image.aquaCropBase64).length,
     rejectedImages,
     requestIds,
   });
