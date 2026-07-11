@@ -5684,9 +5684,6 @@ body.capture-mode #realPcTableSection.table-wrap{
 
 
 /* ===== 2026 클럽배틀 데스매치 ===== */
-.deathmatch-card-first{
-  order:-999 !important;
-}
 .deathmatch-menu-grid{
   display:grid !important;
   grid-template-columns:repeat(2,1fr) !important;
@@ -5700,6 +5697,59 @@ body.capture-mode #realPcTableSection.table-wrap{
   border-radius:14px !important;
   background:#ffffff !important;
   border:1px solid rgba(14,165,233,.28) !important;
+}
+.deathmatch-main-layout{
+  display:grid !important;
+  grid-template-columns:minmax(0,1.55fr) minmax(260px,.85fr) !important;
+  gap:16px !important;
+  align-items:stretch !important;
+}
+.deathmatch-main-layout .deathmatch-poster{
+  height:100% !important;
+  min-height:330px !important;
+}
+.deathmatch-results-panel{
+  border:2px solid #facc15 !important;
+  border-radius:16px !important;
+  background:linear-gradient(180deg,#fffbea 0%,#ffffff 100%) !important;
+  padding:18px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  gap:16px !important;
+  color:#111827 !important;
+}
+.deathmatch-results-heading{
+  text-align:center !important;
+  font-size:24px !important;
+  font-weight:1000 !important;
+  color:#b45309 !important;
+  padding-bottom:10px !important;
+  border-bottom:2px solid rgba(245,158,11,.35) !important;
+}
+.deathmatch-award{
+  display:grid !important;
+  gap:5px !important;
+}
+.deathmatch-award-rank{
+  font-size:19px !important;
+  font-weight:1000 !important;
+  color:#2563eb !important;
+}
+.deathmatch-award-team{
+  font-size:17px !important;
+  font-weight:1000 !important;
+  line-height:1.55 !important;
+  word-break:keep-all !important;
+}
+@media (max-width:760px){
+  .deathmatch-main-layout{
+    grid-template-columns:1fr !important;
+  }
+  .deathmatch-main-layout .deathmatch-poster{
+    min-height:0 !important;
+    height:auto !important;
+  }
 }
 .deathmatch-popup{
   position:fixed !important;
@@ -6879,7 +6929,6 @@ function escMini4545(v){
   <img class="main-title-image" src="https://i.ibb.co/6cMN4rY1/s39-logo.png">
 
 <span class="chatgo-new-wrap" id="topChatGoWrap">
-  <span class="chatgo-new-badge">NEW</span>
   <button class="btn gold" id="btnChatGo" onclick="openChatGoPopup()">챗GO</button>
 </span>
 
@@ -7359,7 +7408,7 @@ user-select:none;
     </div>
 
     <div class="ai-record-guide">
-      카러플 본인 기록이 보이도록 스크린샷을 업로드해주세요.<br>
+      카러플 본인 기록(타임어택/랭전)이 보이도록 스크린샷을 업로드해주세요.<br>
       JPG·PNG·WEBP 파일을 최대 10장까지 첨부할 수 있습니다.
     </div>
 
@@ -7372,6 +7421,7 @@ user-select:none;
     <div id="aiFileList" class="ai-file-list"></div>
 
     <div class="ai-record-actions">
+      <button type="button" class="btn gold" id="btnApplyAiRecord" onclick="applyPendingAiRecords()" disabled style="opacity:.5;">적용</button>
       <button type="button" class="btn blue" id="btnRunAiRecord" onclick="runAiRecordAnalysis()">AI 측정 시작</button>
       <button type="button" class="btn link" onclick="clearAiRecordFiles()">첨부 초기화</button>
       <button type="button" class="btn red" onclick="closeAiRecordPopup()">닫기</button>
@@ -9896,24 +9946,9 @@ function showBoard(board){
     list.innerHTML = `
     <div class="tournament-main-grid">
 
-      <div class="tournament-thumb-card deathmatch-card-first" onclick="openDeathmatchMainPopup()">
-        <div class="tournament-title">2026 클럽배틀데스매치</div>
-        <div class="tournament-soon-badge">접수중</div>
-
-        <img class="tournament-thumb-img" src="https://i.ibb.co/FqxfqGjT/11.jpg">
-
-        <button
-          type="button"
-          class="tournament-apply-btn"
-          onclick="event.stopPropagation(); openDeathmatchMainPopup();"
-        >
-          대회/진행 공지
-        </button>
-      </div>
-
       <div class="tournament-thumb-card" onclick="openTournamentPoster('sticker3839')">
         <div class="tournament-title">38,39시즌 카트 스티커대회</div>
-          <div class="tournament-soon-badge">진행중</div>
+        <div class="tournament-soon-badge">진행중</div>
 
         <img class="tournament-thumb-img" src="https://i.ibb.co/qLGLRSgV/70c24cb0-1a18-491b-af91-9b540a061c14.png">
 
@@ -9923,6 +9958,21 @@ function showBoard(board){
           onclick="event.stopPropagation(); openTournamentPoster('sticker3839');"
         >
           이벤트 포스터보기
+        </button>
+      </div>
+
+      <div class="tournament-thumb-card" onclick="openDeathmatchMainPopup()">
+        <div class="tournament-title">2026 클럽배틀데스매치</div>
+        <div class="tournament-soon-badge">종 료</div>
+
+        <img class="tournament-thumb-img" src="https://i.ibb.co/FqxfqGjT/11.jpg">
+
+        <button
+          type="button"
+          class="tournament-apply-btn"
+          onclick="event.stopPropagation(); openDeathmatchMainPopup();"
+        >
+          대회/진행 공지
         </button>
       </div>
 
@@ -14050,7 +14100,28 @@ function makeDeathmatchPopup(title, bodyHtml, returnToMenuOnClose = false){
 
 function openDeathmatchMainPopup(){
   makeDeathmatchPopup("2026 클럽배틀데스매치", `
-    <img class="deathmatch-poster" src="${DEATHMATCH_POSTER_URL}" alt="2026 클럽배틀데스매치 대표 포스터">
+    <div class="deathmatch-main-layout">
+      <img class="deathmatch-poster" src="${DEATHMATCH_POSTER_URL}" alt="2026 클럽배틀데스매치 대표 포스터">
+
+      <div class="deathmatch-results-panel">
+        <div class="deathmatch-results-heading">최종 순위</div>
+
+        <div class="deathmatch-award">
+          <div class="deathmatch-award-rank">우승팀</div>
+          <div class="deathmatch-award-team">리퀴드1 - 예찬, 케디치, 찬영, 팬텀</div>
+        </div>
+
+        <div class="deathmatch-award">
+          <div class="deathmatch-award-rank">준우승</div>
+          <div class="deathmatch-award-team">춘식파 - 한빈, 기태, 현준, 지환</div>
+        </div>
+
+        <div class="deathmatch-award">
+          <div class="deathmatch-award-rank">3등</div>
+          <div class="deathmatch-award-team">아시아 - 라오, 트리, 흠, 미신트</div>
+        </div>
+      </div>
+    </div>
 
     <div class="deathmatch-menu-grid">
       <button class="tournament-apply-btn" onclick="openDeathmatchApply()">신청하기</button>
@@ -14688,6 +14759,8 @@ async function deleteDeathmatchApply(id){
 const AI_ANALYZE_ENDPOINT = "/analyze";
 let AI_RECORD_FILES = [];
 let AI_LAST_APPLIED_COUNT = 0;
+let AI_PENDING_RECORDS = [];
+let AI_PENDING_WARNINGS = [];
 
 function openAiRecordPopup(){
   const popup = document.getElementById("aiRecordPopup");
@@ -14706,6 +14779,11 @@ function clearAiRecordFiles(){
   if(input) input.value = "";
   const result = document.getElementById("aiRecordResult");
   if(result) result.innerHTML = "";
+  AI_PENDING_RECORDS = [];
+  AI_PENDING_WARNINGS = [];
+  AI_LAST_APPLIED_COUNT = 0;
+  const applyBtn = document.getElementById("btnApplyAiRecord");
+  if(applyBtn){ applyBtn.disabled = true; applyBtn.style.opacity = ".5"; }
   setAiRecordStatus("", false);
   renderAiRecordFiles();
 }
@@ -14921,6 +14999,53 @@ function applyAiRecordToSelection(record){
   };
 }
 
+function previewAiRecord(record){
+  const matched = findBestAiMapRow(record.mapName);
+  if(!matched){
+    return { ok:false, pending:false, mapName:record.mapName, record:record.record, reason:"군표의 맵 이름과 일치하지 않음" };
+  }
+
+  const savedTime = normalizeAiRecordTime(record.record);
+  if(!savedTime){
+    return { ok:false, pending:false, mapName:record.mapName, record:record.record, matchedMap:matched.row["맵이름"], reason:"기록 형식을 읽지 못함" };
+  }
+
+  const tierInfo = findTierBySavedTime(matched.row, savedTime);
+  if(!tierInfo){
+    return { ok:false, pending:false, mapName:record.mapName, record:savedTime, matchedMap:matched.row["맵이름"], reason:"5군 기준 기록보다 느림" };
+  }
+
+  const key = getSelectionKeyForRow(matched.row);
+  const old = selections[key];
+  if(old && old.savedTime && timeToMs(old.savedTime) !== null && timeToMs(old.savedTime) <= timeToMs(savedTime)){
+    return { ok:false, pending:false, skipped:true, mapName:record.mapName, record:savedTime, matchedMap:matched.row["맵이름"], reason:`기존 기록 ${old.savedTime}이 더 빠름` };
+  }
+
+  return { ok:true, pending:true, mapName:record.mapName, record:savedTime, matchedMap:matched.row["맵이름"], tier:tierInfo.tier, confidence:Number(record.confidence || 0), similarity:matched.score };
+}
+
+function applyPendingAiRecords(){
+  if(!AI_PENDING_RECORDS.length){
+    toast("먼저 AI 측정을 실행해주세요.");
+    return;
+  }
+
+  const appliedResults = AI_PENDING_RECORDS.map(applyAiRecordToSelection);
+  AI_LAST_APPLIED_COUNT = appliedResults.filter(r => r.ok).length;
+  calc();
+  renderAiRecordResults(appliedResults, AI_PENDING_WARNINGS);
+
+  const failed = appliedResults.filter(r => !r.ok).length;
+  setAiRecordStatus(`적용 완료\n군표 반영: ${AI_LAST_APPLIED_COUNT}개\n미반영 또는 확인필요: ${failed}개\n결과를 확인한 뒤 군표 저장하기 버튼을 눌러주세요.`, true, false);
+
+  if(AI_LAST_APPLIED_COUNT > 0){
+    toast(`AI 기록 ${AI_LAST_APPLIED_COUNT}개가 군표에 적용되었습니다.`);
+    setTimeout(() => {
+      document.getElementById("pcTableSection")?.scrollIntoView({ behavior:"smooth", block:"start" });
+    }, 400);
+  }
+}
+
 function renderAiRecordResults(results, warnings){
   const box = document.getElementById("aiRecordResult");
   if(!box) return;
@@ -14931,7 +15056,7 @@ function renderAiRecordResults(results, warnings){
       <td>${esc(r.record || "-")}</td>
       <td>${esc(r.matchedMap || "-")}</td>
       <td>${r.ok ? esc(r.tier || "-") : "-"}</td>
-      <td class="${r.ok ? "ai-result-ok" : "ai-result-fail"}">${r.ok ? "반영완료" : esc(r.reason || "미반영")}</td>
+      <td class="${r.ok ? "ai-result-ok" : "ai-result-fail"}">${r.ok ? (r.pending ? "적용 대기" : "반영완료") : esc(r.reason || "미반영")}</td>
     </tr>
   `).join("");
 
@@ -14969,6 +15094,11 @@ async function runAiRecordAnalysis(){
     }
 
     document.getElementById("aiRecordResult").innerHTML = "";
+    AI_PENDING_RECORDS = [];
+    AI_PENDING_WARNINGS = [];
+    AI_LAST_APPLIED_COUNT = 0;
+    const applyBtn = document.getElementById("btnApplyAiRecord");
+    if(applyBtn){ applyBtn.disabled = true; applyBtn.style.opacity = ".5"; }
     setAiRecordStatus(`${AI_RECORD_FILES.length}장의 스크린샷을 AI가 분석하고 있습니다. 잠시만 기다려주세요.`, true, true);
 
     const images = [];
@@ -14977,7 +15107,7 @@ async function runAiRecordAnalysis(){
       images.push(await aiFileToPayload(AI_RECORD_FILES[i]));
     }
 
-    setAiRecordStatus("OpenAI가 맵 이름과 본인 기록을 판독하고 있습니다.", true, true);
+    setAiRecordStatus("AI가 맵 이름과 본인 기록을 판독하고 있습니다.", true, true);
 
     const response = await fetch(AI_ANALYZE_ENDPOINT, {
       method:"POST",
@@ -14991,25 +15121,22 @@ async function runAiRecordAnalysis(){
     }
 
     const records = Array.isArray(data.records) ? data.records : [];
-    const appliedResults = records.map(applyAiRecordToSelection);
-    AI_LAST_APPLIED_COUNT = appliedResults.filter(r => r.ok).length;
+    AI_PENDING_RECORDS = records;
+    AI_PENDING_WARNINGS = Array.isArray(data.warnings) ? data.warnings : [];
+    AI_LAST_APPLIED_COUNT = 0;
 
-    calc();
-    renderAiRecordResults(appliedResults, data.warnings || []);
+    const previewResults = records.map(previewAiRecord);
+    renderAiRecordResults(previewResults, AI_PENDING_WARNINGS);
 
-    const failed = appliedResults.filter(r => !r.ok).length;
-    setAiRecordStatus(
-      `AI 측정 완료\n군표 자동 반영: ${AI_LAST_APPLIED_COUNT}개\n미반영 또는 확인필요: ${failed}개\n결과를 확인한 뒤 군표 저장하기 버튼을 눌러주세요.`,
-      true,
-      false
-    );
-
-    if(AI_LAST_APPLIED_COUNT > 0){
-      toast(`AI 기록 ${AI_LAST_APPLIED_COUNT}개가 군표에 반영되었습니다.`);
-      setTimeout(() => {
-        document.getElementById("pcTableSection")?.scrollIntoView({ behavior:"smooth", block:"start" });
-      }, 400);
+    const applicable = previewResults.filter(r => r.ok).length;
+    const failed = previewResults.filter(r => !r.ok).length;
+    const applyBtn = document.getElementById("btnApplyAiRecord");
+    if(applyBtn){
+      applyBtn.disabled = applicable < 1;
+      applyBtn.style.opacity = applicable < 1 ? ".5" : "1";
     }
+
+    setAiRecordStatus(`AI 측정 완료\n적용 가능한 기록: ${applicable}개\n미반영 또는 확인필요: ${failed}개\n내용을 확인한 뒤 왼쪽의 적용 버튼을 눌러주세요.`, true, false);
 
   }catch(e){
     console.error(e);
