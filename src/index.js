@@ -293,8 +293,10 @@ B. 타임어택 / 개인 기록 상세 화면
 C. 랭킹전 / 경기 종료 순위표
 - 이 화면에서만 본인 행 선택 표시를 사용합니다.
 - 1등의 기록·닉네임·평균속도가 노란색이어도 본인이라는 뜻이 아닙니다. 노란색은 절대 사용하지 마세요.
-- 본인 표식은 표 왼쪽 끝에 행 높이만큼 보이는 조금 두껍고 밝은 아쿠아색 세로 강조선입니다.
-- 이 세로 강조선이 붙어 있는 정확한 가로 행만 본인 행입니다. 바로 위나 바로 아래의 더 밝은 행을 선택하지 마세요.
+- 본인 표식은 순위표 맨 왼쪽에 있는 굵고 진한 아쿠아색 선택 경계입니다.
+- 선택 행 왼쪽에 '승리' 또는 '패배' 문구가 있으면, 그 문구 뒤쪽까지 진한 아쿠아색 배경이나 경계가 이어질 수 있습니다. 이것은 매우 강한 본인 행 단서입니다.
+- 이 굵은 경계가 붙어 있는 정확한 가로 행만 본인 행입니다. 바로 위나 바로 아래의 더 밝은 행을 선택하지 마세요.
+- 1등의 노란 기록, 노란 평균속도, 노란 순위 숫자는 본인 표시가 아닙니다. 본인 판별에 절대 사용하지 마세요.
 - 원본에서 세로 강조선이 3위 행에 붙어 있으면, 1위 기록이 노란색이어도 반드시 3위 행 기록을 선택합니다.
 - 선택된 동일 행의 완주 기록만 읽고, '미완료'면 반환하지 않습니다.
 - 상단 맵 이름과 본인 행 기록을 한 쌍으로 반환합니다.
@@ -303,14 +305,15 @@ C. 랭킹전 / 경기 종료 순위표
 ${hasAquaCrop ? `
 첨부 이미지 안내
 - 첫 번째 이미지는 전체 원본입니다. 화면 유형 판별, 맵 이름, 여러 기록 카드 전체 판독은 반드시 원본을 기준으로 합니다.
-- 두 번째 이미지는 브라우저가 왼쪽의 굵은 아쿠아 세로 강조선을 직접 탐지해 잘라낸 본인 행 후보입니다.
-- 랭킹전 화면으로 확인되면 두 번째 Crop의 행이 본인 행이며, Crop 안의 기록을 최우선·사실상 확정값으로 사용하세요.
-- 랭킹전에서 원본의 1등 노란 기록과 Crop 기록이 다르면 반드시 Crop 기록을 선택하세요.
-- Crop 바로 위·아래 행의 기록을 원본에서 가져오지 마세요.
-- 원본이 여러 기록 카드 화면이라면 Crop 이미지는 완전히 무시하고 원본의 모든 카드를 추출하세요.
-- Crop 때문에 원본의 다른 기록 카드들을 누락해서는 안 됩니다.
+- 두 번째 이미지는 브라우저 자동 탐지 본인 행 후보 Crop입니다. 사진 기울기나 배경 때문에 한 행 위·아래로 빗나갈 수 있으므로 무조건 확정값으로 취급하지 마세요.
+- 세 번째 이미지가 제공되면 순위표 맨 왼쪽 약 36%를 통째로 확대한 비교용 안내 이미지입니다.
+- 랭전에서는 세 번째 왼쪽 확대 이미지에서 1~8행을 모두 비교하여 가장 굵고 진한 아쿠아 경계가 붙은 행을 최종 선택하세요.
+- '승리/패배' 문구 뒤쪽까지 진한 아쿠아색이 이어지는 행이 있으면 그 행을 강하게 우선하세요.
+- 자동 Crop과 왼쪽 확대 이미지가 충돌하면 왼쪽 확대 이미지 판독을 우선하세요.
+- 1등 노란 기록은 완전히 무시하세요.
+- 원본이 여러 기록 카드 화면이라면 모든 보조 이미지를 무시하고 원본에 보이는 기록 카드를 전부 추출하세요.
 ` : `
-보조 Crop이 없습니다. 랭킹전이라면 원본의 왼쪽 아쿠아 선택 테두리를 찾고, 기록 카드 화면이라면 모든 카드를 읽으세요.
+보조 이미지가 없습니다. 랭전이라면 원본 맨 왼쪽의 굵고 진한 아쿠아 선택 경계를 찾고, 승리/패배 문구 뒤쪽 강조까지 확인하세요. 1등 노란 기록은 무시하세요. 기록 카드 화면이라면 모든 카드를 읽으세요.
 `}
 
 기록 형식
@@ -408,7 +411,7 @@ async function callVisionForSingleImage({
   const inputContent = [
     {
       type: "input_text",
-      text: buildVisionPrompt(imageNumber, retryMode, Boolean(image.aquaCropBase64)),
+      text: buildVisionPrompt(imageNumber, retryMode, Boolean(image.aquaCropBase64 || image.aquaGuideBase64)),
     },
     {
       type: "input_text",
@@ -425,11 +428,25 @@ async function callVisionForSingleImage({
     inputContent.push(
       {
         type: "input_text",
-        text: `아래 이미지는 브라우저가 왼쪽의 굵은 아쿠아 선택 세로선을 탐지해 자른 본인 행 후보입니다. 탐지 신뢰도: ${Number(image.aquaCropConfidence || 0).toFixed(3)}. 랭킹전이면 이 Crop 행의 기록을 원본의 노란 1등 기록보다 우선하세요.`,
+        text: `아래 이미지는 브라우저 자동 탐지 본인 행 후보 Crop입니다. 탐지 신뢰도: ${Number(image.aquaCropConfidence || 0).toFixed(3)}. 사진 기울기에 따라 한 행 위·아래로 빗나갈 수 있으므로 왼쪽 확대 안내 이미지와 교차 확인하세요.`,
       },
       {
         type: "input_image",
         image_url: `data:${image.aquaCropMimeType || "image/jpeg"};base64,${image.aquaCropBase64}`,
+        detail: "high",
+      },
+    );
+  }
+
+  if (image.aquaGuideBase64) {
+    inputContent.push(
+      {
+        type: "input_text",
+        text: "아래 이미지는 원본 순위표의 맨 왼쪽 약 36%를 확대한 비교용 안내 이미지입니다. 1~8행의 왼쪽 경계를 모두 비교하세요. 가장 굵고 진한 아쿠아 경계가 붙은 행, 특히 승리/패배 문구 뒤쪽까지 진한 아쿠아색이 이어지는 행이 본인 행입니다. 1등 노란 기록은 무시하세요.",
+      },
+      {
+        type: "input_image",
+        image_url: `data:${image.aquaGuideMimeType || "image/jpeg"};base64,${image.aquaGuideBase64}`,
         detail: "high",
       },
     );
@@ -600,6 +617,8 @@ async function analyzeImages(request, env) {
 
     let aquaCropBase64 = cleanBase64(image?.aquaCropBase64 || "");
     let aquaCropMimeType = sanitizeMimeType(image?.aquaCropMimeType || "image/jpeg");
+    let aquaGuideBase64 = cleanBase64(image?.aquaGuideBase64 || "");
+    let aquaGuideMimeType = sanitizeMimeType(image?.aquaGuideMimeType || "image/jpeg");
 
     if (!ALLOWED_IMAGE_TYPES.has(aquaCropMimeType)) {
       aquaCropBase64 = "";
@@ -616,7 +635,25 @@ async function analyzeImages(request, env) {
       aquaCropMimeType = "";
     }
 
-    totalBase64Chars += base64.length + aquaCropBase64.length;
+    if (!ALLOWED_IMAGE_TYPES.has(aquaGuideMimeType)) {
+      aquaGuideBase64 = "";
+      aquaGuideMimeType = "";
+    }
+
+    if (aquaGuideBase64 && aquaGuideBase64.length > MAX_BASE64_CHARS_PER_IMAGE) {
+      aquaGuideBase64 = "";
+      aquaGuideMimeType = "";
+    }
+
+    if (
+      aquaGuideBase64 &&
+      totalBase64Chars + base64.length + aquaCropBase64.length + aquaGuideBase64.length > MAX_TOTAL_BASE64_CHARS
+    ) {
+      aquaGuideBase64 = "";
+      aquaGuideMimeType = "";
+    }
+
+    totalBase64Chars += base64.length + aquaCropBase64.length + aquaGuideBase64.length;
     acceptedImages.push({
       name,
       mimeType,
@@ -625,6 +662,10 @@ async function analyzeImages(request, env) {
       aquaCropMimeType,
       aquaCropFound: Boolean(image?.aquaCropFound && aquaCropBase64),
       aquaCropConfidence: Number(image?.aquaCropConfidence || 0),
+      aquaGuideBase64,
+      aquaGuideMimeType,
+      aquaGuideBox: image?.aquaGuideBox || null,
+      aquaGuideVersion: String(image?.aquaGuideVersion || ""),
       sourceImage: index + 1,
     });
   });
@@ -703,6 +744,7 @@ async function analyzeImages(request, env) {
     model: env.OPENAI_MODEL || "gpt-4.1-mini",
     analyzedImages: acceptedImages.length,
     aquaCropsUsed: acceptedImages.filter((image) => image.aquaCropBase64).length,
+    aquaGuidesUsed: acceptedImages.filter((image) => image.aquaGuideBase64).length,
     rejectedImages,
     requestIds,
   });
