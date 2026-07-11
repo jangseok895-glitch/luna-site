@@ -15092,7 +15092,7 @@ async function detectAndCropAquaRow(file){
     confidence,
     cropBase64:dataUrl.split(",")[1] || "",
     cropMimeType:"image/jpeg",
-    detectionReason:"등수 왼쪽 아쿠아 세로선 후보 탐지(최종 판별은 엄지척 부재·방패 효과와 교차 확인)",
+    detectionReason:"엄지척 부재를 최우선으로 판별하고, 방패 효과와 아쿠아 테두리를 후순위로 확인",
     cropBox:{
       x:Math.round(cropLeft / scale),
       y:Math.round(cropTop / scale),
@@ -15104,7 +15104,7 @@ async function detectAndCropAquaRow(file){
     aquaLineBottom:Math.round(best.bottom / scale),
     aquaCenterYRatio:Number((((best.top + best.bottom) / 2) / height).toFixed(6)),
     aquaXRatio:Number((best.x / width).toFixed(6)),
-    detectorVersion:"rank-three-signals-v6"
+    detectorVersion:"rank-thumb-first-v7"
   };
 }
 async function createAquaLeftGuide(file){
@@ -15123,9 +15123,9 @@ async function createAquaLeftGuide(file){
   /*
    * 랭전 본인 행 판별용 복합 확대 이미지 V6
    * 같은 높이의 선수 행을 다음 세 패널에서 교차 확인합니다.
-   * 1) 등수 숫자 왼쪽의 굵은 아쿠아 세로선
+   * 1) 맨 오른쪽 엄지척 아이콘 존재 여부
    * 2) 평균속도 바로 왼쪽의 방패/광택 선택 효과
-   * 3) 맨 오른쪽 엄지척 아이콘 존재 여부
+   * 3) 등수 숫자 왼쪽의 굵은 아쿠아 세로선
    */
   const top = Math.max(0, Math.round(height * 0.05));
   const bottom = Math.min(height, Math.round(height * 0.91));
@@ -15133,9 +15133,9 @@ async function createAquaLeftGuide(file){
 
   const panels = [
     {
-      label:"① 등수 왼쪽 아쿠아 세로선",
-      x:0,
-      w:Math.max(1, Math.round(width * 0.27)),
+      label:"① 오른쪽 엄지척 존재/부재",
+      x:Math.max(0, Math.round(width * 0.70)),
+      w:Math.max(1, width - Math.round(width * 0.70)),
     },
     {
       label:"② 평균속도 왼쪽 방패 효과",
@@ -15143,9 +15143,9 @@ async function createAquaLeftGuide(file){
       w:Math.max(1, Math.round(width * 0.39)),
     },
     {
-      label:"③ 오른쪽 엄지척 존재/부재",
-      x:Math.max(0, Math.round(width * 0.72)),
-      w:Math.max(1, width - Math.round(width * 0.72)),
+      label:"③ 등수 왼쪽 아쿠아 세로선",
+      x:0,
+      w:Math.max(1, Math.round(width * 0.27)),
     },
   ];
 
@@ -15202,7 +15202,7 @@ async function createAquaLeftGuide(file){
       width:Math.round(width / scale),
       height:Math.round(cropH / scale)
     },
-    version:"rank-three-signals-guide-v6"
+    version:"rank-thumb-first-guide-v7"
   };
 }
 
