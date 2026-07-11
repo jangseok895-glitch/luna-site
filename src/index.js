@@ -259,10 +259,14 @@ function normalizeRecords(data) {
   return Array.from(bestByMap.values());
 }
 
-function buildVisionPrompt() {
+function buildVisionPrompt(imageNumber, retryMode = false) {
   return `
 당신은 카트라이더 러쉬플러스 기록 스크린샷을 판독하는 전문 분석기입니다.
-첨부된 각 이미지에서 맵 이름과 사용자의 본인 기록만 정확하게 추출하세요.
+현재 첨부된 이미지는 ${imageNumber}번 이미지입니다.
+이 이미지 한 장에서 맵 이름과 사용자의 본인 기록만 정확하게 추출하세요.
+
+중요: 랭킹전/경기 종료 순위표에서는 "노란색 평균 속도"만 보고 행을 선택하면 안 됩니다.
+반드시 "완주 기록 숫자 자체"가 노란색 또는 금색인지 먼저 확인해야 합니다.
 
 지원 화면 유형
 
@@ -272,32 +276,50 @@ A. 타임어택 또는 개인 기록 화면
 - 다른 사람의 기록이나 비교 기록은 제외합니다.
 
 B. 랭킹전 또는 경기 종료 순위표
-- 한 화면에 여러 선수의 닉네임, 순위, 기록, 카트, 평균 속도가 표시될 수 있습니다.
-- 사용자의 행은 보통 기록 숫자와 평균 속도 숫자가 노란색 또는 금색으로 강조됩니다.
-- 기록과 평균 속도가 함께 노란색/금색인 동일한 행을 우선적으로 본인 행으로 판단합니다.
-- 상단 왼쪽 또는 상단 영역에 표시된 맵 이름과 본인 행의 완주 기록을 한 쌍으로 추출합니다.
+- 표를 위에서 아래까지 행 단위로 확인합니다.
+- 각 행에서 닉네임, 완주 기록, 점수, 카트, 평균 속도가 같은 가로줄에 있는지 확인합니다.
+- 사용자의 행은 "완주 기록 숫자"가 노란색/금색으로 표시된 행입니다.
+- 가능하면 같은 행의 평균 속도도 노란색/금색인지 추가로 확인합니다.
+- 평균 속도만 노란색이고 완주 기록 숫자가 흰색이면 그 행은 본인 행으로 선택하지 않습니다.
+- 여러 행의 평균 속도가 노란색처럼 보여도, 완주 기록 숫자까지 노란색인 행 하나를 우선 선택합니다.
+- 예: 첫 번째 행 기록이 01:58:68이고 노란색이며, 두 번째 행 기록 02:00:68은 흰색이라면 반드시 01:58:68을 선택해야 합니다.
+- 상단 왼쪽 또는 상단 영역의 맵 이름과 선택한 동일 행의 완주 기록을 한 쌍으로 추출합니다.
 - 평균 속도는 본인 행을 찾는 근거로만 사용하며 record 값에는 넣지 않습니다.
-- 노란색 강조가 불명확하거나 여러 행이 동시에 후보라면 추측하지 말고 제외합니다.
-- '미완료', 리타이어, 완주 기록 없음은 기록으로 반환하지 않습니다.
+- '미완료', 리타이어, 완주 기록 없음은 반환하지 않습니다.
 
-필수 판독 규칙
+판독 절차
+
+1. 맵 이름을 찾습니다.
+2. 순위표 화면이면 각 행의 완주 기록 숫자 색상을 먼저 비교합니다.
+3. 노란색/금색 완주 기록 숫자가 있는 행을 찾습니다.
+4. 그 행의 기록을 정확히 문자 단위로 읽습니다.
+5. 기록은 화면의 01:58:68을 1.58.68로 변환하는 식으로 반환합니다.
+6. 다른 행의 기록과 섞지 않습니다.
+7. 기록 숫자가 작거나 흐려도 확대해서 다시 확인하듯 신중하게 읽습니다.
+8. 후보가 정확히 하나이고 색상 근거가 충분하면 confidence 0.70 이상으로 반환합니다.
+9. 완주 기록 숫자의 색상을 전혀 구분할 수 없을 때만 제외합니다.
+
+필수 규칙
 
 1. 이미지에서 실제로 확인되는 정보만 사용합니다.
 2. 기록 형식은 반드시 "분.초.센티초"로 반환합니다.
-   예: 1.32.57 / 0.58.99 / 2.01.30
-3. 같은 맵이 여러 이미지에 있으면 가장 빠른 기록만 남깁니다.
-4. 맵 이름이나 본인 기록이 불명확하면 억지로 추측하지 않습니다.
-5. 다른 선수의 기록을 본인 기록으로 반환하지 않습니다.
-6. sourceImage는 첨부 이미지의 순번이며 첫 번째 이미지는 1입니다.
-7. sourceType:
+3. 다른 선수의 기록을 본인 기록으로 반환하지 않습니다.
+4. sourceImage는 ${imageNumber}입니다.
+5. sourceType:
    - 타임어택/개인 기록 화면: time_attack
    - 랭킹전/경기 결과 순위표: ranked_result
    - 구분 불가: unknown
-8. evidence에는 본인 기록이라고 판단한 짧은 근거를 적습니다.
-   예: "개인 최고기록 표시"
-   예: "기록과 평균속도가 노란색인 동일 행"
-9. 확인 가능한 본인 기록이 없으면 records를 빈 배열로 반환하고 warnings에 이유를 적습니다.
-10. 반드시 지정된 JSON 형식으로만 응답합니다.
+6. evidence에는 판독 근거를 구체적으로 적습니다.
+   예: "완주 기록 01:58:68이 노란색이고 같은 행 평균속도도 노란색"
+7. 확인 가능한 본인 기록이 없으면 records를 빈 배열로 반환하고 warnings에 이유를 적습니다.
+8. 반드시 지정된 JSON 형식으로만 응답합니다.
+
+${retryMode ? `
+재검토 모드:
+- 첫 판독에서 기록을 찾지 못했으므로, 이번에는 완주 기록 숫자의 노란색/금색 여부를 가장 우선해서 다시 확인하세요.
+- 평균 속도 색상만으로 포기하지 말고, 각 행의 기록 숫자를 한 줄씩 비교하세요.
+- 노란색 기록 후보가 하나라면 낮은 confidence라도 반환하세요.
+` : ""}
   `.trim();
 }
 
@@ -354,6 +376,114 @@ function buildUpstreamError(openAIResponse, responseText, parsed, requestId) {
   };
 }
 
+async function callVisionForSingleImage({
+  env,
+  image,
+  imageNumber,
+  retryMode = false,
+}) {
+  const model = env.OPENAI_MODEL || "gpt-4.1-mini";
+
+  const inputContent = [
+    {
+      type: "input_text",
+      text: buildVisionPrompt(imageNumber, retryMode),
+    },
+    {
+      type: "input_text",
+      text: `첨부 이미지 ${imageNumber}번 파일명: ${image.name}`,
+    },
+    {
+      type: "input_image",
+      image_url: `data:${image.mimeType};base64,${image.base64}`,
+      detail: "high",
+    },
+  ];
+
+  let openAIResponse;
+
+  try {
+    openAIResponse = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${env.OPENAI_API_KEY}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        store: false,
+        input: [
+          {
+            role: "user",
+            content: inputContent,
+          },
+        ],
+        text: {
+          format: {
+            type: "json_schema",
+            name: "kart_record_analysis",
+            description:
+              "카트라이더 러쉬플러스 스크린샷에서 본인 맵 기록을 추출한 결과",
+            strict: true,
+            schema: RECORD_RESPONSE_SCHEMA,
+          },
+        },
+        max_output_tokens: 1800,
+      }),
+    });
+  } catch (error) {
+    return {
+      ok: false,
+      status: 502,
+      error: "AI 분석 서버에 연결하지 못했습니다.",
+      detail: String(error?.message || error || ""),
+      requestId: null,
+    };
+  }
+
+  const {
+    responseText,
+    parsed: openAIResult,
+    requestId,
+  } = await readOpenAIResponse(openAIResponse);
+
+  if (!openAIResponse.ok) {
+    return {
+      ...buildUpstreamError(
+        openAIResponse,
+        responseText,
+        openAIResult,
+        requestId,
+      ),
+      model,
+    };
+  }
+
+  const outputText = extractOutputText(openAIResult);
+  const parsedResult = parseJsonText(outputText);
+
+  if (!parsedResult) {
+    return {
+      ok: false,
+      status: 502,
+      error: "AI 분석 결과를 읽지 못했습니다.",
+      requestId,
+    };
+  }
+
+  return {
+    ok: true,
+    status: 200,
+    records: normalizeRecords(parsedResult),
+    warnings: Array.isArray(parsedResult?.warnings)
+      ? parsedResult.warnings
+          .map((item) => String(item || "").trim())
+          .filter(Boolean)
+      : [],
+    requestId,
+  };
+}
+
 async function analyzeImages(request, env) {
   if (!env.OPENAI_API_KEY) {
     return jsonResponse(
@@ -401,16 +531,9 @@ async function analyzeImages(request, env) {
     );
   }
 
-  const inputContent = [
-    {
-      type: "input_text",
-      text: buildVisionPrompt(),
-    },
-  ];
-
-  let acceptedImages = 0;
-  let totalBase64Chars = 0;
+  const acceptedImages = [];
   const rejectedImages = [];
+  let totalBase64Chars = 0;
 
   images.forEach((image, index) => {
     const mimeType = sanitizeMimeType(
@@ -418,47 +541,38 @@ async function analyzeImages(request, env) {
     );
 
     const base64 = cleanBase64(image?.base64 || image?.data || "");
-    const displayName = String(
-      image?.name || `screenshot-${index + 1}`,
-    );
+    const name = String(image?.name || `screenshot-${index + 1}`);
 
     if (!ALLOWED_IMAGE_TYPES.has(mimeType)) {
-      rejectedImages.push(`${displayName}: 지원하지 않는 파일 형식`);
+      rejectedImages.push(`${name}: 지원하지 않는 파일 형식`);
       return;
     }
 
     if (!base64) {
-      rejectedImages.push(`${displayName}: 이미지 데이터 없음`);
+      rejectedImages.push(`${name}: 이미지 데이터 없음`);
       return;
     }
 
     if (base64.length > MAX_BASE64_CHARS_PER_IMAGE) {
-      rejectedImages.push(`${displayName}: 파일 용량이 너무 큼`);
+      rejectedImages.push(`${name}: 파일 용량이 너무 큼`);
       return;
     }
 
     if (totalBase64Chars + base64.length > MAX_TOTAL_BASE64_CHARS) {
-      rejectedImages.push(`${displayName}: 전체 첨부 용량 제한 초과`);
+      rejectedImages.push(`${name}: 전체 첨부 용량 제한 초과`);
       return;
     }
 
-    acceptedImages += 1;
     totalBase64Chars += base64.length;
-
-    inputContent.push({
-      type: "input_text",
-      text: `첨부 이미지 ${index + 1}번 파일명: ${displayName}`,
-    });
-
-    // OpenAI Responses API의 공식 Vision 입력 형식입니다.
-    inputContent.push({
-      type: "input_image",
-      image_url: `data:${mimeType};base64,${base64}`,
-      detail: "high",
+    acceptedImages.push({
+      name,
+      mimeType,
+      base64,
+      sourceImage: index + 1,
     });
   });
 
-  if (!acceptedImages) {
+  if (!acceptedImages.length) {
     return jsonResponse(
       {
         ok: false,
@@ -470,112 +584,69 @@ async function analyzeImages(request, env) {
     );
   }
 
-  const model = env.OPENAI_MODEL || "gpt-4.1-mini";
-  let openAIResponse;
+  const allRecords = [];
+  const warnings = [];
+  const requestIds = [];
 
-  try {
-    openAIResponse = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${env.OPENAI_API_KEY}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        store: false,
-        input: [
-          {
-            role: "user",
-            content: inputContent,
-          },
-        ],
-        text: {
-          format: {
-            type: "json_schema",
-            name: "kart_record_analysis",
-            description:
-              "카트라이더 러쉬플러스 스크린샷에서 본인 맵 기록을 추출한 결과",
-            strict: true,
-            schema: RECORD_RESPONSE_SCHEMA,
-          },
+  // 여러 이미지를 한 요청에 섞지 않고 한 장씩 분석하여 행/기록 혼동을 줄입니다.
+  for (const image of acceptedImages) {
+    let result = await callVisionForSingleImage({
+      env,
+      image,
+      imageNumber: image.sourceImage,
+      retryMode: false,
+    });
+
+    // 첫 판독에서 기록을 못 찾은 경우 랭전 노란색 기록 중심으로 한 번 더 재검토합니다.
+    if (result.ok && !result.records.length) {
+      const retryResult = await callVisionForSingleImage({
+        env,
+        image,
+        imageNumber: image.sourceImage,
+        retryMode: true,
+      });
+
+      if (retryResult.ok && retryResult.records.length) {
+        result = retryResult;
+      } else if (retryResult.ok) {
+        warnings.push(...retryResult.warnings);
+      }
+    }
+
+    if (!result.ok) {
+      return jsonResponse(
+        {
+          ok: false,
+          error: result.error || "AI 분석 요청에 실패했습니다.",
+          status: result.status || 502,
+          code: result.code || null,
+          type: result.type || null,
+          requestId: result.requestId || null,
+          cf: getCloudflareLocation(request),
         },
-        max_output_tokens: 3000,
-      }),
-    });
-  } catch (error) {
-    console.error("OpenAI connection error:", error);
+        result.status || 502,
+      );
+    }
 
-    return jsonResponse(
-      {
-        ok: false,
-        error: "AI 분석 서버에 연결하지 못했습니다.",
-        detail: String(error?.message || error || ""),
-      },
-      502,
-    );
+    allRecords.push(...result.records);
+    warnings.push(...result.warnings);
+
+    if (result.requestId) {
+      requestIds.push(result.requestId);
+    }
   }
 
-  const {
-    responseText,
-    parsed: openAIResult,
-    requestId,
-  } = await readOpenAIResponse(openAIResponse);
-
-  if (!openAIResponse.ok) {
-    const upstreamError = buildUpstreamError(
-      openAIResponse,
-      responseText,
-      openAIResult,
-      requestId,
-    );
-
-    console.error("OpenAI API error:", upstreamError);
-
-    return jsonResponse(
-      {
-        ...upstreamError,
-        model,
-        cf: getCloudflareLocation(request),
-      },
-      openAIResponse.status,
-    );
-  }
-
-  const outputText = extractOutputText(openAIResult);
-  const parsedResult = parseJsonText(outputText);
-
-  if (!parsedResult) {
-    console.error("Invalid structured output:", {
-      requestId,
-      outputText,
-      openAIResult,
-    });
-
-    return jsonResponse(
-      {
-        ok: false,
-        error: "AI 분석 결과를 읽지 못했습니다. 다시 시도해주세요.",
-        requestId,
-      },
-      502,
-    );
-  }
-
-  const records = normalizeRecords(parsedResult);
-  const warnings = Array.isArray(parsedResult?.warnings)
-    ? parsedResult.warnings
-        .map((item) => String(item || "").trim())
-        .filter(Boolean)
-    : [];
+  // 여러 이미지에서 같은 맵이 나온 경우 가장 빠른 기록만 유지합니다.
+  const records = normalizeRecords({ records: allRecords });
 
   return jsonResponse({
     ok: true,
     records,
-    warnings,
-    model,
-    analyzedImages: acceptedImages,
+    warnings: Array.from(new Set(warnings)),
+    model: env.OPENAI_MODEL || "gpt-4.1-mini",
+    analyzedImages: acceptedImages.length,
     rejectedImages,
-    requestId,
+    requestIds,
   });
 }
 
