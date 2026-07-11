@@ -15107,6 +15107,234 @@ async function detectAndCropAquaRow(file){
     detectorVersion:"rank-thumb-only-v8"
   };
 }
+
+async function detectThumbAbsentRow(file){
+  const img = await loadImageFromFile(file);
+  const maxWidth = 1500;
+  const scale = Math.min(1, maxWidth / img.naturalWidth);
+  const width = Math.max(1, Math.round(img.naturalWidth * scale));
+  const height = Math.max(1, Math.round(img.naturalHeight * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { willReadFrequently:true });
+  ctx.drawImage(img, 0, 0, width, height);
+
+  const data = ctx.getImageData(0, 0, width, height).data;
+
+  // 엄지척 아이콘이 있는 맨 오른쪽 좁은 칸만 검사합니다.
+  const x0 = Math.max(1, Math.floor(width * 0.925));
+  const x1 = Math.min(width - 2, Math.ceil(width * 0.995));
+  const yMin = Math.floor(height * 0.10);
+  const yMax = Math.ceil(height * 0.91);
+
+  function lumAt(x, y){
+    const i = (y * width + x) * 4;
+    return data[i] * 0.2126 + data[i + 1] * 0.7152 + data[i + 2] * 0.0722;
+  }
+
+  const raw = new Float64Array(height);
+
+  for(let y = Math.max(2, yMin); y < Math.min(height - 2, yMax); y++){
+    let energy = 0;
+    let count = 0;
+
+    for(let x = x0; x < x1; x += 2){
+      const l = lumAt(x, y);
+      const gx = Math.abs(lumAt(x + 1, y) - lumAt(x - 1, y));
+      const gy = Math.abs(lumAt(x, y + 1) - lumAt(x, y - 1));
+
+      const i = (y * width + x) * 4;
+      const r = data[i], g = data[i + 1], b = data[i + 2];
+      const maxC = Math.max(r, g, b);
+      const minC = Math.min(r, g, b);
+      const saturation = maxC <= 0 ? 0 : (maxC - minC) / maxC;
+
+      const paleBlueWhite = l > 105 && b >= r * 0.88 && g >= r * 0.78;
+      const edge = gx + gy;
+
+      if(edge > 10){
+        energy += Math.min(90, edge) * (paleBlueWhite ? 1.35 : 0.72);
+      }
+      if(paleBlueWhite && saturation < 0.62 && l > 135){
+        energy += (l - 120) * 0.42;
+      }
+      count++;
+    }
+
+    raw[y] = energy / Math.max(1, count);
+  }
+
+  const smoothRadius = Math.max(2, Math.round(height * 0.0035));
+  const smooth = new Float64Array(height);
+
+  for(let y = 0; y < height; y++){
+    let sum = 0;
+    let n = 0;
+    for(let yy = Math.max(0, y - smoothRadius); yy <= Math.min(height - 1, y + smoothRadius); yy++){
+      sum += raw[yy];
+      n++;
+    }
+    smooth[y] = sum / Math.max(1, n);
+  }
+
+  const allValues = [];
+  for(let y = yMin; y < yMax; y++) allValues.push(smooth[y]);
+  allValues.sort((a,b) => a - b);
+
+  function percentile(p){
+    if(!allValues.length) return 0;
+    const idx = Math.max(0, Math.min(allValues.length - 1, Math.round((allValues.length - 1) * p)));
+    return allValues[idx];
+  }
+
+  const base = percentile(0.25);
+  const high = percentile(0.85);
+  const spread = Math.max(1, high - base);
+
+  function slotValue(center, pitch){
+    const radius = Math.max(3, Math.round(pitch * 0.22));
+    let maxValue = 0;
+    let sum = 0;
+    let n = 0;
+
+    for(let y = Math.max(yMin, Math.round(center - radius));
+        y <= Math.min(yMax - 1, Math.round(center + radius)); y++){
+      const v = Math.max(0, (smooth[y] - base) / spread);
+      maxValue = Math.max(maxValue, v);
+      sum += v;
+      n++;
+    }
+
+    return maxValue * 0.72 + (sum / Math.max(1, n)) * 0.28;
+  }
+
+  let best = null;
+  const minPitch = Math.max(18, Math.round(height * 0.045));
+  const maxPitch = Math.max(minPitch + 2, Math.round(height * 0.092));
+  const startMin = Math.round(height * 0.12);
+  const startMax = Math.round(height * 0.43);
+
+  for(let pitch = minPitch; pitch <= maxPitch; pitch++){
+    for(let start = startMin; start <= startMax; start += 2){
+      if(start + pitch * 7 >= yMax) continue;
+
+      const slots = [];
+      for(let i = 0; i < 8; i++){
+        slots.push(slotValue(start + pitch * i, pitch));
+      }
+
+      const ordered = slots
+        .map((value, index) => ({ value, index }))
+        .sort((a,b) => a.value - b.value);
+
+      const low = ordered[0].value;
+      const second = ordered[1].value;
+      const highs = ordered.slice(1).map(v => v.value);
+      const highMean = highs.reduce((a,b) => a + b, 0) / highs.length;
+      const sevenPresence = highs.filter(v => v >= 0.28).length / 7;
+      const margin = (second - low) / Math.max(0.20, highMean);
+
+      const score =
+        margin * 2.8 +
+        sevenPresence * 1.45 +
+        Math.min(1.5, highMean) * 0.65;
+
+      if(!best || score > best.score){
+        best = {
+          score,
+          selectedRank:ordered[0].index + 1,
+          start,
+          pitch,
+          slots,
+          low,
+          second,
+          highMean,
+          sevenPresence,
+          margin
+        };
+      }
+    }
+  }
+
+  if(!best){
+    return {
+      found:false,
+      selectedRank:null,
+      candidateRank:null,
+      confidence:0,
+      scores:[],
+      debugBase64:"",
+      debugMimeType:"",
+      reason:"엄지척 반복 패턴을 찾지 못함",
+      detectorVersion:"thumb-pixel-v9"
+    };
+  }
+
+  const confidence = Math.max(0, Math.min(1,
+    best.margin * 0.66 +
+    best.sevenPresence * 0.26 +
+    Math.min(1, best.highMean) * 0.08
+  ));
+
+  const found =
+    best.sevenPresence >= 0.72 &&
+    best.highMean >= 0.20 &&
+    best.margin >= 0.18 &&
+    confidence >= 0.52;
+
+  // AI가 재확인할 수 있도록 각 등수의 오른쪽 끝 칸을 8줄로 잘라 보냅니다.
+  const patchW = 700;
+  const rowH = 105;
+  const debugCanvas = document.createElement("canvas");
+  debugCanvas.width = 920;
+  debugCanvas.height = rowH * 8;
+  const dctx = debugCanvas.getContext("2d");
+  dctx.fillStyle = "#fff";
+  dctx.fillRect(0, 0, debugCanvas.width, debugCanvas.height);
+  dctx.font = "bold 26px sans-serif";
+  dctx.textAlign = "center";
+  dctx.textBaseline = "middle";
+
+  for(let i = 0; i < 8; i++){
+    const center = best.start + best.pitch * i;
+    const srcH = Math.max(12, Math.round(best.pitch * 0.80));
+    const sy = Math.max(0, Math.round(center - srcH / 2));
+
+    dctx.fillStyle = (i + 1) === best.selectedRank ? "#fff2b8" : "#eaf8ff";
+    dctx.fillRect(0, i * rowH, 220, rowH);
+    dctx.fillStyle = "#0f172a";
+    dctx.fillText(`${i + 1}등 / ${best.slots[i].toFixed(2)}`, 110, i * rowH + rowH / 2);
+
+    dctx.drawImage(
+      canvas,
+      x0, sy, Math.max(1, x1 - x0), srcH,
+      220, i * rowH, patchW, rowH
+    );
+
+    dctx.strokeStyle = "#38bdf8";
+    dctx.lineWidth = 2;
+    dctx.strokeRect(0, i * rowH, debugCanvas.width, rowH);
+  }
+
+  const debugUrl = canvasToDataUrl(debugCanvas, "image/jpeg", 0.98);
+
+  return {
+    found,
+    selectedRank:found ? best.selectedRank : null,
+    candidateRank:best.selectedRank,
+    confidence,
+    scores:best.slots.map(v => Number(v.toFixed(4))),
+    debugBase64:debugUrl.split(",")[1] || "",
+    debugMimeType:"image/jpeg",
+    reason:found
+      ? `오른쪽 엄지척 픽셀 에너지가 유일하게 낮은 ${best.selectedRank}등 확정`
+      : "엄지척 없는 행 후보와 다른 행의 점수 차이가 충분하지 않음",
+    detectorVersion:"thumb-pixel-v9"
+  };
+}
+
 async function createAquaLeftGuide(file){
   const img = await loadImageFromFile(file);
   const maxWidth = 1900;
@@ -15252,6 +15480,24 @@ async function aiFileToPayload(file){
     console.warn("랭전 엄지척 전용 확대 이미지 생성 실패, 원본 판독으로 계속합니다.", e);
   }
 
+  let thumbPixel = {
+    found:false,
+    selectedRank:null,
+    candidateRank:null,
+    confidence:0,
+    scores:[],
+    debugBase64:"",
+    debugMimeType:"",
+    reason:"",
+    detectorVersion:""
+  };
+
+  try{
+    thumbPixel = await detectThumbAbsentRow(file);
+  }catch(e){
+    console.warn("엄지척 픽셀 탐지 실패, AI 판독으로 계속합니다.", e);
+  }
+
   return {
     name:file.name,
     mimeType:converted.type || file.type || "image/jpeg",
@@ -15272,6 +15518,15 @@ async function aiFileToPayload(file){
     aquaGuideMimeType:aquaGuide.mimeType || "",
     aquaGuideBox:aquaGuide.box || null,
     aquaGuideVersion:aquaGuide.version || "",
+    thumbPixelFound:!!thumbPixel.found,
+    thumbPixelSelectedRank:Number.isInteger(thumbPixel.selectedRank) ? thumbPixel.selectedRank : null,
+    thumbPixelCandidateRank:Number.isInteger(thumbPixel.candidateRank) ? thumbPixel.candidateRank : null,
+    thumbPixelConfidence:Number(thumbPixel.confidence || 0),
+    thumbPixelScores:Array.isArray(thumbPixel.scores) ? thumbPixel.scores : [],
+    thumbPixelDebugBase64:thumbPixel.debugBase64 || "",
+    thumbPixelDebugMimeType:thumbPixel.debugMimeType || "",
+    thumbPixelReason:thumbPixel.reason || "",
+    thumbPixelDetectorVersion:thumbPixel.detectorVersion || "",
     analysisMode:"auto",
     preserveAllVisibleRecords:true
   };
