@@ -15147,327 +15147,321 @@ async function detectAndCropAquaRow(file){
 }
 
 
-let AI_OPENCV_PROMISE = null;
 
-async function ensureOpenCvReady(){
-  if(window.cv && typeof window.cv.then === "function"){
-    window.cv = await window.cv;
-  }
-  if(window.cv && window.cv.Mat){
-    return window.cv;
-  }
+let AI_OPENCV_WORKER = null;
+let AI_OPENCV_WORKER_URL = "";
+let AI_OPENCV_JOB_SEQ = 0;
+const AI_OPENCV_PENDING = new Map();
 
-  if(!AI_OPENCV_PROMISE){
-    AI_OPENCV_PROMISE = new Promise((resolve, reject) => {
-      const existing = document.querySelector('script[data-ai-opencv="1"]');
+function getOpenCvWorkerSource(){
+  return String.raw`
+let cvReadyPromise = null;
 
-      const waitForReady = async () => {
-        const started = Date.now();
-
-        while(Date.now() - started < 25000){
-          try{
-            if(window.cv && typeof window.cv.then === "function"){
-              window.cv = await window.cv;
-            }
-            if(window.cv && window.cv.Mat){
-              resolve(window.cv);
-              return;
-            }
-          }catch(e){
-            // 초기화 중에는 계속 기다립니다.
-          }
-          await new Promise(r => setTimeout(r, 120));
-        }
-
-        reject(new Error("OpenCV.js 초기화 시간이 초과되었습니다."));
-      };
-
-      if(existing){
-        waitForReady();
-        return;
-      }
-
-      const script = document.createElement("script");
-      script.src = "https://docs.opencv.org/4.x/opencv.js";
-      script.async = true;
-      script.defer = true;
-      script.dataset.aiOpencv = "1";
-      script.onload = waitForReady;
-      script.onerror = () => reject(new Error("OpenCV.js 파일을 불러오지 못했습니다."));
-      document.head.appendChild(script);
-    }).catch(error => {
-      AI_OPENCV_PROMISE = null;
-      throw error;
-    });
-  }
-
-  return AI_OPENCV_PROMISE;
-}
-
-function safeDeleteCvMat(mat){
+function safeDelete(mat){
   try{
     if(mat && typeof mat.delete === "function") mat.delete();
   }catch(e){}
 }
 
-function cvPatchSimilarity(cv, matA, matB){
-  let result = null;
+async function ensureCv(){
+  if(self.cv && self.cv.Mat) return self.cv;
+  if(cvReadyPromise) return cvReadyPromise;
 
+  cvReadyPromise = new Promise(async (resolve, reject) => {
+    try{
+      importScripts("https://docs.opencv.org/4.x/opencv.js");
+    }catch(error){
+      reject(new Error("OpenCV.js 다운로드 실패: " + (error?.message || error)));
+      return;
+    }
+
+    const started = Date.now();
+
+    while(Date.now() - started < 20000){
+      try{
+        if(self.cv && typeof self.cv.then === "function"){
+          self.cv = await self.cv;
+        }
+        if(self.cv && self.cv.Mat){
+          resolve(self.cv);
+          return;
+        }
+      }catch(e){}
+      await new Promise(r => setTimeout(r, 100));
+    }
+
+    reject(new Error("OpenCV.js 초기화 시간이 초과되었습니다."));
+  });
+
+  return cvReadyPromise;
+}
+
+function similarity(cv, a, b){
+  let result = null;
   try{
     result = new cv.Mat();
-    cv.matchTemplate(matA, matB, result, cv.TM_CCOEFF_NORMED);
+    cv.matchTemplate(a, b, result, cv.TM_CCOEFF_NORMED);
     const mm = cv.minMaxLoc(result);
     const value = Number(mm.maxVal);
     return Number.isFinite(value) ? Math.max(-1, Math.min(1, value)) : 0;
   }finally{
-    safeDeleteCvMat(result);
+    safeDelete(result);
   }
 }
 
-async function detectThumbAbsentRowOpenCV(file){
-  const cv = await ensureOpenCvReady();
-  const img = await loadImageFromFile(file);
+async function analyzeThumbPattern(bitmap, geometry){
+  const cv = await ensureCv();
 
-  const maxWidth = 1600;
-  const scale = Math.min(1, maxWidth / img.naturalWidth);
-  const width = Math.max(1, Math.round(img.naturalWidth * scale));
-  const height = Math.max(1, Math.round(img.naturalHeight * scale));
+  const maxWidth = 1200;
+  const scale = Math.min(1, maxWidth / bitmap.width);
+  const width = Math.max(1, Math.round(bitmap.width * scale));
+  const height = Math.max(1, Math.round(bitmap.height * scale));
 
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(img, 0, 0, width, height);
+  const canvas = new OffscreenCanvas(width, height);
+  const ctx = canvas.getContext("2d", { willReadFrequently:true });
+  ctx.drawImage(bitmap, 0, 0, width, height);
 
-  /*
-   * 먼저 기존 픽셀 탐지기를 이용해 8개 행의 대략적인 시작점과 간격을 구합니다.
-   * 픽셀 탐지가 확정되지 않아도 후보 행 간격은 OpenCV 분석에 활용합니다.
-   */
-  let pixelGeometry = null;
-  try{
-    pixelGeometry = await detectThumbAbsentRow(file);
-  }catch(e){
-    pixelGeometry = null;
+  const startRatio = Number(geometry?.rowStartRatio);
+  const pitchRatio = Number(geometry?.rowPitchRatio);
+
+  if(!Number.isFinite(startRatio) || !Number.isFinite(pitchRatio)){
+    return {
+      found:false,
+      selectedRank:null,
+      candidateRank:null,
+      confidence:0,
+      scores:[],
+      reason:"행 위치를 안정적으로 찾지 못해 본인 아이디 선택 방식으로 넘깁니다.",
+      detectorVersion:"opencv-worker-v13"
+    };
   }
 
-  const candidateStartRatio = Number(pixelGeometry?.rowStartRatio);
-  const candidatePitchRatio = Number(pixelGeometry?.rowPitchRatio);
+  const start = startRatio * height;
+  const pitch = pitchRatio * height;
+  const roiX = Math.max(0, Math.round(width * 0.900));
+  const roiW = Math.max(24, Math.min(width - roiX, Math.round(width * 0.096)));
 
-  const starts = [];
-  const pitches = [];
-
-  if(Number.isFinite(candidateStartRatio) && Number.isFinite(candidatePitchRatio)){
-    starts.push(candidateStartRatio * height);
-    pitches.push(candidatePitchRatio * height);
-  }
-
-  /*
-   * 화면 해상도와 여백이 달라도 동작하도록 여러 행 배치를 함께 시험합니다.
-   */
-  for(let pitchRatio = 0.050; pitchRatio <= 0.082; pitchRatio += 0.004){
-    pitches.push(height * pitchRatio);
-  }
-  for(let startRatio = 0.18; startRatio <= 0.36; startRatio += 0.018){
-    starts.push(height * startRatio);
-  }
-
-  const uniqueStarts = Array.from(new Set(starts.map(v => Math.round(v))));
-  const uniquePitches = Array.from(new Set(pitches.map(v => Math.round(v))));
-
-  const src = cv.imread(canvas);
-  let rgba = null;
-  let gray = null;
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const src = cv.matFromImageData(imageData);
+  const gray = new cv.Mat();
+  const patches = [];
+  const edges = [];
 
   try{
-    rgba = new cv.Mat();
-    gray = new cv.Mat();
+    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
-    cv.cvtColor(src, rgba, cv.COLOR_RGBA2RGB);
-    cv.cvtColor(rgba, gray, cv.COLOR_RGB2GRAY);
+    for(let index = 0; index < 8; index++){
+      const centerY = start + pitch * index;
+      const patchH = Math.max(18, Math.round(pitch * 0.74));
+      const y = Math.max(0, Math.round(centerY - patchH / 2));
 
-    /*
-     * 오른쪽 끝 엄지척 칸만 사용합니다.
-     * 너무 좁으면 촬영 사진에서 아이콘이 잘릴 수 있어 약 8.5%를 사용합니다.
-     */
-    const roiX = Math.max(0, Math.round(width * 0.905));
-    const roiW = Math.max(18, Math.min(width - roiX, Math.round(width * 0.090)));
+      if(y + patchH > height){
+        return {
+          found:false,
+          selectedRank:null,
+          candidateRank:null,
+          confidence:0,
+          scores:[],
+          reason:"엄지척 분석 영역이 사진 범위를 벗어나 본인 아이디 선택 방식으로 넘깁니다.",
+          detectorVersion:"opencv-worker-v13"
+        };
+      }
 
-    let best = null;
+      const roi = gray.roi(new cv.Rect(roiX, y, roiW, patchH));
+      const resized = new cv.Mat();
+      const equalized = new cv.Mat();
+      const edge = new cv.Mat();
 
-    for(const pitch of uniquePitches){
-      if(pitch < 18) continue;
+      cv.resize(roi, resized, new cv.Size(72, 48), 0, 0, cv.INTER_AREA);
+      cv.equalizeHist(resized, equalized);
+      cv.GaussianBlur(equalized, equalized, new cv.Size(3,3), 0, 0, cv.BORDER_DEFAULT);
+      cv.Canny(equalized, edge, 38, 108);
 
-      for(const start of uniqueStarts){
-        if(start + pitch * 7 >= height * 0.94) continue;
+      patches.push(equalized);
+      edges.push(edge);
 
-        const patches = [];
-        const edges = [];
-        const energies = [];
+      safeDelete(roi);
+      safeDelete(resized);
+    }
 
-        try{
-          let valid = true;
+    const means = new Array(8).fill(0);
+    const counts = new Array(8).fill(0);
+    const energies = edges.map(edge => cv.countNonZero(edge) / (edge.rows * edge.cols));
 
-          for(let index = 0; index < 8; index++){
-            const centerY = start + pitch * index;
-            const patchH = Math.max(18, Math.round(pitch * 0.72));
-            const y = Math.max(0, Math.round(centerY - patchH / 2));
+    for(let i = 0; i < 8; i++){
+      for(let j = i + 1; j < 8; j++){
+        const simGray = similarity(cv, patches[i], patches[j]);
+        const simEdge = similarity(cv, edges[i], edges[j]);
+        const combined = simGray * 0.30 + simEdge * 0.70;
 
-            if(y + patchH > height){
-              valid = false;
-              break;
-            }
-
-            const rect = new cv.Rect(roiX, y, roiW, patchH);
-            const roi = gray.roi(rect);
-            const resized = new cv.Mat();
-            const equalized = new cv.Mat();
-            const edge = new cv.Mat();
-
-            cv.resize(roi, resized, new cv.Size(72, 48), 0, 0, cv.INTER_CUBIC);
-            cv.equalizeHist(resized, equalized);
-            cv.GaussianBlur(equalized, equalized, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
-            cv.Canny(equalized, edge, 38, 112);
-
-            const nonZero = cv.countNonZero(edge);
-            const energy = nonZero / (edge.rows * edge.cols);
-
-            patches.push(equalized);
-            edges.push(edge);
-            energies.push(energy);
-
-            safeDeleteCvMat(roi);
-            safeDeleteCvMat(resized);
-          }
-
-          if(!valid || patches.length !== 8) continue;
-
-          /*
-           * 엄지척이 있는 7개 행은 오른쪽 패치 모양이 서로 비슷하고,
-           * 본인 행 하나는 그 반복 모양에서 벗어납니다.
-           */
-          const similarities = Array.from({length:8}, () => []);
-          const edgeSimilarities = Array.from({length:8}, () => []);
-
-          for(let i = 0; i < 8; i++){
-            for(let j = i + 1; j < 8; j++){
-              const simGray = cvPatchSimilarity(cv, patches[i], patches[j]);
-              const simEdge = cvPatchSimilarity(cv, edges[i], edges[j]);
-              const combined = simGray * 0.42 + simEdge * 0.58;
-
-              similarities[i].push(combined);
-              similarities[j].push(combined);
-              edgeSimilarities[i].push(simEdge);
-              edgeSimilarities[j].push(simEdge);
-            }
-          }
-
-          const meanSimilarity = similarities.map(items =>
-            items.reduce((a,b) => a + b, 0) / Math.max(1, items.length)
-          );
-
-          /*
-           * 엄지척이 없는 행은:
-           *  - 다른 7개 행과 평균 유사도가 낮고
-           *  - 윤곽선 에너지도 상대적으로 낮은 경향이 있습니다.
-           */
-          const sortedEnergy = [...energies].sort((a,b) => a - b);
-          const energyMedian = (sortedEnergy[3] + sortedEnergy[4]) / 2;
-          const normalizedEnergy = energies.map(v => v / Math.max(0.0001, energyMedian));
-
-          const absenceScores = meanSimilarity.map((similarity, index) => {
-            const similarityOutlier = 1 - Math.max(-0.2, Math.min(1, similarity));
-            const lowEnergyBonus = Math.max(0, 1.05 - normalizedEnergy[index]);
-            return similarityOutlier * 0.72 + lowEnergyBonus * 0.28;
-          });
-
-          const ordered = absenceScores
-            .map((value,index) => ({value,index}))
-            .sort((a,b) => b.value - a.value);
-
-          const winner = ordered[0];
-          const runnerUp = ordered[1];
-          const margin = winner.value - runnerUp.value;
-
-          /*
-           * 나머지 7개의 상호 유사도가 높을수록 신뢰도를 올립니다.
-           */
-          const otherIndexes = Array.from({length:8}, (_,i) => i).filter(i => i !== winner.index);
-          const otherSimilarity = otherIndexes.reduce((sum,i) => sum + meanSimilarity[i], 0) / 7;
-          const winnerEnergyRatio = normalizedEnergy[winner.index];
-
-          const layoutScore =
-            margin * 2.6 +
-            Math.max(0, otherSimilarity) * 0.75 +
-            Math.max(0, 1 - winnerEnergyRatio) * 0.38;
-
-          if(!best || layoutScore > best.layoutScore){
-            best = {
-              layoutScore,
-              selectedRank:winner.index + 1,
-              start,
-              pitch,
-              margin,
-              otherSimilarity,
-              winnerEnergyRatio,
-              energies,
-              normalizedEnergy,
-              meanSimilarity,
-              absenceScores
-            };
-          }
-        }finally{
-          for(const mat of patches) safeDeleteCvMat(mat);
-          for(const mat of edges) safeDeleteCvMat(mat);
-        }
+        means[i] += combined;
+        means[j] += combined;
+        counts[i]++;
+        counts[j]++;
       }
     }
 
-    if(!best){
-      return {
-        found:false,
-        selectedRank:null,
-        candidateRank:null,
-        confidence:0,
-        scores:[],
-        reason:"OpenCV가 8개 행의 반복 엄지척 패턴을 찾지 못했습니다.",
-        detectorVersion:"opencv-thumb-consensus-v11"
-      };
+    for(let i = 0; i < 8; i++){
+      means[i] /= Math.max(1, counts[i]);
     }
 
+    const sortedEnergy = [...energies].sort((a,b) => a-b);
+    const medianEnergy = Math.max(0.0001, (sortedEnergy[3] + sortedEnergy[4]) / 2);
+
+    const scores = means.map((sim, index) => {
+      const dissimilarity = 1 - Math.max(-0.2, Math.min(1, sim));
+      const lowEnergy = Math.max(0, 1 - energies[index] / medianEnergy);
+      return dissimilarity * 0.80 + lowEnergy * 0.20;
+    });
+
+    const ordered = scores
+      .map((value,index) => ({value,index}))
+      .sort((a,b) => b.value - a.value);
+
+    const winner = ordered[0];
+    const runner = ordered[1];
+    const margin = winner.value - runner.value;
+
+    const otherSimilarity = means
+      .filter((_,index) => index !== winner.index)
+      .reduce((a,b) => a+b, 0) / 7;
+
+    const winnerEnergyRatio = energies[winner.index] / medianEnergy;
+
     const confidence = Math.max(0, Math.min(1,
-      best.margin * 1.55 +
-      Math.max(0, best.otherSimilarity) * 0.32 +
-      Math.max(0, 1 - best.winnerEnergyRatio) * 0.24
+      margin * 1.70 +
+      Math.max(0, otherSimilarity) * 0.28 +
+      Math.max(0, 1 - winnerEnergyRatio) * 0.22
     ));
 
-    /*
-     * 자동 확정은 매우 보수적으로 합니다.
-     * 애매하면 V10의 아이디 선택창으로 넘깁니다.
-     */
     const found =
-      confidence >= 0.82 &&
-      best.margin >= 0.11 &&
-      best.otherSimilarity >= 0.18 &&
-      best.winnerEnergyRatio <= 0.92;
+      confidence >= 0.84 &&
+      margin >= 0.12 &&
+      otherSimilarity >= 0.17;
 
     return {
       found,
-      selectedRank:found ? best.selectedRank : null,
-      candidateRank:best.selectedRank,
+      selectedRank:found ? winner.index + 1 : null,
+      candidateRank:winner.index + 1,
       confidence,
-      scores:best.absenceScores.map(v => Number(v.toFixed(5))),
-      rowStartRatio:Number((best.start / height).toFixed(6)),
-      rowPitchRatio:Number((best.pitch / height).toFixed(6)),
+      scores:scores.map(v => Number(v.toFixed(5))),
       reason:found
-        ? `OpenCV 반복 패턴 비교로 엄지척이 없는 ${best.selectedRank}등을 확정했습니다.`
-        : `OpenCV 후보는 ${best.selectedRank}등이지만 신뢰도가 부족해 직접 선택으로 보류합니다.`,
-      detectorVersion:"opencv-thumb-consensus-v11"
+        ? "OpenCV Web Worker가 엄지척이 없는 " + (winner.index + 1) + "등을 확정했습니다."
+        : "OpenCV 후보는 " + (winner.index + 1) + "등이지만 애매하여 본인 아이디 선택 방식으로 넘깁니다.",
+      detectorVersion:"opencv-worker-v13"
     };
   }finally{
-    safeDeleteCvMat(gray);
-    safeDeleteCvMat(rgba);
-    safeDeleteCvMat(src);
+    for(const mat of patches) safeDelete(mat);
+    for(const mat of edges) safeDelete(mat);
+    safeDelete(gray);
+    safeDelete(src);
   }
+}
+
+self.onmessage = async (event) => {
+  const { id, bitmap, geometry } = event.data || {};
+
+  try{
+    const result = await analyzeThumbPattern(bitmap, geometry);
+    try{ bitmap.close(); }catch(e){}
+    self.postMessage({ id, ok:true, result });
+  }catch(error){
+    try{ bitmap.close(); }catch(e){}
+    self.postMessage({
+      id,
+      ok:false,
+      error:String(error?.message || error || "OpenCV 분석 실패")
+    });
+  }
+};
+`;
+}
+
+function getOpenCvAnalysisWorker(){
+  if(AI_OPENCV_WORKER) return AI_OPENCV_WORKER;
+
+  const blob = new Blob([getOpenCvWorkerSource()], { type:"application/javascript" });
+  AI_OPENCV_WORKER_URL = URL.createObjectURL(blob);
+  AI_OPENCV_WORKER = new Worker(AI_OPENCV_WORKER_URL);
+
+  AI_OPENCV_WORKER.onmessage = (event) => {
+    const { id, ok, result, error } = event.data || {};
+    const pending = AI_OPENCV_PENDING.get(id);
+    if(!pending) return;
+
+    AI_OPENCV_PENDING.delete(id);
+    clearTimeout(pending.timer);
+
+    if(ok){
+      pending.resolve(result);
+    }else{
+      pending.reject(new Error(error || "OpenCV 분석 실패"));
+    }
+  };
+
+  AI_OPENCV_WORKER.onerror = (event) => {
+    const error = new Error(event?.message || "OpenCV Web Worker 오류");
+
+    for(const [id, pending] of AI_OPENCV_PENDING){
+      clearTimeout(pending.timer);
+      pending.reject(error);
+      AI_OPENCV_PENDING.delete(id);
+    }
+
+    try{ AI_OPENCV_WORKER.terminate(); }catch(e){}
+    AI_OPENCV_WORKER = null;
+
+    if(AI_OPENCV_WORKER_URL){
+      URL.revokeObjectURL(AI_OPENCV_WORKER_URL);
+      AI_OPENCV_WORKER_URL = "";
+    }
+  };
+
+  return AI_OPENCV_WORKER;
+}
+
+async function detectThumbAbsentRowOpenCV(file){
+  /*
+   * 가벼운 픽셀 분석은 행 위치만 제공합니다.
+   * 실제 OpenCV 계산은 별도 Web Worker에서 실행되어 화면을 멈추지 않습니다.
+   */
+  let geometry = null;
+
+  try{
+    geometry = await detectThumbAbsentRow(file);
+  }catch(e){
+    geometry = null;
+  }
+
+  const bitmap = await createImageBitmap(file);
+  const worker = getOpenCvAnalysisWorker();
+  const id = ++AI_OPENCV_JOB_SEQ;
+
+  return await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      const pending = AI_OPENCV_PENDING.get(id);
+      if(!pending) return;
+
+      AI_OPENCV_PENDING.delete(id);
+      reject(new Error("OpenCV 분석 시간이 25초를 초과했습니다."));
+    }, 25000);
+
+    AI_OPENCV_PENDING.set(id, { resolve, reject, timer });
+
+    worker.postMessage(
+      {
+        id,
+        bitmap,
+        geometry:{
+          rowStartRatio:Number(geometry?.rowStartRatio),
+          rowPitchRatio:Number(geometry?.rowPitchRatio),
+          candidateRank:Number(geometry?.candidateRank),
+          scores:Array.isArray(geometry?.scores) ? geometry.scores : []
+        }
+      },
+      [bitmap]
+    );
+  });
 }
 
 async function detectThumbAbsentRow(file){
@@ -16212,6 +16206,21 @@ function renderAiRecordResults(results, warnings){
   `;
 }
 
+
+async function withAiPrepareTimeout(promise, ms, label){
+  let timer = null;
+  try{
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} 준비 시간이 초과되었습니다.`)), ms);
+      })
+    ]);
+  }finally{
+    if(timer) clearTimeout(timer);
+  }
+}
+
 async function runAiRecordAnalysis(){
   const runBtn = document.getElementById("btnRunAiRecord");
 
@@ -16243,8 +16252,19 @@ async function runAiRecordAnalysis(){
 
     const images = [];
     for(let i = 0; i < AI_RECORD_FILES.length; i++){
-      setAiRecordStatus(`${i + 1}/${AI_RECORD_FILES.length} 스크린샷을 준비하고 있습니다.`, true, true);
-      images.push(await aiFileToPayload(AI_RECORD_FILES[i]));
+      setAiRecordStatus(
+        `${i + 1}/${AI_RECORD_FILES.length} 스크린샷을 준비하고 OpenCV로 분석하고 있습니다.`,
+        true,
+        true
+      );
+
+      images.push(
+        await withAiPrepareTimeout(
+          aiFileToPayload(AI_RECORD_FILES[i]),
+          35000,
+          `${i + 1}번째 스크린샷`
+        )
+      );
     }
 
     setAiRecordStatus("AI가 맵 이름과 본인 기록을 판독하고 있습니다.", true, true);
