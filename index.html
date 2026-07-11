@@ -6346,6 +6346,41 @@ body.capture-mode #realPcTableSection.table-wrap{
   white-space:pre-wrap !important;
 }
 .ai-record-status.hidden{ display:none !important; }
+
+.ai-choice-box{
+  margin-top:12px;
+  border:1px solid #f59e0b;
+  background:#fffaf0;
+  border-radius:14px;
+  padding:14px;
+}
+.ai-choice-title{
+  font-size:16px;
+  font-weight:900;
+  color:#92400e;
+  margin-bottom:10px;
+  line-height:1.45;
+}
+.ai-choice-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.ai-choice-btn{
+  border:1px solid #93c5fd;
+  background:#fff;
+  border-radius:11px;
+  padding:10px 8px;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:800;
+  line-height:1.35;
+  color:#0f172a;
+}
+.ai-choice-btn:hover{ background:#eff6ff; border-color:#3b82f6; }
+.ai-choice-rank{ display:block; color:#2563eb; font-size:13px; }
+.ai-choice-record{ display:block; margin-top:3px; color:#475569; font-size:12px; }
+@media(max-width:720px){ .ai-choice-grid{ grid-template-columns:1fr; } }
 .ai-result-table{
   width:100% !important;
   margin-top:14px !important;
@@ -14760,6 +14795,8 @@ const AI_ANALYZE_ENDPOINT = "/analyze";
 let AI_RECORD_FILES = [];
 let AI_LAST_APPLIED_COUNT = 0;
 let AI_PENDING_RECORDS = [];
+let AI_PENDING_CHOICES = [];
+let AI_SELECTED_NICKNAME = localStorage.getItem("aiSelectedNickname") || "";
 let AI_PENDING_WARNINGS = [];
 
 function openAiRecordPopup(){
@@ -14780,6 +14817,7 @@ function clearAiRecordFiles(){
   const result = document.getElementById("aiRecordResult");
   if(result) result.innerHTML = "";
   AI_PENDING_RECORDS = [];
+  AI_PENDING_CHOICES = [];
   AI_PENDING_WARNINGS = [];
   AI_LAST_APPLIED_COUNT = 0;
   const applyBtn = document.getElementById("btnApplyAiRecord");
@@ -15700,6 +15738,103 @@ function applyPendingAiRecords(){
   }
 }
 
+
+function groupAiRankedCandidates(candidates){
+  const groups = new Map();
+
+  for(const item of (candidates || [])){
+    const mapName = String(item?.mapName || "").trim();
+    const nickname = String(item?.nickname || "").trim();
+    const record = String(item?.record || "").trim();
+    const sourceImage = Number(item?.sourceImage || 1);
+
+    if(!mapName || !nickname || !record) continue;
+
+    const key = `${sourceImage}|${mapName}`;
+    if(!groups.has(key)){
+      groups.set(key, { key, mapName, sourceImage, candidates:[] });
+    }
+    groups.get(key).candidates.push(item);
+  }
+
+  return Array.from(groups.values()).map(group => {
+    group.candidates.sort((a,b) => Number(a.rank || 99) - Number(b.rank || 99));
+    return group;
+  });
+}
+
+function chooseAiRankedCandidate(encodedKey, candidateIndex){
+  const groupKey = decodeURIComponent(encodedKey);
+  const group = AI_PENDING_CHOICES.find(item => item.key === groupKey);
+  if(!group) return;
+
+  const candidate = group.candidates[candidateIndex];
+  if(!candidate) return;
+
+  AI_SELECTED_NICKNAME = String(candidate.nickname || "").trim();
+  if(AI_SELECTED_NICKNAME){
+    localStorage.setItem("aiSelectedNickname", AI_SELECTED_NICKNAME);
+  }
+
+  const chosenRecord = {
+    mapName:candidate.mapName,
+    record:candidate.record,
+    confidence:Number(candidate.confidence || 0.95),
+    sourceImage:Number(candidate.sourceImage || 1),
+    sourceType:"ranked_result",
+    evidence:`사용자가 ${candidate.rank}등 ${candidate.nickname}을 본인으로 직접 선택함`
+  };
+
+  AI_PENDING_RECORDS = AI_PENDING_RECORDS.filter(item => !(
+    Number(item?.sourceImage || 1) === Number(chosenRecord.sourceImage) &&
+    String(item?.mapName || "").trim() === String(chosenRecord.mapName || "").trim() &&
+    String(item?.sourceType || "") === "ranked_result"
+  ));
+  AI_PENDING_RECORDS.push(chosenRecord);
+  AI_PENDING_CHOICES = AI_PENDING_CHOICES.filter(item => item.key !== groupKey);
+
+  const previewResults = AI_PENDING_RECORDS.map(previewAiRecord);
+  renderAiRecordResults(previewResults, AI_PENDING_WARNINGS);
+
+  const applicable = previewResults.filter(item => item.ok).length;
+  const applyBtn = document.getElementById("btnApplyAiRecord");
+  if(applyBtn){
+    applyBtn.disabled = applicable < 1;
+    applyBtn.style.opacity = applicable < 1 ? ".5" : "1";
+  }
+
+  setAiRecordStatus(
+    `본인 아이디 선택 완료\n${candidate.mapName} - ${candidate.rank}등 ${candidate.nickname} / ${candidate.record}\n내용을 확인한 뒤 적용 버튼을 눌러주세요.`,
+    true,
+    false
+  );
+}
+
+function renderAiChoiceGroups(groups){
+  if(!Array.isArray(groups) || !groups.length) return "";
+
+  return groups.map(group => {
+    const encodedKey = encodeURIComponent(group.key);
+    const buttons = group.candidates.map((candidate, index) => `
+      <button type="button"
+              class="ai-choice-btn"
+              onclick="chooseAiRankedCandidate('${encodedKey}', ${index})">
+        <span class="ai-choice-rank">${esc(candidate.rank)}등 · ${esc(candidate.nickname)}</span>
+        <span class="ai-choice-record">${esc(candidate.record)}</span>
+      </button>
+    `).join("");
+
+    return `
+      <div class="ai-choice-box">
+        <div class="ai-choice-title">
+          AI 감지 보류 - ${esc(group.mapName)}에서 당신의 아이디는 어떤 것입니까?
+        </div>
+        <div class="ai-choice-grid">${buttons}</div>
+      </div>
+    `;
+  }).join("");
+}
+
 function renderAiRecordResults(results, warnings){
   const box = document.getElementById("aiRecordResult");
   if(!box) return;
@@ -15724,6 +15859,7 @@ function renderAiRecordResults(results, warnings){
       <tbody>${rows || `<tr><td colspan="5">확인 가능한 기록이 없습니다.</td></tr>`}</tbody>
     </table>
     ${warningHtml}
+    ${renderAiChoiceGroups(AI_PENDING_CHOICES)}
   `;
 }
 
@@ -15749,6 +15885,7 @@ async function runAiRecordAnalysis(){
 
     document.getElementById("aiRecordResult").innerHTML = "";
     AI_PENDING_RECORDS = [];
+    AI_PENDING_CHOICES = [];
     AI_PENDING_WARNINGS = [];
     AI_LAST_APPLIED_COUNT = 0;
     const applyBtn = document.getElementById("btnApplyAiRecord");
@@ -15778,11 +15915,30 @@ async function runAiRecordAnalysis(){
     }
 
     const records = Array.isArray(data.records) ? data.records : [];
+    const rankedCandidates = Array.isArray(data.rankedCandidates) ? data.rankedCandidates : [];
+
     AI_PENDING_RECORDS = records;
+    AI_PENDING_CHOICES = groupAiRankedCandidates(rankedCandidates);
     AI_PENDING_WARNINGS = Array.isArray(data.warnings) ? data.warnings : [];
     AI_LAST_APPLIED_COUNT = 0;
 
-    const previewResults = records.map(previewAiRecord);
+    // 과거에 직접 선택했던 닉네임이 정확히 하나 발견되면 자동 선택합니다.
+    if(AI_SELECTED_NICKNAME && AI_PENDING_CHOICES.length){
+      const pendingAuto = [];
+      for(const group of AI_PENDING_CHOICES){
+        const matches = group.candidates
+          .map((candidate,index) => ({candidate,index}))
+          .filter(item => String(item.candidate.nickname || "").trim() === AI_SELECTED_NICKNAME);
+        if(matches.length === 1){
+          pendingAuto.push({ key:group.key, index:matches[0].index });
+        }
+      }
+      for(const item of pendingAuto){
+        chooseAiRankedCandidate(encodeURIComponent(item.key), item.index);
+      }
+    }
+
+    const previewResults = AI_PENDING_RECORDS.map(previewAiRecord);
     renderAiRecordResults(previewResults, AI_PENDING_WARNINGS);
 
     const applicable = previewResults.filter(r => r.ok).length;
@@ -15793,7 +15949,24 @@ async function runAiRecordAnalysis(){
       applyBtnAfterAnalysis.style.opacity = applicable < 1 ? ".5" : "1";
     }
 
-    setAiRecordStatus(`AI 측정 완료\n적용 가능한 기록: ${applicable}개\n미반영 또는 확인필요: ${failed}개\n내용을 확인한 뒤 왼쪽의 적용 버튼을 눌러주세요.`, true, false);
+    if(AI_PENDING_CHOICES.length){
+      setAiRecordStatus(
+        `AI 감지 보류
+본인 행을 확실하게 구별하지 못한 화면: ${AI_PENDING_CHOICES.length}개
+아래 후보 중 본인 아이디를 선택해주세요.`,
+        true,
+        false
+      );
+    }else{
+      setAiRecordStatus(
+        `AI 측정 완료
+적용 가능한 기록: ${applicable}개
+미반영 또는 확인필요: ${failed}개
+내용을 확인한 뒤 왼쪽의 적용 버튼을 눌러주세요.`,
+        true,
+        false
+      );
+    }
 
   }catch(e){
     console.error(e);
