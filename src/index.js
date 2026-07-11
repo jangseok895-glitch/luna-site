@@ -3,21 +3,23 @@ const JSON_HEADERS = {
   "cache-control": "no-store",
 };
 
-function jsonResponse(data, status = 200) {
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+
+const MAX_IMAGES = 10;
+const MAX_BASE64_CHARS_PER_IMAGE = 12_000_000;
+
+function jsonResponse(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: JSON_HEADERS,
+    headers: {
+      ...JSON_HEADERS,
+      ...extraHeaders,
+    },
   });
-}
-
-function getExtension(mimeType) {
-  const types = {
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "image/webp": "webp",
-  };
-
-  return types[mimeType] || "jpg";
 }
 
 function cleanBase64(value) {
@@ -71,40 +73,162 @@ function parseJsonText(text) {
         return null;
       }
     }
-
-    return null;
   }
+
+  return null;
+}
+
+function normalizeRecordTime(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+
+  const match = raw.match(/(\d{1,2})\D+(\d{1,2})\D+(\d{1,3})/);
+  if (!match) return raw;
+
+  const minutes = Number(match[1]);
+  const seconds = Number(match[2]);
+  let fraction = String(match[3]);
+
+  if (!Number.isFinite(minutes) || !Number.isFinite(seconds)) return raw;
+
+  if (fraction.length === 1) fraction += "0";
+  if (fraction.length > 2) fraction = fraction.slice(0, 2);
+
+  return `${minutes}.${String(seconds).padStart(2, "0")}.${fraction.padStart(2, "0")}`;
+}
+
+function recordToMilliseconds(value) {
+  const normalized = normalizeRecordTime(value);
+  const match = normalized.match(/^(\d+)\.(\d{2})\.(\d{2})$/);
+  if (!match) return Number.POSITIVE_INFINITY;
+
+  return (
+    Number(match[1]) * 60_000 +
+    Number(match[2]) * 1_000 +
+    Number(match[3]) * 10
+  );
 }
 
 function normalizeRecords(data) {
-  const records = Array.isArray(data?.records)
+  const source = Array.isArray(data?.records)
     ? data.records
     : Array.isArray(data)
       ? data
       : [];
 
-  return records
-    .map((record) => ({
-      mapName: String(
-        record?.mapName ??
-          record?.map_name ??
-          record?.map ??
-          record?.맵이름 ??
-          "",
+  const bestByMap = new Map();
+
+  source.forEach((record) => {
+    const mapName = String(
+      record?.mapName ??
+        record?.map_name ??
+        record?.map ??
+        record?.맵이름 ??
+        "",
+    ).trim();
+
+    const time = normalizeRecordTime(
+      record?.record ??
+        record?.time ??
+        record?.기록 ??
+        "",
+    );
+
+    if (!mapName || !time) return;
+
+    const normalized = {
+      mapName,
+      record: time,
+      confidence: Math.max(
+        0,
+        Math.min(1, Number(record?.confidence ?? 0)),
+      ),
+      sourceImage: Math.max(
+        1,
+        Number(record?.sourceImage ?? record?.imageIndex ?? 1),
+      ),
+      sourceType: String(
+        record?.sourceType ??
+          record?.source_type ??
+          "unknown",
       ).trim(),
+      evidence: String(record?.evidence ?? "").trim(),
+    };
 
-      record: String(
-        record?.record ??
-          record?.time ??
-          record?.기록 ??
-          "",
-      ).trim(),
+    const key = mapName
+      .toLowerCase()
+      .replace(/\s+/g, "")
+      .replace(/[^\p{Letter}\p{Number}]/gu, "");
 
-      confidence: Number(record?.confidence ?? 0),
+    const previous = bestByMap.get(key);
 
-      sourceImage: Number(record?.sourceImage ?? record?.imageIndex ?? 0),
-    }))
-    .filter((record) => record.mapName && record.record);
+    if (
+      !previous ||
+      recordToMilliseconds(normalized.record) <
+        recordToMilliseconds(previous.record)
+    ) {
+      bestByMap.set(key, normalized);
+    }
+  });
+
+  return Array.from(bestByMap.values());
+}
+
+function buildVisionPrompt() {
+  return `
+당신은 카트라이더 러쉬플러스 기록 스크린샷 판독기입니다.
+첨부된 각 이미지에서 맵 이름과 사용자의 본인 기록을 판독하세요.
+
+지원 화면 유형:
+
+A. 타임어택/개인 기록 화면
+- 화면에 표시된 맵 이름과 사용자의 기록을 추출합니다.
+- 최고 기록, 개인 기록, 내 기록처럼 사용자의 기록임이 명확한 값만 사용합니다.
+
+B. 랭킹전 또는 경기 종료 결과표
+- 한 화면에 최대 8명의 선수와 기록이 표시될 수 있습니다.
+- 기록과 평균 속도(내 속도)가 모두 노란색 또는 금색으로 강조된 행을 사용자의 행으로 판단합니다.
+- 노란색 강조가 명확하지 않으면 억지로 다른 선수 기록을 선택하지 않습니다.
+- 상단에 표시된 맵 이름과 노란색 본인 행의 완주 기록을 한 쌍으로 추출합니다.
+- 평균 속도 숫자는 본인 판별에만 사용하며 record 값으로 반환하지 않습니다.
+
+필수 규칙:
+
+1. 이미지에서 실제로 확인되는 맵 이름과 기록만 반환합니다.
+2. 기록 형식은 반드시 "분.초.센티초"로 통일합니다.
+   예: 1.32.57, 0.58.99, 2.01.30
+3. 같은 맵이 여러 이미지에 있으면 가장 빠른 기록만 남깁니다.
+4. 맵 이름이나 본인 기록이 불명확하면 추측하지 않습니다.
+5. 다른 선수의 기록을 절대 본인 기록으로 반환하지 않습니다.
+6. sourceImage는 첨부 이미지 순번이며 첫 번째 이미지는 1입니다.
+7. sourceType은 타임어택이면 "time_attack", 랭전/결과표이면 "ranked_result"로 작성합니다.
+8. evidence에는 본인 기록이라고 판단한 짧은 근거를 작성합니다.
+   예: "개인 최고기록 표시", "기록과 평균속도가 노란색인 행"
+9. 설명문이나 마크다운 없이 JSON 객체만 반환합니다.
+
+반환 형식:
+
+{
+  "records": [
+    {
+      "mapName": "맵 이름",
+      "record": "1.32.57",
+      "confidence": 0.95,
+      "sourceImage": 1,
+      "sourceType": "time_attack",
+      "evidence": "개인 최고기록 표시"
+    }
+  ],
+  "warnings": []
+}
+
+확인 가능한 본인 기록이 없으면:
+
+{
+  "records": [],
+  "warnings": ["확인 가능한 본인 기록을 찾지 못했습니다."]
+}
+  `.trim();
 }
 
 async function analyzeImages(request, env) {
@@ -112,8 +236,7 @@ async function analyzeImages(request, env) {
     return jsonResponse(
       {
         ok: false,
-        error:
-          "Cloudflare에 OPENAI_API_KEY 비밀 변수가 등록되지 않았습니다.",
+        error: "AI 서비스 키가 등록되지 않았습니다.",
       },
       500,
     );
@@ -145,11 +268,11 @@ async function analyzeImages(request, env) {
     );
   }
 
-  if (images.length > 10) {
+  if (images.length > MAX_IMAGES) {
     return jsonResponse(
       {
         ok: false,
-        error: "스크린샷은 최대 10장까지 첨부할 수 있습니다.",
+        error: `스크린샷은 최대 ${MAX_IMAGES}장까지 첨부할 수 있습니다.`,
       },
       400,
     );
@@ -158,65 +281,29 @@ async function analyzeImages(request, env) {
   const inputContent = [
     {
       type: "input_text",
-      text: `
-당신은 카트라이더 러쉬플러스 경기기록 스크린샷 판독기입니다.
-
-첨부된 이미지에서 사용자의 본인 기록을 찾아주세요.
-
-반드시 다음 규칙을 따르세요.
-
-1. 이미지에 실제로 보이는 맵 이름과 기록만 추출합니다.
-2. 기록은 "분.초.센티초" 형식으로 통일합니다.
-   예시: 1.32.57, 0.58.99, 2.01.30
-3. 같은 맵이 여러 번 보이면 가장 빠른 기록만 남깁니다.
-4. 맵 이름이나 기록이 불분명하면 억지로 추측하지 않습니다.
-5. 다른 사람의 기록, 랭킹표의 다른 선수 기록은 제외합니다.
-6. 맵 이름은 이미지에 표시된 한국어 명칭을 최대한 그대로 사용합니다.
-7. 설명 문장은 쓰지 말고 JSON만 반환합니다.
-
-반환 형식:
-
-{
-  "records": [
-    {
-      "mapName": "맵 이름",
-      "record": "1.32.57",
-      "confidence": 0.95,
-      "sourceImage": 1
-    }
-  ],
-  "warnings": [
-    "판독이 어려운 내용이 있을 경우 작성"
-  ]
-}
-
-기록을 찾지 못한 경우:
-
-{
-  "records": [],
-  "warnings": ["확인 가능한 본인 기록을 찾지 못했습니다."]
-}
-      `.trim(),
+      text: buildVisionPrompt(),
     },
   ];
 
+  let acceptedImages = 0;
+
   images.forEach((image, index) => {
-    const mimeType = String(image?.mimeType || "image/jpeg").toLowerCase();
+    const mimeType = String(
+      image?.mimeType || image?.type || "image/jpeg",
+    ).toLowerCase();
+
     const base64 = cleanBase64(image?.base64 || image?.data || "");
 
-    if (!base64) return;
+    if (!ALLOWED_IMAGE_TYPES.has(mimeType)) return;
+    if (!base64 || base64.length > MAX_BASE64_CHARS_PER_IMAGE) return;
 
-    if (!["image/jpeg", "image/png", "image/webp"].includes(mimeType)) {
-      return;
-    }
-
-    const extension = getExtension(mimeType);
+    acceptedImages += 1;
 
     inputContent.push({
       type: "input_text",
-      text: `스크린샷 ${index + 1}번 파일: ${
-        image?.name || `image-${index + 1}.${extension}`
-      }`,
+      text: `첨부 이미지 ${index + 1}번: ${String(
+        image?.name || `screenshot-${index + 1}`,
+      )}`,
     });
 
     inputContent.push({
@@ -226,11 +313,12 @@ async function analyzeImages(request, env) {
     });
   });
 
-  if (inputContent.length <= 1) {
+  if (!acceptedImages) {
     return jsonResponse(
       {
         ok: false,
-        error: "사용할 수 있는 이미지가 없습니다. JPG, PNG 또는 WEBP를 올려주세요.",
+        error:
+          "사용할 수 있는 이미지가 없습니다. JPG, PNG 또는 WEBP 파일을 올려주세요.",
       },
       400,
     );
@@ -256,15 +344,16 @@ async function analyzeImages(request, env) {
           },
         ],
         temperature: 0,
-        max_output_tokens: 4000,
+        max_output_tokens: 3000,
       }),
     });
   } catch (error) {
+    console.error("AI connection error:", error);
+
     return jsonResponse(
       {
         ok: false,
-        error: "OpenAI 서버에 연결하지 못했습니다.",
-        detail: String(error?.message || error),
+        error: "AI 분석 서버에 연결하지 못했습니다.",
       },
       502,
     );
@@ -273,16 +362,22 @@ async function analyzeImages(request, env) {
   const result = await openAIResponse.json().catch(() => null);
 
   if (!openAIResponse.ok) {
-    console.error("OpenAI API error:", result);
+    console.error("AI API error:", result);
+
+    const upstreamMessage = String(
+      result?.error?.message || "",
+    ).trim();
 
     return jsonResponse(
       {
         ok: false,
         error:
-          result?.error?.message ||
+          upstreamMessage ||
           `AI 분석 요청에 실패했습니다. 상태코드: ${openAIResponse.status}`,
       },
-      openAIResponse.status,
+      openAIResponse.status >= 400 && openAIResponse.status < 600
+        ? openAIResponse.status
+        : 502,
     );
   }
 
@@ -290,11 +385,12 @@ async function analyzeImages(request, env) {
   const parsed = parseJsonText(outputText);
 
   if (!parsed) {
+    console.error("Invalid AI JSON:", outputText);
+
     return jsonResponse(
       {
         ok: false,
-        error: "AI 분석 결과를 JSON 형식으로 읽지 못했습니다.",
-        rawText: outputText,
+        error: "AI 분석 결과를 읽지 못했습니다. 다시 시도해주세요.",
       },
       502,
     );
@@ -302,7 +398,7 @@ async function analyzeImages(request, env) {
 
   const records = normalizeRecords(parsed);
   const warnings = Array.isArray(parsed?.warnings)
-    ? parsed.warnings.map((item) => String(item))
+    ? parsed.warnings.map((item) => String(item || "").trim()).filter(Boolean)
     : [];
 
   return jsonResponse({
@@ -310,6 +406,7 @@ async function analyzeImages(request, env) {
     records,
     warnings,
     model,
+    analyzedImages: acceptedImages,
   });
 }
 
@@ -324,6 +421,7 @@ export default {
           "access-control-allow-origin": "*",
           "access-control-allow-methods": "GET, POST, OPTIONS",
           "access-control-allow-headers": "content-type",
+          "access-control-max-age": "86400",
         },
       });
     }
@@ -336,6 +434,7 @@ export default {
             error: "POST 요청만 사용할 수 있습니다.",
           },
           405,
+          { allow: "POST" },
         );
       }
 
@@ -349,6 +448,16 @@ export default {
         model: env.OPENAI_MODEL || "gpt-4.1-mini",
         hasOpenAIKey: Boolean(env.OPENAI_API_KEY),
       });
+    }
+
+    if (!env.ASSETS || typeof env.ASSETS.fetch !== "function") {
+      return jsonResponse(
+        {
+          ok: false,
+          error: "정적 파일 바인딩을 찾지 못했습니다.",
+        },
+        500,
+      );
     }
 
     return env.ASSETS.fetch(request);
