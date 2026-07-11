@@ -15092,7 +15092,7 @@ async function detectAndCropAquaRow(file){
     confidence,
     cropBase64:dataUrl.split(",")[1] || "",
     cropMimeType:"image/jpeg",
-    detectionReason:"등수 숫자 바로 왼쪽의 굵고 진한 아쿠아 세로 강조선 탐지",
+    detectionReason:"등수 왼쪽 아쿠아 세로선 후보 탐지(최종 판별은 엄지척 부재·방패 효과와 교차 확인)",
     cropBox:{
       x:Math.round(cropLeft / scale),
       y:Math.round(cropTop / scale),
@@ -15104,12 +15104,12 @@ async function detectAndCropAquaRow(file){
     aquaLineBottom:Math.round(best.bottom / scale),
     aquaCenterYRatio:Number((((best.top + best.bottom) / 2) / height).toFixed(6)),
     aquaXRatio:Number((best.x / width).toFixed(6)),
-    detectorVersion:"rank-number-left-wall-v5"
+    detectorVersion:"rank-three-signals-v6"
   };
 }
 async function createAquaLeftGuide(file){
   const img = await loadImageFromFile(file);
-  const maxWidth = 1700;
+  const maxWidth = 1800;
   const scale = Math.min(1, maxWidth / img.naturalWidth);
   const width = Math.max(1, Math.round(img.naturalWidth * scale));
   const height = Math.max(1, Math.round(img.naturalHeight * scale));
@@ -15120,33 +15120,89 @@ async function createAquaLeftGuide(file){
   const sourceCtx = sourceCanvas.getContext("2d");
   sourceCtx.drawImage(img, 0, 0, width, height);
 
-  const guideLeft = 0;
-  const guideTop = Math.max(0, Math.round(height * 0.035));
-  const guideRight = Math.min(width, Math.round(width * 0.28));
-  const guideBottom = Math.min(height, Math.round(height * 0.91));
-  const guideW = Math.max(1, guideRight - guideLeft);
-  const guideH = Math.max(1, guideBottom - guideTop);
+  /*
+   * 랭전 본인 행 판별용 복합 확대 이미지 V6
+   * 같은 높이의 선수 행을 다음 세 패널에서 교차 확인합니다.
+   * 1) 등수 숫자 왼쪽의 굵은 아쿠아 세로선
+   * 2) 평균속도 바로 왼쪽의 방패/광택 선택 효과
+   * 3) 맨 오른쪽 엄지척 아이콘 존재 여부
+   */
+  const top = Math.max(0, Math.round(height * 0.05));
+  const bottom = Math.min(height, Math.round(height * 0.91));
+  const cropH = Math.max(1, bottom - top);
+
+  const panels = [
+    {
+      label:"① 등수 왼쪽 아쿠아 세로선",
+      x:0,
+      w:Math.max(1, Math.round(width * 0.27)),
+    },
+    {
+      label:"② 평균속도 왼쪽 방패 효과",
+      x:Math.max(0, Math.round(width * 0.34)),
+      w:Math.max(1, Math.round(width * 0.39)),
+    },
+    {
+      label:"③ 오른쪽 엄지척 존재/부재",
+      x:Math.max(0, Math.round(width * 0.72)),
+      w:Math.max(1, width - Math.round(width * 0.72)),
+    },
+  ];
+
+  const panelTargetW = 600;
+  const labelH = 54;
+  const outputScale = Math.max(1.2, Math.min(3.2, 1050 / cropH));
+  const panelOutputH = Math.max(1, Math.round(cropH * outputScale));
 
   const guideCanvas = document.createElement("canvas");
-  const outputScale = Math.max(1.5, Math.min(3.5, 1250 / guideW));
-  guideCanvas.width = Math.round(guideW * outputScale);
-  guideCanvas.height = Math.round(guideH * outputScale);
+  guideCanvas.width = panelTargetW * panels.length;
+  guideCanvas.height = labelH + panelOutputH;
+
   const guideCtx = guideCanvas.getContext("2d");
+  guideCtx.fillStyle = "#ffffff";
+  guideCtx.fillRect(0, 0, guideCanvas.width, guideCanvas.height);
   guideCtx.imageSmoothingEnabled = true;
   guideCtx.imageSmoothingQuality = "high";
-  guideCtx.drawImage(sourceCanvas, guideLeft, guideTop, guideW, guideH, 0, 0, guideCanvas.width, guideCanvas.height);
+  guideCtx.font = "bold 25px sans-serif";
+  guideCtx.textAlign = "center";
+  guideCtx.textBaseline = "middle";
+
+  panels.forEach((panel, idx) => {
+    const dx = idx * panelTargetW;
+
+    guideCtx.fillStyle = idx === 0 ? "#dff7ff" : idx === 1 ? "#eef6ff" : "#f3f8ff";
+    guideCtx.fillRect(dx, 0, panelTargetW, labelH);
+    guideCtx.fillStyle = "#0f172a";
+    guideCtx.fillText(panel.label, dx + panelTargetW / 2, labelH / 2);
+
+    guideCtx.drawImage(
+      sourceCanvas,
+      panel.x, top, panel.w, cropH,
+      dx, labelH, panelTargetW, panelOutputH
+    );
+
+    if(idx > 0){
+      guideCtx.strokeStyle = "#0ea5e9";
+      guideCtx.lineWidth = 4;
+      guideCtx.beginPath();
+      guideCtx.moveTo(dx, 0);
+      guideCtx.lineTo(dx, guideCanvas.height);
+      guideCtx.stroke();
+    }
+  });
 
   const dataUrl = canvasToDataUrl(guideCanvas, "image/jpeg", 0.98);
+
   return {
     base64:dataUrl.split(",")[1] || "",
     mimeType:"image/jpeg",
     box:{
-      x:Math.round(guideLeft / scale),
-      y:Math.round(guideTop / scale),
-      width:Math.round(guideW / scale),
-      height:Math.round(guideH / scale)
+      x:0,
+      y:Math.round(top / scale),
+      width:Math.round(width / scale),
+      height:Math.round(cropH / scale)
     },
-    version:"rank-strip-guide-v5"
+    version:"rank-three-signals-guide-v6"
   };
 }
 
@@ -15180,7 +15236,7 @@ async function aiFileToPayload(file){
   try{
     aquaGuide = await createAquaLeftGuide(file);
   }catch(e){
-    console.warn("랭전 왼쪽 확대 안내 이미지 생성 실패, 원본 판독으로 계속합니다.", e);
+    console.warn("랭전 3단서 복합 확대 이미지 생성 실패, 원본 판독으로 계속합니다.", e);
   }
 
   return {
