@@ -428,6 +428,28 @@ function buildUpstreamError(openAIResponse, responseText, parsed, requestId) {
 }
 
 async function detectScreenAndSelectedRank({ env, image }) {
+  const pixelRank = Number(image?.thumbPixelSelectedRank);
+  const pixelConfidence = Number(image?.thumbPixelConfidence || 0);
+
+  // 실제 오른쪽 엄지척 칸의 픽셀을 계산해 유일한 빈 행을 찾았으면
+  // OpenAI가 노란 1등 기록으로 선택을 바꾸지 못하도록 바로 확정합니다.
+  if(
+    image?.thumbPixelFound === true &&
+    Number.isInteger(pixelRank) &&
+    pixelRank >= 1 &&
+    pixelRank <= 8 &&
+    pixelConfidence >= 0.52
+  ){
+    return {
+      ok:true,
+      screenType:"ranked_result",
+      selectedRank:pixelRank,
+      confidence:pixelConfidence,
+      evidence:String(image?.thumbPixelReason || `엄지척 픽셀 탐지로 ${pixelRank}등 확정`),
+      requestId:null,
+      selectionSource:"thumb_pixel"
+    };
+  }
   const model = env.OPENAI_MODEL || "gpt-4.1-mini";
   const content = [
     {
@@ -435,6 +457,11 @@ async function detectScreenAndSelectedRank({ env, image }) {
       text: `
 이 이미지는 카트라이더 러쉬플러스 화면입니다.
 먼저 화면 유형을 분류하고, 랭킹전 결과표이면 본인 등수를 판별하세요.
+
+브라우저 픽셀 탐지 참고:
+- 후보 등수: ${Number.isInteger(Number(image?.thumbPixelCandidateRank)) ? `${Number(image.thumbPixelCandidateRank)}등` : "없음"}
+- 신뢰도: ${Number(image?.thumbPixelConfidence || 0).toFixed(3)}
+- 1~8등 엄지척 에너지: ${Array.isArray(image?.thumbPixelScores) ? image.thumbPixelScores.join(", ") : "없음"}
 
 가장 중요한 사실:
 - 맨 오른쪽에 있는 엄지척(좋아요) 아이콘은 다른 선수에게만 표시됩니다.
@@ -476,11 +503,25 @@ screenType 분류
     },
   ];
 
+  if (image.thumbPixelDebugBase64) {
+    content.push(
+      {
+        type: "input_text",
+        text: `아래 이미지는 브라우저가 1~8등의 맨 오른쪽 엄지척 칸만 같은 크기로 잘라 배열한 것입니다. 픽셀 후보는 ${Number.isInteger(Number(image?.thumbPixelCandidateRank)) ? `${Number(image.thumbPixelCandidateRank)}등` : "없음"}이며 신뢰도는 ${Number(image?.thumbPixelConfidence || 0).toFixed(3)}입니다. 각 줄에서 엄지척 모양이 실제로 있는지 재검토하세요.`,
+      },
+      {
+        type: "input_image",
+        image_url: `data:${image.thumbPixelDebugMimeType || "image/jpeg"};base64,${image.thumbPixelDebugBase64}`,
+        detail: "high",
+      },
+    );
+  }
+
   if (image.aquaGuideBase64) {
     content.push(
       {
         type: "input_text",
-        text: "아래 첫 번째 확대 이미지만 사용해 본인 등수를 먼저 확정하세요. 왼쪽 패널의 등수와 같은 높이에 있는 오른쪽 패널을 비교하여, 맨 오른쪽 엄지척 아이콘이 없는 유일한 행을 선택하세요. 엄지척은 매우 희미할 수 있습니다. 방패·아쿠아색·노란 기록은 이 단계에서 보지 마세요.",
+        text: "아래 이미지는 등수와 오른쪽 끝을 같은 높이로 맞춘 추가 확인용입니다. 엄지척이 없는 유일한 행을 선택하세요.",
       },
       {
         type: "input_image",
@@ -850,6 +891,15 @@ async function analyzeImages(request, env) {
       aquaGuideVersion: String(image?.aquaGuideVersion || ""),
       aquaCenterYRatio: Number.isFinite(Number(image?.aquaCenterYRatio)) ? Number(image.aquaCenterYRatio) : null,
       aquaXRatio: Number.isFinite(Number(image?.aquaXRatio)) ? Number(image.aquaXRatio) : null,
+      thumbPixelFound:Boolean(image?.thumbPixelFound),
+      thumbPixelSelectedRank:Number.isInteger(Number(image?.thumbPixelSelectedRank)) ? Number(image.thumbPixelSelectedRank) : null,
+      thumbPixelCandidateRank:Number.isInteger(Number(image?.thumbPixelCandidateRank)) ? Number(image.thumbPixelCandidateRank) : null,
+      thumbPixelConfidence:Number(image?.thumbPixelConfidence || 0),
+      thumbPixelScores:Array.isArray(image?.thumbPixelScores) ? image.thumbPixelScores.map(Number) : [],
+      thumbPixelDebugBase64:cleanBase64(image?.thumbPixelDebugBase64 || ""),
+      thumbPixelDebugMimeType:sanitizeMimeType(image?.thumbPixelDebugMimeType || "image/jpeg"),
+      thumbPixelReason:String(image?.thumbPixelReason || ""),
+      thumbPixelDetectorVersion:String(image?.thumbPixelDetectorVersion || ""),
       sourceImage: index + 1,
     });
   });
@@ -952,6 +1002,15 @@ async function analyzeImages(request, env) {
     allowedMapCount: allowedMapNames.length,
     rejectedImages,
     requestIds,
+    selectionDebug: acceptedImages.map((image) => ({
+      image:image.name,
+      thumbPixelFound:Boolean(image.thumbPixelFound),
+      thumbPixelSelectedRank:image.thumbPixelSelectedRank,
+      thumbPixelCandidateRank:image.thumbPixelCandidateRank,
+      thumbPixelConfidence:image.thumbPixelConfidence,
+      thumbPixelScores:image.thumbPixelScores,
+      thumbPixelReason:image.thumbPixelReason,
+    })),
   });
 }
 
