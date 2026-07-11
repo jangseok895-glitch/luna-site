@@ -15130,10 +15130,10 @@ async function runAiRecordAnalysis(){
 
     const applicable = previewResults.filter(r => r.ok).length;
     const failed = previewResults.filter(r => !r.ok).length;
-    const applyBtn = document.getElementById("btnApplyAiRecord");
-    if(applyBtn){
-      applyBtn.disabled = applicable < 1;
-      applyBtn.style.opacity = applicable < 1 ? ".5" : "1";
+    const applyBtnAfterAnalysis = document.getElementById("btnApplyAiRecord");
+    if(applyBtnAfterAnalysis){
+      applyBtnAfterAnalysis.disabled = applicable < 1;
+      applyBtnAfterAnalysis.style.opacity = applicable < 1 ? ".5" : "1";
     }
 
     setAiRecordStatus(`AI 측정 완료\n적용 가능한 기록: ${applicable}개\n미반영 또는 확인필요: ${failed}개\n내용을 확인한 뒤 왼쪽의 적용 버튼을 눌러주세요.`, true, false);
