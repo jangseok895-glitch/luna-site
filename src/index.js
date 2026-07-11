@@ -326,103 +326,30 @@ async function analyzeImages(request, env) {
 
   const model = env.OPENAI_MODEL || "gpt-4.1-mini";
 
-  let openAIResponse;
+const model = env.OPENAI_MODEL || "gpt-4.1-mini";
 
-  try {
-    openAIResponse = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${env.OPENAI_API_KEY}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        input: [
-          {
-            role: "user",
-            content: inputContent,
-          },
-        ],
-        temperature: 0,
-        max_output_tokens: 3000,
-      }),
-    });
-  } catch (error) {
-    console.error("AI connection error:", error);
-
-    return jsonResponse(
-      {
-        ok: false,
-        error: "AI 분석 서버에 연결하지 못했습니다.",
-      },
-      502,
-    );
+const openAIResponse = await fetch(
+  "https://api.openai.com/v1/responses",
+  {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      input: "hello"
+    })
   }
+);
 
-  // 오류 응답이 JSON이 아닐 수도 있으므로 먼저 원문 텍스트로 읽습니다.
-  const responseText = await openAIResponse.text().catch(() => "");
-  let result = null;
+const responseText = await openAIResponse.text();
 
-  if (responseText) {
-    try {
-      result = JSON.parse(responseText);
-    } catch {
-      result = null;
-    }
-  }
-
-  if (!openAIResponse.ok) {
-    const upstreamMessage = String(
-      result?.error?.message ||
-      result?.message ||
-      responseText ||
-      "",
-    )
-      .replace(/<[^>]*>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 1200);
-
-    const upstreamCode = String(
-      result?.error?.code ||
-      result?.code ||
-      "",
-    ).trim();
-
-    const upstreamType = String(
-      result?.error?.type ||
-      result?.type ||
-      "",
-    ).trim();
-
-    console.error("AI API error:", {
-      status: openAIResponse.status,
-      message: upstreamMessage,
-      code: upstreamCode,
-      type: upstreamType,
-    });
-
-    const detailParts = [
-      upstreamMessage,
-      upstreamCode ? `오류 코드: ${upstreamCode}` : "",
-      upstreamType ? `오류 유형: ${upstreamType}` : "",
-      `상태코드: ${openAIResponse.status}`,
-    ].filter(Boolean);
-
-    return jsonResponse(
-      {
-        ok: false,
-        error: detailParts.join("\n"),
-        status: openAIResponse.status,
-        code: upstreamCode || null,
-        type: upstreamType || null,
-      },
-      openAIResponse.status >= 400 && openAIResponse.status < 600
-        ? openAIResponse.status
-        : 502,
-    );
-  }
-
+return jsonResponse({
+  ok: openAIResponse.ok,
+  status: openAIResponse.status,
+  response: responseText
+});
   const outputText = extractOutputText(result);
   const parsed = parseJsonText(outputText);
 
