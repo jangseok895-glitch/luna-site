@@ -15092,7 +15092,7 @@ async function detectAndCropAquaRow(file){
     confidence,
     cropBase64:dataUrl.split(",")[1] || "",
     cropMimeType:"image/jpeg",
-    detectionReason:"엄지척 부재를 최우선으로 판별하고, 방패 효과와 아쿠아 테두리를 후순위로 확인",
+    detectionReason:"맨 오른쪽 엄지척 아이콘이 없는 유일한 행을 절대 우선 판별",
     cropBox:{
       x:Math.round(cropLeft / scale),
       y:Math.round(cropTop / scale),
@@ -15104,12 +15104,12 @@ async function detectAndCropAquaRow(file){
     aquaLineBottom:Math.round(best.bottom / scale),
     aquaCenterYRatio:Number((((best.top + best.bottom) / 2) / height).toFixed(6)),
     aquaXRatio:Number((best.x / width).toFixed(6)),
-    detectorVersion:"rank-thumb-first-v7"
+    detectorVersion:"rank-thumb-only-v8"
   };
 }
 async function createAquaLeftGuide(file){
   const img = await loadImageFromFile(file);
-  const maxWidth = 1800;
+  const maxWidth = 1900;
   const scale = Math.min(1, maxWidth / img.naturalWidth);
   const width = Math.max(1, Math.round(img.naturalWidth * scale));
   const height = Math.max(1, Math.round(img.naturalHeight * scale));
@@ -15121,77 +15121,90 @@ async function createAquaLeftGuide(file){
   sourceCtx.drawImage(img, 0, 0, width, height);
 
   /*
-   * 랭전 본인 행 판별용 복합 확대 이미지 V6
-   * 같은 높이의 선수 행을 다음 세 패널에서 교차 확인합니다.
-   * 1) 맨 오른쪽 엄지척 아이콘 존재 여부
-   * 2) 평균속도 바로 왼쪽의 방패/광택 선택 효과
-   * 3) 등수 숫자 왼쪽의 굵은 아쿠아 세로선
+   * 랭전 본인 판별 전용 안내 이미지 V8
+   *
+   * 본인은 맨 오른쪽 엄지척(좋아요) 아이콘이 없는 유일한 행입니다.
+   * AI가 작은 아이콘을 놓치지 않도록:
+   *  - 왼쪽에는 등수 숫자 영역
+   *  - 오른쪽에는 엄지척 아이콘 영역
+   * 두 영역을 같은 세로 비율로 크게 확대해 나란히 배치합니다.
+   *
+   * 평균속도/방패 및 아쿠아 테두리는 이 1차 판별 이미지에 넣지 않습니다.
+   * 엄지척으로 확정하지 못했을 때만 원본에서 후순위로 확인합니다.
    */
-  const top = Math.max(0, Math.round(height * 0.05));
-  const bottom = Math.min(height, Math.round(height * 0.91));
+  const top = Math.max(0, Math.round(height * 0.08));
+  const bottom = Math.min(height, Math.round(height * 0.90));
   const cropH = Math.max(1, bottom - top);
 
-  const panels = [
-    {
-      label:"① 오른쪽 엄지척 존재/부재",
-      x:Math.max(0, Math.round(width * 0.70)),
-      w:Math.max(1, width - Math.round(width * 0.70)),
-    },
-    {
-      label:"② 평균속도 왼쪽 방패 효과",
-      x:Math.max(0, Math.round(width * 0.34)),
-      w:Math.max(1, Math.round(width * 0.39)),
-    },
-    {
-      label:"③ 등수 왼쪽 아쿠아 세로선",
-      x:0,
-      w:Math.max(1, Math.round(width * 0.27)),
-    },
-  ];
+  // 등수 영역: 화면 왼쪽 약 0~13%
+  const rankX = 0;
+  const rankW = Math.max(1, Math.round(width * 0.15));
 
-  const panelTargetW = 600;
-  const labelH = 54;
-  const outputScale = Math.max(1.2, Math.min(3.2, 1050 / cropH));
-  const panelOutputH = Math.max(1, Math.round(cropH * outputScale));
+  // 엄지척 영역: 화면 오른쪽 약 79~100%
+  // 사진마다 표 폭이 조금 달라도 아이콘과 바로 왼쪽 보조 아이콘까지 포함합니다.
+  const thumbX = Math.max(0, Math.round(width * 0.76));
+  const thumbW = Math.max(1, width - thumbX);
+
+  const rankPanelW = 420;
+  const thumbPanelW = 1080;
+  const labelH = 62;
+  const panelH = Math.max(900, Math.round(cropH * 2.15));
 
   const guideCanvas = document.createElement("canvas");
-  guideCanvas.width = panelTargetW * panels.length;
-  guideCanvas.height = labelH + panelOutputH;
+  guideCanvas.width = rankPanelW + thumbPanelW;
+  guideCanvas.height = labelH + panelH;
 
-  const guideCtx = guideCanvas.getContext("2d");
-  guideCtx.fillStyle = "#ffffff";
-  guideCtx.fillRect(0, 0, guideCanvas.width, guideCanvas.height);
-  guideCtx.imageSmoothingEnabled = true;
-  guideCtx.imageSmoothingQuality = "high";
-  guideCtx.font = "bold 25px sans-serif";
-  guideCtx.textAlign = "center";
-  guideCtx.textBaseline = "middle";
+  const ctx = guideCanvas.getContext("2d");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, guideCanvas.width, guideCanvas.height);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.font = "bold 27px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
 
-  panels.forEach((panel, idx) => {
-    const dx = idx * panelTargetW;
+  ctx.fillStyle = "#dff7ff";
+  ctx.fillRect(0, 0, rankPanelW, labelH);
+  ctx.fillStyle = "#0f172a";
+  ctx.fillText("같은 높이의 등수", rankPanelW / 2, labelH / 2);
 
-    guideCtx.fillStyle = idx === 0 ? "#dff7ff" : idx === 1 ? "#eef6ff" : "#f3f8ff";
-    guideCtx.fillRect(dx, 0, panelTargetW, labelH);
-    guideCtx.fillStyle = "#0f172a";
-    guideCtx.fillText(panel.label, dx + panelTargetW / 2, labelH / 2);
+  ctx.fillStyle = "#fff7d6";
+  ctx.fillRect(rankPanelW, 0, thumbPanelW, labelH);
+  ctx.fillStyle = "#0f172a";
+  ctx.fillText("맨 오른쪽 엄지척 존재 여부 — 없는 행이 본인", rankPanelW + thumbPanelW / 2, labelH / 2);
 
-    guideCtx.drawImage(
-      sourceCanvas,
-      panel.x, top, panel.w, cropH,
-      dx, labelH, panelTargetW, panelOutputH
-    );
+  ctx.drawImage(
+    sourceCanvas,
+    rankX, top, rankW, cropH,
+    0, labelH, rankPanelW, panelH
+  );
 
-    if(idx > 0){
-      guideCtx.strokeStyle = "#0ea5e9";
-      guideCtx.lineWidth = 4;
-      guideCtx.beginPath();
-      guideCtx.moveTo(dx, 0);
-      guideCtx.lineTo(dx, guideCanvas.height);
-      guideCtx.stroke();
-    }
-  });
+  ctx.drawImage(
+    sourceCanvas,
+    thumbX, top, thumbW, cropH,
+    rankPanelW, labelH, thumbPanelW, panelH
+  );
 
-  const dataUrl = canvasToDataUrl(guideCanvas, "image/jpeg", 0.98);
+  ctx.strokeStyle = "#0ea5e9";
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(rankPanelW, 0);
+  ctx.lineTo(rankPanelW, guideCanvas.height);
+  ctx.stroke();
+
+  // 세로 위치 비교를 쉽게 하기 위한 얇은 가이드선.
+  // 실제 행을 임의로 나누는 것이 아니라 같은 y좌표를 비교하는 보조선입니다.
+  ctx.strokeStyle = "rgba(239,68,68,0.22)";
+  ctx.lineWidth = 2;
+  for(let i = 1; i < 8; i++){
+    const y = labelH + (panelH * i / 8);
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(guideCanvas.width, y);
+    ctx.stroke();
+  }
+
+  const dataUrl = canvasToDataUrl(guideCanvas, "image/jpeg", 0.99);
 
   return {
     base64:dataUrl.split(",")[1] || "",
@@ -15202,7 +15215,7 @@ async function createAquaLeftGuide(file){
       width:Math.round(width / scale),
       height:Math.round(cropH / scale)
     },
-    version:"rank-thumb-first-guide-v7"
+    version:"rank-thumb-only-guide-v8"
   };
 }
 
@@ -15236,7 +15249,7 @@ async function aiFileToPayload(file){
   try{
     aquaGuide = await createAquaLeftGuide(file);
   }catch(e){
-    console.warn("랭전 3단서 복합 확대 이미지 생성 실패, 원본 판독으로 계속합니다.", e);
+    console.warn("랭전 엄지척 전용 확대 이미지 생성 실패, 원본 판독으로 계속합니다.", e);
   }
 
   return {
