@@ -4753,39 +4753,41 @@ body.pc-view #goPcBtn{
 }
 
 .map-name-wrap{
-  position:relative !important;
-  display:inline-block !important;
-  padding:0 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:7px !important;
+  max-width:100% !important;
+  vertical-align:middle !important;
 }
 
+/* Supabase map_records.status: 1=N(NEW), 2=B(BAN) */
 .map-new-badge{
-  position:absolute !important;
-  left:-26px !important;
-  top:-12px !important;
-  display:inline-block !important;
-  padding:2px 6px !important;
-  border-radius:999px !important;
-  background:#ef4444 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  flex:0 0 auto !important;
+  width:25px !important;
+  height:25px !important;
+  padding:0 !important;
+  border-radius:7px !important;
   color:#ffffff !important;
-  font-size:10px !important;
-  font-weight:900 !important;
-  line-height:1.1 !important;
-  transform:rotate(-12deg) !important;
-  box-shadow:0 2px 6px rgba(239,68,68,.35) !important;
+  font-size:16px !important;
+  font-weight:1000 !important;
+  line-height:1 !important;
+  box-sizing:border-box !important;
+  box-shadow:0 2px 5px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.28) !important;
   pointer-events:none !important;
 }
 
-/* Supabase map_records.status: 1=NEW, 2=BAN */
 .map-badge-new{
-  background:#ef4444 !important;
-  color:#ffffff !important;
+  background:linear-gradient(145deg,#ff5b5b,#dc2626) !important;
+  border:1px solid #ff9a9a !important;
 }
 
 .map-badge-ban{
-  background:#111827 !important;
-  color:#ffffff !important;
-  border:1px solid #ffffff !important;
-  box-shadow:0 2px 6px rgba(17,24,39,.35) !important;
+  background:linear-gradient(145deg,#374151,#111827) !important;
+  border:1px solid #6b7280 !important;
 }
 
   .tab-status-badge{
@@ -7670,11 +7672,11 @@ function newMapBadge(r){
   const status = Number(r?.status ?? 0);
 
   if(status === 1){
-    return ` <span class="map-new-badge map-badge-new">NEW</span>`;
+    return `<span class="map-new-badge map-badge-new" title="신규 맵">N</span>`;
   }
 
   if(status === 2){
-    return ` <span class="map-new-badge map-badge-ban">BAN</span>`;
+    return `<span class="map-new-badge map-badge-ban" title="금지 맵">B</span>`;
   }
 
   return "";
@@ -8001,7 +8003,7 @@ function renderPc() {
     tr.dataset.map = normName(r["맵이름"]);
     tr.innerHTML = `
 <td class="map" title="${esc(r["맵이름"])}">
-  <span class="map-name-wrap">${esc(r["맵이름"])}${newMapBadge(r)}</span>
+  <span class="map-name-wrap">${newMapBadge(r)}${esc(r["맵이름"])}</span>
 </td>
       <td class="center">${chipHtml(key, "프로", r["프로"])}</td>
       <td class="center">${chipHtml(key, "강주력", r["강주력"])}</td>
@@ -8031,7 +8033,7 @@ function renderRealPc(selObj) {
     tr.dataset.map = normName(r["맵이름"]);
 
     tr.innerHTML = `
-      <td class="map" title="${esc(r["맵이름"])}"><span class="map-name-wrap">${esc(r["맵이름"])}${newMapBadge(r)}</span></td>
+      <td class="map" title="${esc(r["맵이름"])}"><span class="map-name-wrap">${newMapBadge(r)}${esc(r["맵이름"])}</span></td>
       ${realChipCell(key, "프로", r["프로"], chosen)}
       ${realChipCell(key, "강주력", r["강주력"], chosen)}
       ${realChipCell(key, "주력", r["주력"], chosen)}
@@ -8071,7 +8073,7 @@ function renderMobile() {
       <div class="card-head">
         <div class="diff-badge">${esc(r["난이도"] || "")}</div>
         <div class="thumb" style="${thumbStyle}">${imgUrl ? "" : "📷"}</div>
-        <div class="map-big"><span class="map-name-wrap">${esc(mapName)}${newMapBadge(r)}</span></div>
+        <div class="map-big"><span class="map-name-wrap">${newMapBadge(r)}${esc(mapName)}</span></div>
       </div>
       <div class="card-headers">
         <div class="h">프로</div><div class="h">강주력</div><div class="h">주력</div><div class="h">1군</div>
