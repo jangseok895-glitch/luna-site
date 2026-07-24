@@ -4775,6 +4775,19 @@ body.pc-view #goPcBtn{
   pointer-events:none !important;
 }
 
+/* Supabase map_records.status: 1=NEW, 2=BAN */
+.map-badge-new{
+  background:#ef4444 !important;
+  color:#ffffff !important;
+}
+
+.map-badge-ban{
+  background:#111827 !important;
+  color:#ffffff !important;
+  border:1px solid #ffffff !important;
+  box-shadow:0 2px 6px rgba(17,24,39,.35) !important;
+}
+
   .tab-status-badge{
   position:absolute !important;
   right:8px !important;
@@ -7654,18 +7667,14 @@ function rowClassByDiff(d) {
 }
   
 function newMapBadge(r){
-  const order = Number(r && r.sort_order);
+  const status = Number(r?.status ?? 0);
 
-  if(order === 45){
-    return ` <span class="map-new-badge">NEW</span>`;
+  if(status === 1){
+    return ` <span class="map-new-badge map-badge-new">NEW</span>`;
   }
 
-  if(order === 76){
-    return ` <span class="map-new-badge">BAN</span>`;
-  }
-
-    if(order === 14){
-    return ` <span class="map-new-badge">BAN</span>`;
+  if(status === 2){
+    return ` <span class="map-new-badge map-badge-ban">BAN</span>`;
   }
 
   return "";
@@ -8022,7 +8031,7 @@ function renderRealPc(selObj) {
     tr.dataset.map = normName(r["맵이름"]);
 
     tr.innerHTML = `
-      <td class="map" title="${esc(r["맵이름"])}">${esc(r["맵이름"])}</td>
+      <td class="map" title="${esc(r["맵이름"])}"><span class="map-name-wrap">${esc(r["맵이름"])}${newMapBadge(r)}</span></td>
       ${realChipCell(key, "프로", r["프로"], chosen)}
       ${realChipCell(key, "강주력", r["강주력"], chosen)}
       ${realChipCell(key, "주력", r["주력"], chosen)}
@@ -8062,7 +8071,7 @@ function renderMobile() {
       <div class="card-head">
         <div class="diff-badge">${esc(r["난이도"] || "")}</div>
         <div class="thumb" style="${thumbStyle}">${imgUrl ? "" : "📷"}</div>
-        <div class="map-big">${esc(mapName)}</div>
+        <div class="map-big"><span class="map-name-wrap">${esc(mapName)}${newMapBadge(r)}</span></div>
       </div>
       <div class="card-headers">
         <div class="h">프로</div><div class="h">강주력</div><div class="h">주력</div><div class="h">1군</div>
@@ -9000,6 +9009,7 @@ function mapRecordToSheetRow(r, idx){
   return {
     id: String(r.id ?? r.sort_order ?? idx + 1),
     sort_order: Number(r.sort_order ?? idx + 1),
+    status: Number(r.status ?? 0),
     "추가점수": String(bonus || ""),
     bonusMultiplier: bonusMultiplierFromBonus(bonus),
     "난이도": String(r.difficulty ?? r["난이도"] ?? ""),
