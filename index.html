@@ -6438,10 +6438,232 @@ body.capture-mode #realPcTableSection.table-wrap{
 }
 @keyframes aiRecordSpin{ to{ transform:rotate(360deg); } }
 
+
+
+/* ===== 시즌40 최초 접속 안내 팝업 ===== */
+#season40NoticePopup{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  z-index:2147483647 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:20px !important;
+  background:rgba(15,23,42,.68) !important;
+  backdrop-filter:blur(6px) !important;
+}
+
+#season40NoticePopup.hidden{
+  display:none !important;
+}
+
+body.season40-notice-open{
+  overflow:hidden !important;
+}
+
+.season40-notice-box{
+  width:min(520px,94vw) !important;
+  max-height:92vh !important;
+  overflow-y:auto !important;
+  padding:24px 24px 22px !important;
+  border:3px solid #38bdf8 !important;
+  border-radius:22px !important;
+  background:
+    radial-gradient(circle at top left,rgba(255,255,255,.98),transparent 38%),
+    linear-gradient(145deg,#ffffff 0%,#eefaff 52%,#d9f3ff 100%) !important;
+  color:#111827 !important;
+  text-align:center !important;
+  box-shadow:0 24px 70px rgba(0,0,0,.42),
+             0 0 0 6px rgba(56,189,248,.18) !important;
+}
+
+.season40-notice-heading{
+  margin:0 0 8px !important;
+  font-size:28px !important;
+  font-weight:1000 !important;
+  color:#0369a1 !important;
+  letter-spacing:.2px !important;
+}
+
+.season40-notice-main{
+  margin:0 0 18px !important;
+  padding:12px 10px !important;
+  border-radius:14px !important;
+  background:linear-gradient(135deg,#fff4a8,#ffd54f,#ffb36b) !important;
+  border:1px solid #f59e0b !important;
+  color:#b91c1c !important;
+  font-size:23px !important;
+  font-weight:1000 !important;
+  line-height:1.35 !important;
+  box-shadow:0 5px 14px rgba(245,158,11,.22) !important;
+}
+
+.season40-notice-copy{
+  margin:0 0 16px !important;
+  font-size:17px !important;
+  font-weight:800 !important;
+  line-height:1.7 !important;
+  color:#1f2937 !important;
+  word-break:keep-all !important;
+}
+
+.season40-notice-copy strong{
+  color:#dc2626 !important;
+  font-weight:1000 !important;
+}
+
+.season40-notice-info{
+  display:grid !important;
+  gap:9px !important;
+  margin:0 0 18px !important;
+  padding:14px !important;
+  border:1px solid #93c5fd !important;
+  border-radius:14px !important;
+  background:rgba(255,255,255,.82) !important;
+  text-align:left !important;
+}
+
+.season40-notice-info-row{
+  display:flex !important;
+  align-items:flex-start !important;
+  gap:8px !important;
+  color:#0f172a !important;
+  font-size:16px !important;
+  font-weight:900 !important;
+  line-height:1.45 !important;
+  word-break:keep-all !important;
+}
+
+.season40-notice-info-row::before{
+  content:"•" !important;
+  flex:0 0 auto !important;
+  color:#2563eb !important;
+  font-size:20px !important;
+  line-height:1.1 !important;
+}
+
+.season40-notice-bottom{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:14px !important;
+  margin-top:4px !important;
+}
+
+.season40-notice-check{
+  display:flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  color:#334155 !important;
+  font-size:15px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+  user-select:none !important;
+  text-align:left !important;
+}
+
+#season40DontShowAgain{
+  flex:0 0 auto !important;
+  width:20px !important;
+  height:20px !important;
+  margin:0 !important;
+  accent-color:#2563eb !important;
+  cursor:pointer !important;
+}
+
+.season40-notice-confirm{
+  flex:0 0 130px !important;
+  height:48px !important;
+  border:0 !important;
+  border-radius:14px !important;
+  background:linear-gradient(135deg,#38bdf8,#2563eb) !important;
+  color:#ffffff !important;
+  font-size:18px !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+  box-shadow:0 7px 18px rgba(37,99,235,.3),
+             inset 0 1px 0 rgba(255,255,255,.45) !important;
+}
+
+.season40-notice-confirm:hover{
+  filter:brightness(1.06) !important;
+  transform:translateY(-1px) !important;
+}
+
+.season40-notice-confirm:active{
+  transform:scale(.98) !important;
+}
+
+@media(max-width:560px){
+  .season40-notice-box{
+    padding:20px 17px 18px !important;
+  }
+  .season40-notice-heading{
+    font-size:24px !important;
+  }
+  .season40-notice-main{
+    font-size:20px !important;
+  }
+  .season40-notice-copy{
+    font-size:15px !important;
+  }
+  .season40-notice-info-row{
+    font-size:14px !important;
+  }
+  .season40-notice-bottom{
+    flex-direction:column !important;
+    align-items:stretch !important;
+  }
+  .season40-notice-check{
+    justify-content:center !important;
+  }
+  .season40-notice-confirm{
+    flex:0 0 auto !important;
+    width:100% !important;
+  }
+}
+
 </style>
 </head>
 
 <body>
+
+<!-- ===== 시즌40 최초 접속 안내 팝업 ===== -->
+<div id="season40NoticePopup" class="hidden" role="dialog" aria-modal="true" aria-labelledby="season40NoticeTitle">
+  <div class="season40-notice-box">
+    <h2 id="season40NoticeTitle" class="season40-notice-heading">📢 안내 🚨</h2>
+
+    <div class="season40-notice-main">
+      시즌40 군표 업데이트 완료!
+    </div>
+
+    <div class="season40-notice-copy">
+      AI 자동 기록 변경 기능이 적용되었습니다.<br>
+      저장된 군 기록이 자동으로 변경될 수 있으나<br>
+      그래도 <strong>본인의 기록을 확인해 주세요.</strong>
+    </div>
+
+    <div class="season40-notice-info">
+      <div class="season40-notice-info-row">7월 26일 오전 07:00부터 친선매칭방 적용</div>
+      <div class="season40-notice-info-row">시작맵 : 월드 두바이 다운타운</div>
+      <div class="season40-notice-info-row">벤 맵 : 대저택 오후의 휴일</div>
+    </div>
+
+    <div class="season40-notice-bottom">
+      <label class="season40-notice-check" for="season40DontShowAgain">
+        <input type="checkbox" id="season40DontShowAgain">
+        <span>다시는 열지 않기</span>
+      </label>
+
+      <button type="button" class="season40-notice-confirm" id="season40NoticeConfirm">
+        확인
+      </button>
+    </div>
+  </div>
+</div>
+
 <audio id="bgm" loop playsinline preload="auto">
   <source src="https://github.com/jangseok895-glitch/asia-ox-sound/raw/refs/heads/main/260604%20kartremix.mp3" type="audio/mpeg">
 </audio>
@@ -16481,5 +16703,64 @@ async function runAiRecordAnalysis(){
   </div>
 </div>
     
+
+
+<script>
+/* ===== 시즌40 최초 접속 안내 팝업 =====
+   다음 시즌에 모든 사용자에게 다시 띄우려면
+   아래 저장 키의 season40을 season41처럼 변경하세요.
+*/
+(function(){
+  const STORAGE_KEY = "hideSeason40Notice_v1";
+
+  function openSeason40Notice(){
+    const popup = document.getElementById("season40NoticePopup");
+    if(!popup) return;
+
+    let hiddenForever = false;
+    try{
+      hiddenForever = localStorage.getItem(STORAGE_KEY) === "1";
+    }catch(e){
+      hiddenForever = false;
+    }
+
+    if(hiddenForever){
+      popup.classList.add("hidden");
+      document.body.classList.remove("season40-notice-open");
+      return;
+    }
+
+    popup.classList.remove("hidden");
+    document.body.classList.add("season40-notice-open");
+  }
+
+  function closeSeason40Notice(){
+    const popup = document.getElementById("season40NoticePopup");
+    const checkbox = document.getElementById("season40DontShowAgain");
+
+    if(checkbox && checkbox.checked){
+      try{
+        localStorage.setItem(STORAGE_KEY, "1");
+      }catch(e){
+        console.warn("시즌40 안내 저장 실패", e);
+      }
+    }
+
+    if(popup) popup.classList.add("hidden");
+    document.body.classList.remove("season40-notice-open");
+  }
+
+  window.openSeason40Notice = openSeason40Notice;
+  window.closeSeason40Notice = closeSeason40Notice;
+
+  document.addEventListener("DOMContentLoaded", function(){
+    const confirmBtn = document.getElementById("season40NoticeConfirm");
+    if(confirmBtn) confirmBtn.addEventListener("click", closeSeason40Notice);
+
+    openSeason40Notice();
+  });
+})();
+</script>
+
 </body>
 </html>
