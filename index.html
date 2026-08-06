@@ -6625,6 +6625,114 @@ body.season40-notice-open{
   }
 }
 
+
+
+/* ===== EVENT 비활성 안내 / 비밀번호 변경 ===== */
+.event-empty-state{
+  min-height:220px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:30px !important;
+  border:2px dashed rgba(14,165,233,.45) !important;
+  border-radius:16px !important;
+  background:rgba(255,255,255,.88) !important;
+  color:#475569 !important;
+  font-size:25px !important;
+  font-weight:1000 !important;
+  text-align:center !important;
+}
+.main-title-image{
+  cursor:pointer !important;
+}
+.main-title-image:focus-visible{
+  outline:3px solid #2563eb !important;
+  outline-offset:4px !important;
+  border-radius:8px !important;
+}
+.pw-change-wrap{
+  position:relative !important;
+  display:inline-block !important;
+}
+#passwordChangePopup{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:2147483647 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:18px !important;
+  background:rgba(15,23,42,.62) !important;
+  backdrop-filter:blur(5px) !important;
+}
+#passwordChangePopup.hidden{ display:none !important; }
+.password-change-box{
+  width:min(460px,94vw) !important;
+  padding:22px !important;
+  border-radius:20px !important;
+  background:#ffffff !important;
+  border:2px solid #38bdf8 !important;
+  box-shadow:0 18px 54px rgba(0,0,0,.38) !important;
+  color:#111827 !important;
+}
+.password-change-head{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:12px !important;
+  margin-bottom:16px !important;
+}
+.password-change-head h2{
+  margin:0 !important;
+  color:#0369a1 !important;
+  font-size:26px !important;
+  font-weight:1000 !important;
+}
+.password-change-close{
+  width:46px !important;
+  height:46px !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:#ef4444 !important;
+  color:#fff !important;
+  font-size:27px !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+}
+.password-change-field{
+  display:grid !important;
+  gap:6px !important;
+  margin-bottom:12px !important;
+}
+.password-change-field label{
+  color:#334155 !important;
+  font-size:14px !important;
+  font-weight:900 !important;
+}
+.password-change-field input{
+  width:100% !important;
+  height:48px !important;
+  padding:0 12px !important;
+  border:1px solid #7dd3fc !important;
+  border-radius:12px !important;
+  background:#f8fdff !important;
+  color:#111827 !important;
+  font-size:18px !important;
+  font-weight:900 !important;
+}
+.password-change-help{
+  margin:4px 0 16px !important;
+  color:#64748b !important;
+  font-size:13px !important;
+  font-weight:800 !important;
+  line-height:1.5 !important;
+}
+.password-change-actions{
+  display:flex !important;
+  justify-content:flex-end !important;
+  gap:9px !important;
+}
+
 </style>
 </head>
 
@@ -7198,7 +7306,7 @@ function escMini4545(v){
       <!-- 타이틀 -->
       <div class="topbar">
 <div class="title">
-  <img class="main-title-image" src="https://i.postimg.cc/XYmkF1sW-/jemog-eobs-eum-1.png">
+  <img class="main-title-image" src="https://i.postimg.cc/XYmkF1sW-/jemog-eobs-eum-1.png" alt="루칭방 홈" role="button" tabindex="0" title="군표 메인 새로고침" onclick="reloadGunpyoHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();reloadGunpyoHome();}">
 
 <span class="chatgo-new-wrap" id="topChatGoWrap">
   <button class="btn gold" id="btnChatGo" onclick="openChatGoPopup()">챗GO</button>
@@ -7226,7 +7334,6 @@ function escMini4545(v){
   <button class="main-tab" data-tab="real">군실명제</button>
 <button class="main-tab" data-tab="eventTournament">
   대회
-  <span class="tab-live-badge">진행중</span>
 </button>
   <button class="main-tab" data-tab="event">EVENT</button>
   <button class="main-tab" data-tab="promo">홍보/자유</button>
@@ -7253,9 +7360,8 @@ function escMini4545(v){
             <button class="btn" id="btnJpg">스크린샷</button>
             <span class="main-btn-divider"></span>
 <button class="btn blue" id="btnRankGraph" onclick="openRankGraphPopup()">루칭방 그래프</button>
-<span class="ai-measure-new-wrap">
-  <span class="ai-measure-new-badge">NEW</span>
-  <button class="btn gold" id="btnAiRecord" onclick="openAiRecordPopup()">AI측정</button>
+<span class="pw-change-wrap">
+  <button class="btn gold" id="btnChangePassword" type="button" onclick="openPasswordChangePopup()">PW변경</button>
 </span>
 
             <!-- ✅ 버튼 하나 -->
@@ -7701,6 +7807,37 @@ user-select:none;
 
     <div id="aiRecordStatus" class="ai-record-status hidden"></div>
     <div id="aiRecordResult"></div>
+  </div>
+</div>
+
+  <div id="passwordChangePopup" class="hidden" onclick="closePasswordChangePopup()" role="dialog" aria-modal="true" aria-labelledby="passwordChangeTitle">
+  <div class="password-change-box" onclick="event.stopPropagation()">
+    <div class="password-change-head">
+      <h2 id="passwordChangeTitle">비밀번호 변경</h2>
+      <button type="button" class="password-change-close" onclick="closePasswordChangePopup()">×</button>
+    </div>
+
+    <div class="password-change-field">
+      <label for="pwChangeNickname">현재 닉네임</label>
+      <input id="pwChangeNickname" maxlength="30" autocomplete="username" placeholder="닉네임 입력">
+    </div>
+
+    <div class="password-change-field">
+      <label for="pwChangeCurrent">현재 비밀번호 5자리</label>
+      <input id="pwChangeCurrent" type="password" maxlength="5" inputmode="numeric" autocomplete="current-password" placeholder="현재 비밀번호">
+    </div>
+
+    <div class="password-change-field">
+      <label for="pwChangeNew">새로운 비밀번호 5자리</label>
+      <input id="pwChangeNew" type="password" maxlength="5" inputmode="numeric" autocomplete="new-password" placeholder="새 비밀번호">
+    </div>
+
+    <div class="password-change-help">군표와 군실명제에 저장된 본인의 5자리 비밀번호가 모두 함께 변경됩니다.</div>
+
+    <div class="password-change-actions">
+      <button type="button" class="btn link" onclick="closePasswordChangePopup()">취소</button>
+      <button type="button" class="btn gold" id="btnConfirmPasswordChange" onclick="submitPasswordChange()">확인</button>
+    </div>
   </div>
 </div>
 
@@ -9326,6 +9463,36 @@ async function loadProfileSupabase(nickname, pin5){
   return { totalScore: calcTotalFromSelectionsSupabase(safeSelections, sheet.rows), selections: safeSelections };
 }
 
+async function changeUserPasswordSupabase(nickname, currentPin, newPin){
+  const nick = String(nickname || "").trim();
+  const oldPin = String(currentPin || "").trim();
+  const nextPin = String(newPin || "").trim();
+
+  if(!nick) throw new Error("현재 닉네임을 입력해주세요.");
+  if(!/^\d{5}$/.test(oldPin)) throw new Error("현재 비밀번호는 숫자 5자리입니다.");
+  if(!/^\d{5}$/.test(nextPin)) throw new Error("새 비밀번호는 숫자 5자리입니다.");
+
+  const { data, error } = await sb.rpc("change_user_password_secure", {
+    p_nickname: nick,
+    p_current_pin: oldPin,
+    p_new_pin: nextPin
+  });
+
+  if(error){
+    if(String(error.message || "").includes("change_user_password_secure")){
+      throw new Error("Supabase에 비밀번호 변경 함수가 설치되지 않았습니다. 함께 제공된 SQL을 먼저 실행해주세요.");
+    }
+    throw error;
+  }
+
+  const result = Array.isArray(data) ? data[0] : data;
+  if(result === false || result?.ok === false || !result){
+    throw new Error(result?.message || "닉네임 또는 현재 비밀번호가 일치하지 않습니다.");
+  }
+
+  return result;
+}
+
 async function getCertifiedClubMapSupabase(){
   const map = {};
   try{
@@ -9912,6 +10079,7 @@ async function addAdminReplyToBoardSupabase(id, pin, reply){
     if(name === "getSheetData") return await getSheetDataSupabase();
     if(name === "saveProfile") return await saveProfileSupabase(...args);
     if(name === "loadProfile") return await loadProfileSupabase(...args);
+    if(name === "changeUserPassword") return await changeUserPasswordSupabase(...args);
     if(name === "getTeamList") return await getTeamListSupabase(...args);
     if(name === "registerToTeam") return await registerToTeamSupabase(...args);
     if(name === "getTeamMembers") return await getTeamMembersSupabase(...args);
@@ -10205,6 +10373,21 @@ function showBoard(board){
   if(writeBtn) writeBtn.textContent = board === "event" ? "이벤트 참여하기" : "글쓰기";
   if(list) list.innerHTML = "";
 
+  if(board === "event"){
+    if(writeBtn) writeBtn.style.display = "none";
+    if(fullRankBtn) fullRankBtn.style.display = "none";
+
+    const noticeBtn = document.getElementById("btnOpenEventNotice");
+    if(noticeBtn) noticeBtn.style.display = "none";
+
+    document.getElementById("boardSearchBox")?.classList.add("hidden");
+
+    if(list){
+      list.innerHTML = `<div class="event-empty-state">[현재 진행중인 이벤트가 없습니다]</div>`;
+    }
+    return;
+  }
+
   if(board === "eventTournament"){
     if(writeBtn) writeBtn.style.display = "none";
     if(fullRankBtn) fullRankBtn.style.display = "none";
@@ -10217,7 +10400,7 @@ function showBoard(board){
 
       <div class="tournament-thumb-card" onclick="openTournamentPoster('sticker3839')">
         <div class="tournament-title">38,39시즌 카트 스티커대회</div>
-        <div class="tournament-soon-badge">진행중</div>
+        <div class="tournament-soon-badge">종 료</div>
 
         <img class="tournament-thumb-img" src="https://i.ibb.co/qLGLRSgV/70c24cb0-1a18-491b-af91-9b540a061c14.png">
 
@@ -12616,7 +12799,7 @@ function pickSyncedLiveLog(logs){
   const realLogs = logs.filter(x => x.type === "real");
   const chatLogs = logs.filter(x => x.type === "chat");
 
-  const slot = Math.floor(Date.now() / 11000);
+  const slot = Math.floor(Date.now() / LIVE_LOG_SCROLL_MS);
   const pattern = slot % 10;
 
   let pool = [];
@@ -12658,6 +12841,8 @@ async function startLiveLogNeon(){
   const track = document.getElementById("liveLogTrack");
   if(!track) return;
 
+  track.style.animationDuration = (LIVE_LOG_SCROLL_MS / 1000) + "s";
+
   async function refreshLogs(){
     const logs = await getRecentLiveLogs();
     if(logs && logs.length){
@@ -12687,6 +12872,79 @@ setTimeout(startLiveLogNeon, 1200);
 
 
   const RANK_GRAPH_LABELS = ["프로","강주력","주력","1군","2군","3군","4군","5군","6군"];
+
+  const LUNA_HOME_URL = "https://luna-site.jangseok7.workers.dev/#gunpyo";
+  const LIVE_LOG_SCROLL_MS = 11000;
+
+  function reloadGunpyoHome(){
+    window.location.href = LUNA_HOME_URL;
+    window.location.reload();
+  }
+
+  function openPasswordChangePopup(){
+    const popup = document.getElementById("passwordChangePopup");
+    const nickInput = document.getElementById("pwChangeNickname");
+    const currentInput = document.getElementById("pwChangeCurrent");
+    const newInput = document.getElementById("pwChangeNew");
+
+    if(nickInput) nickInput.value = document.getElementById("nickname")?.value.trim() || "";
+    if(currentInput) currentInput.value = "";
+    if(newInput) newInput.value = "";
+    popup?.classList.remove("hidden");
+    setTimeout(() => (nickInput?.value ? currentInput : nickInput)?.focus(), 50);
+  }
+
+  function closePasswordChangePopup(){
+    document.getElementById("passwordChangePopup")?.classList.add("hidden");
+  }
+
+  async function submitPasswordChange(){
+    const nickname = String(document.getElementById("pwChangeNickname")?.value || "").trim();
+    const currentPin = String(document.getElementById("pwChangeCurrent")?.value || "").trim();
+    const newPin = String(document.getElementById("pwChangeNew")?.value || "").trim();
+    const confirmBtn = document.getElementById("btnConfirmPasswordChange");
+
+    if(!nickname) return toast("현재 닉네임을 입력해주세요.");
+    if(!/^\d{5}$/.test(currentPin)) return toast("현재 비밀번호는 숫자 5자리입니다.");
+    if(!/^\d{5}$/.test(newPin)) return toast("새 비밀번호는 숫자 5자리입니다.");
+    if(currentPin === newPin) return toast("현재 비밀번호와 다른 새 비밀번호를 입력해주세요.");
+
+    try{
+      if(confirmBtn){
+        confirmBtn.disabled = true;
+        confirmBtn.style.opacity = ".55";
+      }
+      showLoading("비밀번호를 변경하는 중입니다");
+      await changeUserPasswordSupabase(nickname, currentPin, newPin);
+
+      const mainNick = document.getElementById("nickname");
+      const mainPin = document.getElementById("pin5");
+      if(mainNick) mainNick.value = nickname;
+      if(mainPin) mainPin.value = newPin;
+
+      closePasswordChangePopup();
+      toast("비밀번호 변경 완료");
+    }catch(e){
+      console.error(e);
+      toast(e?.message || "비밀번호 변경 실패");
+    }finally{
+      hideLoading();
+      if(confirmBtn){
+        confirmBtn.disabled = false;
+        confirmBtn.style.opacity = "";
+      }
+    }
+  }
+
+  document.addEventListener("keydown", function(e){
+    const popup = document.getElementById("passwordChangePopup");
+    if(!popup || popup.classList.contains("hidden")) return;
+    if(e.key === "Escape") closePasswordChangePopup();
+    if(e.key === "Enter"){
+      e.preventDefault();
+      submitPasswordChange();
+    }
+  });
 
   function openChatGoPopup(){
   const popup = document.getElementById("chatGoPopup");
