@@ -9468,29 +9468,45 @@ async function changeUserPasswordSupabase(nickname, currentPin, newPin){
   const oldPin = String(currentPin || "").trim();
   const nextPin = String(newPin || "").trim();
 
+  if(!sb) throw new Error("Supabase 연결에 실패했습니다.");
   if(!nick) throw new Error("현재 닉네임을 입력해주세요.");
   if(!/^\d{5}$/.test(oldPin)) throw new Error("현재 비밀번호는 숫자 5자리입니다.");
   if(!/^\d{5}$/.test(nextPin)) throw new Error("새 비밀번호는 숫자 5자리입니다.");
 
-  const { data, error } = await sb.rpc("change_user_password_secure", {
+  const { data, error } = await sb.rpc("change_profile_password_secure", {
     p_nickname: nick,
-    p_current_pin: oldPin,
-    p_new_pin: nextPin
+    p_old_pin5: oldPin,
+    p_new_pin5: nextPin
   });
 
   if(error){
-    if(String(error.message || "").includes("change_user_password_secure")){
-      throw new Error("Supabase에 비밀번호 변경 함수가 설치되지 않았습니다. 함께 제공된 SQL을 먼저 실행해주세요.");
+    console.error("비밀번호 변경 RPC 오류:", error);
+
+    const errorText = [
+      error.message,
+      error.details,
+      error.hint,
+      error.code
+    ].filter(Boolean).join(" ");
+
+    if(
+      errorText.includes("change_profile_password_secure") ||
+      errorText.includes("PGRST202") ||
+      errorText.includes("Could not find the function")
+    ){
+      throw new Error("Supabase에서 비밀번호 변경 함수를 찾지 못했습니다. change_profile_password_secure SQL 함수와 현재 사이트의 Supabase 프로젝트가 같은지 확인해주세요.");
     }
-    throw error;
+
+    throw new Error(error.message || "비밀번호 변경 중 Supabase 오류가 발생했습니다.");
   }
 
   const result = Array.isArray(data) ? data[0] : data;
-  if(result === false || result?.ok === false || !result){
-    throw new Error(result?.message || "닉네임 또는 현재 비밀번호가 일치하지 않습니다.");
+
+  if(result !== true){
+    throw new Error("닉네임 또는 현재 비밀번호가 일치하지 않습니다.");
   }
 
-  return result;
+  return true;
 }
 
 async function getCertifiedClubMapSupabase(){
