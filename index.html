@@ -1451,7 +1451,7 @@ input, .select, .text, #gunpyoTopPanel .input-wrap input{
   align-items:center !important;
   justify-content:center !important;
   writing-mode:horizontal-tb !important;
-  white-space:normal !important;
+  white-space:pre-line !important;
 }
 
 .tournament-thumb-img{
@@ -6733,6 +6733,414 @@ body.season40-notice-open{
   gap:9px !important;
 }
 
+
+/* ===== EVENT : 공성전 1차 - 지도 성 이름 배치 ===== */
+#siegeSection{
+  width:100% !important;
+  margin:0 auto !important;
+}
+.siege-wrap{
+  width:min(1100px,100%) !important;
+  margin:10px auto 30px !important;
+}
+.siege-title{
+  margin:0 0 10px !important;
+  text-align:center !important;
+  font-size:28px !important;
+  font-weight:1000 !important;
+  color:#0f172a !important;
+}
+.siege-map{
+  position:relative !important;
+  width:100% !important;
+  aspect-ratio:1447 / 2048 !important;
+  overflow:hidden !important;
+  background:#dff6ff !important;
+  border-radius:16px !important;
+  box-shadow:0 10px 28px rgba(0,0,0,.18) !important;
+}
+.siege-map-bg{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  display:block !important;
+  object-fit:fill !important;
+  user-select:none !important;
+  -webkit-user-drag:none !important;
+}
+.siege-castle{
+  position:absolute !important;
+  z-index:5 !important;
+  transform:translate(-50%,-50%) !important;
+  width:7.6% !important;
+  min-width:58px !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+  outline:0 !important;
+  background:transparent !important;
+  color:#111827 !important;
+  text-align:center !important;
+  cursor:pointer !important;
+  font-family:"Pretendard Variable",system-ui,sans-serif !important;
+  line-height:1.05 !important;
+}
+.siege-city{
+  display:block !important;
+  margin-bottom:1px !important;
+  color:#ffffff !important;
+  font-size:clamp(8px,1.05vw,14px) !important;
+  font-weight:1000 !important;
+  white-space:nowrap !important;
+  text-shadow:
+    -1px -1px 0 #111827,
+     1px -1px 0 #111827,
+    -1px  1px 0 #111827,
+     1px  1px 0 #111827,
+     0 2px 4px rgba(0,0,0,.9) !important;
+}
+.siege-owner{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:100% !important;
+  min-height:18px !important;
+  padding:2px 2px !important;
+  border-radius:3px !important;
+  background:rgba(0,214,73,.90) !important;
+  border:1px solid rgba(0,80,25,.75) !important;
+  color:#08140b !important;
+  font-size:clamp(6px,.72vw,10px) !important;
+  font-weight:1000 !important;
+  white-space:nowrap !important;
+  box-shadow:0 1px 2px rgba(0,0,0,.22) !important;
+}
+.siege-castle:hover{
+  z-index:30 !important;
+  transform:translate(-50%,-50%) scale(1.12) !important;
+}
+.siege-castle:hover .siege-owner{
+  filter:brightness(1.12) !important;
+}
+@media(max-width:700px){
+  .siege-wrap{
+    width:100% !important;
+  }
+  .siege-title{
+    font-size:20px !important;
+  }
+  .siege-castle{
+    min-width:42px !important;
+    width:8.3% !important;
+  }
+  .siege-owner{
+    min-height:13px !important;
+    padding:1px !important;
+  }
+}
+
+
+/* ===== 공성전 성 정보 팝업 / 홍보 툴팁 ===== */
+.siege-castle::after{
+  content:attr(data-tooltip);
+  position:absolute !important;
+  left:50% !important;
+  bottom:calc(100% + 8px) !important;
+  transform:translateX(-50%) !important;
+  width:max-content !important;
+  max-width:230px !important;
+  padding:7px 10px !important;
+  border-radius:9px !important;
+  background:rgba(15,23,42,.94) !important;
+  color:#fff !important;
+  font-size:11px !important;
+  font-weight:800 !important;
+  line-height:1.35 !important;
+  white-space:pre-line !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+  transition:opacity .15s ease !important;
+  box-shadow:0 7px 18px rgba(0,0,0,.28) !important;
+}
+.siege-castle:hover::after{
+  opacity:1 !important;
+}
+.siege-info-popup{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:2147483646 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:18px !important;
+  background:rgba(0,0,0,.58) !important;
+}
+.siege-info-popup.hidden{
+  display:none !important;
+}
+.siege-info-box{
+  width:min(520px,94vw) !important;
+  max-height:82vh !important;
+  overflow:auto !important;
+  padding:20px !important;
+  border-radius:18px !important;
+  background:#fff !important;
+  box-shadow:0 18px 55px rgba(0,0,0,.36) !important;
+}
+.siege-info-head{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:12px !important;
+  padding-bottom:12px !important;
+  border-bottom:1px solid #e2e8f0 !important;
+}
+.siege-info-head h2{
+  margin:0 !important;
+  font-size:25px !important;
+  font-weight:1000 !important;
+  color:#0f172a !important;
+}
+.siege-info-close{
+  border:0 !important;
+  border-radius:10px !important;
+  padding:8px 12px !important;
+  background:#ef4444 !important;
+  color:white !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+}
+.siege-info-body{
+  padding-top:14px !important;
+}
+.siege-info-row{
+  display:grid !important;
+  grid-template-columns:110px 1fr !important;
+  gap:12px !important;
+  padding:10px 0 !important;
+  border-bottom:1px dashed #cbd5e1 !important;
+  font-size:15px !important;
+}
+.siege-info-label{
+  color:#64748b !important;
+  font-weight:900 !important;
+}
+.siege-info-value{
+  color:#111827 !important;
+  font-weight:900 !important;
+}
+.siege-info-note{
+  margin-top:14px !important;
+  padding:12px !important;
+  border-radius:12px !important;
+  background:#f8fafc !important;
+  color:#475569 !important;
+  font-size:13px !important;
+  line-height:1.55 !important;
+}
+
+
+
+/* ===== 공성전 3차 : 로그인 / 단체상태 / 자금 / 기억게임 / 성 액션 ===== */
+.siege-controlbar{
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  gap:8px !important; flex-wrap:wrap !important; margin:0 auto 12px !important;
+  padding:12px !important; border-radius:16px !important;
+  background:rgba(255,255,255,.90) !important; border:1px solid rgba(14,165,233,.30) !important;
+  box-shadow:0 7px 20px rgba(14,165,233,.12) !important;
+}
+.siege-controlbar .select,.siege-controlbar .text{height:44px !important;padding:0 10px !important;font-size:14px !important;}
+.siege-controlbar .select{width:175px !important;}
+.siege-controlbar .siege-login-pin{width:115px !important;}
+.siege-controlbar .btn{height:44px !important;padding:0 13px !important;font-size:14px !important;border-radius:11px !important;}
+.siege-login-state{min-width:78px !important;font-size:14px !important;font-weight:1000 !important;color:#64748b !important;}
+.siege-login-state.ok{color:#16a34a !important;}
+.siege-modal{
+  position:fixed !important; inset:0 !important; z-index:2147483647 !important;
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  padding:18px !important; background:rgba(15,23,42,.60) !important; backdrop-filter:blur(4px) !important;
+}
+.siege-modal.hidden{display:none !important;}
+.siege-modal-box{
+  width:min(620px,95vw) !important; max-height:90vh !important; overflow:auto !important;
+  padding:20px !important; border-radius:20px !important; background:#fff !important;
+  border:2px solid #38bdf8 !important; box-shadow:0 18px 55px rgba(0,0,0,.35) !important; color:#111827 !important;
+}
+.siege-modal-head{display:flex !important;align-items:center !important;justify-content:space-between !important;gap:12px !important;margin-bottom:14px !important;}
+.siege-modal-head h2{margin:0 !important;font-size:24px !important;font-weight:1000 !important;color:#0369a1 !important;}
+.siege-modal-close{width:44px !important;height:44px !important;border:0 !important;border-radius:50% !important;background:#ef4444 !important;color:#fff !important;font-size:24px !important;font-weight:1000 !important;cursor:pointer !important;}
+.siege-status-grid{display:grid !important;gap:10px !important;margin-top:14px !important;}
+.siege-status-card{padding:13px !important;border-radius:13px !important;background:#f0f9ff !important;border:1px solid #bae6fd !important;font-weight:900 !important;line-height:1.55 !important;}
+.siege-wallet-line{margin:10px 0 !important;padding:10px 12px !important;border-radius:12px !important;background:#fff7cc !important;border:1px solid #facc15 !important;font-weight:1000 !important;}
+.siege-fund-tabs{display:flex !important;gap:8px !important;margin-bottom:14px !important;}
+.siege-fund-tab{flex:1 !important;height:46px !important;border:1px solid #38bdf8 !important;border-radius:12px !important;background:#e0f7ff !important;color:#0f172a !important;font-weight:1000 !important;cursor:pointer !important;}
+.siege-fund-tab.active{background:linear-gradient(135deg,#38bdf8,#2563eb) !important;color:#fff !important;}
+.siege-fund-pane.hidden{display:none !important;}
+.memory-stage-line{display:flex !important;justify-content:space-between !important;align-items:center !important;gap:10px !important;margin:10px 0 !important;font-weight:1000 !important;}
+.memory-sequence{display:flex !important;justify-content:center !important;gap:8px !important;flex-wrap:wrap !important;min-height:76px !important;padding:10px !important;border-radius:14px !important;background:#f8fafc !important;border:1px solid #cbd5e1 !important;}
+.memory-card{width:52px !important;height:70px !important;border-radius:10px !important;border:3px solid #fff !important;box-shadow:0 4px 10px rgba(0,0,0,.22) !important;}
+.memory-card.back{background:linear-gradient(135deg,#475569,#0f172a) !important;}
+.memory-input-preview{min-height:76px !important;background:#fffdf4 !important;border-color:#fde68a !important;}
+.siege-castle.occupied .siege-owner{color:#ffffff !important;font-size:clamp(7px,.82vw,11px) !important;}
+.siege-castle:not(.occupied) .siege-owner{color:#111827 !important;}
+.siege-attack-badge{position:absolute !important;left:50% !important;bottom:calc(100% + 2px) !important;transform:translateX(-50%) !important;color:#ef4444 !important;font-size:clamp(7px,.82vw,11px) !important;font-weight:1000 !important;white-space:nowrap !important;text-shadow:0 1px 0 #fff,0 0 5px rgba(255,255,255,.95) !important;animation:siegeAttackBlink .75s steps(2,end) infinite !important;pointer-events:none !important;}
+@keyframes siegeAttackBlink{0%,45%{opacity:1;}46%,100%{opacity:.12;}}
+
+.memory-inputs{display:grid !important;grid-template-columns:repeat(4,1fr) !important;gap:8px !important;margin-top:12px !important;}
+.memory-color-btn{height:58px !important;border-radius:12px !important;border:3px solid #fff !important;box-shadow:0 4px 12px rgba(0,0,0,.18) !important;cursor:pointer !important;font-size:0 !important;}
+.memory-color-btn:disabled{opacity:.38 !important;cursor:not-allowed !important;}
+.memory-red{background:#ef4444 !important}.memory-yellow{background:#facc15 !important}.memory-blue{background:#3b82f6 !important}.memory-green{background:#22c55e !important}
+.memory-msg{min-height:42px !important;margin-top:10px !important;padding:10px !important;border-radius:11px !important;background:#f8fafc !important;border:1px solid #e2e8f0 !important;font-weight:900 !important;text-align:center !important;}
+.siege-action-buttons{display:grid !important;grid-template-columns:repeat(5,1fr) !important;gap:7px !important;margin-top:16px !important;}
+.siege-action-buttons .btn{padding:10px 5px !important;font-size:14px !important;}
+.siege-action-form{margin-top:10px !important;padding:12px !important;border-radius:12px !important;border:1px solid #bae6fd !important;background:#f8fdff !important;}
+.siege-action-form.hidden{display:none !important;}
+.siege-action-form-row{display:flex !important;gap:7px !important;align-items:center !important;flex-wrap:wrap !important;}
+.siege-action-form input{height:42px !important;flex:1 !important;min-width:130px !important;border:1px solid #7dd3fc !important;border-radius:10px !important;padding:0 10px !important;font-weight:900 !important;}
+.siege-cooldown{display:inline-flex !important;min-width:26px !important;justify-content:center !important;color:#ef4444 !important;font-size:18px !important;font-weight:1000 !important;}
+.siege-log{margin-top:14px !important;padding:12px !important;border-radius:12px !important;background:#0f172a !important;color:#fff !important;height:142px !important;max-height:142px !important;overflow:hidden !important;font-size:13px !important;line-height:1.6 !important;}
+.siege-log-title{font-weight:1000 !important;color:#facc15 !important;margin-bottom:6px !important;}
+.siege-log-item{color:#fff !important;white-space:pre-wrap !important;}
+.siege-promo-form input{width:100% !important;height:42px !important;border:1px solid #7dd3fc !important;border-radius:10px !important;padding:0 10px !important;font-weight:900 !important;}
+.siege-friendly-form{display:grid !important;gap:10px !important;}
+.siege-friendly-vs{display:grid !important;grid-template-columns:1fr auto 1fr !important;gap:8px !important;align-items:center !important;}
+.siege-friendly-vs .select{width:100% !important;}
+.siege-friendly-proof{padding:12px !important;border:1px dashed #38bdf8 !important;border-radius:12px !important;background:#f8fdff !important;}
+.siege-friendly-log{margin-top:12px !important;border:1px solid #bae6fd !important;border-radius:12px !important;background:#fff !important;max-height:212px !important;overflow-y:auto !important;overflow-x:hidden !important;}
+.siege-friendly-log-row{display:grid !important;grid-template-columns:1fr auto !important;gap:8px !important;align-items:center !important;min-height:40px !important;padding:8px 10px !important;border-bottom:1px solid #e2e8f0 !important;font-size:13px !important;font-weight:900 !important;}
+.siege-friendly-log-row:last-child{border-bottom:0 !important;}
+.siege-friendly-log-row button{height:30px !important;padding:0 9px !important;border:0 !important;border-radius:8px !important;background:#2563eb !important;color:#fff !important;font-weight:900 !important;cursor:pointer !important;}
+@media(max-width:700px){.siege-action-buttons{grid-template-columns:repeat(2,1fr) !important;}.siege-friendly-vs{grid-template-columns:1fr !important;}.siege-friendly-vs .vs-text{text-align:center !important;}}
+
+@media(max-width:700px){
+  .siege-controlbar{align-items:stretch !important;}
+  .siege-controlbar .select{width:100% !important;flex:1 1 45% !important;}
+  .siege-controlbar .siege-login-pin{width:100% !important;flex:1 1 120px !important;}
+  .siege-action-buttons{grid-template-columns:repeat(2,1fr) !important;}
+  .memory-card{width:44px !important;height:60px !important;}
+}
+
+
+
+/* ===== 공성전 6차 : 툴팁/점령 색상 보정 ===== */
+.siege-castle::after{
+  min-width:185px !important;
+  max-width:245px !important;
+  text-align:center !important;
+  z-index:999 !important;
+}
+/* 신의주: 왼쪽 경계에서 잘리지 않도록 오른쪽으로 펼침 */
+.siege-castle[data-castle="신의주"]::after{
+  left:0 !important;
+  right:auto !important;
+  bottom:calc(100% + 8px) !important;
+  transform:none !important;
+}
+/* 선봉: 지도 상단에서 잘리지 않도록 왼쪽 아래로 펼침 */
+.siege-castle[data-castle="선봉"]::after{
+  left:auto !important;
+  right:calc(100% + 5px) !important;
+  top:calc(100% + 5px) !important;
+  bottom:auto !important;
+  transform:none !important;
+}
+/* 울릉도: 우측 기준 정렬로 지도 밖 잘림 방지 */
+.siege-castle[data-castle="울릉도"]::after{
+  left:auto !important;
+  right:0 !important;
+  bottom:calc(100% + 8px) !important;
+  transform:none !important;
+}
+
+
+/* ===== 공성전 7차 : 구조형 툴팁 / TOP10 단체 순위 ===== */
+.siege-castle::after{display:none !important;content:none !important;}
+.siege-hover-tooltip{
+  position:absolute !important;left:50% !important;bottom:calc(100% + 8px) !important;transform:translateX(-50%) !important;
+  min-width:195px !important;max-width:255px !important;padding:9px 11px !important;border-radius:10px !important;
+  background:rgba(15,23,42,.96) !important;color:#fff !important;text-align:center !important;
+  opacity:0 !important;visibility:hidden !important;pointer-events:none !important;transition:opacity .15s ease !important;
+  box-shadow:0 7px 18px rgba(0,0,0,.30) !important;z-index:999 !important;white-space:normal !important;
+}
+.siege-castle:hover .siege-hover-tooltip{opacity:1 !important;visibility:visible !important;}
+.siege-tip-city{font-size:15px !important;font-weight:1000 !important;line-height:1.25 !important;margin-bottom:6px !important;}
+.siege-tip-line{font-size:11px !important;font-weight:850 !important;line-height:1.4 !important;color:#fff !important;}
+.siege-tip-blocks{font-size:12px !important;font-weight:1000 !important;letter-spacing:1px !important;line-height:1.35 !important;margin-top:1px !important;color:#fff !important;white-space:nowrap !important;}
+.siege-tip-promo{font-size:11px !important;font-weight:950 !important;line-height:1.4 !important;margin-top:7px !important;word-break:keep-all !important;}
+.siege-castle[data-castle="신의주"] .siege-hover-tooltip{left:0 !important;right:auto !important;bottom:calc(100% + 8px) !important;transform:none !important;}
+.siege-castle[data-castle="선봉"] .siege-hover-tooltip{left:auto !important;right:calc(100% + 5px) !important;top:calc(100% + 5px) !important;bottom:auto !important;transform:none !important;}
+.siege-castle[data-castle="울릉도"] .siege-hover-tooltip{left:auto !important;right:0 !important;bottom:calc(100% + 8px) !important;transform:none !important;}
+.siege-ranking-wrap{margin-top:6px !important;overflow-x:auto !important;}
+.siege-ranking-table{width:100% !important;border-collapse:collapse !important;table-layout:fixed !important;font-size:13px !important;}
+.siege-ranking-table th{padding:10px 7px !important;background:#e0f2fe !important;color:#075985 !important;border-bottom:2px solid #7dd3fc !important;font-weight:1000 !important;text-align:center !important;white-space:nowrap !important;}
+.siege-ranking-table td{padding:10px 7px !important;border-bottom:1px solid #e2e8f0 !important;font-weight:900 !important;text-align:center !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;}
+.siege-ranking-table tbody tr:nth-child(-n+3){background:#f8fdff !important;}
+.siege-ranking-rank{width:11% !important;}
+.siege-ranking-team{width:35% !important;text-align:left !important;}
+.siege-ranking-money{width:18% !important;}
+.siege-ranking-power{width:20% !important;}
+.siege-ranking-castles{width:16% !important;}
+.siege-ranking-empty{padding:20px !important;text-align:center !important;color:#64748b !important;font-weight:900 !important;}
+.siege-ranking-note{margin-top:10px !important;font-size:12px !important;color:#64748b !important;font-weight:800 !important;line-height:1.45 !important;}
+
+/* ===== 공성전 9차 : TOP10 표 정렬 오류 수정 ===== */
+.siege-ranking-wrap{overflow-x:hidden !important;}
+.siege-ranking-table{width:100% !important;table-layout:fixed !important;border-collapse:collapse !important;}
+.siege-ranking-table thead th{position:static !important;top:auto !important;z-index:auto !important;transform:none !important;}
+.siege-ranking-table th,.siege-ranking-table td{box-sizing:border-box !important;}
+.siege-ranking-rank{width:10% !important;}
+.siege-ranking-team{width:35% !important;}
+.siege-ranking-money{width:17% !important;}
+.siege-ranking-power{width:22% !important;}
+.siege-ranking-castles{width:16% !important;}
+.siege-friendly-reward-note{margin:2px 0 12px !important;padding:9px 11px !important;border-radius:10px !important;background:#fff7cc !important;border:1px solid #facc15 !important;color:#92400e !important;font-size:13px !important;font-weight:1000 !important;text-align:center !important;}
+
+
+/* ===== 공성전 10차 : 강조/안내/오픈방 링크/점령색 ===== */
+.main-tab[data-tab="event"]{position:relative !important;overflow:visible !important;}
+.main-tab-new{position:absolute !important;right:8px !important;top:-9px !important;padding:2px 6px !important;border-radius:999px !important;background:#ef4444 !important;color:#fff !important;font-size:9px !important;font-weight:1000 !important;line-height:1.2 !important;box-shadow:0 2px 7px rgba(239,68,68,.45) !important;animation:siegeNewPulse 1.3s ease-in-out infinite !important;}
+@keyframes siegeNewPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.siege-title{display:table !important;margin:2px auto 12px !important;padding:7px 24px 8px !important;border-radius:999px !important;background:linear-gradient(135deg,rgba(255,255,255,.94),rgba(224,242,254,.94)) !important;border:2px solid rgba(14,165,233,.55) !important;box-shadow:0 6px 18px rgba(2,132,199,.18),inset 0 1px 0 #fff !important;font-size:31px !important;font-weight:1000 !important;letter-spacing:2px !important;color:#075985 !important;text-shadow:0 1px 0 #fff !important;}
+.siege-time-notice{position:absolute !important;z-index:8 !important;left:5.5% !important;top:4.2% !important;width:37% !important;max-width:390px !important;padding:9px 12px !important;border:2px solid #ef4444 !important;border-radius:12px !important;background:rgba(255,255,255,.93) !important;color:#dc2626 !important;font-size:clamp(10px,1.12vw,16px) !important;font-weight:1000 !important;line-height:1.3 !important;text-align:center !important;box-shadow:0 5px 16px rgba(239,68,68,.20) !important;pointer-events:none !important;}
+.siege-castle.occupied .siege-owner{font-size:clamp(8px,.92vw,12px) !important;text-shadow:0 1px 1px rgba(0,0,0,.55) !important;}
+.siege-inline-edit{display:flex !important;align-items:center !important;gap:8px !important;flex-wrap:wrap !important;}
+.siege-inline-edit-btn{border:0 !important;border-radius:9px !important;padding:7px 10px !important;background:linear-gradient(135deg,#facc15,#fb923c) !important;color:#111827 !important;font-size:12px !important;font-weight:1000 !important;cursor:pointer !important;white-space:nowrap !important;}
+.siege-inline-edit-btn.blue{background:linear-gradient(135deg,#38bdf8,#2563eb) !important;color:#fff !important;}
+.siege-invest-note{display:inline-block !important;margin-left:4px !important;color:#ef4444 !important;font-size:12px !important;font-weight:900 !important;}
+.siege-openroom-link{color:#2563eb !important;font-weight:1000 !important;text-decoration:underline !important;word-break:break-all !important;}
+.siege-openroom-link.disabled{color:#94a3b8 !important;text-decoration:none !important;pointer-events:none !important;}
+@media(max-width:700px){.siege-title{font-size:23px !important;padding:6px 18px !important}.siege-time-notice{left:4% !important;top:3.5% !important;width:45% !important;padding:6px 8px !important}.siege-info-row{grid-template-columns:92px 1fr !important}.siege-invest-note{display:block !important;margin-left:0 !important;margin-top:3px !important;}}
+
+/* ===== 공성전 11차 : 점령 클럽명 가독성 강화 ===== */
+.siege-castle.occupied .siege-owner{
+  text-shadow:none !important;
+  -webkit-text-stroke:0.65px #000 !important;
+  paint-order:stroke fill !important;
+  filter:none !important;
+}
+
+/* ===== 공성전 우리 단체 정보 ===== */
+.siege-info-team-btn{background:linear-gradient(135deg,#14b8a6,#0ea5e9) !important;color:#fff !important;border:0 !important;font-weight:1000 !important;}
+.siege-myinfo-box{width:min(560px,94vw) !important;}
+.siege-myinfo-summary{display:grid !important;gap:9px !important;margin-top:4px !important;}
+.siege-myinfo-row{display:grid !important;grid-template-columns:105px 1fr !important;align-items:center !important;gap:10px !important;padding:12px 14px !important;border-radius:13px !important;background:#f8fafc !important;border:1px solid #dbeafe !important;}
+.siege-myinfo-label{font-weight:1000 !important;color:#475569 !important;}
+.siege-myinfo-value{font-weight:1000 !important;color:#0f172a !important;line-height:1.55 !important;word-break:keep-all !important;}
+.siege-invest-chip,.siege-cash-chip{display:inline-block !important;margin:2px 6px 2px 0 !important;padding:5px 9px !important;border-radius:9px !important;font-size:14px !important;}
+.siege-invest-chip{background:#fff7cc !important;border:1px solid #facc15 !important;}
+.siege-cash-chip{background:#dcfce7 !important;border:1px solid #4ade80 !important;}
+.siege-myinfo-power{font-size:20px !important;color:#0369a1 !important;}
+.siege-myinfo-rank-title{margin-top:15px !important;margin-bottom:7px !important;font-size:17px !important;font-weight:1000 !important;color:#0f172a !important;}
+.siege-myinfo-ranking{overflow:hidden !important;border:1px solid #cbd5e1 !important;border-radius:12px !important;background:#fff !important;}
+.siege-myinfo-member-row{display:grid !important;grid-template-columns:72px minmax(0,1fr) 120px !important;align-items:center !important;gap:8px !important;padding:9px 12px !important;border-bottom:1px solid #e2e8f0 !important;font-weight:900 !important;}
+.siege-myinfo-member-row:last-child{border-bottom:0 !important;}
+.siege-myinfo-member-rank{color:#0284c7 !important;font-weight:1000 !important;}
+.siege-myinfo-member-name{overflow:hidden !important;text-overflow:ellipsis !important;white-space:nowrap !important;}
+.siege-myinfo-member-power{text-align:right !important;font-variant-numeric:tabular-nums !important;}
+.siege-myinfo-empty{padding:18px !important;text-align:center !important;color:#64748b !important;font-weight:900 !important;}
+@media(max-width:560px){.siege-myinfo-row{grid-template-columns:82px 1fr !important;}.siege-myinfo-member-row{grid-template-columns:58px minmax(0,1fr) 92px !important;padding:9px 8px !important;}}
+
 </style>
 </head>
 
@@ -7335,7 +7743,7 @@ function escMini4545(v){
 <button class="main-tab" data-tab="eventTournament">
   대회
 </button>
-  <button class="main-tab" data-tab="event">EVENT</button>
+  <button class="main-tab" data-tab="event">EVENT<span class="main-tab-new">NEW</span></button>
   <button class="main-tab" data-tab="promo">홍보/자유</button>
 </div>
 
@@ -7777,6 +8185,312 @@ user-select:none;
   </div>
 </div>
 
+
+
+<!-- ===== EVENT : 공성전 ===== -->
+<div id="siegeSection" class="hidden">
+  <div class="siege-wrap">
+    <h2 class="siege-title">공성전</h2>
+    <div class="siege-controlbar">
+      <button type="button" class="btn gold" id="btnSiegeFund">자금 모으기</button>
+      <button type="button" class="btn blue" id="btnSiegeTeamStatus">단체 상태보기</button>
+      <select id="siegeLoginTeam" class="select"><option value="">단체 선택</option></select>
+      <select id="siegeLoginNick" class="select"><option value="">닉네임 선택</option></select>
+      <input id="siegeLoginPin" class="text siege-login-pin" type="password" maxlength="5" inputmode="numeric" placeholder="비번 5자리">
+      <button type="button" class="btn" id="btnSiegeLogin">로그인</button>
+      <button type="button" class="btn red" id="btnSiegeLogout">로그아웃</button>
+      <button type="button" class="btn siege-info-team-btn" id="btnSiegeMyInfo">정보</button>
+      <span id="siegeLoginState" class="siege-login-state">로그인 전</span>
+    </div>
+    <div class="siege-map" id="siegeMap">
+      <img class="siege-map-bg"
+           src="https://i.ibb.co/whWDsXb4/1.jpg"
+           alt="공성전 대한민국 지도">
+      <div class="siege-time-notice">공성전은 밤 22시~23시에만 가능합니다</div>
+      <button type="button" class="siege-castle" data-castle="선봉" data-slot="1" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:94.57%;top:8.81%;" aria-label="선봉 성">
+        <span class="siege-city">선봉</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="청진" data-slot="2" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:83.86%;top:15.38%;" aria-label="청진 성">
+        <span class="siege-city">청진</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="혜산" data-slot="3" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:58.75%;top:16.92%;" aria-label="혜산 성">
+        <span class="siege-city">혜산</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="만포" data-slot="4" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:30.35%;top:22.00%;" aria-label="만포 성">
+        <span class="siege-city">만포</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="김책" data-slot="5" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:73.84%;top:24.44%;" aria-label="김책 성">
+        <span class="siege-city">김책</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="강계" data-slot="6" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:35.84%;top:26.83%;" aria-label="강계 성">
+        <span class="siege-city">강계</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="신의주" data-slot="7" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:6.60%;top:30.16%;" aria-label="신의주 성">
+        <span class="siege-city">신의주</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="함흥" data-slot="8" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:50.80%;top:30.93%;" aria-label="함흥 성">
+        <span class="siege-city">함흥</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="정주" data-slot="9" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:16.55%;top:34.55%;" aria-label="정주 성">
+        <span class="siege-city">정주</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="원산" data-slot="10" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:50.81%;top:39.72%;" aria-label="원산 성">
+        <span class="siege-city">원산</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="평양" data-slot="11" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:26.77%;top:41.55%;" aria-label="평양 성">
+        <span class="siege-city">평양</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="남포" data-slot="12" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:17.32%;top:43.93%;" aria-label="남포 성">
+        <span class="siege-city">남포</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="사리원" data-slot="13" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:24.50%;top:47.98%;" aria-label="사리원 성">
+        <span class="siege-city">사리원</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="속초" data-slot="14" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:66.66%;top:49.78%;" aria-label="속초 성">
+        <span class="siege-city">속초</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="해주" data-slot="15" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:21.15%;top:52.44%;" aria-label="해주 성">
+        <span class="siege-city">해주</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="원주" data-slot="16" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:54.70%;top:52.70%;" aria-label="원주 성">
+        <span class="siege-city">원주</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="파주" data-slot="17" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:38.19%;top:52.70%;" aria-label="파주 성">
+        <span class="siege-city">파주</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="강릉" data-slot="18" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:73.84%;top:54.51%;" aria-label="강릉 성">
+        <span class="siege-city">강릉</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="서울" data-slot="19" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:44.80%;top:56.28%;" aria-label="서울 성">
+        <span class="siege-city">서울</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="울릉도" data-slot="20" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:89.88%;top:56.27%;" aria-label="울릉도 성">
+        <span class="siege-city">울릉도</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="인천" data-slot="21" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:33.07%;top:57.50%;" aria-label="인천 성">
+        <span class="siege-city">인천</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="여주" data-slot="22" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:58.42%;top:59.11%;" aria-label="여주 성">
+        <span class="siege-city">여주</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="서산" data-slot="23" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:26.77%;top:62.21%;" aria-label="서산 성">
+        <span class="siege-city">서산</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="세종" data-slot="24" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:40.67%;top:66.26%;" aria-label="세종 성">
+        <span class="siege-city">세종</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="대전" data-slot="25" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:48.62%;top:66.88%;" aria-label="대전 성">
+        <span class="siege-city">대전</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="포항" data-slot="26" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:77.75%;top:68.06%;" aria-label="포항 성">
+        <span class="siege-city">포항</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="군산" data-slot="27" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:30.59%;top:71.39%;" aria-label="군산 성">
+        <span class="siege-city">군산</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="대구" data-slot="28" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:64.78%;top:71.39%;" aria-label="대구 성">
+        <span class="siege-city">대구</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="울산" data-slot="29" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:78.71%;top:73.01%;" aria-label="울산 성">
+        <span class="siege-city">울산</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="부산" data-slot="30" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:73.69%;top:78.69%;" aria-label="부산 성">
+        <span class="siege-city">부산</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="광주" data-slot="31" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:34.35%;top:80.66%;" aria-label="광주 성">
+        <span class="siege-city">광주</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="통영" data-slot="32" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:52.46%;top:82.41%;" aria-label="통영 성">
+        <span class="siege-city">통영</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="목포" data-slot="33" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:26.38%;top:84.21%;" aria-label="목포 성">
+        <span class="siege-city">목포</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="여수" data-slot="34" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:42.29%;top:84.81%;" aria-label="여수 성">
+        <span class="siege-city">여수</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+      <button type="button" class="siege-castle" data-castle="제주" data-slot="35" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:27.22%;top:96.62%;" aria-label="제주 성">
+        <span class="siege-city">제주</span>
+        <span class="siege-owner">현재단체없음</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== 공성전 성 정보 팝업 ===== -->
+<div id="siegeInfoPopup" class="siege-info-popup hidden">
+  <div class="siege-info-box" role="dialog" aria-modal="true" aria-labelledby="siegeInfoTitle" onclick="event.stopPropagation()">
+    <div class="siege-info-head">
+      <h2 id="siegeInfoTitle">성 정보</h2>
+      <button type="button" class="siege-info-close" onclick="closeSiegeInfoPopup()">닫기</button>
+    </div>
+    <div class="siege-info-body">
+      <div class="siege-info-row"><div class="siege-info-label">성 이름</div><div class="siege-info-value" id="siegeInfoCastle">-</div></div>
+      <div class="siege-info-row"><div class="siege-info-label">현재 점령 단체</div><div class="siege-info-value" id="siegeInfoOwner">현재단체없음</div></div>
+      <div class="siege-info-row"><div class="siege-info-label">홍보 메시지</div><div class="siege-info-value siege-inline-edit"><span id="siegeInfoPromo">현재 등록된 홍보 메시지가 없습니다.</span><button type="button" class="siege-inline-edit-btn" onclick="showSiegePromoForm()">홍보메세지 수정</button></div></div>
+      <div class="siege-info-row"><div class="siege-info-label">투자금</div><div class="siege-info-value"><span id="siegeInfoInvestment">0원</span> <span class="siege-invest-note">(일주일마다 3%씩 적립 · 매주 월요일 오전 00시 갱신)</span></div></div>
+      <div class="siege-info-row"><div class="siege-info-label">성 내구성</div><div class="siege-info-value" id="siegeInfoDurability">100/100</div></div>
+      <div class="siege-info-row"><div class="siege-info-label">클럽오픈방 링크</div><div class="siege-info-value siege-inline-edit"><a id="siegeInfoOpenRoomLink" class="siege-openroom-link" href="#" target="_blank" rel="noopener noreferrer">등록된 링크 없음</a><button type="button" class="siege-inline-edit-btn blue" onclick="showSiegeOpenRoomForm()">링크수정하기</button></div></div>
+
+      <div class="siege-action-buttons">
+        <button type="button" class="btn gold" onclick="showSiegeMoneyForm('buy')">구입</button>
+        <button type="button" class="btn link" onclick="showSiegeMoneyForm('sell')">판매</button>
+        <button type="button" class="btn red" id="btnSiegeAttack" onclick="startSiegeAttack()">공격 <span id="siegeAttackCountdown" class="siege-cooldown"></span></button>
+        <button type="button" class="btn blue" onclick="repairSiegeCastle()">내구성회복</button>
+      </div>
+
+      <div id="siegeMoneyForm" class="siege-action-form hidden">
+        <div class="siege-action-form-row">
+          <b id="siegeMoneyFormLabel">금액</b>
+          <input id="siegeMoneyAmount" type="number" min="0.1" step="0.1" placeholder="금액 입력">
+          <button type="button" class="btn gold" onclick="confirmSiegeMoneyAction()">확인</button>
+          <button type="button" class="btn link" onclick="hideSiegeMoneyForm()">취소</button>
+        </div>
+      </div>
+
+      <div id="siegePromoForm" class="siege-action-form siege-promo-form hidden">
+        <div style="display:grid;gap:8px;">
+          <b>홍보메세지 수정 <span id="siegePromoCount" style="color:#64748b;font-size:12px;">0/30</span></b>
+          <input id="siegePromoInput" maxlength="30" placeholder="홍보메세지 30자 이내" oninput="updateSiegePromoCount()">
+          <div style="display:flex;gap:7px;justify-content:flex-end;">
+            <button type="button" class="btn gold" onclick="confirmSiegePromoEdit()">확인</button>
+            <button type="button" class="btn link" onclick="hideSiegePromoForm()">취소</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="siegeOpenRoomForm" class="siege-action-form hidden">
+        <div style="display:grid;gap:8px;">
+          <b>클럽오픈방 링크 수정</b>
+          <input id="siegeOpenRoomInput" maxlength="300" placeholder="https:// 또는 http:// 링크 입력">
+          <div style="display:flex;gap:7px;justify-content:flex-end;">
+            <button type="button" class="btn blue" onclick="confirmSiegeOpenRoomEdit()">확인</button>
+            <button type="button" class="btn link" onclick="hideSiegeOpenRoomForm()">취소</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="siege-log" id="siegeCastleLog">
+        <div class="siege-log-title">성 로그</div>
+        <div id="siegeCastleLogItems" class="siege-log-item">*아직 기록이 없습니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 공성전 단체 상태보기 팝업 : TOP 10 ===== -->
+<div id="siegeTeamStatusPopup" class="siege-modal hidden" onclick="closeSiegeTeamStatusPopup()">
+  <div class="siege-modal-box" onclick="event.stopPropagation()">
+    <div class="siege-modal-head"><h2>단체 상태 TOP 10</h2><button class="siege-modal-close" onclick="closeSiegeTeamStatusPopup()">×</button></div>
+    <div class="siege-ranking-wrap">
+      <table class="siege-ranking-table">
+        <thead><tr><th class="siege-ranking-rank">순위</th><th class="siege-ranking-team">단체명</th><th class="siege-ranking-money">자금</th><th class="siege-ranking-power">전투력</th><th class="siege-ranking-castles">성보유갯수</th></tr></thead>
+        <tbody id="siegeStatusRankingBody"><tr><td colspan="5" class="siege-ranking-empty">순위를 불러오는 중...</td></tr></tbody>
+      </table>
+    </div>
+    <div class="siege-ranking-note">* 자금 = 현재 보유자금 + 보유 성에 투자된 금액 합계<br>* 순위 우선순위 : 자금 → 전투력 → 성보유갯수</div>
+  </div>
+</div>
+
+<!-- ===== 공성전 내 단체 정보 팝업 ===== -->
+<div id="siegeMyInfoPopup" class="siege-modal hidden" onclick="closeSiegeMyInfoPopup()">
+  <div class="siege-modal-box siege-myinfo-box" onclick="event.stopPropagation()">
+    <div class="siege-modal-head">
+      <h2 id="siegeMyInfoTitle">우리 단체 정보</h2>
+      <button class="siege-modal-close" onclick="closeSiegeMyInfoPopup()">×</button>
+    </div>
+    <div class="siege-myinfo-summary">
+      <div class="siege-myinfo-row"><span class="siege-myinfo-label">보유한 성</span><span id="siegeMyInfoCastles" class="siege-myinfo-value">없음</span></div>
+      <div class="siege-myinfo-row"><span class="siege-myinfo-label">자금</span><span class="siege-myinfo-value"><b class="siege-invest-chip">투자금 <span id="siegeMyInfoInvested">0원</span></b><b class="siege-cash-chip">보유금 <span id="siegeMyInfoCash">0원</span></b></span></div>
+      <div class="siege-myinfo-row"><span class="siege-myinfo-label">전투력</span><span id="siegeMyInfoPower" class="siege-myinfo-value siege-myinfo-power">0</span></div>
+    </div>
+    <div class="siege-myinfo-rank-title">단체 내 전투력 TOP 10</div>
+    <div id="siegeMyInfoMemberRanking" class="siege-myinfo-ranking"></div>
+  </div>
+</div>
+
+<!-- ===== 공성전 자금 모으기 팝업 ===== -->
+<div id="siegeFundPopup" class="siege-modal hidden" onclick="closeSiegeFundPopup()">
+  <div class="siege-modal-box" onclick="event.stopPropagation()">
+    <div class="siege-modal-head"><h2>자금 모으기</h2><button class="siege-modal-close" onclick="closeSiegeFundPopup()">×</button></div>
+    <div class="siege-wallet-line">로그인 단체 : <span id="siegeFundTeam">-</span> · 보유 자금 : <span id="siegeFundMoney">10원</span></div>
+    <div class="siege-fund-tabs">
+      <button type="button" class="siege-fund-tab active" data-pane="game" onclick="switchSiegeFundTab('game')">오늘의 게임하기</button>
+      <button type="button" class="siege-fund-tab" data-pane="friendly" onclick="switchSiegeFundTab('friendly')">친선하기</button>
+    </div>
+    <div id="siegeFundGamePane" class="siege-fund-pane">
+      <div class="memory-stage-line"><span>단계 : <b id="memoryStage">1</b>/10</span><span>게임 종료 보상 : <b id="memoryReward">0원</b></span></div>
+      <div class="memory-stage-line"><span id="memoryGuide">게임 시작을 눌러주세요.</span><span id="memoryTimer"></span></div>
+      <div id="memorySequence" class="memory-sequence"></div>
+      <div style="margin-top:8px;font-size:13px;font-weight:1000;color:#0369a1;text-align:center;">내가 선택한 순서</div>
+      <div id="memoryInputPreview" class="memory-sequence memory-input-preview"></div>
+      <div class="memory-inputs">
+        <button type="button" class="memory-color-btn memory-red" data-color="red" onclick="clickSiegeMemoryColor('red')" disabled>빨강</button>
+        <button type="button" class="memory-color-btn memory-yellow" data-color="yellow" onclick="clickSiegeMemoryColor('yellow')" disabled>노랑</button>
+        <button type="button" class="memory-color-btn memory-blue" data-color="blue" onclick="clickSiegeMemoryColor('blue')" disabled>파랑</button>
+        <button type="button" class="memory-color-btn memory-green" data-color="green" onclick="clickSiegeMemoryColor('green')" disabled>초록</button>
+      </div>
+      <div id="memoryMsg" class="memory-msg">한 번 틀리면 해당 도전은 종료됩니다.</div>
+      <div style="display:flex;justify-content:center;gap:8px;margin-top:10px;">
+        <button type="button" class="btn gold" id="btnMemoryStart" onclick="startSiegeMemoryGame()">게임 시작</button>
+        <button type="button" class="btn link" onclick="resetSiegeMemoryGame()">다시 시작</button>
+      </div>
+    </div>
+    <div id="siegeFundFriendlyPane" class="siege-fund-pane hidden">
+      <div class="siege-friendly-reward-note">친선 승리 시 0.5원 획득</div>
+      <div class="siege-friendly-form">
+        <div class="siege-friendly-vs">
+          <select id="siegeFriendlyWinner" class="select"><option value="">승리단체</option></select>
+          <b class="vs-text">VS</b>
+          <select id="siegeFriendlyLoser" class="select"><option value="">패배단체</option></select>
+        </div>
+        <div class="siege-friendly-proof">
+          <b>친선 입증자료 1개</b>
+          <input id="siegeFriendlyFile" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" style="display:block;margin-top:8px;">
+          <div id="siegeFriendlyFileName" style="margin-top:6px;font-size:12px;color:#64748b;font-weight:800;">선택된 파일 없음</div>
+        </div>
+        <button type="button" class="btn gold" onclick="submitSiegeFriendly()">확인</button>
+      </div>
+      <div style="margin-top:14px;font-weight:1000;color:#0369a1;">친선 로그 (최대 10개)</div>
+      <div id="siegeFriendlyLog" class="siege-friendly-log"></div>
+    </div>
+  </div>
+</div>
 
 <div id="aiRecordPopup" class="hidden" onclick="closeAiRecordPopup()">
   <div class="ai-record-box" onclick="event.stopPropagation()">
@@ -8778,6 +9492,7 @@ function showGunpyo() {
   document.getElementById("gunpyoTopBtns").style.display = "flex";
   document.getElementById("realTopBtns").style.display = "none";
   document.getElementById("boardSection")?.classList.add("hidden");
+  document.getElementById("siegeSection")?.classList.add("hidden");
 
   document.body.classList.remove("real-mode");
   document.body.classList.remove("real-scrolled");
@@ -8800,6 +9515,7 @@ function showReal() {
     document.getElementById("realTopPanel")?.classList.remove("hidden");
     document.getElementById("realSection")?.classList.remove("hidden");
     document.getElementById("boardSection")?.classList.add("hidden");
+    document.getElementById("siegeSection")?.classList.add("hidden");
 
     document.getElementById("gunpyoTopBtns").style.display = "none";
     document.getElementById("realTopBtns").style.display = "none";
@@ -9213,7 +9929,7 @@ document.querySelectorAll(".main-tab").forEach(btn => {
     else if(tab === "real") showReal();
     else if(tab === "eventTournament") showBoard("eventTournament");
     else if(tab === "promo") showBoard("promo");
-    else if(tab === "event") showBoard("event");
+    else if(tab === "event") showSiege();
   });
 });
 
@@ -10359,6 +11075,430 @@ let BOARD_CACHE = {};
 let BOARD_CACHE_TIME = {};
 const BOARD_CACHE_MAX_AGE = 60 * 1000;
 
+
+/* ===== EVENT : 공성전 4차 ===== */
+const SIEGE_STORAGE_KEY = "asia_siege_state_v4";
+const SIEGE_OLD_STORAGE_KEY = "asia_siege_state_v3";
+const SIEGE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+let SIEGE_CURRENT_SLOT = "";
+let SIEGE_LOGIN = { team:"", nick:"", total:0, authenticated:false };
+let SIEGE_MONEY_MODE = "";
+let SIEGE_ATTACK_TIMER = null;
+let SIEGE_MEMORY = { stage:1, sequence:[], input:[], accepting:false, timer:null, countdown:null, inputTimer:null, running:false };
+const SIEGE_SOUND_COUNT5 = "https://github.com/jangseok895-glitch/asia-ox-sound/raw/refs/heads/main/5%EC%B9%B4%EC%9A%B4%ED%8A%B8.mp3";
+const SIEGE_SOUND_CLICK = "https://github.com/jangseok895-glitch/asia-ox-sound/raw/refs/heads/main/%EC%9E%90%EB%A6%AC%EC%9D%B4%EB%8F%99%EC%82%AC%EB%9E%8C.mp3";
+const SIEGE_SOUND_DING = "https://github.com/jangseok895-glitch/asia-ox-sound/raw/refs/heads/main/%EB%9D%B5%EB%8F%99.mp3";
+const SIEGE_SOUND_END = "https://github.com/jangseok895-glitch/asia-ox-sound/raw/refs/heads/main/%EA%B2%8C%EC%9E%84%EB%81%9D.mp3";
+
+
+/* ===== 공성전 Supabase 영구 저장 =====
+   필요 테이블: siege_castles / siege_teams / siege_friendly_logs
+   SQL 파일(index_공성전_6차_Supabase.sql)을 Supabase SQL Editor에서 1회 실행하세요.
+*/
+let SIEGE_REMOTE_SAVE_TIMER = null;
+let SIEGE_REMOTE_SYNCING = false;
+
+function siegeTeamColor(team){
+  const palette=["#f97316","#f472b6","#38bdf8","#2dd4bf"]; // 주황/분홍/하늘/민트
+  const text=String(team||"");
+  let hash=0;
+  for(let i=0;i<text.length;i++) hash=((hash<<5)-hash)+text.charCodeAt(i), hash|=0;
+  return palette[Math.abs(hash)%palette.length];
+}
+
+function queueSiegeSupabaseSave(st){
+  if(!sb || SIEGE_REMOTE_SYNCING) return;
+  const snapshot=JSON.parse(JSON.stringify(st||siegeDefaultState()));
+  clearTimeout(SIEGE_REMOTE_SAVE_TIMER);
+  SIEGE_REMOTE_SAVE_TIMER=setTimeout(()=>persistSiegeStateSupabase(snapshot).catch(e=>console.error("공성전 Supabase 저장:",e)),250);
+}
+
+async function persistSiegeStateSupabase(st){
+  if(!sb) return;
+  const castleRows=Object.entries(st.castles||{}).map(([slot,c])=>({
+    slot:Number(slot), castle_name:String(c.name||""), owner:c.owner||null,
+    investment:siegeRoundMoney(c.investment||0), durability:siegeRoundMoney(c.durability||0),
+    max_durability:siegeRoundMoney(c.maxDurability||100), promo:String(c.promo||"현재 등록된 홍보 메시지가 없습니다."),
+    open_room_url:String(c.openRoomUrl||""),
+    last_growth_at:new Date(Number(c.lastGrowthAt)||Date.now()).toISOString(),
+    attacked_at:Number(c.attackedAt)>0?new Date(Number(c.attackedAt)).toISOString():null,
+    logs:Array.isArray(c.logs)?c.logs:[], updated_at:new Date().toISOString()
+  }));
+  if(castleRows.length){
+    const {error}=await sb.from("siege_castles").upsert(castleRows,{onConflict:"slot"});
+    if(error) throw error;
+  }
+  const teamRows=Object.entries(st.teams||{}).map(([team,v])=>({team_name:team,money:siegeRoundMoney(v?.money??10),updated_at:new Date().toISOString()}));
+  if(teamRows.length){
+    const {error}=await sb.from("siege_teams").upsert(teamRows,{onConflict:"team_name"});
+    if(error) throw error;
+  }
+}
+
+async function syncSiegeFromSupabase(){
+  if(!sb || SIEGE_REMOTE_SYNCING) return loadSiegeState();
+  SIEGE_REMOTE_SYNCING=true;
+  try{
+    const [cr,tr,fr]=await Promise.all([
+      sb.from("siege_castles").select("*").order("slot",{ascending:true}),
+      sb.from("siege_teams").select("*"),
+      sb.from("siege_friendly_logs").select("*").order("created_at",{ascending:false}).limit(10)
+    ]);
+    if(cr.error) throw cr.error; if(tr.error) throw tr.error; if(fr.error) throw fr.error;
+    const st=siegeDefaultState();
+    (cr.data||[]).forEach(r=>{
+      st.castles[String(r.slot)]={name:r.castle_name||"",owner:r.owner||"",promo:r.promo||"현재 등록된 홍보 메시지가 없습니다.",openRoomUrl:r.open_room_url||"",investment:Number(r.investment)||0,durability:Number(r.durability)||0,maxDurability:Number(r.max_durability)||100,lastGrowthAt:r.last_growth_at?new Date(r.last_growth_at).getTime():Date.now(),attackedAt:r.attacked_at?new Date(r.attacked_at).getTime():0,logs:Array.isArray(r.logs)?r.logs:[]};
+    });
+    (tr.data||[]).forEach(r=>{st.teams[String(r.team_name||"")]={money:Number(r.money)||0};});
+    st.friendlyLogs=(fr.data||[]).map(r=>({id:r.id,winner:r.winner||"",loser:r.loser||"",proof:r.proof_data||"",createdAt:r.created_at||""}));
+    document.querySelectorAll(".siege-castle").forEach(btn=>{ensureSiegeCastle(btn.dataset.slot,btn.dataset.castle,st);});
+    const growthChanged=applySiegeWeeklyGrowthToState(st);
+    localStorage.setItem(SIEGE_STORAGE_KEY,JSON.stringify(st));
+    renderSiegeMapFromState(st,false);
+    renderSiegeFriendlyLogs();
+    updateSiegeFundWallet();
+    if(growthChanged) setTimeout(()=>queueSiegeSupabaseSave(st),0);
+    return st;
+  }catch(e){
+    console.warn("공성전 Supabase 불러오기 실패 - 로컬 상태 유지:",e);
+    return loadSiegeState();
+  }finally{SIEGE_REMOTE_SYNCING=false;}
+}
+function playSiegeSound(url){try{const a=new Audio(url);a.volume=.75;a.play().catch(()=>{});return a;}catch(e){return null;}}
+
+function siegeRoundMoney(v){ return Math.round((Number(v)||0)*100)/100; }
+function siegeMoneyText(v){ const n=siegeRoundMoney(v); return n.toFixed(2).replace(/\.00$/,"").replace(/(\.\d)0$/,"$1")+"원"; }
+function siegeDefaultState(){ return { teams:{}, castles:{}, friendlyLogs:[] }; }
+function siegeNextMonday00After(ts){
+  const base=new Date(Number(ts)||Date.now());
+  const d=new Date(base);
+  d.setHours(0,0,0,0);
+  let add=(8-d.getDay())%7;
+  d.setDate(d.getDate()+add);
+  if(d.getTime()<=base.getTime()) d.setDate(d.getDate()+7);
+  return d.getTime();
+}
+function applySiegeWeeklyGrowthToState(st){
+  const now=Date.now(); let changed=false;
+  Object.values(st.castles||{}).forEach(c=>{
+    if(!Number.isFinite(Number(c.maxDurability))) c.maxDurability=100;
+    if(!Number.isFinite(Number(c.durability))) c.durability=100;
+    if(!Number.isFinite(Number(c.lastGrowthAt))) c.lastGrowthAt=now;
+    if(!c.owner || !(Number(c.investment)>0)){ c.lastGrowthAt=now; return; }
+    let boundary=siegeNextMonday00After(c.lastGrowthAt), weeks=0, lastBoundary=Number(c.lastGrowthAt);
+    while(boundary<=now && weeks<520){ weeks++; lastBoundary=boundary; boundary=siegeNextMonday00After(boundary); }
+    if(weeks<=0) return;
+    const before=siegeRoundMoney(c.investment);
+    let after=before;
+    for(let i=0;i<weeks;i++) after=siegeRoundMoney(after*1.03);
+    c.investment=after;
+    c.lastGrowthAt=lastBoundary;
+    c.logs=Array.isArray(c.logs)?c.logs:[];
+    c.logs.unshift(`*월요일 00시 투자금 3% 적립 (${siegeMoneyText(before)} → ${siegeMoneyText(after)})`);
+    c.logs=c.logs.slice(0,60); changed=true;
+  });
+  return changed;
+}
+function loadSiegeState(){
+  try{
+    let raw=localStorage.getItem(SIEGE_STORAGE_KEY);
+    if(!raw){ raw=localStorage.getItem(SIEGE_OLD_STORAGE_KEY); }
+    const parsed=raw?JSON.parse(raw):siegeDefaultState();
+    const st=parsed&&typeof parsed==="object"?parsed:siegeDefaultState();
+    if(!st.teams) st.teams={}; if(!st.castles) st.castles={}; if(!Array.isArray(st.friendlyLogs)) st.friendlyLogs=[];
+    if(applySiegeWeeklyGrowthToState(st)) localStorage.setItem(SIEGE_STORAGE_KEY,JSON.stringify(st));
+    return st;
+  }catch(e){ return siegeDefaultState(); }
+}
+function saveSiegeState(st){ localStorage.setItem(SIEGE_STORAGE_KEY, JSON.stringify(st)); queueSiegeSupabaseSave(st); }
+function ensureSiegeTeam(team, st=loadSiegeState()){
+  const t=String(team||"").trim(); if(!t)return st; if(!st.teams)st.teams={};
+  if(!st.teams[t])st.teams[t]={money:10}; if(!Number.isFinite(Number(st.teams[t].money)))st.teams[t].money=10; return st;
+}
+function ensureSiegeCastle(slot,name,st=loadSiegeState()){
+  const key=String(slot||""); if(!st.castles)st.castles={};
+  if(!st.castles[key])st.castles[key]={name:name||"",owner:"",promo:"현재 등록된 홍보 메시지가 없습니다.",openRoomUrl:"",investment:0,durability:100,maxDurability:100,lastGrowthAt:Date.now(),attackedAt:0,logs:[]};
+  const c=st.castles[key]; c.name=name||c.name||""; if(typeof c.openRoomUrl!=="string")c.openRoomUrl="";
+  if(!Number.isFinite(Number(c.investment)))c.investment=0; if(!Number.isFinite(Number(c.durability)))c.durability=100;
+  if(!Number.isFinite(Number(c.maxDurability)))c.maxDurability=Math.max(100,Number(c.durability)||100);
+  if(!Number.isFinite(Number(c.lastGrowthAt)))c.lastGrowthAt=Date.now(); if(!Number.isFinite(Number(c.attackedAt)))c.attackedAt=0; if(!Array.isArray(c.logs))c.logs=[]; return st;
+}
+function initializeSiegeCastles(){ let st=loadSiegeState(); document.querySelectorAll(".siege-castle").forEach(btn=>{st=ensureSiegeCastle(btn.dataset.slot,btn.dataset.castle,st);}); saveSiegeState(st); renderSiegeMapFromState(st); }
+function siegeCastleState(slot){ const btn=document.querySelector(`.siege-castle[data-slot="${String(slot)}"]`); let st=loadSiegeState(); st=ensureSiegeCastle(slot,btn?.dataset.castle||"",st); saveSiegeState(st); return {st,castle:st.castles[String(slot)]}; }
+function siegeDurabilityBlocks(v){const n=Math.max(0,Math.floor((Number(v)||0)/10));return "■".repeat(n)+(n<10?"□".repeat(10-n):"");}
+function siegeAttackBadgeActive(c){const d=new Date(),a=new Date(Number(c?.attackedAt)||0);return d.getHours()===22&&a.getFullYear()===d.getFullYear()&&a.getMonth()===d.getMonth()&&a.getDate()===d.getDate();}
+function renderSiegeMapFromState(st=loadSiegeState(),persist=true){
+  document.querySelectorAll(".siege-castle").forEach(btn=>{
+    st=ensureSiegeCastle(btn.dataset.slot,btn.dataset.castle,st); const c=st.castles[String(btn.dataset.slot)];
+    const occupied=!!c.owner, owner=c.owner||"현재단체없음", promo=c.promo||"현재 등록된 홍보 메시지가 없습니다.";
+    const cityName=c.name||btn.dataset.castle||"";
+    const durability=`${siegeRoundMoney(c.durability)}/${siegeRoundMoney(c.maxDurability)}`;
+    const accent=occupied?siegeTeamColor(owner):"#ffffff";
+    btn.dataset.owner=owner;
+    btn.dataset.promo=promo;
+    btn.dataset.durability=String(siegeRoundMoney(c.durability));
+    btn.dataset.maxDurability=String(siegeRoundMoney(c.maxDurability));
+    btn.removeAttribute("data-tooltip");
+    btn.classList.toggle("occupied",occupied);
+    const cityEl=btn.querySelector(".siege-city");
+    if(cityEl){cityEl.textContent=cityName;cityEl.style.setProperty("color",accent,"important");}
+    const ownerEl=btn.querySelector(".siege-owner");
+    if(ownerEl){ownerEl.textContent=owner;ownerEl.style.setProperty("color",occupied?accent:"#111827","important");}
+
+    let tip=btn.querySelector(".siege-hover-tooltip");
+    if(!tip){
+      tip=document.createElement("div");tip.className="siege-hover-tooltip";
+      tip.innerHTML='<div class="siege-tip-city"></div><div class="siege-tip-line siege-tip-owner"></div><div class="siege-tip-line siege-tip-durability"></div><div class="siege-tip-blocks"></div><div class="siege-tip-promo"></div>';
+      btn.appendChild(tip);
+    }
+    const tipCity=tip.querySelector(".siege-tip-city"),tipOwner=tip.querySelector(".siege-tip-owner"),tipDur=tip.querySelector(".siege-tip-durability"),tipBlocks=tip.querySelector(".siege-tip-blocks"),tipPromo=tip.querySelector(".siege-tip-promo");
+    if(tipCity){tipCity.textContent=cityName;tipCity.style.color=accent;}
+    if(tipOwner)tipOwner.textContent=occupied?`점령 : ${owner}`:"점령 : 현재단체없음";
+    if(tipDur)tipDur.textContent=`내구성 : ${durability}`;
+    if(tipBlocks)tipBlocks.textContent=siegeDurabilityBlocks(c.durability);
+    if(tipPromo){tipPromo.textContent=promo;tipPromo.style.color=accent;}
+
+    let badge=btn.querySelector(".siege-attack-badge");
+    if(siegeAttackBadgeActive(c)){if(!badge){badge=document.createElement("span");badge.className="siege-attack-badge";badge.textContent="공격당함";btn.appendChild(badge);}}
+    else if(badge){badge.remove();}
+  });
+  if(persist) saveSiegeState(st);
+}
+function addSiegeCastleLog(slot,text){ const {st,castle}=siegeCastleState(slot); castle.logs.unshift("*"+String(text||"")); castle.logs=castle.logs.slice(0,60); saveSiegeState(st); }
+function getSiegeTeamMoney(team){ let st=loadSiegeState();st=ensureSiegeTeam(team,st);saveSiegeState(st);return siegeRoundMoney(st.teams[String(team||"").trim()]?.money??10); }
+function setSiegeTeamMoney(team,money,st=null){ const own=!st;st=st||loadSiegeState();st=ensureSiegeTeam(team,st);st.teams[String(team||"").trim()].money=siegeRoundMoney(Math.max(0,Number(money)||0));if(own)saveSiegeState(st);return st; }
+function requireSiegeLogin(){ if(!SIEGE_LOGIN.authenticated||!SIEGE_LOGIN.team){alert("공성전 로그인을 먼저 해주세요.");return false;}return true; }
+async function loadSiegeLoginTeams(){
+  const teamSel=document.getElementById("siegeLoginTeam"); if(!teamSel)return;
+  try{ const res=await getTeamListSupabase(); const teams=(res?.teams||[]).map(t=>typeof t==="string"?t:t.name).filter(Boolean); fillSelect(teamSel,teams,"단체 선택");
+    let st=loadSiegeState();teams.forEach(t=>{st=ensureSiegeTeam(t,st);});saveSiegeState(st); window.SIEGE_TEAM_LIST=teams; populateSiegeFriendlyTeams();
+  }catch(e){console.error("공성전 단체목록:",e);}
+}
+async function onSiegeLoginTeamChanged(){ const team=document.getElementById("siegeLoginTeam")?.value||"",nickSel=document.getElementById("siegeLoginNick");fillSelect(nickSel,[],"닉네임 선택");SIEGE_LOGIN={team:"",nick:"",total:0,authenticated:false};updateSiegeLoginState();if(!team)return;try{const res=await getTeamMembersSupabase(team);fillSelect(nickSel,res?.members||[],"닉네임 선택");}catch(e){alert(e.message||"닉네임 목록을 불러오지 못했습니다.");} }
+function updateSiegeLoginState(){ const el=document.getElementById("siegeLoginState");if(!el)return;if(SIEGE_LOGIN.authenticated){el.textContent="로그인됨";el.classList.add("ok");}else{el.textContent="로그인 전";el.classList.remove("ok");}updateSiegeFundWallet();populateSiegeFriendlyTeams(); }
+async function submitSiegeLogin(){
+  const team=String(document.getElementById("siegeLoginTeam")?.value||"").trim(),nick=String(document.getElementById("siegeLoginNick")?.value||"").trim(),pin=String(document.getElementById("siegeLoginPin")?.value||"").trim();
+  if(!team)return alert("단체를 선택해주세요.");if(!nick)return alert("닉네임을 선택해주세요.");if(!/^\d{5}$/.test(pin))return alert("비밀번호 5자리를 입력해주세요.");
+  try{await loadProfileSupabase(nick,pin);const rows=await sbSelect("team_members",q=>q.select("team_name,nickname,total").eq("team_name",team).eq("nickname",nick).limit(1));if(!rows.length)throw new Error("선택한 단체에 등록된 닉네임이 아닙니다.");
+    SIEGE_LOGIN={team,nick,total:Number(rows[0].total)||0,authenticated:true};let st=loadSiegeState();st=ensureSiegeTeam(team,st);saveSiegeState(st);document.getElementById("siegeLoginPin").value="";updateSiegeLoginState();
+  }catch(e){SIEGE_LOGIN={team:"",nick:"",total:0,authenticated:false};updateSiegeLoginState();alert(e.message||"로그인 실패");}
+}
+function logoutSiege(){
+  SIEGE_LOGIN={team:"",nick:"",total:0,authenticated:false};
+  const t=document.getElementById("siegeLoginTeam"),n=document.getElementById("siegeLoginNick"),p=document.getElementById("siegeLoginPin");
+  if(t)t.value=""; if(n)fillSelect(n,[],"닉네임 선택"); if(p)p.value=""; updateSiegeLoginState();
+}
+async function openSiegeTeamStatusPopup(){
+  document.getElementById("siegeTeamStatusPopup")?.classList.remove("hidden");
+  await updateSiegeTeamStatus();
+}
+function closeSiegeTeamStatusPopup(){document.getElementById("siegeTeamStatusPopup")?.classList.add("hidden");}
+async function updateSiegeTeamStatus(){
+  const body=document.getElementById("siegeStatusRankingBody"); if(!body)return;
+  body.innerHTML='<tr><td colspan="5" class="siege-ranking-empty">순위를 불러오는 중...</td></tr>';
+  try{
+    await syncSiegeFromSupabase();
+    const st=loadSiegeState();
+    let teams=Array.from(new Set([...(window.SIEGE_TEAM_LIST||[]),...Object.keys(st.teams||{}),...Object.values(st.castles||{}).map(c=>c.owner).filter(Boolean)]));
+    if(!teams.length){
+      try{const res=await getTeamListSupabase();teams=(res?.teams||[]).map(t=>typeof t==="string"?t:t.name).filter(Boolean);window.SIEGE_TEAM_LIST=teams;}catch(_e){}
+    }
+    const powerMap={};
+    try{
+      const rows=await sbSelect("team_members",q=>q.select("team_name,total"));
+      (rows||[]).forEach(r=>{const t=String(r.team_name||"").trim();if(t)powerMap[t]=(powerMap[t]||0)+(Number(r.total)||0);});
+    }catch(e){console.warn("공성전 TOP10 전투력:",e);}
+    const ranking=teams.map(team=>{
+      const cash=Number(st.teams?.[team]?.money)||0;
+      const owned=Object.values(st.castles||{}).filter(c=>c.owner===team);
+      const invested=owned.reduce((sum,c)=>sum+(Number(c.investment)||0),0);
+      return {team,totalMoney:siegeRoundMoney(cash+invested),power:Math.round((Number(powerMap[team])||0)*100)/100,castleCount:owned.length};
+    }).sort((a,b)=>b.totalMoney-a.totalMoney || b.power-a.power || b.castleCount-a.castleCount || a.team.localeCompare(b.team,'ko')).slice(0,10);
+    if(!ranking.length){body.innerHTML='<tr><td colspan="5" class="siege-ranking-empty">등록된 단체가 없습니다.</td></tr>';return;}
+    body.innerHTML="";
+    ranking.forEach((r,i)=>{
+      const tr=document.createElement("tr");
+      const vals=[`${i+1}.`,r.team,siegeMoneyText(r.totalMoney),String(r.power),String(r.castleCount)];
+      vals.forEach((v,idx)=>{const td=document.createElement("td");td.textContent=v;if(idx===0)td.className="siege-ranking-rank";if(idx===1)td.className="siege-ranking-team";if(idx===2)td.className="siege-ranking-money";if(idx===3)td.className="siege-ranking-power";if(idx===4)td.className="siege-ranking-castles";tr.appendChild(td);});
+      body.appendChild(tr);
+    });
+  }catch(e){console.error("공성전 TOP10:",e);body.innerHTML='<tr><td colspan="5" class="siege-ranking-empty">순위를 불러오지 못했습니다.</td></tr>';}
+}
+
+async function openSiegeMyInfoPopup(){
+  if(!requireSiegeLogin())return;
+  const popup=document.getElementById("siegeMyInfoPopup");
+  if(popup)popup.classList.remove("hidden");
+  await updateSiegeMyInfo();
+}
+function closeSiegeMyInfoPopup(){document.getElementById("siegeMyInfoPopup")?.classList.add("hidden");}
+function siegeDisplayNumber(v){
+  const n=Number(v)||0;
+  return String(Math.round(n*100)/100).replace(/\.0+$/,"").replace(/(\.\d*[1-9])0+$/,"$1");
+}
+async function updateSiegeMyInfo(){
+  const title=document.getElementById("siegeMyInfoTitle");
+  const castlesEl=document.getElementById("siegeMyInfoCastles");
+  const investedEl=document.getElementById("siegeMyInfoInvested");
+  const cashEl=document.getElementById("siegeMyInfoCash");
+  const powerEl=document.getElementById("siegeMyInfoPower");
+  const rankingEl=document.getElementById("siegeMyInfoMemberRanking");
+  if(!SIEGE_LOGIN.authenticated||!SIEGE_LOGIN.team)return;
+  const team=SIEGE_LOGIN.team;
+  if(title)title.textContent=team+" 정보";
+  if(rankingEl)rankingEl.innerHTML='<div class="siege-myinfo-empty">정보를 불러오는 중...</div>';
+  try{
+    await syncSiegeFromSupabase();
+    const st=loadSiegeState();
+    const owned=Object.values(st.castles||{}).filter(c=>c&&c.owner===team);
+    const castleNames=owned.map(c=>c.name).filter(Boolean);
+    const invested=owned.reduce((sum,c)=>sum+(Number(c.investment)||0),0);
+    const cash=Number(st.teams?.[team]?.money)||0;
+    const rows=await sbSelect("team_members",q=>q.select("nickname,total").eq("team_name",team));
+    const members=(rows||[]).map(r=>({nickname:String(r.nickname||"").trim(),total:Number(r.total)||0})).filter(r=>r.nickname).sort((a,b)=>b.total-a.total || a.nickname.localeCompare(b.nickname,'ko')).slice(0,10);
+    const teamPower=(rows||[]).reduce((sum,r)=>sum+(Number(r.total)||0),0);
+    if(castlesEl)castlesEl.textContent=castleNames.length?castleNames.join(", "):"없음";
+    if(investedEl)investedEl.textContent=siegeMoneyText(invested);
+    if(cashEl)cashEl.textContent=siegeMoneyText(cash);
+    if(powerEl)powerEl.textContent=siegeDisplayNumber(teamPower);
+    if(rankingEl){
+      if(!members.length)rankingEl.innerHTML='<div class="siege-myinfo-empty">등록된 단체원이 없습니다.</div>';
+      else rankingEl.innerHTML=members.map((m,i)=>`<div class="siege-myinfo-member-row"><span class="siege-myinfo-member-rank">전투력 ${i+1}위</span><span class="siege-myinfo-member-name">${esc(m.nickname)}</span><span class="siege-myinfo-member-power">${siegeDisplayNumber(m.total)}</span></div>`).join("");
+    }
+  }catch(e){
+    console.error("공성전 단체 정보:",e);
+    if(rankingEl)rankingEl.innerHTML='<div class="siege-myinfo-empty">단체 정보를 불러오지 못했습니다.</div>';
+  }
+}
+
+function openSiegeFundPopup(){if(!requireSiegeLogin())return;document.getElementById("siegeFundPopup")?.classList.remove("hidden");switchSiegeFundTab("game");resetSiegeMemoryGame();updateSiegeFundWallet();populateSiegeFriendlyTeams();renderSiegeFriendlyLogs();}
+function closeSiegeFundPopup(){document.getElementById("siegeFundPopup")?.classList.add("hidden");clearTimeout(SIEGE_MEMORY.timer);clearInterval(SIEGE_MEMORY.countdown);clearTimeout(SIEGE_MEMORY.inputTimer);SIEGE_MEMORY.accepting=false;}
+function switchSiegeFundTab(name){document.querySelectorAll(".siege-fund-tab").forEach(b=>b.classList.toggle("active",b.dataset.pane===name));document.getElementById("siegeFundGamePane")?.classList.toggle("hidden",name!=="game");document.getElementById("siegeFundFriendlyPane")?.classList.toggle("hidden",name!=="friendly");if(name==="friendly"){populateSiegeFriendlyTeams();renderSiegeFriendlyLogs();}}
+function updateSiegeFundWallet(){const teamEl=document.getElementById("siegeFundTeam"),moneyEl=document.getElementById("siegeFundMoney");if(teamEl)teamEl.textContent=SIEGE_LOGIN.authenticated?SIEGE_LOGIN.team:"-";if(moneyEl)moneyEl.textContent=SIEGE_LOGIN.authenticated?siegeMoneyText(getSiegeTeamMoney(SIEGE_LOGIN.team)):"-";}
+function memoryStageSpec(stage){if(stage<=2)return{count:4};if(stage<=4)return{count:5};if(stage<=6)return{count:6};if(stage<=8)return{count:7};if(stage===9)return{count:8};return{count:9};}
+function siegeMemoryFailReward(stage){const n=Number(stage)||1;if(n<=1)return 0;if(n<=3)return .1;if(n<=5)return .2;if(n<=7)return .4;return 1;}
+function siegeMemoryPayReward(amount){const reward=siegeRoundMoney(amount);if(!(reward>0))return 0;let st=loadSiegeState();st=ensureSiegeTeam(SIEGE_LOGIN.team,st);st.teams[SIEGE_LOGIN.team].money=siegeRoundMoney(Number(st.teams[SIEGE_LOGIN.team].money)+reward);saveSiegeState(st);updateSiegeFundWallet();return reward;}
+function memoryColorClass(c){return c==="red"?"memory-red":c==="yellow"?"memory-yellow":c==="blue"?"memory-blue":"memory-green";}
+function setMemoryButtons(enabled){document.querySelectorAll(".memory-color-btn").forEach(b=>{b.disabled=!enabled;b.toggleAttribute("disabled",!enabled);b.style.pointerEvents=enabled?"auto":"none";});}
+function renderMemoryCards(hidden=false){const box=document.getElementById("memorySequence");if(!box)return;box.innerHTML=SIEGE_MEMORY.sequence.map(c=>`<div class="memory-card ${hidden?'back':memoryColorClass(c)}"></div>`).join("");}
+function renderMemoryInputPreview(){const box=document.getElementById("memoryInputPreview");if(!box)return;box.innerHTML=SIEGE_MEMORY.input.map(c=>`<div class="memory-card ${memoryColorClass(c)}"></div>`).join("");}
+function resetSiegeMemoryGame(){clearTimeout(SIEGE_MEMORY.timer);clearInterval(SIEGE_MEMORY.countdown);clearTimeout(SIEGE_MEMORY.inputTimer);SIEGE_MEMORY={stage:1,sequence:[],input:[],accepting:false,timer:null,countdown:null,inputTimer:null,running:false};setMemoryButtons(false);const seq=document.getElementById("memorySequence");if(seq)seq.innerHTML="";renderMemoryInputPreview();const st=document.getElementById("memoryStage"),rw=document.getElementById("memoryReward"),gd=document.getElementById("memoryGuide"),tm=document.getElementById("memoryTimer"),msg=document.getElementById("memoryMsg");if(st)st.textContent="1";if(rw)rw.textContent="0원";if(gd)gd.textContent="게임 시작을 눌러주세요.";if(tm)tm.textContent="";if(msg)msg.textContent="보상은 게임이 끝난 뒤 한 번만 지급됩니다.";const b=document.getElementById("btnMemoryStart");if(b){b.disabled=false;b.textContent="게임 시작";}}
+function startSiegeMemoryGame(){if(!requireSiegeLogin())return;resetSiegeMemoryGame();SIEGE_MEMORY.running=true;const b=document.getElementById("btnMemoryStart");if(b)b.disabled=true;startSiegeMemoryStage();}
+function startSiegeMemoryStage(){
+  const stage=SIEGE_MEMORY.stage,spec=memoryStageSpec(stage),colors=["red","yellow","blue","green"];SIEGE_MEMORY.sequence=Array.from({length:spec.count},()=>colors[Math.floor(Math.random()*colors.length)]);SIEGE_MEMORY.input=[];SIEGE_MEMORY.accepting=false;renderMemoryInputPreview();clearTimeout(SIEGE_MEMORY.inputTimer);
+  document.getElementById("memoryStage").textContent=String(stage);document.getElementById("memoryReward").textContent=stage>=10?"실패 1원 / 성공 2원":siegeMoneyText(siegeMemoryFailReward(stage));document.getElementById("memoryGuide").textContent="카드 순서를 기억하세요.";document.getElementById("memoryMsg").textContent=`${spec.count}장의 순서를 5초 동안 기억하세요.`;renderMemoryCards(false);setMemoryButtons(false);
+  playSiegeSound(SIEGE_SOUND_COUNT5);
+  let left=5;document.getElementById("memoryTimer").textContent=left+"초";clearInterval(SIEGE_MEMORY.countdown);SIEGE_MEMORY.countdown=setInterval(()=>{left--;document.getElementById("memoryTimer").textContent=left>0?left+"초":"";if(left<=0)clearInterval(SIEGE_MEMORY.countdown);},1000);
+  clearTimeout(SIEGE_MEMORY.timer);SIEGE_MEMORY.timer=setTimeout(()=>{renderMemoryCards(true);playSiegeSound(SIEGE_SOUND_DING);SIEGE_MEMORY.accepting=true;setMemoryButtons(true);let inputLeft=10;document.getElementById("memoryGuide").textContent="아래 카드를 순서대로 입력하세요.";document.getElementById("memoryTimer").textContent=inputLeft+"초";document.getElementById("memoryMsg").textContent="정답 순서대로 입력하세요. (제한시간 10초)";clearInterval(SIEGE_MEMORY.countdown);SIEGE_MEMORY.countdown=setInterval(()=>{inputLeft--;document.getElementById("memoryTimer").textContent=inputLeft>0?inputLeft+"초":"";if(inputLeft<=0)clearInterval(SIEGE_MEMORY.countdown);},1000);SIEGE_MEMORY.inputTimer=setTimeout(()=>{if(!SIEGE_MEMORY.accepting)return;SIEGE_MEMORY.accepting=false;SIEGE_MEMORY.running=false;setMemoryButtons(false);clearInterval(SIEGE_MEMORY.countdown);document.getElementById("memoryTimer").textContent="";const reward=siegeMemoryPayReward(siegeMemoryFailReward(SIEGE_MEMORY.stage));document.getElementById("memoryMsg").textContent=`시간초과! ${SIEGE_MEMORY.stage}단계에서 패배. 최종 보상 ${siegeMoneyText(reward)} 지급.`;playSiegeSound(SIEGE_SOUND_END);const b=document.getElementById("btnMemoryStart");if(b){b.disabled=false;b.textContent="처음부터 시작";}},10000);},5000);
+}
+function clickSiegeMemoryColor(color){
+  if(!SIEGE_MEMORY.accepting||!SIEGE_MEMORY.running)return;
+  playSiegeSound(SIEGE_SOUND_CLICK);
+  const idx=SIEGE_MEMORY.input.length;
+  SIEGE_MEMORY.input.push(color);
+  renderMemoryInputPreview();
+
+  if(SIEGE_MEMORY.sequence[idx]!==color){
+    clearTimeout(SIEGE_MEMORY.inputTimer);
+    clearInterval(SIEGE_MEMORY.countdown);
+    SIEGE_MEMORY.accepting=false;
+    SIEGE_MEMORY.running=false;
+    setMemoryButtons(false);
+    document.getElementById("memoryTimer").textContent="";
+    const reward=siegeMemoryPayReward(siegeMemoryFailReward(SIEGE_MEMORY.stage));
+    document.getElementById("memoryMsg").textContent=`오답입니다. ${SIEGE_MEMORY.stage}단계에서 패배. 최종 보상 ${siegeMoneyText(reward)} 지급.`;
+    playSiegeSound(SIEGE_SOUND_END);
+    const b=document.getElementById("btnMemoryStart");
+    if(b){b.disabled=false;b.textContent="처음부터 시작";}
+    return;
+  }
+
+  document.getElementById("memoryMsg").textContent=`입력 ${SIEGE_MEMORY.input.length}/${SIEGE_MEMORY.sequence.length}`;
+
+  if(SIEGE_MEMORY.input.length===SIEGE_MEMORY.sequence.length){
+    clearTimeout(SIEGE_MEMORY.inputTimer);
+    clearInterval(SIEGE_MEMORY.countdown);
+    document.getElementById("memoryTimer").textContent="";
+    SIEGE_MEMORY.accepting=false;
+    setMemoryButtons(false);
+
+    if(SIEGE_MEMORY.stage>=10){
+      const reward=siegeMemoryPayReward(2);
+      SIEGE_MEMORY.running=false;
+      document.getElementById("memoryReward").textContent=siegeMoneyText(reward);
+      document.getElementById("memoryMsg").textContent=`10단계까지 모두 성공! 최종 보상 ${siegeMoneyText(reward)} 지급.`;
+      playSiegeSound(SIEGE_SOUND_END);
+      const b=document.getElementById("btnMemoryStart");
+      if(b){b.disabled=false;b.textContent="다시 도전";}
+    }else{
+      document.getElementById("memoryMsg").textContent=`${SIEGE_MEMORY.stage}단계 성공! 보상은 아직 지급되지 않습니다. 다음 단계로 진행합니다.`;
+      SIEGE_MEMORY.stage++;
+      SIEGE_MEMORY.timer=setTimeout(startSiegeMemoryStage,900);
+    }
+  }
+}
+
+function populateSiegeFriendlyTeams(){
+  const win=document.getElementById("siegeFriendlyWinner"),lose=document.getElementById("siegeFriendlyLoser");if(!win||!lose)return;const teams=window.SIEGE_TEAM_LIST||[];fillSelect(win,teams,"승리단체");fillSelect(lose,teams.filter(t=>t!==SIEGE_LOGIN.team),"패배단체");
+  if(SIEGE_LOGIN.authenticated){ensureSelectOption(win,SIEGE_LOGIN.team,SIEGE_LOGIN.team);win.value=SIEGE_LOGIN.team;win.disabled=true;}else win.disabled=false;
+}
+function handleSiegeFriendlyFileChange(){const f=document.getElementById("siegeFriendlyFile")?.files?.[0];const el=document.getElementById("siegeFriendlyFileName");if(el)el.textContent=f?f.name:"선택된 파일 없음";}
+function fileToSiegeProofDataUrl(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(new Error("첨부파일을 읽지 못했습니다."));reader.onload=()=>{const img=new Image();img.onerror=()=>reject(new Error("이미지 파일만 첨부할 수 있습니다."));img.onload=()=>{const max=1100,scale=Math.min(1,max/Math.max(img.width,img.height)),canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));const ctx=canvas.getContext("2d");ctx.drawImage(img,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL("image/jpeg",.72));};img.src=reader.result;};reader.readAsDataURL(file);});}
+async function submitSiegeFriendly(){
+  if(!requireSiegeLogin())return;const winner=SIEGE_LOGIN.team,loser=String(document.getElementById("siegeFriendlyLoser")?.value||"").trim(),file=document.getElementById("siegeFriendlyFile")?.files?.[0];
+  if(!loser)return alert("패배단체를 선택해주세요.");if(loser===winner)return alert("승리단체와 패배단체는 같을 수 없습니다.");if(!file)return alert("친선을 했다는 입증자료를 1개 첨부해주세요.");
+  const pw=prompt("클럽 비번 4자리를 입력해주세요.");if(pw===null)return;if(!/^\d{4}$/.test(String(pw).trim()))return alert("클럽 비번 4자리를 입력해주세요.");
+  try{
+    await verifyClubPwSupabase(winner,String(pw).trim());
+    const proof=await fileToSiegeProofDataUrl(file),createdAt=new Date().toISOString();
+    let remoteId=(crypto?.randomUUID?crypto.randomUUID():String(Date.now())+Math.random());
+    if(sb){const {data,error}=await sb.from("siege_friendly_logs").insert({id:remoteId,winner,loser,proof_data:proof,created_at:createdAt}).select("id").single();if(error)throw error;remoteId=data?.id||remoteId;}
+    let st=loadSiegeState();st=ensureSiegeTeam(winner,st);st.teams[winner].money=siegeRoundMoney(Number(st.teams[winner].money)+.5);st.friendlyLogs=Array.isArray(st.friendlyLogs)?st.friendlyLogs:[];st.friendlyLogs.unshift({id:remoteId,winner,loser,proof,createdAt});st.friendlyLogs=st.friendlyLogs.slice(0,10);saveSiegeState(st);
+    document.getElementById("siegeFriendlyFile").value="";handleSiegeFriendlyFileChange();updateSiegeFundWallet();renderSiegeFriendlyLogs();alert("친선 등록 완료! 승리단체에 0.5원이 적립되었습니다.");
+  }catch(e){alert(e.message||"친선 등록에 실패했습니다.");}
+}
+function renderSiegeFriendlyLogs(){const box=document.getElementById("siegeFriendlyLog");if(!box)return;const rows=(loadSiegeState().friendlyLogs||[]).slice(0,10);box.innerHTML=rows.length?rows.map((r,i)=>`<div class="siege-friendly-log-row"><div>${esc(r.winner)} (승) vs ${esc(r.loser)} (패)</div><button type="button" onclick="showSiegeFriendlyAttachment(${i})">첨부파일보기</button></div>`).join(""):'<div class="siege-friendly-log-row"><div>아직 등록된 친선 로그가 없습니다.</div></div>';}
+function showSiegeFriendlyAttachment(index){const row=(loadSiegeState().friendlyLogs||[])[Number(index)];if(!row?.proof)return alert("첨부파일이 없습니다.");const popup=document.getElementById("imagePopup"),img=document.getElementById("imagePopupImg");if(img)img.src=row.proof;if(popup)popup.classList.remove("hidden");}
+
+function openSiegeInfoPopup(castleBtn){if(!castleBtn)return;SIEGE_CURRENT_SLOT=String(castleBtn.dataset.slot||"");const popup=document.getElementById("siegeInfoPopup");if(!popup)return;const {castle}=siegeCastleState(SIEGE_CURRENT_SLOT);document.getElementById("siegeInfoTitle").textContent=(castle.name||castleBtn.dataset.castle||"-")+" 성 정보";document.getElementById("siegeInfoCastle").textContent=castle.name||castleBtn.dataset.castle||"-";document.getElementById("siegeInfoOwner").textContent=castle.owner||"현재단체없음";document.getElementById("siegeInfoPromo").textContent=castle.promo||"현재 등록된 홍보 메시지가 없습니다.";document.getElementById("siegeInfoInvestment").textContent=siegeMoneyText(castle.investment||0);document.getElementById("siegeInfoDurability").textContent=`${siegeRoundMoney(castle.durability)}/${siegeRoundMoney(castle.maxDurability)}`;const link=document.getElementById("siegeInfoOpenRoomLink"),url=String(castle.openRoomUrl||"").trim();if(link){link.textContent=url||"등록된 링크 없음";link.href=url||"#";link.classList.toggle("disabled",!url);}renderSiegeCastleLogs(castle);hideSiegeMoneyForm();hideSiegePromoForm();hideSiegeOpenRoomForm();popup.classList.remove("hidden");}
+function renderSiegeCastleLogs(castle){const box=document.getElementById("siegeCastleLogItems");if(!box)return;const logs=(castle.logs||[]).slice(0,5);box.textContent=logs.length?logs.join("\n"):"*아직 기록이 없습니다.";}
+function refreshOpenSiegeInfo(){if(!SIEGE_CURRENT_SLOT)return;const btn=document.querySelector(`.siege-castle[data-slot="${SIEGE_CURRENT_SLOT}"]`);if(btn)openSiegeInfoPopup(btn);}
+function closeSiegeInfoPopup(){clearInterval(SIEGE_ATTACK_TIMER);SIEGE_ATTACK_TIMER=null;const c=document.getElementById("siegeAttackCountdown");if(c)c.textContent="";const b=document.getElementById("btnSiegeAttack");if(b)b.disabled=false;document.getElementById("siegeInfoPopup")?.classList.add("hidden");}
+function showSiegeMoneyForm(mode){if(!requireSiegeLogin())return;SIEGE_MONEY_MODE=mode;document.getElementById("siegeMoneyFormLabel").textContent=mode==="buy"?"구입 금액":"판매 금액";document.getElementById("siegeMoneyAmount").value="";hideSiegePromoForm();hideSiegeOpenRoomForm();document.getElementById("siegeMoneyForm")?.classList.remove("hidden");}
+function hideSiegeMoneyForm(){SIEGE_MONEY_MODE="";document.getElementById("siegeMoneyForm")?.classList.add("hidden");}
+async function confirmSiegeMoneyAction(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;const amount=siegeRoundMoney(document.getElementById("siegeMoneyAmount")?.value);if(!(amount>0))return alert("금액을 입력해주세요.");if(SIEGE_MONEY_MODE==="sell"&&!confirm("판매한 금액은 20% 차감 후 회수됩니다. 판매하시겠습니까?"))return;const pw=prompt("단체 비밀번호를 입력해주세요 4자리");if(pw===null)return;if(!/^\d{4}$/.test(String(pw).trim()))return alert("단체 비밀번호 4자리를 입력해주세요.");try{await verifyClubPwSupabase(SIEGE_LOGIN.team,String(pw).trim());if(SIEGE_MONEY_MODE==="buy")buySiegeCastle(amount);else if(SIEGE_MONEY_MODE==="sell")sellSiegeCastle(amount);}catch(e){alert(e.message||"단체 비밀번호 확인에 실패했습니다.");}}
+function buySiegeCastle(amount){let st=loadSiegeState();st=ensureSiegeTeam(SIEGE_LOGIN.team,st);st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT],buyer=SIEGE_LOGIN.team,money=Number(st.teams[buyer].money)||0;if(money<amount)return alert("단체 보유 자금이 부족합니다.");if(c.owner&&c.owner!==buyer){const oldOwner=c.owner,oldInvestment=Number(c.investment)||0,refund=siegeRoundMoney(oldInvestment*.8);st=ensureSiegeTeam(oldOwner,st);st.teams[oldOwner].money=siegeRoundMoney(Number(st.teams[oldOwner].money)+refund);c.logs.unshift(`*${oldOwner}는 ${siegeMoneyText(oldInvestment)}에서 20% 차감 후 회수`);c.investment=0;c.promo="현재 등록된 홍보 메시지가 없습니다.";c.openRoomUrl="";}st.teams[buyer].money=siegeRoundMoney(money-amount);c.owner=buyer;c.investment=siegeRoundMoney(Number(c.investment||0)+amount);c.lastGrowthAt=Date.now();c.logs.unshift(`*${buyer}가 구입에 성공`);saveSiegeState(st);renderSiegeMapFromState(st);hideSiegeMoneyForm();refreshOpenSiegeInfo();updateSiegeFundWallet();}
+function sellSiegeCastle(amount){let st=loadSiegeState();st=ensureSiegeTeam(SIEGE_LOGIN.team,st);st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT];if(c.owner!==SIEGE_LOGIN.team)return alert("현재 점령 단체만 판매할 수 있습니다.");const inv=Number(c.investment)||0;if(amount>inv)return alert("투자금보다 많은 금액은 판매할 수 없습니다.");const refund=siegeRoundMoney(amount*.8);st.teams[SIEGE_LOGIN.team].money=siegeRoundMoney(Number(st.teams[SIEGE_LOGIN.team].money)+refund);c.investment=siegeRoundMoney(inv-amount);c.lastGrowthAt=Date.now();c.logs.unshift(`*${SIEGE_LOGIN.team}는 ${siegeMoneyText(amount)}에서 20% 차감 후 ${siegeMoneyText(refund)} 회수`);if(c.investment<=0){c.investment=0;c.owner="";c.openRoomUrl="";c.durability=100;c.maxDurability=100;c.lastGrowthAt=Date.now();c.logs.unshift("*성이 미점령 상태가 되었습니다.");}saveSiegeState(st);renderSiegeMapFromState(st);hideSiegeMoneyForm();refreshOpenSiegeInfo();updateSiegeFundWallet();}
+function showSiegePromoForm(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;const {castle}=siegeCastleState(SIEGE_CURRENT_SLOT);if(castle.owner!==SIEGE_LOGIN.team)return alert("성을 점령한 단체만 홍보메세지를 수정할 수 있습니다.");hideSiegeMoneyForm();hideSiegeOpenRoomForm();const input=document.getElementById("siegePromoInput");if(input)input.value=(castle.promo&&castle.promo!=="현재 등록된 홍보 메시지가 없습니다.")?castle.promo:"";updateSiegePromoCount();document.getElementById("siegePromoForm")?.classList.remove("hidden");}
+function hideSiegePromoForm(){document.getElementById("siegePromoForm")?.classList.add("hidden");}
+function updateSiegePromoCount(){const input=document.getElementById("siegePromoInput"),count=document.getElementById("siegePromoCount");if(input&&input.value.length>30)input.value=input.value.slice(0,30);if(count)count.textContent=(input?.value.length||0)+"/30";}
+async function confirmSiegePromoEdit(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;const text=String(document.getElementById("siegePromoInput")?.value||"").trim();if(text.length>30)return alert("홍보메세지는 30자 이내로 입력해주세요.");const {castle}=siegeCastleState(SIEGE_CURRENT_SLOT);if(castle.owner!==SIEGE_LOGIN.team)return alert("성을 점령한 단체만 홍보메세지를 수정할 수 있습니다.");const pw=prompt("단체 비밀번호를 입력해주세요 4자리");if(pw===null)return;if(!/^\d{4}$/.test(String(pw).trim()))return alert("단체 비밀번호 4자리를 입력해주세요.");try{await verifyClubPwSupabase(SIEGE_LOGIN.team,String(pw).trim());let st=loadSiegeState();st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT];c.promo=text||"현재 등록된 홍보 메시지가 없습니다.";c.logs.unshift(`*${SIEGE_LOGIN.team}에서 홍보메세지 수정`);saveSiegeState(st);renderSiegeMapFromState(st);hideSiegePromoForm();refreshOpenSiegeInfo();}catch(e){alert(e.message||"단체 비밀번호 확인에 실패했습니다.");}}
+function normalizeSiegeOpenRoomUrl(value){const raw=String(value||"").trim();if(!raw)return "";const full=/^https?:\/\//i.test(raw)?raw:"https://"+raw;try{const u=new URL(full);if(u.protocol!=="http:"&&u.protocol!=="https:")return "";return u.href;}catch(e){return "";}}
+function showSiegeOpenRoomForm(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;const {castle}=siegeCastleState(SIEGE_CURRENT_SLOT);if(castle.owner!==SIEGE_LOGIN.team)return alert("성을 점령한 단체만 클럽오픈방 링크를 수정할 수 있습니다.");hideSiegeMoneyForm();hideSiegePromoForm();const input=document.getElementById("siegeOpenRoomInput");if(input)input.value=castle.openRoomUrl||"";document.getElementById("siegeOpenRoomForm")?.classList.remove("hidden");}
+function hideSiegeOpenRoomForm(){document.getElementById("siegeOpenRoomForm")?.classList.add("hidden");}
+async function confirmSiegeOpenRoomEdit(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;const raw=String(document.getElementById("siegeOpenRoomInput")?.value||"").trim();const url=normalizeSiegeOpenRoomUrl(raw);if(raw&&!url)return alert("올바른 http:// 또는 https:// 링크를 입력해주세요.");const {castle}=siegeCastleState(SIEGE_CURRENT_SLOT);if(castle.owner!==SIEGE_LOGIN.team)return alert("성을 점령한 단체만 클럽오픈방 링크를 수정할 수 있습니다.");const pw=prompt("단체 비밀번호를 입력해주세요 4자리");if(pw===null)return;if(!/^\d{4}$/.test(String(pw).trim()))return alert("단체 비밀번호 4자리를 입력해주세요.");try{await verifyClubPwSupabase(SIEGE_LOGIN.team,String(pw).trim());let st=loadSiegeState();st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT];c.openRoomUrl=url;c.logs=Array.isArray(c.logs)?c.logs:[];c.logs.unshift(`*${SIEGE_LOGIN.team}에서 클럽오픈방 링크 ${url?"수정":"삭제"}`);saveSiegeState(st);hideSiegeOpenRoomForm();refreshOpenSiegeInfo();}catch(e){alert(e.message||"단체 비밀번호 확인에 실패했습니다.");}}
+function siegeAttackPower(total){const n=Math.max(0,Number(total)||0);return Math.max(.4,Math.floor(n/1000)/10);}
+function isSiegeAttackTime(){const d=new Date();return d.getHours()===22;}
+function startSiegeAttack(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;if(!isSiegeAttackTime())return alert("현재 공격시간이 아닙니다. 공격시간은 매일 22시~23시에만 가능합니다.");const {castle}=siegeCastleState(SIEGE_CURRENT_SLOT);if(!castle.owner)return alert("현재 점령 단체가 없는 성입니다.");if(castle.owner===SIEGE_LOGIN.team)return alert("자신의 단체가 점령한 성은 공격할 수 없습니다.");const btn=document.getElementById("btnSiegeAttack"),count=document.getElementById("siegeAttackCountdown");if(btn.disabled)return;btn.disabled=true;let left=5;count.textContent=String(left);let attackState=loadSiegeState();attackState=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",attackState);attackState.castles[SIEGE_CURRENT_SLOT].attackedAt=Date.now();attackState.castles[SIEGE_CURRENT_SLOT].logs.unshift(`*${SIEGE_LOGIN.team}에서 공격을 시작함`);saveSiegeState(attackState);renderSiegeMapFromState(attackState);refreshOpenSiegeInfo();clearInterval(SIEGE_ATTACK_TIMER);SIEGE_ATTACK_TIMER=setInterval(()=>{left--;if(left>0){count.textContent=String(left);return;}clearInterval(SIEGE_ATTACK_TIMER);SIEGE_ATTACK_TIMER=null;count.textContent="";btn.disabled=false;let st=loadSiegeState();st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT],power=siegeAttackPower(SIEGE_LOGIN.total);c.durability=siegeRoundMoney(Math.max(0,Number(c.durability)-power));c.logs.unshift(`*${SIEGE_LOGIN.team} 공격력 ${power.toFixed(1)} 적용 · 내구성 ${c.durability}/${c.maxDurability}`);saveSiegeState(st);renderSiegeMapFromState(st);refreshOpenSiegeInfo();},1000);}
+function repairSiegeCastle(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;let st=loadSiegeState();st=ensureSiegeTeam(SIEGE_LOGIN.team,st);st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT];if(c.owner!==SIEGE_LOGIN.team)return alert("현재 점령 단체만 내구성을 회복할 수 있습니다.");if(Number(c.durability)>=Number(c.maxDurability))return alert("성 내구성이 이미 최대입니다.");if(Number(st.teams[SIEGE_LOGIN.team].money)<5)return alert("내구성 회복에 필요한 5원이 부족합니다.");st.teams[SIEGE_LOGIN.team].money=siegeRoundMoney(Number(st.teams[SIEGE_LOGIN.team].money)-5);c.durability=Math.min(Number(c.maxDurability),siegeRoundMoney(Number(c.durability)+50));c.logs.unshift("*성 내구성 회복");saveSiegeState(st);renderSiegeMapFromState(st);refreshOpenSiegeInfo();updateSiegeFundWallet();}
+
+document.addEventListener("click",function(e){const castleBtn=e.target.closest(".siege-castle");if(castleBtn){e.preventDefault();openSiegeInfoPopup(castleBtn);return;}if(e.target&&e.target.id==="siegeInfoPopup")closeSiegeInfoPopup();});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"){closeSiegeInfoPopup();closeSiegeTeamStatusPopup();closeSiegeMyInfoPopup();closeSiegeFundPopup();}});
+setInterval(()=>{if(document.getElementById("siegeSection")&&!document.getElementById("siegeSection").classList.contains("hidden"))syncSiegeFromSupabase();},15000);
+document.addEventListener("DOMContentLoaded",async function(){await syncSiegeFromSupabase();initializeSiegeCastles();loadSiegeLoginTeams();document.getElementById("siegeLoginTeam")?.addEventListener("change",onSiegeLoginTeamChanged);document.getElementById("btnSiegeLogin")?.addEventListener("click",submitSiegeLogin);document.getElementById("btnSiegeLogout")?.addEventListener("click",logoutSiege);document.getElementById("btnSiegeMyInfo")?.addEventListener("click",openSiegeMyInfoPopup);document.getElementById("btnSiegeTeamStatus")?.addEventListener("click",openSiegeTeamStatusPopup);document.getElementById("btnSiegeFund")?.addEventListener("click",openSiegeFundPopup);document.getElementById("siegeLoginPin")?.addEventListener("keydown",e=>{if(e.key==="Enter")submitSiegeLogin();});document.getElementById("siegeFriendlyFile")?.addEventListener("change",handleSiegeFriendlyFileChange);});
+
+function showSiege(){
+  document.getElementById("gunpyoTopPanel")?.classList.add("hidden");
+  document.getElementById("gunpyoSection")?.classList.add("hidden");
+  document.getElementById("realTopPanel")?.classList.add("hidden");
+  document.getElementById("realSection")?.classList.add("hidden");
+  document.getElementById("boardSection")?.classList.add("hidden");
+  document.getElementById("siegeSection")?.classList.remove("hidden");
+  const gunBtns=document.getElementById("gunpyoTopBtns"), realBtns=document.getElementById("realTopBtns"); if(gunBtns)gunBtns.style.display="none"; if(realBtns)realBtns.style.display="none";
+  document.body.classList.remove("real-mode"); document.body.classList.remove("real-scrolled"); setActiveTab("event"); refreshHeaderPush();
+  syncSiegeFromSupabase().then(()=>initializeSiegeCastles()); if(!document.getElementById("siegeLoginTeam")?.options?.length || document.getElementById("siegeLoginTeam")?.options?.length<=1) loadSiegeLoginTeams();
+}
+
 function showBoard(board){
   CURRENT_BOARD = board;
   CURRENT_BOARD_PAGE = 1;
@@ -10368,6 +11508,7 @@ function showBoard(board){
   document.getElementById("realTopPanel")?.classList.add("hidden");
   document.getElementById("realSection")?.classList.add("hidden");
   document.getElementById("boardSection")?.classList.remove("hidden");
+  document.getElementById("siegeSection")?.classList.add("hidden");
 
   document.getElementById("gunpyoTopBtns").style.display = "none";
   document.getElementById("realTopBtns").style.display = "none";
