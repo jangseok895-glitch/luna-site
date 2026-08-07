@@ -8378,7 +8378,7 @@ user-select:none;
       <div id="siegeMoneyForm" class="siege-action-form hidden">
         <div class="siege-action-form-row">
           <b id="siegeMoneyFormLabel">금액</b>
-          <input id="siegeMoneyAmount" type="number" min="0.1" step="0.1" placeholder="금액 입력">
+          <input id="siegeMoneyAmount" type="number" min="1" step="1" placeholder="금액 입력">
           <button type="button" class="btn gold" onclick="confirmSiegeMoneyAction()">확인</button>
           <button type="button" class="btn link" onclick="hideSiegeMoneyForm()">취소</button>
         </div>
@@ -11305,6 +11305,27 @@ async function openSiegeTeamStatusPopup(){
   await updateSiegeTeamStatus();
 }
 function closeSiegeTeamStatusPopup(){document.getElementById("siegeTeamStatusPopup")?.classList.add("hidden");}
+
+// 공성전 전투력 집계 전용: Supabase 기본 반환 제한(최대 1000행) 때문에
+// 전체 단체 순위와 내 단체 정보의 합계가 달라지는 문제를 방지하기 위해
+// team_members를 1000행씩 끝까지 불러옵니다.
+async function fetchAllSiegeTeamMembers(teamName=""){
+  const pageSize=1000;
+  let from=0;
+  const all=[];
+  while(true){
+    let q=sb.from("team_members").select("team_name,nickname,total").range(from,from+pageSize-1);
+    if(teamName)q=q.eq("team_name",String(teamName).trim());
+    const {data,error}=await q;
+    if(error)throw error;
+    const rows=data||[];
+    all.push(...rows);
+    if(rows.length<pageSize)break;
+    from+=pageSize;
+  }
+  return all;
+}
+
 async function updateSiegeTeamStatus(){
   const body=document.getElementById("siegeStatusRankingBody"); if(!body)return;
   body.innerHTML='<tr><td colspan="5" class="siege-ranking-empty">순위를 불러오는 중...</td></tr>';
@@ -11317,7 +11338,7 @@ async function updateSiegeTeamStatus(){
     }
     const powerMap={};
     try{
-      const rows=await sbSelect("team_members",q=>q.select("team_name,total"));
+      const rows=await fetchAllSiegeTeamMembers();
       (rows||[]).forEach(r=>{const t=String(r.team_name||"").trim();if(t)powerMap[t]=(powerMap[t]||0)+(Number(r.total)||0);});
     }catch(e){console.warn("공성전 TOP10 전투력:",e);}
     const ranking=teams.map(team=>{
@@ -11366,7 +11387,7 @@ async function updateSiegeMyInfo(){
     const castleNames=owned.map(c=>c.name).filter(Boolean);
     const invested=owned.reduce((sum,c)=>sum+(Number(c.investment)||0),0);
     const cash=Number(st.teams?.[team]?.money)||0;
-    const rows=await sbSelect("team_members",q=>q.select("nickname,total").eq("team_name",team));
+    const rows=await fetchAllSiegeTeamMembers(team);
     const members=(rows||[]).map(r=>({nickname:String(r.nickname||"").trim(),total:Number(r.total)||0})).filter(r=>r.nickname).sort((a,b)=>b.total-a.total || a.nickname.localeCompare(b.nickname,'ko')).slice(0,10);
     const teamPower=(rows||[]).reduce((sum,r)=>sum+(Number(r.total)||0),0);
     if(castlesEl)castlesEl.textContent=castleNames.length?castleNames.join(", "):"없음";
@@ -11476,11 +11497,11 @@ function openSiegeInfoPopup(castleBtn){if(!castleBtn)return;SIEGE_CURRENT_SLOT=S
 function renderSiegeCastleLogs(castle){const box=document.getElementById("siegeCastleLogItems");if(!box)return;const logs=(castle.logs||[]).slice(0,5);box.textContent=logs.length?logs.join("\n"):"*아직 기록이 없습니다.";}
 function refreshOpenSiegeInfo(){if(!SIEGE_CURRENT_SLOT)return;const btn=document.querySelector(`.siege-castle[data-slot="${SIEGE_CURRENT_SLOT}"]`);if(btn)openSiegeInfoPopup(btn);}
 function closeSiegeInfoPopup(){clearInterval(SIEGE_ATTACK_TIMER);SIEGE_ATTACK_TIMER=null;const c=document.getElementById("siegeAttackCountdown");if(c)c.textContent="";const b=document.getElementById("btnSiegeAttack");if(b)b.disabled=false;document.getElementById("siegeInfoPopup")?.classList.add("hidden");}
-function showSiegeMoneyForm(mode){if(!requireSiegeLogin())return;SIEGE_MONEY_MODE=mode;document.getElementById("siegeMoneyFormLabel").textContent=mode==="buy"?"구입 금액":"판매 금액";document.getElementById("siegeMoneyAmount").value="";hideSiegePromoForm();hideSiegeOpenRoomForm();document.getElementById("siegeMoneyForm")?.classList.remove("hidden");}
+function showSiegeMoneyForm(mode){if(!requireSiegeLogin())return;SIEGE_MONEY_MODE=mode;document.getElementById("siegeMoneyFormLabel").textContent=mode==="buy"?"구입 금액":"판매 금액";const amountInput=document.getElementById("siegeMoneyAmount");if(amountInput){amountInput.value="";if(mode==="buy"){amountInput.min="1";amountInput.step="1";amountInput.placeholder="구입 금액 (1원 단위)";}else{amountInput.min="0.01";amountInput.step="0.01";amountInput.placeholder="판매 금액";}}hideSiegePromoForm();hideSiegeOpenRoomForm();document.getElementById("siegeMoneyForm")?.classList.remove("hidden");}
 function hideSiegeMoneyForm(){SIEGE_MONEY_MODE="";document.getElementById("siegeMoneyForm")?.classList.add("hidden");}
-async function confirmSiegeMoneyAction(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;const amount=siegeRoundMoney(document.getElementById("siegeMoneyAmount")?.value);if(!(amount>0))return alert("금액을 입력해주세요.");if(SIEGE_MONEY_MODE==="sell"&&!confirm("판매한 금액은 20% 차감 후 회수됩니다. 판매하시겠습니까?"))return;const pw=prompt("단체 비밀번호를 입력해주세요 4자리");if(pw===null)return;if(!/^\d{4}$/.test(String(pw).trim()))return alert("단체 비밀번호 4자리를 입력해주세요.");try{await verifyClubPwSupabase(SIEGE_LOGIN.team,String(pw).trim());if(SIEGE_MONEY_MODE==="buy")buySiegeCastle(amount);else if(SIEGE_MONEY_MODE==="sell")sellSiegeCastle(amount);}catch(e){alert(e.message||"단체 비밀번호 확인에 실패했습니다.");}}
-function buySiegeCastle(amount){let st=loadSiegeState();st=ensureSiegeTeam(SIEGE_LOGIN.team,st);st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT],buyer=SIEGE_LOGIN.team,money=Number(st.teams[buyer].money)||0;if(money<amount)return alert("단체 보유 자금이 부족합니다.");if(c.owner&&c.owner!==buyer){const oldOwner=c.owner,oldInvestment=Number(c.investment)||0,refund=siegeRoundMoney(oldInvestment*.8);st=ensureSiegeTeam(oldOwner,st);st.teams[oldOwner].money=siegeRoundMoney(Number(st.teams[oldOwner].money)+refund);c.logs.unshift(`*${oldOwner}는 ${siegeMoneyText(oldInvestment)}에서 20% 차감 후 회수`);c.investment=0;c.promo="현재 등록된 홍보 메시지가 없습니다.";c.openRoomUrl="";}st.teams[buyer].money=siegeRoundMoney(money-amount);c.owner=buyer;c.fallenAt=0;c.investment=siegeRoundMoney(Number(c.investment||0)+amount);c.lastGrowthAt=Date.now();c.logs.unshift(`*${buyer}가 구입에 성공`);saveSiegeState(st);renderSiegeMapFromState(st);hideSiegeMoneyForm();refreshOpenSiegeInfo();updateSiegeFundWallet();}
-function sellSiegeCastle(amount){let st=loadSiegeState();st=ensureSiegeTeam(SIEGE_LOGIN.team,st);st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT];if(c.owner!==SIEGE_LOGIN.team)return alert("현재 점령 단체만 판매할 수 있습니다.");const inv=Number(c.investment)||0;if(amount>inv)return alert("투자금보다 많은 금액은 판매할 수 없습니다.");const refund=siegeRoundMoney(amount*.8);st.teams[SIEGE_LOGIN.team].money=siegeRoundMoney(Number(st.teams[SIEGE_LOGIN.team].money)+refund);c.investment=siegeRoundMoney(inv-amount);c.lastGrowthAt=Date.now();c.logs.unshift(`*${SIEGE_LOGIN.team}는 ${siegeMoneyText(amount)}에서 20% 차감 후 ${siegeMoneyText(refund)} 회수`);if(c.investment<=0){c.investment=0;c.owner="";c.openRoomUrl="";c.fallenAt=0;c.durability=100;c.maxDurability=100;c.lastGrowthAt=Date.now();c.logs.unshift("*성이 미점령 상태가 되었습니다.");}saveSiegeState(st);renderSiegeMapFromState(st);hideSiegeMoneyForm();refreshOpenSiegeInfo();updateSiegeFundWallet();}
+async function confirmSiegeMoneyAction(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;const rawAmount=Number(document.getElementById("siegeMoneyAmount")?.value);if(!(rawAmount>0))return alert("금액을 입력해주세요.");if(SIEGE_MONEY_MODE==="buy"&&!Number.isInteger(rawAmount))return alert("성 구입은 1원 단위의 정수 금액만 가능합니다. 예: 3원, 5원");const amount=SIEGE_MONEY_MODE==="buy"?rawAmount:siegeRoundMoney(rawAmount);if(SIEGE_MONEY_MODE==="sell"&&!confirm("판매한 금액은 10% 차감 후 90%가 회수됩니다. 판매하시겠습니까?"))return;const pw=prompt("단체 비밀번호를 입력해주세요 4자리");if(pw===null)return;if(!/^\d{4}$/.test(String(pw).trim()))return alert("단체 비밀번호 4자리를 입력해주세요.");try{await verifyClubPwSupabase(SIEGE_LOGIN.team,String(pw).trim());if(SIEGE_MONEY_MODE==="buy")buySiegeCastle(amount);else if(SIEGE_MONEY_MODE==="sell")sellSiegeCastle(amount);}catch(e){alert(e.message||"단체 비밀번호 확인에 실패했습니다.");}}
+function buySiegeCastle(amount){let st=loadSiegeState();st=ensureSiegeTeam(SIEGE_LOGIN.team,st);st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT],buyer=SIEGE_LOGIN.team,money=Number(st.teams[buyer].money)||0;if(money<amount)return alert("단체 보유 자금이 부족합니다.");if(c.owner&&c.owner!==buyer){const oldOwner=c.owner,oldInvestment=Number(c.investment)||0,refund=siegeRoundMoney(oldInvestment*.9);st=ensureSiegeTeam(oldOwner,st);st.teams[oldOwner].money=siegeRoundMoney(Number(st.teams[oldOwner].money)+refund);c.logs.unshift(`*${oldOwner}는 ${siegeMoneyText(oldInvestment)}에서 10% 차감 후 ${siegeMoneyText(refund)} 회수`);c.investment=0;c.promo="현재 등록된 홍보 메시지가 없습니다.";c.openRoomUrl="";}st.teams[buyer].money=siegeRoundMoney(money-amount);c.owner=buyer;c.fallenAt=0;c.investment=siegeRoundMoney(Number(c.investment||0)+amount);c.lastGrowthAt=Date.now();c.logs.unshift(`*${buyer}가 구입에 성공`);saveSiegeState(st);renderSiegeMapFromState(st);hideSiegeMoneyForm();refreshOpenSiegeInfo();updateSiegeFundWallet();}
+function sellSiegeCastle(amount){let st=loadSiegeState();st=ensureSiegeTeam(SIEGE_LOGIN.team,st);st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT];if(c.owner!==SIEGE_LOGIN.team)return alert("현재 점령 단체만 판매할 수 있습니다.");const inv=Number(c.investment)||0;if(amount>inv)return alert("투자금보다 많은 금액은 판매할 수 없습니다.");const refund=siegeRoundMoney(amount*.9);st.teams[SIEGE_LOGIN.team].money=siegeRoundMoney(Number(st.teams[SIEGE_LOGIN.team].money)+refund);c.investment=siegeRoundMoney(inv-amount);c.lastGrowthAt=Date.now();c.logs.unshift(`*${SIEGE_LOGIN.team}는 ${siegeMoneyText(amount)}에서 10% 차감 후 ${siegeMoneyText(refund)} 회수`);if(c.investment<=0){c.investment=0;c.owner="";c.openRoomUrl="";c.fallenAt=0;c.durability=100;c.maxDurability=100;c.lastGrowthAt=Date.now();c.logs.unshift("*성이 미점령 상태가 되었습니다.");}saveSiegeState(st);renderSiegeMapFromState(st);hideSiegeMoneyForm();refreshOpenSiegeInfo();updateSiegeFundWallet();}
 function showSiegePromoForm(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;const {castle}=siegeCastleState(SIEGE_CURRENT_SLOT);if(castle.owner!==SIEGE_LOGIN.team)return alert("성을 점령한 단체만 홍보메세지를 수정할 수 있습니다.");hideSiegeMoneyForm();hideSiegeOpenRoomForm();const input=document.getElementById("siegePromoInput");if(input)input.value=(castle.promo&&castle.promo!=="현재 등록된 홍보 메시지가 없습니다.")?castle.promo:"";updateSiegePromoCount();document.getElementById("siegePromoForm")?.classList.remove("hidden");}
 function hideSiegePromoForm(){document.getElementById("siegePromoForm")?.classList.add("hidden");}
 function updateSiegePromoCount(){const input=document.getElementById("siegePromoInput"),count=document.getElementById("siegePromoCount");if(input&&input.value.length>30)input.value=input.value.slice(0,30);if(count)count.textContent=(input?.value.length||0)+"/30";}
