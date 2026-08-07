@@ -6985,6 +6985,7 @@ body.season40-notice-open{
 .siege-castle.occupied .siege-owner{color:#ffffff !important;font-size:clamp(7px,.82vw,11px) !important;}
 .siege-castle:not(.occupied) .siege-owner{color:#111827 !important;}
 .siege-attack-badge{position:absolute !important;left:50% !important;bottom:calc(100% + 2px) !important;transform:translateX(-50%) !important;color:#ef4444 !important;font-size:clamp(7px,.82vw,11px) !important;font-weight:1000 !important;white-space:nowrap !important;text-shadow:0 1px 0 #fff,0 0 5px rgba(255,255,255,.95) !important;animation:siegeAttackBlink .75s steps(2,end) infinite !important;pointer-events:none !important;}
+.siege-fallen-badge{position:absolute !important;left:50% !important;bottom:calc(100% + 2px) !important;transform:translateX(-50%) !important;color:#dc2626 !important;font-size:clamp(8px,.9vw,12px) !important;font-weight:1000 !important;white-space:nowrap !important;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff,0 2px 5px rgba(0,0,0,.35) !important;animation:siegeAttackBlink .85s steps(2,end) infinite !important;pointer-events:none !important;}
 @keyframes siegeAttackBlink{0%,45%{opacity:1;}46%,100%{opacity:.12;}}
 
 .memory-inputs{display:grid !important;grid-template-columns:repeat(4,1fr) !important;gap:8px !important;margin-top:12px !important;}
@@ -11122,6 +11123,7 @@ async function persistSiegeStateSupabase(st){
     open_room_url:String(c.openRoomUrl||""),
     last_growth_at:new Date(Number(c.lastGrowthAt)||Date.now()).toISOString(),
     attacked_at:Number(c.attackedAt)>0?new Date(Number(c.attackedAt)).toISOString():null,
+    fallen_at:Number(c.fallenAt)>0?new Date(Number(c.fallenAt)).toISOString():null,
     logs:Array.isArray(c.logs)?c.logs:[], updated_at:new Date().toISOString()
   }));
   if(castleRows.length){
@@ -11147,7 +11149,7 @@ async function syncSiegeFromSupabase(){
     if(cr.error) throw cr.error; if(tr.error) throw tr.error; if(fr.error) throw fr.error;
     const st=siegeDefaultState();
     (cr.data||[]).forEach(r=>{
-      st.castles[String(r.slot)]={name:r.castle_name||"",owner:r.owner||"",promo:r.promo||"현재 등록된 홍보 메시지가 없습니다.",openRoomUrl:r.open_room_url||"",investment:Number(r.investment)||0,durability:Number(r.durability)||0,maxDurability:Number(r.max_durability)||100,lastGrowthAt:r.last_growth_at?new Date(r.last_growth_at).getTime():Date.now(),attackedAt:r.attacked_at?new Date(r.attacked_at).getTime():0,logs:Array.isArray(r.logs)?r.logs:[]};
+      st.castles[String(r.slot)]={name:r.castle_name||"",owner:r.owner||"",promo:r.promo||"현재 등록된 홍보 메시지가 없습니다.",openRoomUrl:r.open_room_url||"",investment:Number(r.investment)||0,durability:Number(r.durability)||0,maxDurability:Number(r.max_durability)||100,lastGrowthAt:r.last_growth_at?new Date(r.last_growth_at).getTime():Date.now(),attackedAt:r.attacked_at?new Date(r.attacked_at).getTime():0,fallenAt:r.fallen_at?new Date(r.fallen_at).getTime():0,logs:Array.isArray(r.logs)?r.logs:[]};
     });
     (tr.data||[]).forEach(r=>{st.teams[String(r.team_name||"")]={money:Number(r.money)||0};});
     st.friendlyLogs=(fr.data||[]).map(r=>({id:r.id,winner:r.winner||"",loser:r.loser||"",proof:r.proof_data||"",createdAt:r.created_at||""}));
@@ -11217,16 +11219,23 @@ function ensureSiegeTeam(team, st=loadSiegeState()){
 }
 function ensureSiegeCastle(slot,name,st=loadSiegeState()){
   const key=String(slot||""); if(!st.castles)st.castles={};
-  if(!st.castles[key])st.castles[key]={name:name||"",owner:"",promo:"현재 등록된 홍보 메시지가 없습니다.",openRoomUrl:"",investment:0,durability:100,maxDurability:100,lastGrowthAt:Date.now(),attackedAt:0,logs:[]};
+  if(!st.castles[key])st.castles[key]={name:name||"",owner:"",promo:"현재 등록된 홍보 메시지가 없습니다.",openRoomUrl:"",investment:0,durability:100,maxDurability:100,lastGrowthAt:Date.now(),attackedAt:0,fallenAt:0,logs:[]};
   const c=st.castles[key]; c.name=name||c.name||""; if(typeof c.openRoomUrl!=="string")c.openRoomUrl="";
   if(!Number.isFinite(Number(c.investment)))c.investment=0; if(!Number.isFinite(Number(c.durability)))c.durability=100;
   if(!Number.isFinite(Number(c.maxDurability)))c.maxDurability=Math.max(100,Number(c.durability)||100);
-  if(!Number.isFinite(Number(c.lastGrowthAt)))c.lastGrowthAt=Date.now(); if(!Number.isFinite(Number(c.attackedAt)))c.attackedAt=0; if(!Array.isArray(c.logs))c.logs=[]; return st;
+  if(!Number.isFinite(Number(c.lastGrowthAt)))c.lastGrowthAt=Date.now(); if(!Number.isFinite(Number(c.attackedAt)))c.attackedAt=0; if(!Number.isFinite(Number(c.fallenAt)))c.fallenAt=0; if(!Array.isArray(c.logs))c.logs=[]; return st;
 }
 function initializeSiegeCastles(){ let st=loadSiegeState(); document.querySelectorAll(".siege-castle").forEach(btn=>{st=ensureSiegeCastle(btn.dataset.slot,btn.dataset.castle,st);}); saveSiegeState(st); renderSiegeMapFromState(st); }
 function siegeCastleState(slot){ const btn=document.querySelector(`.siege-castle[data-slot="${String(slot)}"]`); let st=loadSiegeState(); st=ensureSiegeCastle(slot,btn?.dataset.castle||"",st); saveSiegeState(st); return {st,castle:st.castles[String(slot)]}; }
 function siegeDurabilityBlocks(v){const n=Math.max(0,Math.floor((Number(v)||0)/10));return "■".repeat(n)+(n<10?"□".repeat(10-n):"");}
 function siegeAttackBadgeActive(c){const d=new Date(),a=new Date(Number(c?.attackedAt)||0);return d.getHours()===22&&a.getFullYear()===d.getFullYear()&&a.getMonth()===d.getMonth()&&a.getDate()===d.getDate();}
+function siegeFallenBadgeActive(c){
+  const ts=Number(c?.fallenAt)||0; if(!ts)return false;
+  const f=new Date(ts);
+  const start=new Date(f); start.setHours(23,0,0,0);
+  const end=new Date(f); end.setDate(end.getDate()+1); end.setHours(21,0,0,0);
+  const now=Date.now(); return now>=start.getTime()&&now<end.getTime();
+}
 function renderSiegeMapFromState(st=loadSiegeState(),persist=true){
   document.querySelectorAll(".siege-castle").forEach(btn=>{
     st=ensureSiegeCastle(btn.dataset.slot,btn.dataset.castle,st); const c=st.castles[String(btn.dataset.slot)];
@@ -11261,6 +11270,9 @@ function renderSiegeMapFromState(st=loadSiegeState(),persist=true){
     let badge=btn.querySelector(".siege-attack-badge");
     if(siegeAttackBadgeActive(c)){if(!badge){badge=document.createElement("span");badge.className="siege-attack-badge";badge.textContent="공격당함";btn.appendChild(badge);}}
     else if(badge){badge.remove();}
+    let fallenBadge=btn.querySelector(".siege-fallen-badge");
+    if(siegeFallenBadgeActive(c)){if(!fallenBadge){fallenBadge=document.createElement("span");fallenBadge.className="siege-fallen-badge";fallenBadge.textContent="[함락]";btn.appendChild(fallenBadge);}}
+    else if(fallenBadge){fallenBadge.remove();}
   });
   if(persist) saveSiegeState(st);
 }
@@ -11467,8 +11479,8 @@ function closeSiegeInfoPopup(){clearInterval(SIEGE_ATTACK_TIMER);SIEGE_ATTACK_TI
 function showSiegeMoneyForm(mode){if(!requireSiegeLogin())return;SIEGE_MONEY_MODE=mode;document.getElementById("siegeMoneyFormLabel").textContent=mode==="buy"?"구입 금액":"판매 금액";document.getElementById("siegeMoneyAmount").value="";hideSiegePromoForm();hideSiegeOpenRoomForm();document.getElementById("siegeMoneyForm")?.classList.remove("hidden");}
 function hideSiegeMoneyForm(){SIEGE_MONEY_MODE="";document.getElementById("siegeMoneyForm")?.classList.add("hidden");}
 async function confirmSiegeMoneyAction(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;const amount=siegeRoundMoney(document.getElementById("siegeMoneyAmount")?.value);if(!(amount>0))return alert("금액을 입력해주세요.");if(SIEGE_MONEY_MODE==="sell"&&!confirm("판매한 금액은 20% 차감 후 회수됩니다. 판매하시겠습니까?"))return;const pw=prompt("단체 비밀번호를 입력해주세요 4자리");if(pw===null)return;if(!/^\d{4}$/.test(String(pw).trim()))return alert("단체 비밀번호 4자리를 입력해주세요.");try{await verifyClubPwSupabase(SIEGE_LOGIN.team,String(pw).trim());if(SIEGE_MONEY_MODE==="buy")buySiegeCastle(amount);else if(SIEGE_MONEY_MODE==="sell")sellSiegeCastle(amount);}catch(e){alert(e.message||"단체 비밀번호 확인에 실패했습니다.");}}
-function buySiegeCastle(amount){let st=loadSiegeState();st=ensureSiegeTeam(SIEGE_LOGIN.team,st);st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT],buyer=SIEGE_LOGIN.team,money=Number(st.teams[buyer].money)||0;if(money<amount)return alert("단체 보유 자금이 부족합니다.");if(c.owner&&c.owner!==buyer){const oldOwner=c.owner,oldInvestment=Number(c.investment)||0,refund=siegeRoundMoney(oldInvestment*.8);st=ensureSiegeTeam(oldOwner,st);st.teams[oldOwner].money=siegeRoundMoney(Number(st.teams[oldOwner].money)+refund);c.logs.unshift(`*${oldOwner}는 ${siegeMoneyText(oldInvestment)}에서 20% 차감 후 회수`);c.investment=0;c.promo="현재 등록된 홍보 메시지가 없습니다.";c.openRoomUrl="";}st.teams[buyer].money=siegeRoundMoney(money-amount);c.owner=buyer;c.investment=siegeRoundMoney(Number(c.investment||0)+amount);c.lastGrowthAt=Date.now();c.logs.unshift(`*${buyer}가 구입에 성공`);saveSiegeState(st);renderSiegeMapFromState(st);hideSiegeMoneyForm();refreshOpenSiegeInfo();updateSiegeFundWallet();}
-function sellSiegeCastle(amount){let st=loadSiegeState();st=ensureSiegeTeam(SIEGE_LOGIN.team,st);st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT];if(c.owner!==SIEGE_LOGIN.team)return alert("현재 점령 단체만 판매할 수 있습니다.");const inv=Number(c.investment)||0;if(amount>inv)return alert("투자금보다 많은 금액은 판매할 수 없습니다.");const refund=siegeRoundMoney(amount*.8);st.teams[SIEGE_LOGIN.team].money=siegeRoundMoney(Number(st.teams[SIEGE_LOGIN.team].money)+refund);c.investment=siegeRoundMoney(inv-amount);c.lastGrowthAt=Date.now();c.logs.unshift(`*${SIEGE_LOGIN.team}는 ${siegeMoneyText(amount)}에서 20% 차감 후 ${siegeMoneyText(refund)} 회수`);if(c.investment<=0){c.investment=0;c.owner="";c.openRoomUrl="";c.durability=100;c.maxDurability=100;c.lastGrowthAt=Date.now();c.logs.unshift("*성이 미점령 상태가 되었습니다.");}saveSiegeState(st);renderSiegeMapFromState(st);hideSiegeMoneyForm();refreshOpenSiegeInfo();updateSiegeFundWallet();}
+function buySiegeCastle(amount){let st=loadSiegeState();st=ensureSiegeTeam(SIEGE_LOGIN.team,st);st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT],buyer=SIEGE_LOGIN.team,money=Number(st.teams[buyer].money)||0;if(money<amount)return alert("단체 보유 자금이 부족합니다.");if(c.owner&&c.owner!==buyer){const oldOwner=c.owner,oldInvestment=Number(c.investment)||0,refund=siegeRoundMoney(oldInvestment*.8);st=ensureSiegeTeam(oldOwner,st);st.teams[oldOwner].money=siegeRoundMoney(Number(st.teams[oldOwner].money)+refund);c.logs.unshift(`*${oldOwner}는 ${siegeMoneyText(oldInvestment)}에서 20% 차감 후 회수`);c.investment=0;c.promo="현재 등록된 홍보 메시지가 없습니다.";c.openRoomUrl="";}st.teams[buyer].money=siegeRoundMoney(money-amount);c.owner=buyer;c.fallenAt=0;c.investment=siegeRoundMoney(Number(c.investment||0)+amount);c.lastGrowthAt=Date.now();c.logs.unshift(`*${buyer}가 구입에 성공`);saveSiegeState(st);renderSiegeMapFromState(st);hideSiegeMoneyForm();refreshOpenSiegeInfo();updateSiegeFundWallet();}
+function sellSiegeCastle(amount){let st=loadSiegeState();st=ensureSiegeTeam(SIEGE_LOGIN.team,st);st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT];if(c.owner!==SIEGE_LOGIN.team)return alert("현재 점령 단체만 판매할 수 있습니다.");const inv=Number(c.investment)||0;if(amount>inv)return alert("투자금보다 많은 금액은 판매할 수 없습니다.");const refund=siegeRoundMoney(amount*.8);st.teams[SIEGE_LOGIN.team].money=siegeRoundMoney(Number(st.teams[SIEGE_LOGIN.team].money)+refund);c.investment=siegeRoundMoney(inv-amount);c.lastGrowthAt=Date.now();c.logs.unshift(`*${SIEGE_LOGIN.team}는 ${siegeMoneyText(amount)}에서 20% 차감 후 ${siegeMoneyText(refund)} 회수`);if(c.investment<=0){c.investment=0;c.owner="";c.openRoomUrl="";c.fallenAt=0;c.durability=100;c.maxDurability=100;c.lastGrowthAt=Date.now();c.logs.unshift("*성이 미점령 상태가 되었습니다.");}saveSiegeState(st);renderSiegeMapFromState(st);hideSiegeMoneyForm();refreshOpenSiegeInfo();updateSiegeFundWallet();}
 function showSiegePromoForm(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;const {castle}=siegeCastleState(SIEGE_CURRENT_SLOT);if(castle.owner!==SIEGE_LOGIN.team)return alert("성을 점령한 단체만 홍보메세지를 수정할 수 있습니다.");hideSiegeMoneyForm();hideSiegeOpenRoomForm();const input=document.getElementById("siegePromoInput");if(input)input.value=(castle.promo&&castle.promo!=="현재 등록된 홍보 메시지가 없습니다.")?castle.promo:"";updateSiegePromoCount();document.getElementById("siegePromoForm")?.classList.remove("hidden");}
 function hideSiegePromoForm(){document.getElementById("siegePromoForm")?.classList.add("hidden");}
 function updateSiegePromoCount(){const input=document.getElementById("siegePromoInput"),count=document.getElementById("siegePromoCount");if(input&&input.value.length>30)input.value=input.value.slice(0,30);if(count)count.textContent=(input?.value.length||0)+"/30";}
@@ -11479,7 +11491,38 @@ function hideSiegeOpenRoomForm(){document.getElementById("siegeOpenRoomForm")?.c
 async function confirmSiegeOpenRoomEdit(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;const raw=String(document.getElementById("siegeOpenRoomInput")?.value||"").trim();const url=normalizeSiegeOpenRoomUrl(raw);if(raw&&!url)return alert("올바른 http:// 또는 https:// 링크를 입력해주세요.");const {castle}=siegeCastleState(SIEGE_CURRENT_SLOT);if(castle.owner!==SIEGE_LOGIN.team)return alert("성을 점령한 단체만 클럽오픈방 링크를 수정할 수 있습니다.");const pw=prompt("단체 비밀번호를 입력해주세요 4자리");if(pw===null)return;if(!/^\d{4}$/.test(String(pw).trim()))return alert("단체 비밀번호 4자리를 입력해주세요.");try{await verifyClubPwSupabase(SIEGE_LOGIN.team,String(pw).trim());let st=loadSiegeState();st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT];c.openRoomUrl=url;c.logs=Array.isArray(c.logs)?c.logs:[];c.logs.unshift(`*${SIEGE_LOGIN.team}에서 클럽오픈방 링크 ${url?"수정":"삭제"}`);saveSiegeState(st);hideSiegeOpenRoomForm();refreshOpenSiegeInfo();}catch(e){alert(e.message||"단체 비밀번호 확인에 실패했습니다.");}}
 function siegeAttackPower(total){const n=Math.max(0,Number(total)||0);return Math.max(.4,Math.floor(n/1000)/10);}
 function isSiegeAttackTime(){const d=new Date();return d.getHours()===22;}
-function startSiegeAttack(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;if(!isSiegeAttackTime())return alert("현재 공격시간이 아닙니다. 공격시간은 매일 22시~23시에만 가능합니다.");const {castle}=siegeCastleState(SIEGE_CURRENT_SLOT);if(!castle.owner)return alert("현재 점령 단체가 없는 성입니다.");if(castle.owner===SIEGE_LOGIN.team)return alert("자신의 단체가 점령한 성은 공격할 수 없습니다.");const btn=document.getElementById("btnSiegeAttack"),count=document.getElementById("siegeAttackCountdown");if(btn.disabled)return;btn.disabled=true;let left=5;count.textContent=String(left);let attackState=loadSiegeState();attackState=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",attackState);attackState.castles[SIEGE_CURRENT_SLOT].attackedAt=Date.now();attackState.castles[SIEGE_CURRENT_SLOT].logs.unshift(`*${SIEGE_LOGIN.team}에서 공격을 시작함`);saveSiegeState(attackState);renderSiegeMapFromState(attackState);refreshOpenSiegeInfo();clearInterval(SIEGE_ATTACK_TIMER);SIEGE_ATTACK_TIMER=setInterval(()=>{left--;if(left>0){count.textContent=String(left);return;}clearInterval(SIEGE_ATTACK_TIMER);SIEGE_ATTACK_TIMER=null;count.textContent="";btn.disabled=false;let st=loadSiegeState();st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT],power=siegeAttackPower(SIEGE_LOGIN.total);c.durability=siegeRoundMoney(Math.max(0,Number(c.durability)-power));c.logs.unshift(`*${SIEGE_LOGIN.team} 공격력 ${power.toFixed(1)} 적용 · 내구성 ${c.durability}/${c.maxDurability}`);saveSiegeState(st);renderSiegeMapFromState(st);refreshOpenSiegeInfo();},1000);}
+function startSiegeAttack(){
+  if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;
+  if(!isSiegeAttackTime())return alert("현재 공격시간이 아닙니다. 공격시간은 매일 22시~23시에만 가능합니다.");
+  const {castle}=siegeCastleState(SIEGE_CURRENT_SLOT);
+  if(!castle.owner)return alert("현재 점령 단체가 없는 성입니다.");
+  if(castle.owner===SIEGE_LOGIN.team)return alert("자신의 단체가 점령한 성은 공격할 수 없습니다.");
+  if(Number(castle.durability)<=0)return alert("이미 함락된 성입니다. 내구성이 회복된 후 다시 공격할 수 있습니다.");
+  const btn=document.getElementById("btnSiegeAttack"),count=document.getElementById("siegeAttackCountdown");
+  if(btn.disabled)return;
+  btn.disabled=true;let left=5;count.textContent=String(left);
+  let attackState=loadSiegeState();attackState=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",attackState);
+  attackState.castles[SIEGE_CURRENT_SLOT].attackedAt=Date.now();
+  attackState.castles[SIEGE_CURRENT_SLOT].logs.unshift(`*${SIEGE_LOGIN.team}에서 공격을 시작함`);
+  saveSiegeState(attackState);renderSiegeMapFromState(attackState);refreshOpenSiegeInfo();
+  clearInterval(SIEGE_ATTACK_TIMER);
+  SIEGE_ATTACK_TIMER=setInterval(()=>{
+    left--;if(left>0){count.textContent=String(left);return;}
+    clearInterval(SIEGE_ATTACK_TIMER);SIEGE_ATTACK_TIMER=null;count.textContent="";btn.disabled=false;
+    let st=loadSiegeState();st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);
+    const c=st.castles[SIEGE_CURRENT_SLOT],power=siegeAttackPower(SIEGE_LOGIN.total),beforeDur=Number(c.durability)||0;
+    c.durability=siegeRoundMoney(Math.max(0,beforeDur-power));
+    c.logs.unshift(`*${SIEGE_LOGIN.team} 공격력 ${power.toFixed(1)} 적용 · 내구성 ${c.durability}/${c.maxDurability}`);
+    if(beforeDur>0&&c.durability<=0){
+      const beforeInv=siegeRoundMoney(c.investment||0);
+      const lost=siegeRoundMoney(beforeInv*0.30);
+      c.investment=siegeRoundMoney(Math.max(0,beforeInv-lost));
+      c.fallenAt=Date.now();
+      c.logs.unshift(`*[함락] 점령 단체는 유지 · 투자금 30% 손실 (${siegeMoneyText(beforeInv)} → ${siegeMoneyText(c.investment)})`);
+    }
+    saveSiegeState(st);renderSiegeMapFromState(st);refreshOpenSiegeInfo();
+  },1000);
+}
 function repairSiegeCastle(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;let st=loadSiegeState();st=ensureSiegeTeam(SIEGE_LOGIN.team,st);st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT];if(c.owner!==SIEGE_LOGIN.team)return alert("현재 점령 단체만 내구성을 회복할 수 있습니다.");if(Number(c.durability)>=Number(c.maxDurability))return alert("성 내구성이 이미 최대입니다.");if(Number(st.teams[SIEGE_LOGIN.team].money)<5)return alert("내구성 회복에 필요한 5원이 부족합니다.");st.teams[SIEGE_LOGIN.team].money=siegeRoundMoney(Number(st.teams[SIEGE_LOGIN.team].money)-5);c.durability=Math.min(Number(c.maxDurability),siegeRoundMoney(Number(c.durability)+50));c.logs.unshift("*성 내구성 회복");saveSiegeState(st);renderSiegeMapFromState(st);refreshOpenSiegeInfo();updateSiegeFundWallet();}
 
 document.addEventListener("click",function(e){const castleBtn=e.target.closest(".siege-castle");if(castleBtn){e.preventDefault();openSiegeInfoPopup(castleBtn);return;}if(e.target&&e.target.id==="siegeInfoPopup")closeSiegeInfoPopup();});
