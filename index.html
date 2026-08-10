@@ -7146,30 +7146,108 @@ body.season40-notice-open{
 .siege-myinfo-empty{padding:18px !important;text-align:center !important;color:#64748b !important;font-weight:900 !important;}
 @media(max-width:560px){.siege-myinfo-row{grid-template-columns:82px 1fr !important;}.siege-myinfo-member-row{grid-template-columns:58px minmax(0,1fr) 92px !important;padding:9px 8px !important;}}
 
+
+/* ===== 최초 접속 모집 포스터 확대 팝업 ===== */
+.season40-notice-recruit-row{
+  flex-wrap:wrap !important;
+}
+.season40-poster-link{
+  flex:0 0 auto !important;
+  margin-left:auto !important;
+  padding:7px 12px !important;
+  border:0 !important;
+  border-radius:10px !important;
+  background:linear-gradient(135deg,#38bdf8,#2563eb) !important;
+  color:#ffffff !important;
+  font-size:14px !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+  box-shadow:0 4px 10px rgba(37,99,235,.24) !important;
+}
+.season40-poster-link:hover{
+  filter:brightness(1.06) !important;
+}
+.season40-poster-popup{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  z-index:2147483647 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:18px !important;
+  background:rgba(15,23,42,.78) !important;
+  backdrop-filter:blur(5px) !important;
+}
+.season40-poster-popup.hidden{
+  display:none !important;
+}
+.season40-poster-box{
+  position:relative !important;
+  width:min(900px,96vw) !important;
+  max-height:94vh !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+.season40-poster-img{
+  display:block !important;
+  max-width:100% !important;
+  max-height:90vh !important;
+  width:auto !important;
+  height:auto !important;
+  object-fit:contain !important;
+  border-radius:14px !important;
+  background:#ffffff !important;
+  box-shadow:0 18px 55px rgba(0,0,0,.45) !important;
+  cursor:pointer !important;
+}
+.season40-poster-close{
+  position:absolute !important;
+  top:10px !important;
+  right:10px !important;
+  z-index:5 !important;
+  padding:9px 14px !important;
+  border:0 !important;
+  border-radius:10px !important;
+  background:#ef4444 !important;
+  color:#ffffff !important;
+  font-size:16px !important;
+  font-weight:1000 !important;
+  cursor:pointer !important;
+  box-shadow:0 5px 14px rgba(0,0,0,.28) !important;
+}
+@media(max-width:560px){
+  .season40-notice-recruit-row{
+    align-items:center !important;
+  }
+  .season40-poster-link{
+    margin-left:0 !important;
+  }
+  .season40-poster-close{
+    top:6px !important;
+    right:6px !important;
+  }
+}
 </style>
 </head>
 
 <body>
 
-<!-- ===== 시즌40 최초 접속 안내 팝업 ===== -->
+<!-- ===== 최초 접속 안내 팝업 ===== -->
 <div id="season40NoticePopup" class="hidden" role="dialog" aria-modal="true" aria-labelledby="season40NoticeTitle">
   <div class="season40-notice-box">
     <h2 id="season40NoticeTitle" class="season40-notice-heading">📢 안내 🚨</h2>
 
-    <div class="season40-notice-main">
-      시즌40 군표 업데이트 완료!
-    </div>
-
-    <div class="season40-notice-copy">
-      AI 자동 기록 변경 기능이 적용되었습니다.<br>
-      저장된 군 기록이 자동으로 변경될 수 있으나<br>
-      그래도 <strong>본인의 기록을 확인해 주세요.</strong>
-    </div>
-
     <div class="season40-notice-info">
-      <div class="season40-notice-info-row">7월 26일 오전 07:00부터 친선매칭방 적용</div>
-      <div class="season40-notice-info-row">시작맵 : 월드 두바이 다운타운</div>
-      <div class="season40-notice-info-row">벤 맵 : 대저택 오후의 휴일</div>
+      <div class="season40-notice-info-row season40-notice-recruit-row">
+        <span>모니터링요원, 루칭방 운영진모집중</span>
+        <button type="button" class="season40-poster-link" onclick="openSeason40Poster()">포스터확인</button>
+      </div>
+      <div class="season40-notice-info-row">
+        EVENT 탭 - 공성전 추가 (심심풀이 성을 점령하여, 단체 홍보해보세요!)
+      </div>
     </div>
 
     <div class="season40-notice-bottom">
@@ -7179,9 +7257,22 @@ body.season40-notice-open{
       </label>
 
       <button type="button" class="season40-notice-confirm" id="season40NoticeConfirm">
-        확인
+        닫기
       </button>
     </div>
+  </div>
+</div>
+
+<!-- ===== 모집 포스터 확대 팝업 ===== -->
+<div id="season40PosterPopup" class="season40-poster-popup hidden" role="dialog" aria-modal="true" aria-label="모니터링요원 및 운영진 모집 포스터" onclick="closeSeason40Poster()">
+  <div class="season40-poster-box" onclick="event.stopPropagation()">
+    <button type="button" class="season40-poster-close" onclick="closeSeason40Poster()">닫기</button>
+    <img
+      class="season40-poster-img"
+      src="https://i.ibb.co/rGG9CmK7/5.jpg"
+      alt="모니터링요원 및 루칭방 운영진 모집 포스터"
+      onclick="closeSeason40Poster()"
+    >
   </div>
 </div>
 
@@ -18305,7 +18396,7 @@ async function runAiRecordAnalysis(){
    아래 저장 키의 season40을 season41처럼 변경하세요.
 */
 (function(){
-  const STORAGE_KEY = "hideSeason40Notice_v1";
+  const STORAGE_KEY = "hideSeason40Notice_v2";
 
   function openSeason40Notice(){
     const popup = document.getElementById("season40NoticePopup");
@@ -18328,6 +18419,16 @@ async function runAiRecordAnalysis(){
     document.body.classList.add("season40-notice-open");
   }
 
+  function openSeason40Poster(){
+    const posterPopup = document.getElementById("season40PosterPopup");
+    if(posterPopup) posterPopup.classList.remove("hidden");
+  }
+
+  function closeSeason40Poster(){
+    const posterPopup = document.getElementById("season40PosterPopup");
+    if(posterPopup) posterPopup.classList.add("hidden");
+  }
+
   function closeSeason40Notice(){
     const popup = document.getElementById("season40NoticePopup");
     const checkbox = document.getElementById("season40DontShowAgain");
@@ -18340,12 +18441,15 @@ async function runAiRecordAnalysis(){
       }
     }
 
+    closeSeason40Poster();
     if(popup) popup.classList.add("hidden");
     document.body.classList.remove("season40-notice-open");
   }
 
   window.openSeason40Notice = openSeason40Notice;
   window.closeSeason40Notice = closeSeason40Notice;
+  window.openSeason40Poster = openSeason40Poster;
+  window.closeSeason40Poster = closeSeason40Poster;
 
   document.addEventListener("DOMContentLoaded", function(){
     const confirmBtn = document.getElementById("season40NoticeConfirm");
