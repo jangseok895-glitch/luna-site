@@ -11178,7 +11178,7 @@ const SIEGE_STORAGE_KEY = "asia_siege_state_v4";
 const SIEGE_OLD_STORAGE_KEY = "asia_siege_state_v3";
 const SIEGE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 let SIEGE_CURRENT_SLOT = "";
-let SIEGE_LOGIN = { team:"", nick:"", total:0, authenticated:false };
+let SIEGE_LOGIN = { team:"", nick:"", total:0, token:"", authenticated:false };
 let SIEGE_MONEY_MODE = "";
 let SIEGE_ATTACK_TIMER = null;
 let SIEGE_MEMORY = { stage:1, sequence:[], input:[], accepting:false, timer:null, countdown:null, inputTimer:null, running:false };
@@ -11203,38 +11203,21 @@ function siegeTeamColor(team){
   return palette[Math.abs(hash)%palette.length];
 }
 
+
 function queueSiegeSupabaseSave(st){
-  if(!sb || SIEGE_REMOTE_SYNCING) return;
-  const snapshot=JSON.parse(JSON.stringify(st||siegeDefaultState()));
-  clearTimeout(SIEGE_REMOTE_SAVE_TIMER);
-  SIEGE_REMOTE_SAVE_TIMER=setTimeout(()=>persistSiegeStateSupabase(snapshot).catch(e=>console.error("공성전 Supabase 저장:",e)),250);
+  /* SECURITY: 공성전 서버 데이터는 브라우저 상태 전체 저장으로 갱신하지 않습니다.
+     모든 변경은 검증된 SECURITY DEFINER RPC가 해당 행만 원자적으로 변경합니다. */
 }
-
 async function persistSiegeStateSupabase(st){
-  if(!sb) return;
-  const castleRows=Object.entries(st.castles||{}).map(([slot,c])=>({
-    slot:Number(slot), castle_name:String(c.name||""), owner:c.owner||null,
-    investment:siegeRoundMoney(c.investment||0), durability:siegeRoundMoney(c.durability||0),
-    max_durability:siegeRoundMoney(c.maxDurability||siegeBaseDurability(c.name)), promo:String(c.promo||"현재 등록된 홍보 메시지가 없습니다."),
-    open_room_url:String(c.openRoomUrl||""),
-    last_growth_at:new Date(Number(c.lastGrowthAt)||Date.now()).toISOString(),
-    attacked_at:Number(c.attackedAt)>0?new Date(Number(c.attackedAt)).toISOString():null,
-    fallen_at:Number(c.fallenAt)>0?new Date(Number(c.fallenAt)).toISOString():null,
-    logs:Array.isArray(c.logs)?c.logs:[], updated_at:new Date().toISOString()
-  }));
-  if(castleRows.length){
-    const {error}=await sb.from("siege_castles").upsert(castleRows,{onConflict:"slot"});
-    if(error) throw error;
-  }
-  const teamRows=Object.entries(st.teams||{}).map(([team,v])=>({team_name:team,money:siegeRoundMoney(v?.money??10),updated_at:new Date().toISOString()}));
-  if(teamRows.length){
-    const {error}=await sb.from("siege_teams").upsert(teamRows,{onConflict:"team_name"});
-    if(error) throw error;
-  }
+  /* SECURITY: intentionally disabled. */
+  return;
 }
-
 async function syncSiegeFromSupabase(){
   if(!sb || SIEGE_REMOTE_SYNCING) return loadSiegeState();
+  try{
+    const {error:growthError}=await sb.rpc("siege_apply_weekly_growth_secure");
+    if(growthError) console.warn("공성전 주간 적립 서버 처리:",growthError);
+  }catch(growthErr){ console.warn("공성전 주간 적립 서버 처리:",growthErr); }
   SIEGE_REMOTE_SYNCING=true;
   try{
     const [cr,tr,fr,gr]=await Promise.all([
@@ -11252,13 +11235,13 @@ async function syncSiegeFromSupabase(){
     st.friendlyLogs=(fr.data||[]).map(r=>({id:r.id,winner:r.winner||"",loser:r.loser||"",proof:r.proof_data||"",createdAt:r.created_at||""}));
     st.representativeLogs=(gr.data||[]).map(r=>({id:r.id,type:r.log_type||"",message:r.message||"",dedupeKey:r.dedupe_key||"",createdAt:r.created_at||""}));
     document.querySelectorAll(".siege-castle").forEach(btn=>{ensureSiegeCastle(btn.dataset.slot,btn.dataset.castle,st);});
-    const growthChanged=applySiegeWeeklyGrowthToState(st);
+    const growthChanged=false; // 서버 RPC에서 처리
     localStorage.setItem(SIEGE_STORAGE_KEY,JSON.stringify(st));
     renderSiegeMapFromState(st,false);
     renderSiegeFriendlyLogs();
     renderSiegeRepresentativeLogs(st.representativeLogs);
     updateSiegeFundWallet();
-    if(growthChanged) setTimeout(()=>queueSiegeSupabaseSave(st),0);
+
     return st;
   }catch(e){
     console.warn("공성전 Supabase 불러오기 실패 - 로컬 상태 유지:",e);
@@ -11282,16 +11265,15 @@ async function refreshSiegeRepresentativeLogs(){
     let st=loadSiegeState();st.representativeLogs=rows;localStorage.setItem(SIEGE_STORAGE_KEY,JSON.stringify(st));renderSiegeRepresentativeLogs(rows);
   }catch(e){console.warn("대표 로그 불러오기 실패:",e);renderSiegeRepresentativeLogs();}
 }
+
 async function addSiegeRepresentativeLog(type,message,dedupeKey="",minGapMs=0){
-  const text=String(message||"").trim();if(!text)return false;const key=String(dedupeKey||"").trim();
-  try{
-    if(sb&&key){const {data,error}=await sb.from("siege_global_logs").select("id,created_at").eq("dedupe_key",key).order("created_at",{ascending:false}).limit(1);if(error)throw error;const last=data?.[0];if(last){if(minGapMs>0&&Date.now()-new Date(last.created_at).getTime()<minGapMs)return false;if(minGapMs<=0)return false;}}
-    const row={id:(crypto?.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()),log_type:String(type||"etc"),message:text,dedupe_key:key||null,created_at:new Date().toISOString()};
-    if(sb){const {error}=await sb.from("siege_global_logs").insert(row);if(error)throw error;const {data:oldRows}=await sb.from("siege_global_logs").select("id").order("created_at",{ascending:false}).range(10,40);if(oldRows?.length)await sb.from("siege_global_logs").delete().in("id",oldRows.map(r=>r.id));}
-    let st=loadSiegeState();st.representativeLogs=Array.isArray(st.representativeLogs)?st.representativeLogs:[];st.representativeLogs.unshift({id:row.id,type:row.log_type,message:row.message,dedupeKey:key,createdAt:row.created_at});st.representativeLogs=st.representativeLogs.slice(0,10);localStorage.setItem(SIEGE_STORAGE_KEY,JSON.stringify(st));renderSiegeRepresentativeLogs(st.representativeLogs);return true;
-  }catch(e){console.warn("대표 로그 저장 실패:",e);return false;}
+  /* SECURITY: siege_global_logs INSERT/DELETE는 브라우저에서 금지.
+     보상/점령/공격/친선/이자 로그는 각 서버 RPC 내부에서 작성됩니다. */
+  return false;
 }
-function queueSiegeRepresentativeLog(type,message,dedupeKey="",minGapMs=0){addSiegeRepresentativeLog(type,message,dedupeKey,minGapMs).catch(()=>{});}
+function queueSiegeRepresentativeLog(type,message,dedupeKey="",minGapMs=0){
+  return false;
+}
 function playSiegeSound(url){try{const a=new Audio(url);a.volume=.75;a.play().catch(()=>{});return a;}catch(e){return null;}}
 
 function siegeRoundMoney(v){ return Math.round((Number(v)||0)*100)/100; }
@@ -11331,30 +11313,10 @@ function siegeNextMonday00After(ts){
   if(d.getTime()<=base.getTime()) d.setDate(d.getDate()+7);
   return d.getTime();
 }
+
 function applySiegeWeeklyGrowthToState(st){
-  const now=Date.now(); let changed=false;
-  Object.values(st.castles||{}).forEach(c=>{
-    if(!Number.isFinite(Number(c.maxDurability))) c.maxDurability=100;
-    if(!Number.isFinite(Number(c.durability))) c.durability=100;
-    if(!Number.isFinite(Number(c.lastGrowthAt))) c.lastGrowthAt=now;
-    if(!c.owner || !(Number(c.investment)>0)){ c.lastGrowthAt=now; return; }
-    let boundary=siegeNextMonday00After(c.lastGrowthAt), weeks=0, lastBoundary=Number(c.lastGrowthAt);
-    while(boundary<=now && weeks<520){ weeks++; lastBoundary=boundary; boundary=siegeNextMonday00After(boundary); }
-    if(weeks<=0) return;
-    const before=siegeRoundMoney(c.investment);
-    let after=before;
-    for(let i=0;i<weeks;i++) after=siegeRoundMoney(after*1.03);
-    c.investment=after;
-    siegeGrowMaxDurabilityFromInvestment(c);
-    c.lastGrowthAt=lastBoundary;
-    c.logs=Array.isArray(c.logs)?c.logs:[];
-    c.logs.unshift(`*월요일 00시 투자금 3% 적립 (${siegeMoneyText(before)} → ${siegeMoneyText(after)})`);
-    c.logs=c.logs.slice(0,60);
-    const interest=siegeRoundMoney(after-before);
-    if(interest>0)queueSiegeRepresentativeLog("interest",`*${c.owner}는 ${c.name}로 인해 이자 ${siegeMoneyText(interest)}이 적립되었습니다.`,`interest:${c.name}:${lastBoundary}`);
-    changed=true;
-  });
-  return changed;
+  /* SECURITY: 투자금 3% 적립은 siege_apply_weekly_growth_secure RPC만 수행 */
+  return false;
 }
 function loadSiegeState(){
   try{
@@ -11367,7 +11329,7 @@ function loadSiegeState(){
     return st;
   }catch(e){ return siegeDefaultState(); }
 }
-function saveSiegeState(st){ localStorage.setItem(SIEGE_STORAGE_KEY, JSON.stringify(st)); queueSiegeSupabaseSave(st); }
+function saveSiegeState(st){ localStorage.setItem(SIEGE_STORAGE_KEY, JSON.stringify(st)); }
 function ensureSiegeTeam(team, st=loadSiegeState()){
   const t=String(team||"").trim(); if(!t)return st; if(!st.teams)st.teams={};
   if(!st.teams[t])st.teams[t]={money:10}; if(!Number.isFinite(Number(st.teams[t].money)))st.teams[t].money=10; return st;
@@ -11445,19 +11407,69 @@ async function loadSiegeLoginTeams(){
     let st=loadSiegeState();teams.forEach(t=>{st=ensureSiegeTeam(t,st);});saveSiegeState(st); window.SIEGE_TEAM_LIST=teams; populateSiegeFriendlyTeams();
   }catch(e){console.error("공성전 단체목록:",e);}
 }
-async function onSiegeLoginTeamChanged(){ const team=document.getElementById("siegeLoginTeam")?.value||"",nickSel=document.getElementById("siegeLoginNick");fillSelect(nickSel,[],"닉네임 선택");SIEGE_LOGIN={team:"",nick:"",total:0,authenticated:false};updateSiegeLoginState();if(!team)return;try{const res=await getTeamMembersSupabase(team);fillSelect(nickSel,res?.members||[],"닉네임 선택");}catch(e){alert(e.message||"닉네임 목록을 불러오지 못했습니다.");} }
-function updateSiegeLoginState(){ const el=document.getElementById("siegeLoginState");if(!el)return;if(SIEGE_LOGIN.authenticated){el.textContent="로그인됨";el.classList.add("ok");}else{el.textContent="로그인 전";el.classList.remove("ok");}updateSiegeFundWallet();populateSiegeFriendlyTeams(); }
+
+async function onSiegeLoginTeamChanged(){
+  const team=document.getElementById("siegeLoginTeam")?.value||"",
+        nickSel=document.getElementById("siegeLoginNick");
+  fillSelect(nickSel,[],"닉네임 선택");
+  SIEGE_LOGIN={team:"",nick:"",total:0,token:"",authenticated:false};
+  updateSiegeLoginState();
+  if(!team)return;
+  try{
+    const res=await getTeamMembersSupabase(team);
+    fillSelect(nickSel,res?.members||[],"닉네임 선택");
+  }catch(e){alert(e.message||"닉네임 목록을 불러오지 못했습니다.");}
+}
+function updateSiegeLoginState(){
+  const el=document.getElementById("siegeLoginState");
+  if(!el)return;
+  if(SIEGE_LOGIN.authenticated){el.textContent="로그인됨";el.classList.add("ok");}
+  else{el.textContent="로그인 전";el.classList.remove("ok");}
+  updateSiegeFundWallet();
+  populateSiegeFriendlyTeams();
+}
 async function submitSiegeLogin(){
-  const team=String(document.getElementById("siegeLoginTeam")?.value||"").trim(),nick=String(document.getElementById("siegeLoginNick")?.value||"").trim(),pin=String(document.getElementById("siegeLoginPin")?.value||"").trim();
-  if(!team)return alert("단체를 선택해주세요.");if(!nick)return alert("닉네임을 선택해주세요.");if(!/^\d{5}$/.test(pin))return alert("비밀번호 5자리를 입력해주세요.");
-  try{await loadProfileSupabase(nick,pin);const rows=await sbSelect("team_members",q=>q.select("team_name,nickname,total").eq("team_name",team).eq("nickname",nick).limit(1));if(!rows.length)throw new Error("선택한 단체에 등록된 닉네임이 아닙니다.");
-    SIEGE_LOGIN={team,nick,total:Number(rows[0].total)||0,authenticated:true};let st=loadSiegeState();st=ensureSiegeTeam(team,st);saveSiegeState(st);document.getElementById("siegeLoginPin").value="";updateSiegeLoginState();
-  }catch(e){SIEGE_LOGIN={team:"",nick:"",total:0,authenticated:false};updateSiegeLoginState();alert(e.message||"로그인 실패");}
+  const team=String(document.getElementById("siegeLoginTeam")?.value||"").trim(),
+        nick=String(document.getElementById("siegeLoginNick")?.value||"").trim(),
+        pin=String(document.getElementById("siegeLoginPin")?.value||"").trim();
+  if(!team)return alert("단체를 선택해주세요.");
+  if(!nick)return alert("닉네임을 선택해주세요.");
+  if(!/^\d{5}$/.test(pin))return alert("비밀번호 5자리를 입력해주세요.");
+  try{
+    await loadProfileSupabase(nick,pin);
+    const rows=await sbSelect("team_members",q=>q.select("team_name,nickname,total").eq("team_name",team).eq("nickname",nick).limit(1));
+    if(!rows.length)throw new Error("선택한 단체에 등록된 닉네임이 아닙니다.");
+
+    const {data:tokenData,error:tokenError}=await sb.rpc("siege_issue_player_token_secure",{
+      p_team:team,
+      p_nickname:nick,
+      p_pin5:pin
+    });
+    if(tokenError)throw tokenError;
+    const token=String(tokenData?.token||tokenData||"").trim();
+    if(!token)throw new Error("공성전 보안 로그인 토큰 발급에 실패했습니다.");
+
+    SIEGE_LOGIN={team,nick,total:Number(rows[0].total)||0,token,authenticated:true};
+    document.getElementById("siegeLoginPin").value="";
+    await syncSiegeFromSupabase();
+    updateSiegeLoginState();
+  }catch(e){
+    SIEGE_LOGIN={team:"",nick:"",total:0,token:"",authenticated:false};
+    updateSiegeLoginState();
+    alert(e.message||"로그인 실패");
+  }
 }
 function logoutSiege(){
-  SIEGE_LOGIN={team:"",nick:"",total:0,authenticated:false};
-  const t=document.getElementById("siegeLoginTeam"),n=document.getElementById("siegeLoginNick"),p=document.getElementById("siegeLoginPin");
-  if(t)t.value=""; if(n)fillSelect(n,[],"닉네임 선택"); if(p)p.value=""; updateSiegeLoginState();
+  const oldToken=String(SIEGE_LOGIN?.token||"");
+  if(oldToken && sb) sb.rpc("siege_revoke_player_token_secure",{p_token:oldToken}).catch(()=>{});
+  SIEGE_LOGIN={team:"",nick:"",total:0,token:"",authenticated:false};
+  const t=document.getElementById("siegeLoginTeam"),
+        n=document.getElementById("siegeLoginNick"),
+        p=document.getElementById("siegeLoginPin");
+  if(t)t.value="";
+  if(n)fillSelect(n,[],"닉네임 선택");
+  if(p)p.value="";
+  updateSiegeLoginState();
 }
 async function openSiegeTeamStatusPopup(){
   document.getElementById("siegeTeamStatusPopup")?.classList.remove("hidden");
@@ -11567,87 +11579,246 @@ function openSiegeFundPopup(){if(!requireSiegeLogin())return;document.getElement
 function closeSiegeFundPopup(){document.getElementById("siegeFundPopup")?.classList.add("hidden");clearTimeout(SIEGE_MEMORY.timer);clearInterval(SIEGE_MEMORY.countdown);clearTimeout(SIEGE_MEMORY.inputTimer);SIEGE_MEMORY.accepting=false;}
 function switchSiegeFundTab(name){document.querySelectorAll(".siege-fund-tab").forEach(b=>b.classList.toggle("active",b.dataset.pane===name));document.getElementById("siegeFundGamePane")?.classList.toggle("hidden",name!=="game");document.getElementById("siegeFundFriendlyPane")?.classList.toggle("hidden",name!=="friendly");if(name==="friendly"){populateSiegeFriendlyTeams();renderSiegeFriendlyLogs();}}
 function updateSiegeFundWallet(){const teamEl=document.getElementById("siegeFundTeam"),moneyEl=document.getElementById("siegeFundMoney");if(teamEl)teamEl.textContent=SIEGE_LOGIN.authenticated?SIEGE_LOGIN.team:"-";if(moneyEl)moneyEl.textContent=SIEGE_LOGIN.authenticated?siegeMoneyText(getSiegeTeamMoney(SIEGE_LOGIN.team)):"-";}
+
 function memoryStageSpec(stage){if(stage<=2)return{count:4};if(stage<=4)return{count:5};if(stage<=6)return{count:6};if(stage<=8)return{count:7};if(stage===9)return{count:8};return{count:9};}
+
+/* UI 표시용 예상 보상일 뿐입니다. 실제 보상은 서버 RPC가 DB의 session 상태로 계산합니다. */
 function siegeMemoryFailReward(stage){const n=Number(stage)||1;if(n<=1)return 0;if(n<=3)return .1;if(n<=5)return .2;if(n<=7)return .4;return 1;}
-function siegeMemoryPayReward(amount){const reward=siegeRoundMoney(amount);if(!(reward>0))return 0;let st=loadSiegeState();st=ensureSiegeTeam(SIEGE_LOGIN.team,st);st.teams[SIEGE_LOGIN.team].money=siegeRoundMoney(Number(st.teams[SIEGE_LOGIN.team].money)+reward);saveSiegeState(st);updateSiegeFundWallet();queueSiegeRepresentativeLog("minigame",`*${SIEGE_LOGIN.team}는 미니게임을 하여 ${siegeMoneyText(reward)} 취득.`);return reward;}
+
 function memoryColorClass(c){return c==="red"?"memory-red":c==="yellow"?"memory-yellow":c==="blue"?"memory-blue":"memory-green";}
 function setMemoryButtons(enabled){document.querySelectorAll(".memory-color-btn").forEach(b=>{b.disabled=!enabled;b.toggleAttribute("disabled",!enabled);b.style.pointerEvents=enabled?"auto":"none";});}
 function renderMemoryCards(hidden=false){const box=document.getElementById("memorySequence");if(!box)return;box.innerHTML=SIEGE_MEMORY.sequence.map(c=>`<div class="memory-card ${hidden?'back':memoryColorClass(c)}"></div>`).join("");}
 function renderMemoryInputPreview(){const box=document.getElementById("memoryInputPreview");if(!box)return;box.innerHTML=SIEGE_MEMORY.input.map(c=>`<div class="memory-card ${memoryColorClass(c)}"></div>`).join("");}
-function resetSiegeMemoryGame(){clearTimeout(SIEGE_MEMORY.timer);clearInterval(SIEGE_MEMORY.countdown);clearTimeout(SIEGE_MEMORY.inputTimer);SIEGE_MEMORY={stage:1,sequence:[],input:[],accepting:false,timer:null,countdown:null,inputTimer:null,running:false};setMemoryButtons(false);const seq=document.getElementById("memorySequence");if(seq)seq.innerHTML="";renderMemoryInputPreview();const st=document.getElementById("memoryStage"),rw=document.getElementById("memoryReward"),gd=document.getElementById("memoryGuide"),tm=document.getElementById("memoryTimer"),msg=document.getElementById("memoryMsg");if(st)st.textContent="1";if(rw)rw.textContent="0원";if(gd)gd.textContent="게임 시작을 눌러주세요.";if(tm)tm.textContent="";if(msg)msg.textContent="보상은 게임이 끝난 뒤 한 번만 지급됩니다.";const b=document.getElementById("btnMemoryStart");if(b){b.disabled=false;b.textContent="게임 시작";}}
-function startSiegeMemoryGame(){if(!requireSiegeLogin())return;resetSiegeMemoryGame();SIEGE_MEMORY.running=true;const b=document.getElementById("btnMemoryStart");if(b)b.disabled=true;startSiegeMemoryStage();}
-function startSiegeMemoryStage(){
-  const stage=SIEGE_MEMORY.stage,spec=memoryStageSpec(stage),colors=["red","yellow","blue","green"];SIEGE_MEMORY.sequence=Array.from({length:spec.count},()=>colors[Math.floor(Math.random()*colors.length)]);SIEGE_MEMORY.input=[];SIEGE_MEMORY.accepting=false;renderMemoryInputPreview();clearTimeout(SIEGE_MEMORY.inputTimer);
-  document.getElementById("memoryStage").textContent=String(stage);document.getElementById("memoryReward").textContent=stage>=10?"실패 1원 / 성공 2원":siegeMoneyText(siegeMemoryFailReward(stage));document.getElementById("memoryGuide").textContent="카드 순서를 기억하세요.";document.getElementById("memoryMsg").textContent=`${spec.count}장의 순서를 5초 동안 기억하세요.`;renderMemoryCards(false);setMemoryButtons(false);
-  playSiegeSound(SIEGE_SOUND_COUNT5);
-  let left=5;document.getElementById("memoryTimer").textContent=left+"초";clearInterval(SIEGE_MEMORY.countdown);SIEGE_MEMORY.countdown=setInterval(()=>{left--;document.getElementById("memoryTimer").textContent=left>0?left+"초":"";if(left<=0)clearInterval(SIEGE_MEMORY.countdown);},1000);
-  clearTimeout(SIEGE_MEMORY.timer);SIEGE_MEMORY.timer=setTimeout(()=>{renderMemoryCards(true);playSiegeSound(SIEGE_SOUND_DING);SIEGE_MEMORY.accepting=true;setMemoryButtons(true);let inputLeft=10;document.getElementById("memoryGuide").textContent="아래 카드를 순서대로 입력하세요.";document.getElementById("memoryTimer").textContent=inputLeft+"초";document.getElementById("memoryMsg").textContent="정답 순서대로 입력하세요. (제한시간 10초)";clearInterval(SIEGE_MEMORY.countdown);SIEGE_MEMORY.countdown=setInterval(()=>{inputLeft--;document.getElementById("memoryTimer").textContent=inputLeft>0?inputLeft+"초":"";if(inputLeft<=0)clearInterval(SIEGE_MEMORY.countdown);},1000);SIEGE_MEMORY.inputTimer=setTimeout(()=>{if(!SIEGE_MEMORY.accepting)return;SIEGE_MEMORY.accepting=false;SIEGE_MEMORY.running=false;setMemoryButtons(false);clearInterval(SIEGE_MEMORY.countdown);document.getElementById("memoryTimer").textContent="";const reward=siegeMemoryPayReward(siegeMemoryFailReward(SIEGE_MEMORY.stage));document.getElementById("memoryMsg").textContent=`시간초과! ${SIEGE_MEMORY.stage}단계에서 패배. 최종 보상 ${siegeMoneyText(reward)} 지급.`;playSiegeSound(SIEGE_SOUND_END);const b=document.getElementById("btnMemoryStart");if(b){b.disabled=false;b.textContent="처음부터 시작";}},10000);},5000);
+
+function resetSiegeMemoryGame(){
+  clearTimeout(SIEGE_MEMORY.timer);
+  clearInterval(SIEGE_MEMORY.countdown);
+  clearTimeout(SIEGE_MEMORY.inputTimer);
+  SIEGE_MEMORY={stage:1,sequence:[],input:[],accepting:false,timer:null,countdown:null,inputTimer:null,running:false,sessionId:""};
+  setMemoryButtons(false);
+  const seq=document.getElementById("memorySequence");if(seq)seq.innerHTML="";
+  renderMemoryInputPreview();
+  const st=document.getElementById("memoryStage"),rw=document.getElementById("memoryReward"),
+        gd=document.getElementById("memoryGuide"),tm=document.getElementById("memoryTimer"),
+        msg=document.getElementById("memoryMsg");
+  if(st)st.textContent="1";
+  if(rw)rw.textContent="0원";
+  if(gd)gd.textContent="게임 시작을 눌러주세요.";
+  if(tm)tm.textContent="";
+  if(msg)msg.textContent="보상은 서버가 실제 진행 세션을 검증한 뒤 한 번만 지급합니다.";
+  const b=document.getElementById("btnMemoryStart");if(b){b.disabled=false;b.textContent="게임 시작";}
 }
-function clickSiegeMemoryColor(color){
+
+async function siegeMemoryClaimServer(){
+  if(!SIEGE_LOGIN.token||!SIEGE_MEMORY.sessionId)throw new Error("미니게임 세션 정보가 없습니다.");
+  const {data,error}=await sb.rpc("claim_siege_memory_reward",{
+    p_player_token:SIEGE_LOGIN.token,
+    p_session_id:SIEGE_MEMORY.sessionId
+  });
+  if(error)throw error;
+  await syncSiegeFromSupabase();
+  updateSiegeFundWallet();
+  refreshSiegeRepresentativeLogs();
+  return data||{};
+}
+
+async function siegeMemoryHandleFinished(result){
+  SIEGE_MEMORY.running=false;
+  SIEGE_MEMORY.accepting=false;
+  setMemoryButtons(false);
+  clearInterval(SIEGE_MEMORY.countdown);
+  clearTimeout(SIEGE_MEMORY.inputTimer);
+  document.getElementById("memoryTimer").textContent="";
+  try{
+    const claim=await siegeMemoryClaimServer();
+    const reward=Number(claim.reward)||0;
+    document.getElementById("memoryReward").textContent=siegeMoneyText(reward);
+    if(result?.result==="success"){
+      document.getElementById("memoryMsg").textContent=`10단계까지 모두 성공! 최종 보상 ${siegeMoneyText(reward)} 지급.`;
+    }else{
+      const stage=Number(result?.finished_stage||result?.stage||SIEGE_MEMORY.stage)||SIEGE_MEMORY.stage;
+      const reason=result?.reason==="timeout"?"시간초과":"오답";
+      document.getElementById("memoryMsg").textContent=`${reason}! ${stage}단계에서 패배. 최종 보상 ${siegeMoneyText(reward)} 지급.`;
+    }
+  }catch(e){
+    document.getElementById("memoryMsg").textContent="게임은 종료되었지만 보상 확인에 실패했습니다. 게임 시작을 다시 누르면 미지급 보상을 재확인합니다.";
+    console.error("미니게임 보상 확인:",e);
+  }
+  playSiegeSound(SIEGE_SOUND_END);
+  const b=document.getElementById("btnMemoryStart");
+  if(b){b.disabled=false;b.textContent="다시 도전";}
+}
+
+async function startSiegeMemoryGame(){
+  if(!requireSiegeLogin())return;
+  if(!SIEGE_LOGIN.token)return alert("공성전 보안 로그인 정보가 없습니다. 로그아웃 후 다시 로그인해주세요.");
+  resetSiegeMemoryGame();
+  const b=document.getElementById("btnMemoryStart");
+  if(b){b.disabled=true;b.textContent="게임 준비중...";}
+  try{
+    const {data,error}=await sb.rpc("start_siege_memory_session",{p_player_token:SIEGE_LOGIN.token});
+    if(error)throw error;
+    if(!data)throw new Error("미니게임 세션을 만들지 못했습니다.");
+
+    SIEGE_MEMORY.sessionId=String(data.session_id||"");
+    if(data.status==="finished"){
+      SIEGE_MEMORY.stage=Number(data.current_stage||data.finished_stage||1);
+      await siegeMemoryHandleFinished(data);
+      return;
+    }
+
+    SIEGE_MEMORY.stage=Number(data.current_stage)||1;
+    SIEGE_MEMORY.sequence=Array.isArray(data.sequence)?data.sequence:[];
+    SIEGE_MEMORY.running=true;
+    if(!SIEGE_MEMORY.sessionId||!SIEGE_MEMORY.sequence.length)throw new Error("서버 게임 데이터가 올바르지 않습니다.");
+    startSiegeMemoryStage();
+  }catch(e){
+    if(b){b.disabled=false;b.textContent="게임 시작";}
+    alert(e.message||"미니게임 시작에 실패했습니다.");
+  }
+}
+
+function startSiegeMemoryStage(){
+  if(!SIEGE_MEMORY.running||!SIEGE_MEMORY.sessionId||!SIEGE_MEMORY.sequence.length)return;
+  const stage=SIEGE_MEMORY.stage;
+  SIEGE_MEMORY.input=[];
+  SIEGE_MEMORY.accepting=false;
+  renderMemoryInputPreview();
+  clearTimeout(SIEGE_MEMORY.inputTimer);
+
+  document.getElementById("memoryStage").textContent=String(stage);
+  document.getElementById("memoryReward").textContent=stage>=10?"실패 1원 / 성공 2원":siegeMoneyText(siegeMemoryFailReward(stage));
+  document.getElementById("memoryGuide").textContent="카드 순서를 기억하세요.";
+  document.getElementById("memoryMsg").textContent=`${SIEGE_MEMORY.sequence.length}장의 순서를 5초 동안 기억하세요.`;
+  renderMemoryCards(false);
+  setMemoryButtons(false);
+  playSiegeSound(SIEGE_SOUND_COUNT5);
+
+  let left=5;
+  document.getElementById("memoryTimer").textContent=left+"초";
+  clearInterval(SIEGE_MEMORY.countdown);
+  SIEGE_MEMORY.countdown=setInterval(()=>{
+    left--;
+    document.getElementById("memoryTimer").textContent=left>0?left+"초":"";
+    if(left<=0)clearInterval(SIEGE_MEMORY.countdown);
+  },1000);
+
+  clearTimeout(SIEGE_MEMORY.timer);
+  SIEGE_MEMORY.timer=setTimeout(()=>{
+    renderMemoryCards(true);
+    playSiegeSound(SIEGE_SOUND_DING);
+    SIEGE_MEMORY.accepting=true;
+    setMemoryButtons(true);
+    let inputLeft=10;
+    document.getElementById("memoryGuide").textContent="아래 카드를 순서대로 입력하세요.";
+    document.getElementById("memoryTimer").textContent=inputLeft+"초";
+    document.getElementById("memoryMsg").textContent="정답 순서대로 입력하세요. (제한시간 10초)";
+    clearInterval(SIEGE_MEMORY.countdown);
+    SIEGE_MEMORY.countdown=setInterval(()=>{
+      inputLeft--;
+      document.getElementById("memoryTimer").textContent=inputLeft>0?inputLeft+"초":"";
+      if(inputLeft<=0)clearInterval(SIEGE_MEMORY.countdown);
+    },1000);
+
+    SIEGE_MEMORY.inputTimer=setTimeout(async ()=>{
+      if(!SIEGE_MEMORY.accepting)return;
+      SIEGE_MEMORY.accepting=false;
+      setMemoryButtons(false);
+      try{
+        const {data,error}=await sb.rpc("submit_siege_memory_stage",{
+          p_player_token:SIEGE_LOGIN.token,
+          p_session_id:SIEGE_MEMORY.sessionId,
+          p_input:[]
+        });
+        if(error)throw error;
+        await siegeMemoryHandleFinished(data||{reason:"timeout"});
+      }catch(e){
+        SIEGE_MEMORY.running=false;
+        document.getElementById("memoryMsg").textContent=e.message||"시간초과 처리에 실패했습니다.";
+        const b=document.getElementById("btnMemoryStart");if(b){b.disabled=false;b.textContent="다시 시작";}
+      }
+    },10000);
+  },5000);
+}
+
+async function clickSiegeMemoryColor(color){
   if(!SIEGE_MEMORY.accepting||!SIEGE_MEMORY.running)return;
   playSiegeSound(SIEGE_SOUND_CLICK);
-  const idx=SIEGE_MEMORY.input.length;
   SIEGE_MEMORY.input.push(color);
   renderMemoryInputPreview();
 
-  if(SIEGE_MEMORY.sequence[idx]!==color){
+  /* 즉시 오답 UI는 보여주되, 실제 패배/stage 판정은 서버가 합니다. */
+  const idx=SIEGE_MEMORY.input.length-1;
+  if(SIEGE_MEMORY.sequence[idx]!==color || SIEGE_MEMORY.input.length===SIEGE_MEMORY.sequence.length){
     clearTimeout(SIEGE_MEMORY.inputTimer);
     clearInterval(SIEGE_MEMORY.countdown);
     SIEGE_MEMORY.accepting=false;
-    SIEGE_MEMORY.running=false;
     setMemoryButtons(false);
     document.getElementById("memoryTimer").textContent="";
-    const reward=siegeMemoryPayReward(siegeMemoryFailReward(SIEGE_MEMORY.stage));
-    document.getElementById("memoryMsg").textContent=`오답입니다. ${SIEGE_MEMORY.stage}단계에서 패배. 최종 보상 ${siegeMoneyText(reward)} 지급.`;
-    playSiegeSound(SIEGE_SOUND_END);
-    const b=document.getElementById("btnMemoryStart");
-    if(b){b.disabled=false;b.textContent="처음부터 시작";}
+    try{
+      const {data,error}=await sb.rpc("submit_siege_memory_stage",{
+        p_player_token:SIEGE_LOGIN.token,
+        p_session_id:SIEGE_MEMORY.sessionId,
+        p_input:SIEGE_MEMORY.input
+      });
+      if(error)throw error;
+      const result=data||{};
+      if(result.status==="finished"){
+        await siegeMemoryHandleFinished(result);
+        return;
+      }
+
+      SIEGE_MEMORY.stage=Number(result.current_stage)||SIEGE_MEMORY.stage+1;
+      SIEGE_MEMORY.sequence=Array.isArray(result.sequence)?result.sequence:[];
+      SIEGE_MEMORY.input=[];
+      document.getElementById("memoryMsg").textContent=`${SIEGE_MEMORY.stage-1}단계 성공! 보상은 아직 지급되지 않습니다. 다음 단계로 진행합니다.`;
+      SIEGE_MEMORY.timer=setTimeout(startSiegeMemoryStage,900);
+    }catch(e){
+      SIEGE_MEMORY.running=false;
+      document.getElementById("memoryMsg").textContent=e.message||"서버 게임 검증에 실패했습니다.";
+      const b=document.getElementById("btnMemoryStart");if(b){b.disabled=false;b.textContent="다시 시작";}
+    }
     return;
   }
 
   document.getElementById("memoryMsg").textContent=`입력 ${SIEGE_MEMORY.input.length}/${SIEGE_MEMORY.sequence.length}`;
-
-  if(SIEGE_MEMORY.input.length===SIEGE_MEMORY.sequence.length){
-    clearTimeout(SIEGE_MEMORY.inputTimer);
-    clearInterval(SIEGE_MEMORY.countdown);
-    document.getElementById("memoryTimer").textContent="";
-    SIEGE_MEMORY.accepting=false;
-    setMemoryButtons(false);
-
-    if(SIEGE_MEMORY.stage>=10){
-      const reward=siegeMemoryPayReward(2);
-      SIEGE_MEMORY.running=false;
-      document.getElementById("memoryReward").textContent=siegeMoneyText(reward);
-      document.getElementById("memoryMsg").textContent=`10단계까지 모두 성공! 최종 보상 ${siegeMoneyText(reward)} 지급.`;
-      playSiegeSound(SIEGE_SOUND_END);
-      const b=document.getElementById("btnMemoryStart");
-      if(b){b.disabled=false;b.textContent="다시 도전";}
-    }else{
-      document.getElementById("memoryMsg").textContent=`${SIEGE_MEMORY.stage}단계 성공! 보상은 아직 지급되지 않습니다. 다음 단계로 진행합니다.`;
-      SIEGE_MEMORY.stage++;
-      SIEGE_MEMORY.timer=setTimeout(startSiegeMemoryStage,900);
-    }
-  }
 }
-
 function populateSiegeFriendlyTeams(){
   const win=document.getElementById("siegeFriendlyWinner"),lose=document.getElementById("siegeFriendlyLoser");if(!win||!lose)return;const teams=window.SIEGE_TEAM_LIST||[];fillSelect(win,teams,"승리단체");fillSelect(lose,teams.filter(t=>t!==SIEGE_LOGIN.team),"패배단체");
   if(SIEGE_LOGIN.authenticated){ensureSelectOption(win,SIEGE_LOGIN.team,SIEGE_LOGIN.team);win.value=SIEGE_LOGIN.team;win.disabled=true;}else win.disabled=false;
 }
 function handleSiegeFriendlyFileChange(){const f=document.getElementById("siegeFriendlyFile")?.files?.[0];const el=document.getElementById("siegeFriendlyFileName");if(el)el.textContent=f?f.name:"선택된 파일 없음";}
 function fileToSiegeProofDataUrl(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(new Error("첨부파일을 읽지 못했습니다."));reader.onload=()=>{const img=new Image();img.onerror=()=>reject(new Error("이미지 파일만 첨부할 수 있습니다."));img.onload=()=>{const max=1100,scale=Math.min(1,max/Math.max(img.width,img.height)),canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));const ctx=canvas.getContext("2d");ctx.drawImage(img,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL("image/jpeg",.72));};img.src=reader.result;};reader.readAsDataURL(file);});}
+
 async function submitSiegeFriendly(){
-  if(!requireSiegeLogin())return;const winner=SIEGE_LOGIN.team,loser=String(document.getElementById("siegeFriendlyLoser")?.value||"").trim(),file=document.getElementById("siegeFriendlyFile")?.files?.[0];
-  if(!loser)return alert("패배단체를 선택해주세요.");if(loser===winner)return alert("승리단체와 패배단체는 같을 수 없습니다.");if(!file)return alert("친선을 했다는 입증자료를 1개 첨부해주세요.");
-  const pw=prompt("클럽 비번 4자리를 입력해주세요.");if(pw===null)return;if(!/^\d{4}$/.test(String(pw).trim()))return alert("클럽 비번 4자리를 입력해주세요.");
+  if(!requireSiegeLogin())return;
+  const winner=SIEGE_LOGIN.team,
+        loser=String(document.getElementById("siegeFriendlyLoser")?.value||"").trim(),
+        file=document.getElementById("siegeFriendlyFile")?.files?.[0];
+  if(!loser)return alert("패배단체를 선택해주세요.");
+  if(loser===winner)return alert("승리단체와 패배단체는 같을 수 없습니다.");
+  if(!file)return alert("친선을 했다는 입증자료를 1개 첨부해주세요.");
+
+  const pw=prompt("클럽 비번 4자리를 입력해주세요.");
+  if(pw===null)return;
+  if(!/^\d{4}$/.test(String(pw).trim()))return alert("클럽 비번 4자리를 입력해주세요.");
+
   try{
-    await verifyClubPwSupabase(winner,String(pw).trim());
-    const proof=await fileToSiegeProofDataUrl(file),createdAt=new Date().toISOString();
-    let remoteId=(crypto?.randomUUID?crypto.randomUUID():String(Date.now())+Math.random());
-    if(sb){const {data,error}=await sb.from("siege_friendly_logs").insert({id:remoteId,winner,loser,proof_data:proof,created_at:createdAt}).select("id").single();if(error)throw error;remoteId=data?.id||remoteId;}
-    let st=loadSiegeState();st=ensureSiegeTeam(winner,st);st.teams[winner].money=siegeRoundMoney(Number(st.teams[winner].money)+.5);st.friendlyLogs=Array.isArray(st.friendlyLogs)?st.friendlyLogs:[];st.friendlyLogs.unshift({id:remoteId,winner,loser,proof,createdAt});st.friendlyLogs=st.friendlyLogs.slice(0,10);saveSiegeState(st);
-    queueSiegeRepresentativeLog("friendly",`*${winner}는 친선을 승리하여 0.5원 취득.`);
-    document.getElementById("siegeFriendlyFile").value="";handleSiegeFriendlyFileChange();updateSiegeFundWallet();renderSiegeFriendlyLogs();alert("친선 등록 완료! 승리단체에 0.5원이 적립되었습니다.");
+    const proof=await fileToSiegeProofDataUrl(file);
+    const {error}=await sb.rpc("siege_submit_friendly_secure",{
+      p_team:winner,
+      p_pw:String(pw).trim(),
+      p_loser:loser,
+      p_proof_data:proof
+    });
+    if(error)throw error;
+    document.getElementById("siegeFriendlyFile").value="";
+    handleSiegeFriendlyFileChange();
+    await syncSiegeFromSupabase();
+    updateSiegeFundWallet();
+    renderSiegeFriendlyLogs();
+    refreshSiegeRepresentativeLogs();
+    alert("친선 등록 완료! 승리단체에 0.5원이 적립되었습니다.");
   }catch(e){alert(e.message||"친선 등록에 실패했습니다.");}
 }
 function renderSiegeFriendlyLogs(){const box=document.getElementById("siegeFriendlyLog");if(!box)return;const rows=(loadSiegeState().friendlyLogs||[]).slice(0,10);box.innerHTML=rows.length?rows.map((r,i)=>`<div class="siege-friendly-log-row"><div>${esc(r.winner)} (승) vs ${esc(r.loser)} (패)</div><button type="button" onclick="showSiegeFriendlyAttachment(${i})">첨부파일보기</button></div>`).join(""):'<div class="siege-friendly-log-row"><div>아직 등록된 친선 로그가 없습니다.</div></div>';}
@@ -11659,98 +11830,136 @@ function refreshOpenSiegeInfo(){if(!SIEGE_CURRENT_SLOT)return;const btn=document
 function closeSiegeInfoPopup(){clearInterval(SIEGE_ATTACK_TIMER);SIEGE_ATTACK_TIMER=null;const c=document.getElementById("siegeAttackCountdown");if(c)c.textContent="";const b=document.getElementById("btnSiegeAttack");if(b)b.disabled=false;document.getElementById("siegeInfoPopup")?.classList.add("hidden");}
 function showSiegeMoneyForm(mode){if(!requireSiegeLogin())return;SIEGE_MONEY_MODE=mode;document.getElementById("siegeMoneyFormLabel").textContent=mode==="buy"?"구입 금액":"판매 금액";const amountInput=document.getElementById("siegeMoneyAmount");if(amountInput){amountInput.value="";if(mode==="buy"){amountInput.min="1";amountInput.step="1";amountInput.placeholder="구입 금액 (1원 단위)";}else{amountInput.min="0.01";amountInput.step="0.01";amountInput.placeholder="판매 금액";}}hideSiegePromoForm();hideSiegeOpenRoomForm();document.getElementById("siegeMoneyForm")?.classList.remove("hidden");}
 function hideSiegeMoneyForm(){SIEGE_MONEY_MODE="";document.getElementById("siegeMoneyForm")?.classList.add("hidden");}
-async function confirmSiegeMoneyAction(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;const rawAmount=Number(document.getElementById("siegeMoneyAmount")?.value);if(!(rawAmount>0))return alert("금액을 입력해주세요.");if(SIEGE_MONEY_MODE==="buy"&&!Number.isInteger(rawAmount))return alert("성 구입은 1원 단위의 정수 금액만 가능합니다. 예: 3원, 5원");const amount=SIEGE_MONEY_MODE==="buy"?rawAmount:siegeRoundMoney(rawAmount);if(SIEGE_MONEY_MODE==="sell"&&!confirm("판매한 금액은 10% 차감 후 90%가 회수됩니다. 판매하시겠습니까?"))return;const pw=prompt("단체 비밀번호를 입력해주세요 4자리");if(pw===null)return;if(!/^\d{4}$/.test(String(pw).trim()))return alert("단체 비밀번호 4자리를 입력해주세요.");try{await verifyClubPwSupabase(SIEGE_LOGIN.team,String(pw).trim());if(SIEGE_MONEY_MODE==="buy")buySiegeCastle(amount);else if(SIEGE_MONEY_MODE==="sell")sellSiegeCastle(amount);}catch(e){alert(e.message||"단체 비밀번호 확인에 실패했습니다.");}}
-function buySiegeCastle(amount){
-  let st=loadSiegeState();
-  st=ensureSiegeTeam(SIEGE_LOGIN.team,st);
-  st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);
-  const c=st.castles[SIEGE_CURRENT_SLOT],buyer=SIEGE_LOGIN.team,money=Number(st.teams[buyer].money)||0,ownerBefore=c.owner||"";
-  if(!Number.isInteger(Number(amount))||Number(amount)<1)return alert("성 구입은 1원 단위의 정수 금액만 가능합니다. 예: 3원, 19원");
-  if(money<amount)return alert("단체 보유 자금이 부족합니다.");
-  if(c.owner&&c.owner!==buyer){
-    const oldOwner=c.owner,oldInvestment=Number(c.investment)||0,minTakeover=Math.floor(oldInvestment)+1;
-    if(Number(amount)<=oldInvestment)return alert(`현재 투자금은 ${siegeMoneyText(oldInvestment)}입니다. 성을 탈취하려면 ${minTakeover}원 이상 입력해주세요.`);
-    const refund=siegeRoundMoney(oldInvestment*.9);
-    st=ensureSiegeTeam(oldOwner,st);
-    st.teams[oldOwner].money=siegeRoundMoney(Number(st.teams[oldOwner].money)+refund);
-    c.logs.unshift(`*${oldOwner}는 ${siegeMoneyText(oldInvestment)}에서 10% 차감 후 ${siegeMoneyText(refund)} 회수`);
-    c.investment=0;c.promo="현재 등록된 홍보 메시지가 없습니다.";c.openRoomUrl="";
-  }
-  st.teams[buyer].money=siegeRoundMoney(money-amount);
-  c.owner=buyer;c.fallenAt=0;
-  c.investment=siegeRoundMoney(Number(c.investment||0)+amount);
-  siegeGrowMaxDurabilityFromInvestment(c);
-  /* 새 점령자(미점령 성 신규 구입 포함)가 생기면 현재 내구성을 최대치까지 전부 회복 */
-  if(ownerBefore!==buyer)c.durability=siegeRoundMoney(c.maxDurability);
-  c.lastGrowthAt=Date.now();
-  c.logs.unshift(`*${buyer}가 구입에 성공`);
-  saveSiegeState(st);
-  if(ownerBefore!==buyer)queueSiegeRepresentativeLog("capture",`*${buyer}가 ${c.name}을 ${siegeMoneyText(amount)}에 점령했습니다.`);
-  renderSiegeMapFromState(st);hideSiegeMoneyForm();refreshOpenSiegeInfo();updateSiegeFundWallet();
+
+async function confirmSiegeMoneyAction(){
+  if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;
+  const rawAmount=Number(document.getElementById("siegeMoneyAmount")?.value);
+  if(!(rawAmount>0))return alert("금액을 입력해주세요.");
+  if(SIEGE_MONEY_MODE==="buy"&&!Number.isInteger(rawAmount))return alert("성 구입은 1원 단위의 정수 금액만 가능합니다. 예: 3원, 5원");
+  const amount=SIEGE_MONEY_MODE==="buy"?rawAmount:siegeRoundMoney(rawAmount);
+  if(SIEGE_MONEY_MODE==="sell"&&!confirm("판매한 금액은 10% 차감 후 90%가 회수됩니다. 판매하시겠습니까?"))return;
+
+  const pw=prompt("단체 비밀번호를 입력해주세요 4자리");
+  if(pw===null)return;
+  if(!/^\d{4}$/.test(String(pw).trim()))return alert("단체 비밀번호 4자리를 입력해주세요.");
+
+  try{
+    const rpcName=SIEGE_MONEY_MODE==="buy"?"siege_buy_castle_secure":"siege_sell_castle_secure";
+    const {error}=await sb.rpc(rpcName,{
+      p_team:SIEGE_LOGIN.team,
+      p_pw:String(pw).trim(),
+      p_slot:Number(SIEGE_CURRENT_SLOT),
+      p_amount:amount
+    });
+    if(error)throw error;
+    hideSiegeMoneyForm();
+    await syncSiegeFromSupabase();
+    refreshOpenSiegeInfo();
+    updateSiegeFundWallet();
+    refreshSiegeRepresentativeLogs();
+  }catch(e){alert(e.message||"성 자금 처리에 실패했습니다.");}
 }
-function sellSiegeCastle(amount){
-  let st=loadSiegeState();st=ensureSiegeTeam(SIEGE_LOGIN.team,st);st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);
-  const c=st.castles[SIEGE_CURRENT_SLOT];
-  if(c.owner!==SIEGE_LOGIN.team)return alert("현재 점령 단체만 판매할 수 있습니다.");
-  const inv=Number(c.investment)||0;if(amount>inv)return alert("투자금보다 많은 금액은 판매할 수 없습니다.");
-  const refund=siegeRoundMoney(amount*.9);
-  st.teams[SIEGE_LOGIN.team].money=siegeRoundMoney(Number(st.teams[SIEGE_LOGIN.team].money)+refund);
-  c.investment=siegeRoundMoney(inv-amount);c.lastGrowthAt=Date.now();
-  c.logs.unshift(`*${SIEGE_LOGIN.team}는 ${siegeMoneyText(amount)}에서 10% 차감 후 ${siegeMoneyText(refund)} 회수`);
-  /* 투자금을 판매해도 한번 상승한 최대 내구성은 내려가지 않습니다. */
-  if(c.investment<=0){
-    c.investment=0;c.owner="";c.openRoomUrl="";c.fallenAt=0;
-    c.logs.unshift(`*성이 미점령 상태가 되었습니다. 최대 내구성 ${siegeRoundMoney(c.maxDurability)}은 유지됩니다.`);
-  }
-  saveSiegeState(st);renderSiegeMapFromState(st);hideSiegeMoneyForm();refreshOpenSiegeInfo();updateSiegeFundWallet();
-}
+function buySiegeCastle(amount){console.warn("보안 변경: 성 구입은 siege_buy_castle_secure RPC에서만 처리됩니다.");}
+function sellSiegeCastle(amount){console.warn("보안 변경: 성 판매는 siege_sell_castle_secure RPC에서만 처리됩니다.");}
 function showSiegePromoForm(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;const {castle}=siegeCastleState(SIEGE_CURRENT_SLOT);if(castle.owner!==SIEGE_LOGIN.team)return alert("성을 점령한 단체만 홍보메세지를 수정할 수 있습니다.");hideSiegeMoneyForm();hideSiegeOpenRoomForm();const input=document.getElementById("siegePromoInput");if(input)input.value=(castle.promo&&castle.promo!=="현재 등록된 홍보 메시지가 없습니다.")?castle.promo:"";updateSiegePromoCount();document.getElementById("siegePromoForm")?.classList.remove("hidden");}
 function hideSiegePromoForm(){document.getElementById("siegePromoForm")?.classList.add("hidden");}
 function updateSiegePromoCount(){const input=document.getElementById("siegePromoInput"),count=document.getElementById("siegePromoCount");if(input&&input.value.length>30)input.value=input.value.slice(0,30);if(count)count.textContent=(input?.value.length||0)+"/30";}
-async function confirmSiegePromoEdit(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;const text=String(document.getElementById("siegePromoInput")?.value||"").trim();if(text.length>30)return alert("홍보메세지는 30자 이내로 입력해주세요.");const {castle}=siegeCastleState(SIEGE_CURRENT_SLOT);if(castle.owner!==SIEGE_LOGIN.team)return alert("성을 점령한 단체만 홍보메세지를 수정할 수 있습니다.");const pw=prompt("단체 비밀번호를 입력해주세요 4자리");if(pw===null)return;if(!/^\d{4}$/.test(String(pw).trim()))return alert("단체 비밀번호 4자리를 입력해주세요.");try{await verifyClubPwSupabase(SIEGE_LOGIN.team,String(pw).trim());let st=loadSiegeState();st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT];c.promo=text||"현재 등록된 홍보 메시지가 없습니다.";c.logs.unshift(`*${SIEGE_LOGIN.team}에서 홍보메세지 수정`);saveSiegeState(st);renderSiegeMapFromState(st);hideSiegePromoForm();refreshOpenSiegeInfo();}catch(e){alert(e.message||"단체 비밀번호 확인에 실패했습니다.");}}
+
+async function confirmSiegePromoEdit(){
+  if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;
+  const text=String(document.getElementById("siegePromoInput")?.value||"").trim();
+  if(text.length>30)return alert("홍보메세지는 30자 이내로 입력해주세요.");
+  const pw=prompt("단체 비밀번호를 입력해주세요 4자리");
+  if(pw===null)return;
+  if(!/^\d{4}$/.test(String(pw).trim()))return alert("단체 비밀번호 4자리를 입력해주세요.");
+  try{
+    const {error}=await sb.rpc("siege_edit_castle_meta_secure",{
+      p_team:SIEGE_LOGIN.team,p_pw:String(pw).trim(),p_slot:Number(SIEGE_CURRENT_SLOT),
+      p_mode:"promo",p_value:text
+    });
+    if(error)throw error;
+    hideSiegePromoForm();
+    await syncSiegeFromSupabase();
+    refreshOpenSiegeInfo();
+  }catch(e){alert(e.message||"단체 비밀번호 확인에 실패했습니다.");}
+}
 function normalizeSiegeOpenRoomUrl(value){const raw=String(value||"").trim();if(!raw)return "";const full=/^https?:\/\//i.test(raw)?raw:"https://"+raw;try{const u=new URL(full);if(u.protocol!=="http:"&&u.protocol!=="https:")return "";return u.href;}catch(e){return "";}}
 function showSiegeOpenRoomForm(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;const {castle}=siegeCastleState(SIEGE_CURRENT_SLOT);if(castle.owner!==SIEGE_LOGIN.team)return alert("성을 점령한 단체만 클럽오픈방 링크를 수정할 수 있습니다.");hideSiegeMoneyForm();hideSiegePromoForm();const input=document.getElementById("siegeOpenRoomInput");if(input)input.value=castle.openRoomUrl||"";document.getElementById("siegeOpenRoomForm")?.classList.remove("hidden");}
 function hideSiegeOpenRoomForm(){document.getElementById("siegeOpenRoomForm")?.classList.add("hidden");}
-async function confirmSiegeOpenRoomEdit(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;const raw=String(document.getElementById("siegeOpenRoomInput")?.value||"").trim();const url=normalizeSiegeOpenRoomUrl(raw);if(raw&&!url)return alert("올바른 http:// 또는 https:// 링크를 입력해주세요.");const {castle}=siegeCastleState(SIEGE_CURRENT_SLOT);if(castle.owner!==SIEGE_LOGIN.team)return alert("성을 점령한 단체만 클럽오픈방 링크를 수정할 수 있습니다.");const pw=prompt("단체 비밀번호를 입력해주세요 4자리");if(pw===null)return;if(!/^\d{4}$/.test(String(pw).trim()))return alert("단체 비밀번호 4자리를 입력해주세요.");try{await verifyClubPwSupabase(SIEGE_LOGIN.team,String(pw).trim());let st=loadSiegeState();st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT];c.openRoomUrl=url;c.logs=Array.isArray(c.logs)?c.logs:[];c.logs.unshift(`*${SIEGE_LOGIN.team}에서 클럽오픈방 링크 ${url?"수정":"삭제"}`);saveSiegeState(st);hideSiegeOpenRoomForm();refreshOpenSiegeInfo();}catch(e){alert(e.message||"단체 비밀번호 확인에 실패했습니다.");}}
+
+async function confirmSiegeOpenRoomEdit(){
+  if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;
+  const raw=String(document.getElementById("siegeOpenRoomInput")?.value||"").trim(),
+        url=normalizeSiegeOpenRoomUrl(raw);
+  if(raw&&!url)return alert("올바른 http:// 또는 https:// 링크를 입력해주세요.");
+  const pw=prompt("단체 비밀번호를 입력해주세요 4자리");
+  if(pw===null)return;
+  if(!/^\d{4}$/.test(String(pw).trim()))return alert("단체 비밀번호 4자리를 입력해주세요.");
+  try{
+    const {error}=await sb.rpc("siege_edit_castle_meta_secure",{
+      p_team:SIEGE_LOGIN.team,p_pw:String(pw).trim(),p_slot:Number(SIEGE_CURRENT_SLOT),
+      p_mode:"url",p_value:url
+    });
+    if(error)throw error;
+    hideSiegeOpenRoomForm();
+    await syncSiegeFromSupabase();
+    refreshOpenSiegeInfo();
+  }catch(e){alert(e.message||"단체 비밀번호 확인에 실패했습니다.");}
+}
+
 function siegeAttackPower(total){const n=Math.max(0,Number(total)||0);return Math.max(.4,Math.floor(n/1000)/10);}
 function isSiegeAttackTime(){const d=new Date();return d.getHours()===22;}
 function startSiegeAttack(){
   if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;
+  if(!SIEGE_LOGIN.token)return alert("공성전 보안 로그인 정보가 없습니다. 다시 로그인해주세요.");
   if(!isSiegeAttackTime())return alert("현재 공격시간이 아닙니다. 공격시간은 매일 22시~23시에만 가능합니다.");
+
   const {castle}=siegeCastleState(SIEGE_CURRENT_SLOT);
   if(!castle.owner)return alert("현재 점령 단체가 없는 성입니다.");
   if(castle.owner===SIEGE_LOGIN.team)return alert("자신의 단체가 점령한 성은 공격할 수 없습니다.");
   if(Number(castle.durability)<=0)return alert("이미 함락된 성입니다. 내구성이 회복된 후 다시 공격할 수 있습니다.");
-  const btn=document.getElementById("btnSiegeAttack"),count=document.getElementById("siegeAttackCountdown");
+
+  const btn=document.getElementById("btnSiegeAttack"),
+        count=document.getElementById("siegeAttackCountdown");
   if(btn.disabled)return;
-  btn.disabled=true;let left=5;count.textContent=String(left);
-  let attackState=loadSiegeState();attackState=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",attackState);
-  attackState.castles[SIEGE_CURRENT_SLOT].attackedAt=Date.now();
-  attackState.castles[SIEGE_CURRENT_SLOT].logs.unshift(`*${SIEGE_LOGIN.team}에서 공격을 시작함`);
-  saveSiegeState(attackState);queueSiegeRepresentativeLog("attack",`*${castle.owner}가 ${SIEGE_LOGIN.team}에게 공격을 당하고 있습니다.`,`attack:${SIEGE_CURRENT_SLOT}:${SIEGE_LOGIN.team}`,10*60*1000);renderSiegeMapFromState(attackState);refreshOpenSiegeInfo();
+  btn.disabled=true;
+  let left=5;
+  count.textContent=String(left);
   clearInterval(SIEGE_ATTACK_TIMER);
-  SIEGE_ATTACK_TIMER=setInterval(()=>{
-    left--;if(left>0){count.textContent=String(left);return;}
-    clearInterval(SIEGE_ATTACK_TIMER);SIEGE_ATTACK_TIMER=null;count.textContent="";btn.disabled=false;
-    let st=loadSiegeState();st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);
-    const c=st.castles[SIEGE_CURRENT_SLOT],power=siegeAttackPower(SIEGE_LOGIN.total),beforeDur=Number(c.durability)||0;
-    c.durability=siegeRoundMoney(Math.max(0,beforeDur-power));
-    c.logs.unshift(`*${SIEGE_LOGIN.team} 공격력 ${power.toFixed(1)} 적용 · 내구성 ${c.durability}/${c.maxDurability}`);
-    if(beforeDur>0&&c.durability<=0){
-      const beforeInv=siegeRoundMoney(c.investment||0);
-      const lost=siegeRoundMoney(beforeInv*0.30);
-      const beforeMax=Math.max(10,siegeRoundMoney(c.maxDurability||siegeBaseDurability(c.name)));
-      c.investment=siegeRoundMoney(Math.max(0,beforeInv-lost));
-      c.maxDurability=siegeRoundMoney(Math.max(10,beforeMax-10));
-      c.durability=0;
-      c.fallenAt=Date.now();
-      c.logs.unshift(`*[함락] 점령 단체 유지 · 투자금 30% 손실 (${siegeMoneyText(beforeInv)} → ${siegeMoneyText(c.investment)}) · 최대 내구성 -10 (${beforeMax} → ${c.maxDurability})`);
-    }
-    saveSiegeState(st);renderSiegeMapFromState(st);refreshOpenSiegeInfo();
+
+  SIEGE_ATTACK_TIMER=setInterval(async ()=>{
+    left--;
+    if(left>0){count.textContent=String(left);return;}
+    clearInterval(SIEGE_ATTACK_TIMER);
+    SIEGE_ATTACK_TIMER=null;
+    count.textContent="";
+    try{
+      const {error}=await sb.rpc("siege_attack_castle_secure",{
+        p_player_token:SIEGE_LOGIN.token,
+        p_slot:Number(SIEGE_CURRENT_SLOT)
+      });
+      if(error)throw error;
+      await syncSiegeFromSupabase();
+      refreshOpenSiegeInfo();
+      refreshSiegeRepresentativeLogs();
+    }catch(e){alert(e.message||"공격에 실패했습니다.");}
+    finally{btn.disabled=false;}
   },1000);
 }
-function repairSiegeCastle(){if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;let st=loadSiegeState();st=ensureSiegeTeam(SIEGE_LOGIN.team,st);st=ensureSiegeCastle(SIEGE_CURRENT_SLOT,"",st);const c=st.castles[SIEGE_CURRENT_SLOT];if(c.owner!==SIEGE_LOGIN.team)return alert("현재 점령 단체만 내구성을 회복할 수 있습니다.");if(Number(c.durability)>=Number(c.maxDurability))return alert("성 내구성이 이미 최대입니다.");if(Number(st.teams[SIEGE_LOGIN.team].money)<5)return alert("내구성 회복에 필요한 5원이 부족합니다.");st.teams[SIEGE_LOGIN.team].money=siegeRoundMoney(Number(st.teams[SIEGE_LOGIN.team].money)-5);c.durability=Math.min(Number(c.maxDurability),siegeRoundMoney(Number(c.durability)+50));c.logs.unshift("*성 내구성 회복");saveSiegeState(st);renderSiegeMapFromState(st);refreshOpenSiegeInfo();updateSiegeFundWallet();}
-
+async function repairSiegeCastle(){
+  if(!requireSiegeLogin()||!SIEGE_CURRENT_SLOT)return;
+  if(!SIEGE_LOGIN.token)return alert("공성전 보안 로그인 정보가 없습니다. 다시 로그인해주세요.");
+  try{
+    const {error}=await sb.rpc("siege_repair_castle_secure",{
+      p_player_token:SIEGE_LOGIN.token,
+      p_slot:Number(SIEGE_CURRENT_SLOT)
+    });
+    if(error)throw error;
+    await syncSiegeFromSupabase();
+    refreshOpenSiegeInfo();
+    updateSiegeFundWallet();
+  }catch(e){alert(e.message||"내구성 회복에 실패했습니다.");}
+}
 document.addEventListener("click",function(e){const castleBtn=e.target.closest(".siege-castle");if(castleBtn){e.preventDefault();openSiegeInfoPopup(castleBtn);return;}if(e.target&&e.target.id==="siegeInfoPopup")closeSiegeInfoPopup();});
 document.addEventListener("keydown",function(e){if(e.key==="Escape"){closeSiegeInfoPopup();closeSiegeTeamStatusPopup();closeSiegeMyInfoPopup();closeSiegeFundPopup();}});
 setInterval(()=>{if(document.getElementById("siegeSection")&&!document.getElementById("siegeSection").classList.contains("hidden"))syncSiegeFromSupabase();},15000);
