@@ -7230,6 +7230,26 @@ body.season40-notice-open{
     right:6px !important;
   }
 }
+
+/* ===== 공성전 가독성 최종 보정 ===== */
+/* 공격 버튼 딜레이 5,4,3,2,1 숫자 */
+.siege-cooldown{
+  color:#facc15 !important;
+  text-shadow:0 1px 2px rgba(0,0,0,.85) !important;
+}
+
+/* 지도 위 공격당함 문구: 기존 최대 11px → 최대 14px (+3px) */
+.siege-attack-badge{
+  font-size:clamp(10px,1.08vw,14px) !important;
+}
+
+/* 지역명 아래 점령 단체명: 글자 +1px / 검은 외곽선 강화 */
+.siege-castle.occupied .siege-owner{
+  font-size:clamp(9px,1.00vw,13px) !important;
+  -webkit-text-stroke:1.15px #000 !important;
+  paint-order:stroke fill !important;
+}
+
 </style>
 </head>
 
