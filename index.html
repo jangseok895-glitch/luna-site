@@ -7250,6 +7250,14 @@ body.season40-notice-open{
   paint-order:stroke fill !important;
 }
 
+
+/* ===== 공성전 단체상태 TOP10 : 투자금/보유금 분리 ===== */
+.siege-ranking-rank{width:9% !important;}
+.siege-ranking-team{width:27% !important;}
+.siege-ranking-money{width:14% !important;}
+.siege-ranking-power{width:20% !important;}
+.siege-ranking-castles{width:16% !important;}
+
 </style>
 </head>
 
@@ -8536,8 +8544,8 @@ user-select:none;
     <div class="siege-modal-head"><h2>단체 상태 TOP 10</h2><button class="siege-modal-close" onclick="closeSiegeTeamStatusPopup()">×</button></div>
     <div class="siege-ranking-wrap">
       <table class="siege-ranking-table">
-        <thead><tr><th class="siege-ranking-rank">순위</th><th class="siege-ranking-team">단체명</th><th class="siege-ranking-money">자금</th><th class="siege-ranking-power">전투력</th><th class="siege-ranking-castles">성보유갯수</th></tr></thead>
-        <tbody id="siegeStatusRankingBody"><tr><td colspan="5" class="siege-ranking-empty">순위를 불러오는 중...</td></tr></tbody>
+        <thead><tr><th class="siege-ranking-rank">순위</th><th class="siege-ranking-team">단체명</th><th class="siege-ranking-money">투자금</th><th class="siege-ranking-money">보유금</th><th class="siege-ranking-power">전투력</th><th class="siege-ranking-castles">성보유갯수</th></tr></thead>
+        <tbody id="siegeStatusRankingBody"><tr><td colspan="6" class="siege-ranking-empty">순위를 불러오는 중...</td></tr></tbody>
       </table>
     </div>
     <div class="siege-ranking-note">* 자금 = 현재 보유자금 + 보유 성에 투자된 금액 합계<br>* 순위 우선순위 : 자금 → 전투력 → 성보유갯수</div>
@@ -8571,7 +8579,7 @@ user-select:none;
       <button type="button" class="siege-fund-tab" data-pane="friendly" onclick="switchSiegeFundTab('friendly')">친선하기</button>
     </div>
     <div id="siegeFundGamePane" class="siege-fund-pane">
-      <div class="memory-stage-line"><span>단계 : <b id="memoryStage">1</b>/10</span><span>게임 종료 보상 : <b id="memoryReward">0원</b></span></div>
+      <div class="memory-stage-line"><span>단계 : <b id="memoryStage">1</b>/10</span><span>단계 보상 : <b id="memoryReward">0원</b></span></div>
       <div class="memory-stage-line"><span id="memoryGuide">게임 시작을 눌러주세요.</span><span id="memoryTimer"></span></div>
       <div id="memorySequence" class="memory-sequence"></div>
       <div style="margin-top:8px;font-size:13px;font-weight:1000;color:#0369a1;text-align:center;">내가 선택한 순서</div>
@@ -11519,7 +11527,7 @@ async function fetchAllSiegeTeamMembers(teamName=""){
 
 async function updateSiegeTeamStatus(){
   const body=document.getElementById("siegeStatusRankingBody"); if(!body)return;
-  body.innerHTML='<tr><td colspan="5" class="siege-ranking-empty">순위를 불러오는 중...</td></tr>';
+  body.innerHTML='<tr><td colspan="6" class="siege-ranking-empty">순위를 불러오는 중...</td></tr>';
   try{
     await syncSiegeFromSupabase();
     const st=loadSiegeState();
@@ -11536,17 +11544,17 @@ async function updateSiegeTeamStatus(){
       const cash=Number(st.teams?.[team]?.money)||0;
       const owned=Object.values(st.castles||{}).filter(c=>c.owner===team);
       const invested=owned.reduce((sum,c)=>sum+(Number(c.investment)||0),0);
-      return {team,totalMoney:siegeRoundMoney(cash+invested),power:Math.round((Number(powerMap[team])||0)*100)/100,castleCount:owned.length};
+      return {team,invested:siegeRoundMoney(invested),cash:siegeRoundMoney(cash),totalMoney:siegeRoundMoney(cash+invested),power:Math.round((Number(powerMap[team])||0)*100)/100,castleCount:owned.length};
     }).sort((a,b)=>b.totalMoney-a.totalMoney || b.power-a.power || b.castleCount-a.castleCount || a.team.localeCompare(b.team,'ko')).slice(0,10);
-    if(!ranking.length){body.innerHTML='<tr><td colspan="5" class="siege-ranking-empty">등록된 단체가 없습니다.</td></tr>';return;}
+    if(!ranking.length){body.innerHTML='<tr><td colspan="6" class="siege-ranking-empty">등록된 단체가 없습니다.</td></tr>';return;}
     body.innerHTML="";
     ranking.forEach((r,i)=>{
       const tr=document.createElement("tr");
-      const vals=[`${i+1}.`,r.team,siegeMoneyText(r.totalMoney),String(r.power),String(r.castleCount)];
-      vals.forEach((v,idx)=>{const td=document.createElement("td");td.textContent=v;if(idx===0)td.className="siege-ranking-rank";if(idx===1)td.className="siege-ranking-team";if(idx===2)td.className="siege-ranking-money";if(idx===3)td.className="siege-ranking-power";if(idx===4)td.className="siege-ranking-castles";tr.appendChild(td);});
+      const vals=[`${i+1}.`,r.team,siegeMoneyText(r.invested),siegeMoneyText(r.cash),String(r.power),String(r.castleCount)];
+      vals.forEach((v,idx)=>{const td=document.createElement("td");td.textContent=v;if(idx===0)td.className="siege-ranking-rank";if(idx===1)td.className="siege-ranking-team";if(idx===2||idx===3)td.className="siege-ranking-money";if(idx===4)td.className="siege-ranking-power";if(idx===5)td.className="siege-ranking-castles";tr.appendChild(td);});
       body.appendChild(tr);
     });
-  }catch(e){console.error("공성전 TOP10:",e);body.innerHTML='<tr><td colspan="5" class="siege-ranking-empty">순위를 불러오지 못했습니다.</td></tr>';}
+  }catch(e){console.error("공성전 TOP10:",e);body.innerHTML='<tr><td colspan="6" class="siege-ranking-empty">순위를 불러오지 못했습니다.</td></tr>';}
 }
 
 async function openSiegeMyInfoPopup(){
@@ -11600,10 +11608,28 @@ function closeSiegeFundPopup(){document.getElementById("siegeFundPopup")?.classL
 function switchSiegeFundTab(name){document.querySelectorAll(".siege-fund-tab").forEach(b=>b.classList.toggle("active",b.dataset.pane===name));document.getElementById("siegeFundGamePane")?.classList.toggle("hidden",name!=="game");document.getElementById("siegeFundFriendlyPane")?.classList.toggle("hidden",name!=="friendly");if(name==="friendly"){populateSiegeFriendlyTeams();renderSiegeFriendlyLogs();}}
 function updateSiegeFundWallet(){const teamEl=document.getElementById("siegeFundTeam"),moneyEl=document.getElementById("siegeFundMoney");if(teamEl)teamEl.textContent=SIEGE_LOGIN.authenticated?SIEGE_LOGIN.team:"-";if(moneyEl)moneyEl.textContent=SIEGE_LOGIN.authenticated?siegeMoneyText(getSiegeTeamMoney(SIEGE_LOGIN.team)):"-";}
 
-function memoryStageSpec(stage){if(stage<=2)return{count:4};if(stage<=4)return{count:5};if(stage<=6)return{count:6};if(stage<=8)return{count:7};if(stage===9)return{count:8};return{count:9};}
+const SIEGE_MEMORY_STAGE_RULES = {
+  1:{count:6,reward:.1},
+  2:{count:8,reward:.1},
+  3:{count:10,reward:.2},
+  4:{count:10,reward:.2},
+  5:{count:12,reward:.3},
+  6:{count:13,reward:.3},
+  7:{count:14,reward:.4},
+  8:{count:14,reward:.4},
+  9:{count:15,reward:.5},
+  10:{count:16,reward:.7}
+};
+function memoryStageSpec(stage){return SIEGE_MEMORY_STAGE_RULES[Math.max(1,Math.min(10,Number(stage)||1))]||SIEGE_MEMORY_STAGE_RULES[1];}
 
-/* UI 표시용 예상 보상일 뿐입니다. 실제 보상은 서버 RPC가 DB의 session 상태로 계산합니다. */
-function siegeMemoryFailReward(stage){const n=Number(stage)||1;if(n<=1)return 0;if(n<=3)return .1;if(n<=5)return .2;if(n<=7)return .4;return 1;}
+/* 화면 표시용 단계별 보상. 실제 지급은 서버 RPC 검증 결과를 사용합니다. */
+function siegeMemoryFailReward(stage){return Number(memoryStageSpec(stage).reward)||0;}
+function getSiegeTeamTotalFunds(team){
+  const st=loadSiegeState();
+  const cash=Number(st.teams?.[team]?.money)||0;
+  const invested=Object.values(st.castles||{}).filter(c=>c&&c.owner===team).reduce((sum,c)=>sum+(Number(c.investment)||0),0);
+  return siegeRoundMoney(cash+invested);
+}
 
 function memoryColorClass(c){return c==="red"?"memory-red":c==="yellow"?"memory-yellow":c==="blue"?"memory-blue":"memory-green";}
 function setMemoryButtons(enabled){document.querySelectorAll(".memory-color-btn").forEach(b=>{b.disabled=!enabled;b.toggleAttribute("disabled",!enabled);b.style.pointerEvents=enabled?"auto":"none";});}
@@ -11672,6 +11698,12 @@ async function siegeMemoryHandleFinished(result){
 async function startSiegeMemoryGame(){
   if(!requireSiegeLogin())return;
   if(!SIEGE_LOGIN.token)return alert("공성전 보안 로그인 정보가 없습니다. 로그아웃 후 다시 로그인해주세요.");
+  await syncSiegeFromSupabase();
+  const totalFunds=getSiegeTeamTotalFunds(SIEGE_LOGIN.team);
+  const forceLevel2=totalFunds>=150;
+  if(forceLevel2){
+    alert("총 자금이 150원 이상인 단체는 2단계부터 적용됩니다.");
+  }
   resetSiegeMemoryGame();
   const b=document.getElementById("btnMemoryStart");
   if(b){b.disabled=true;b.textContent="게임 준비중...";}
@@ -11691,6 +11723,7 @@ async function startSiegeMemoryGame(){
     SIEGE_MEMORY.sequence=Array.isArray(data.sequence)?data.sequence:[];
     SIEGE_MEMORY.running=true;
     if(!SIEGE_MEMORY.sessionId||!SIEGE_MEMORY.sequence.length)throw new Error("서버 게임 데이터가 올바르지 않습니다.");
+
     startSiegeMemoryStage();
   }catch(e){
     if(b){b.disabled=false;b.textContent="게임 시작";}
@@ -11707,7 +11740,7 @@ function startSiegeMemoryStage(){
   clearTimeout(SIEGE_MEMORY.inputTimer);
 
   document.getElementById("memoryStage").textContent=String(stage);
-  document.getElementById("memoryReward").textContent=stage>=10?"실패 1원 / 성공 2원":siegeMoneyText(siegeMemoryFailReward(stage));
+  document.getElementById("memoryReward").textContent=siegeMoneyText(memoryStageSpec(stage).reward);
   document.getElementById("memoryGuide").textContent="카드 순서를 기억하세요.";
   document.getElementById("memoryMsg").textContent=`${SIEGE_MEMORY.sequence.length}장의 순서를 5초 동안 기억하세요.`;
   renderMemoryCards(false);
