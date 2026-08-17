@@ -7421,6 +7421,112 @@ body.season40-notice-open{
     max-height:calc(100vh - 12px) !important;
   }
 }
+
+/* ===== 최종 보정: 모든 주요 팝업을 브라우저 전체 화면 최상위로 ===== */
+body > .global-top-modal:not(.hidden){
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  max-width:none !important;
+  max-height:none !important;
+  margin:0 !important;
+  transform:none !important;
+  z-index:2147483646 !important;
+  isolation:isolate !important;
+}
+body > .global-top-modal{
+  contain:none !important;
+}
+body > #loadingOverlay.global-top-modal:not(.hidden),
+body > #criticalLoadingOverlay.global-top-modal:not(.hidden),
+body > #teamRequestPhotoPopup.global-top-modal:not(.hidden),
+body > #imagePopup.global-top-modal:not(.hidden),
+body > #season40PosterPopup.global-top-modal:not(.hidden){
+  z-index:2147483647 !important;
+}
+
+
+/* ===== 최종 보정: 군실명제 관리 팝업은 '군표' 탭 좌측 아래를 기준점으로 표시 ===== */
+:root{
+  --real-popup-anchor-left: 10px;
+  --real-popup-anchor-top: 160px;
+}
+
+/* 관리계열 오버레이는 반드시 브라우저 전체 화면을 덮음 */
+#unifiedRegisterRequestPopup,
+#registerPopup,
+#teamRequestPopup,
+#teamAdminPopup,
+#memberSearchPopup,
+#teamRequestPhotoPopup{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  max-width:none !important;
+  max-height:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  z-index:2147483646 !important;
+  background:rgba(15,23,42,.60) !important;
+  backdrop-filter:blur(5px) !important;
+  overflow:auto !important;
+  display:block !important;
+  box-sizing:border-box !important;
+}
+#unifiedRegisterRequestPopup.hidden,
+#registerPopup.hidden,
+#teamRequestPopup.hidden,
+#teamAdminPopup.hidden,
+#memberSearchPopup.hidden,
+#teamRequestPhotoPopup.hidden{
+  display:none !important;
+}
+
+/* 실제 흰색 팝업 박스는 군표 탭 바로 아래에서 시작 */
+#unifiedRegisterRequestPopup > .unified-request-box,
+#registerPopup > .search-popup-box,
+#teamRequestPopup > .search-popup-box,
+#teamAdminPopup > .team-admin-box,
+#memberSearchPopup > .search-popup-box,
+#teamRequestPhotoPopup > .search-popup-box{
+  position:relative !important;
+  left:auto !important;
+  top:auto !important;
+  transform:none !important;
+  margin-left:var(--real-popup-anchor-left) !important;
+  margin-top:var(--real-popup-anchor-top) !important;
+  margin-right:12px !important;
+  margin-bottom:18px !important;
+  max-height:calc(100vh - var(--real-popup-anchor-top) - 14px) !important;
+  overflow-y:auto !important;
+  box-sizing:border-box !important;
+}
+
+/* 너무 좁은 화면에서는 오른쪽이 잘리지 않도록 폭 제한 */
+#unifiedRegisterRequestPopup > .unified-request-box,
+#registerPopup > .search-popup-box,
+#teamRequestPopup > .search-popup-box,
+#teamAdminPopup > .team-admin-box,
+#memberSearchPopup > .search-popup-box,
+#teamRequestPhotoPopup > .search-popup-box{
+  max-width:calc(100vw - var(--real-popup-anchor-left) - 12px) !important;
+}
+
+/* 닫기 버튼은 팝업 내부 우측 상단에서 항상 보이게 */
+#unifiedRegisterRequestPopup .search-popup-head,
+#registerPopup .search-popup-head,
+#teamRequestPopup .search-popup-head,
+#teamAdminPopup .search-popup-head,
+#memberSearchPopup .search-popup-head,
+#teamRequestPhotoPopup .search-popup-head{
+  position:sticky !important;
+  top:0 !important;
+  z-index:120 !important;
+  background:#ffffff !important;
+}
+
 </style>
 </head>
 
@@ -18875,6 +18981,98 @@ async function runAiRecordAnalysis(){
 
     openSeason40Notice();
   });
+})();
+</script>
+
+
+<script>
+/* ===== 군표 탭을 기준으로 관리 팝업 위치 계산 ===== */
+(function(){
+  const ANCHORED_MODAL_IDS = new Set([
+    'unifiedRegisterRequestPopup','registerPopup','teamRequestPopup','teamAdminPopup',
+    'memberSearchPopup','teamRequestPhotoPopup'
+  ]);
+
+  function updateRealPopupAnchor(){
+    const gunpyoTab=document.querySelector('.main-tab[data-tab="gunpyo"]');
+    if(!gunpyoTab) return;
+    const r=gunpyoTab.getBoundingClientRect();
+    const left=Math.max(8, Math.round(r.left));
+    const top=Math.max(8, Math.round(r.bottom + 8));
+    document.documentElement.style.setProperty('--real-popup-anchor-left', left+'px');
+    document.documentElement.style.setProperty('--real-popup-anchor-top', top+'px');
+  }
+
+  function promoteAnchoredModal(el){
+    if(!el || !ANCHORED_MODAL_IDS.has(el.id)) return;
+    if(el.parentElement !== document.body) document.body.appendChild(el);
+    el.classList.add('global-top-modal','real-anchored-modal');
+    updateRealPopupAnchor();
+  }
+
+  function promoteAllAnchored(){
+    ANCHORED_MODAL_IDS.forEach(id=>promoteAnchoredModal(document.getElementById(id)));
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', promoteAllAnchored, {once:true});
+  }else promoteAllAnchored();
+
+  window.addEventListener('resize', updateRealPopupAnchor);
+  window.addEventListener('orientationchange', updateRealPopupAnchor);
+  window.addEventListener('scroll', updateRealPopupAnchor, {passive:true});
+
+  // 팝업을 여는 클릭 직전에 현재 군표 탭 위치를 다시 계산
+  document.addEventListener('click', function(e){
+    if(e.target.closest('#btnOpenUnifiedRegisterRequest,#btnContinueUnifiedRegisterRequest,#btnOpenTeamAdminPopup,#btnMemberSearch')){
+      updateRealPopupAnchor();
+      setTimeout(promoteAllAnchored,0);
+    }
+  }, true);
+
+  window.updateRealPopupAnchor=updateRealPopupAnchor;
+  window.promoteAllAnchoredRealModals=promoteAllAnchored;
+})();
+</script>
+
+<script>
+/* ===== 모든 주요 팝업을 부모 stacking-context 밖(body 직속)으로 이동 ===== */
+(function(){
+  const GLOBAL_MODAL_IDS = [
+    'loadingOverlay','unifiedRegisterRequestPopup','registerPopup','memberSearchPopup','autoNoticePopup',
+    'teamRequestPopup','teamRequestPhotoPopup','teamAdminPopup',
+    'rankGraphPopup','rankGuidePopup','mini4545Popup','imagePopup',
+    'criticalNoticePopup','criticalImagePopup','criticalBracketPopup','criticalHitPopup','criticalPrelimPopup',
+    'tournamentPopup','deathmatchPopup','aiRecordPopup','passwordChangePopup','chatGoPopup',
+    'season40NoticePopup','season40PosterPopup','eventRankPopup',
+    'siegeInfoPopup','siegeTeamStatusPopup','siegeMyInfoPopup','siegeFundPopup',
+    'criticalLoadingOverlay'
+  ];
+
+  function promoteGlobalModals(){
+    GLOBAL_MODAL_IDS.forEach(function(id){
+      const el=document.getElementById(id);
+      if(!el) return;
+      el.classList.add('global-top-modal');
+      if(el.parentElement !== document.body){
+        document.body.appendChild(el);
+      }
+    });
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', promoteGlobalModals, {once:true});
+  }else{
+    promoteGlobalModals();
+  }
+
+  // 동적으로 뒤늦게 생성되는 팝업도 body 최상위로 승격
+  const observer=new MutationObserver(function(){ promoteGlobalModals(); });
+  function startObserver(){
+    if(document.body) observer.observe(document.body,{childList:true,subtree:true});
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', startObserver,{once:true});
+  else startObserver();
 })();
 </script>
 
