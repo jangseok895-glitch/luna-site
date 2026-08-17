@@ -7258,6 +7258,24 @@ body.season40-notice-open{
 .siege-ranking-power{width:20% !important;}
 .siege-ranking-castles{width:16% !important;}
 
+/* ===== 군실명제 등록요청 / 단체관리 개편 ===== */
+.unified-request-popup,.team-admin-modal{position:fixed !important;inset:0 !important;z-index:2147483646 !important;display:flex !important;align-items:center !important;justify-content:center !important;padding:18px !important;background:rgba(15,23,42,.60) !important;backdrop-filter:blur(5px) !important;}
+.unified-request-popup.hidden,.team-admin-modal.hidden{display:none !important;}
+#teamAdminPopup.team-admin-modal:not(.hidden){position:fixed !important;inset:0 !important;display:flex !important;width:100vw !important;max-width:none !important;margin:0 !important;padding:18px !important;z-index:2147483646 !important;pointer-events:auto !important;}
+.unified-request-box,.team-admin-box{width:min(600px,95vw) !important;max-height:90vh !important;overflow-y:auto !important;padding:20px !important;border-radius:20px !important;background:#fff !important;border:2px solid #38bdf8 !important;box-shadow:0 18px 55px rgba(0,0,0,.35) !important;color:#111827 !important;}
+.unified-request-guide{margin:0 0 14px !important;padding:13px !important;border-radius:12px !important;background:#f0f9ff !important;border:1px solid #bae6fd !important;line-height:1.6 !important;color:#111827 !important;}
+.team-admin-login-grid{display:grid !important;grid-template-columns:1fr 150px auto !important;gap:8px !important;align-items:center !important;}
+.team-admin-session-line{display:flex !important;align-items:center !important;justify-content:space-between !important;gap:10px !important;padding:11px 12px !important;margin-bottom:12px !important;border-radius:12px !important;background:#e0f7ff !important;border:1px solid #7dd3fc !important;font-weight:900 !important;}
+.team-admin-setting-card{margin:10px 0 !important;padding:13px !important;border:1px solid rgba(14,165,233,.28) !important;border-radius:14px !important;background:#fff !important;}
+.team-admin-setting-main{display:flex !important;align-items:center !important;justify-content:space-between !important;gap:10px !important;font-size:17px !important;font-weight:900 !important;}
+.team-admin-inline-form{display:grid !important;gap:8px !important;margin-top:12px !important;padding-top:12px !important;border-top:1px dashed #bae6fd !important;}
+.team-admin-inline-form .text{width:100% !important;}.team-admin-form-help{font-size:12px !important;color:#64748b !important;font-weight:800 !important;}
+.team-admin-section-title{font-size:18px !important;font-weight:1000 !important;color:#0369a1 !important;margin-bottom:10px !important;}.team-admin-small-btn{padding:8px 11px !important;font-size:13px !important;}.team-admin-delete-btn{width:100% !important;margin-top:14px !important;}
+#teamAdminPopup .search-popup-head{position:sticky !important;top:-20px !important;z-index:30 !important;margin:-20px -20px 14px !important;padding:14px 16px !important;background:#ffffff !important;border-bottom:1px solid #bae6fd !important;}
+#btnCloseTeamAdminPopup{margin-left:auto !important;background:#ef4444 !important;color:#ffffff !important;border:0 !important;border-radius:10px !important;padding:8px 14px !important;font-size:15px !important;font-weight:1000 !important;cursor:pointer !important;box-shadow:0 4px 10px rgba(239,68,68,.22) !important;}
+#btnCloseTeamAdminPopup:hover{filter:brightness(1.05) !important;}
+#registerPopup .search-popup-box{max-height:88vh !important;}
+@media(max-width:650px){.team-admin-login-grid{grid-template-columns:1fr !important;}.team-admin-setting-main{align-items:flex-start !important;flex-direction:column !important;}}
 </style>
 </head>
 
@@ -7982,11 +8000,8 @@ function escMini4545(v){
   <!-- 관리 버튼 배열 -->
   <div class="real-row real-action-row">
     <div class="real-tag">관리</div>
-    <button class="btn gold" id="btnOpenRegisterPopup">군실명제등록</button>
-    <button class="btn gold" id="btnOpenTeamRequestPopup">단체 등록요청 <span class="team-request-badge" id="teamRequestCountBadge">0</span></button>
-    <button class="btn red" id="btnOpenTeamAdminPopup" type="button">
-  단체 변경/삭제
-</button>
+    <button class="btn gold" id="btnOpenUnifiedRegisterRequest" type="button">등록요청</button>
+    <button class="btn blue" id="btnOpenTeamAdminPopup" type="button">단체 관리</button>
     <label id="manageLockWrap" style="
 display:flex;
 align-items:center;
@@ -8013,34 +8028,21 @@ user-select:none;
     </div>
   </div>
 
-  <!-- 등록 팝업 -->
-  <div id="registerPopup" class="hidden">
-    <div class="search-popup-box">
-      <div class="search-popup-head">
-        <b>군 실명제 등록</b>
-      </div>
-
-      <div class="real-row" style="margin-bottom:10px;">
-        <div class="real-tag">등록단체</div>
-        <select id="realTeam" class="select"></select>
-      </div>
-
-      <div class="real-row" style="margin-bottom:10px;">
-        <div class="real-tag">닉네임</div>
-        <input id="realNick" class="text sm" placeholder="인게임 닉네임"/>
-      </div>
-
-      <div class="real-row" style="margin-bottom:14px;">
-        <div class="real-tag">비번</div>
-        <input id="realPin" class="text pin" type="password" maxlength="5" inputmode="numeric" placeholder="군표비번(5자리)"/>
-      </div>
-
-      <div style="display:flex;gap:8px;justify-content:flex-start;">
-        <button class="btn gold" id="btnRealRegister">등록하기</button>
-        <button class="btn red" id="btnCloseRegisterPopup2">닫기</button>
-      </div>
-    </div>
-  </div>
+  <!-- 군실명제 등록요청 팝업 -->
+  <div id="registerPopup" class="hidden"><div class="search-popup-box team-request-box">
+    <div class="search-popup-head"><b>군실명제 등록요청</b><button type="button" id="btnCloseRegisterPopup2">닫기</button></div>
+    <div class="team-request-help">군표에 저장된 아이디와 5자리 비밀번호를 확인한 뒤 등록요청이 생성됩니다.<br>요청 후에는 해당 단체의 4자리 비밀번호로 간부가 승인해야 군실명제에 최종 등록됩니다.</div>
+    <div class="real-row" style="margin-bottom:10px;"><div class="real-tag">등록단체</div><select id="realTeam" class="select"></select></div>
+    <div class="real-row" style="margin-bottom:10px;"><div class="real-tag">닉네임</div><input id="realNick" class="text sm" placeholder="인게임 닉네임"/></div>
+    <div class="real-row" style="margin-bottom:14px;"><div class="real-tag">군표비번</div><input id="realPin" class="text pin" type="password" maxlength="5" inputmode="numeric" placeholder="군표비번(5자리)"/></div>
+    <div style="display:flex;gap:8px;justify-content:flex-start;"><button class="btn gold" id="btnRealRegister">등록 요청</button><button class="btn red" id="btnCloseRegisterPopup2Bottom">닫기</button></div>
+    <div class="team-pending-title" style="margin-top:18px;"><span>군실명제 등록요청 현황</span><span>대기 <span class="team-request-badge" id="pendingRealRequestCount">0</span></span></div><div id="pendingRealRequestList"></div>
+  </div></div>
+  <div id="unifiedRegisterRequestPopup" class="unified-request-popup hidden"><div class="unified-request-box">
+    <div class="search-popup-head"><b>등록요청</b><button type="button" id="btnCloseUnifiedRegisterRequest">닫기</button></div><div class="team-request-help">등록하려는 항목을 선택해주세요.</div>
+    <select id="unifiedRegisterRequestType" class="select" style="width:100%;margin-bottom:12px;"><option value="real">군실명제 등록요청</option><option value="team">단체 등록요청</option></select>
+    <div id="unifiedRegisterRequestGuide" class="unified-request-guide"></div><button type="button" class="btn gold" id="btnContinueUnifiedRegisterRequest" style="width:100%;">계속하기</button>
+  </div></div>
 
   <!-- 단체 등록요청 팝업 -->
   <div id="teamRequestPopup" class="hidden">
@@ -8098,59 +8100,16 @@ user-select:none;
       <div id="pendingTeamList"></div>
     </div>
   </div>
-  <!-- 변경/삭제 패널 팝업 -->
-<div id="teamAdminPopup" class="hidden">
-  <div class="search-popup-box team-request-box">
-    <div class="search-popup-head">
-      <b>변경/삭제 패널</b>
-      <button type="button" id="btnCloseTeamAdminPopup">닫기</button>
+  <!-- 단체 관리 팝업 -->
+  <div id="teamAdminPopup" class="team-admin-modal hidden"><div class="team-admin-box">
+    <div class="search-popup-head"><b>단체 관리</b><button type="button" id="btnCloseTeamAdminPopup" class="team-admin-close">닫기</button></div>
+    <div id="teamAdminLoginStage"><div class="team-request-help">단체를 선택하고 해당 단체의 4자리 비밀번호로 로그인해주세요.</div><div class="team-admin-login-grid"><select id="adminDeleteTeamSelect" class="select" style="width:100%;"><option value="">단체명 선택</option></select><input id="teamAdminLoginPw" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="비번 4자리"><button class="btn blue" id="btnTeamAdminLogin" type="button">로그인</button></div></div>
+    <div id="teamAdminDashboard" class="hidden"><div class="team-admin-session-line"><span>로그인 단체 : <b id="teamAdminSessionTeam">-</b></span><button class="btn link team-admin-small-btn" id="btnTeamAdminLogout" type="button">로그아웃</button></div>
+      <div class="team-admin-setting-card"><div class="team-admin-setting-main"><span>단체명 : <b id="teamAdminCurrentName">-</b></span><button class="btn gold team-admin-small-btn" id="btnShowRenameTeam" type="button">단체명 변경</button></div><div id="renameTeamBox" class="hidden team-admin-inline-form"><input id="renameTeamName" class="text" placeholder="새로운 단체명 입력" style="width:100%;"><div class="team-admin-form-help">[클럽]/[크루] 구분은 기존 단체 구분을 그대로 유지합니다.</div><button class="btn gold" id="btnRenameTeamAll" type="button">변경하기</button></div></div>
+      <div class="team-admin-setting-card"><div class="team-admin-setting-main"><span>비밀번호 : <b>****</b></span><button class="btn blue team-admin-small-btn" id="btnShowChangeTeamPw" type="button">비밀번호 변경하기</button></div><div id="changeTeamPwBox" class="hidden team-admin-inline-form"><input id="oldTeamPwInput" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="현재비밀번호 4자리"><input id="newTeamPwInput" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="새로운비밀번호 4자리"><input id="newTeamPwConfirmInput" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="새로운비밀번호 확인"><button class="btn blue" id="btnChangeTeamPw" type="button">비밀번호 변경하기</button></div></div>
+      <div class="team-admin-setting-card"><div class="team-admin-section-title">군실명제 승인요청</div><div id="teamAdminRealRequestList"><div class="team-pending-sub">승인요청을 불러오는 중...</div></div></div><button class="btn red team-admin-delete-btn" id="btnDeleteTeamAll" type="button">단체 삭제하기</button>
     </div>
-
-    <div class="team-request-help">
-      변경하거나 삭제하고 싶은 단체를 선택해주세요
-    </div>
-
-    <div class="team-request-form-row">
-      <b>단체명</b>
-      <select id="adminDeleteTeamSelect" class="select" style="width:100%;">
-        <option value="">단체 선택</option>
-      </select>
-    </div>
-
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 12px;">
-      <button class="btn gold" id="btnShowRenameTeam" type="button">단체명 변경하기</button>
-      <button class="btn red" id="btnDeleteTeamAll" type="button">단체 삭제하기</button>
-      <button class="btn blue" id="btnShowChangeTeamPw" type="button">단체 비번 변경하기</button>
-    </div>
-
-    <div id="renameTeamBox" class="hidden" style="margin-top:12px;padding:12px;border:1px solid rgba(14,165,233,.28);border-radius:12px;background:#fff;">
-      <div class="team-request-form-row">
-        <b>구분</b>
-        <select id="renameTeamType" class="select" style="width:100%;">
-          <option value="[클럽]">[클럽]</option>
-          <option value="[크루]">[크루]</option>
-        </select>
-      </div>
-      <div class="team-request-form-row">
-        <b>변경명</b>
-        <input id="renameTeamName" class="text" placeholder="단체명만 입력 예: 네이비" style="width:100%;">
-      </div>
-      <button class="btn gold" id="btnRenameTeamAll" type="button">변경하기 확인</button>
-    </div>
-
-    <div id="changeTeamPwBox" class="hidden" style="margin-top:12px;padding:12px;border:1px solid rgba(14,165,233,.28);border-radius:12px;background:#fff;">
-      <div class="team-request-form-row">
-        <b>기존 비번</b>
-        <input id="oldTeamPwInput" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="4자리">
-      </div>
-      <div class="team-request-form-row">
-        <b>변경 비번</b>
-        <input id="newTeamPwInput" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="4자리">
-      </div>
-      <button class="btn blue" id="btnChangeTeamPw" type="button">확인</button>
-    </div>
-  </div>
-</div>
+  </div></div>
 
   <!-- 단체 등록요청 사진보기 팝업 -->
   <div id="teamRequestPhotoPopup" class="hidden">
@@ -9667,7 +9626,23 @@ function fillSelect(sel, items, placeholder){
   op0.textContent = placeholder || "선택";
   sel.appendChild(op0);
 
-  (items || []).forEach(item => {
+  // 단체 드롭다운은 항상 [클럽] → [크루] 우선순위로 정렬합니다.
+  // 단체가 아닌 일반 드롭다운은 기존 순서를 그대로 유지합니다.
+  const sourceItems = [...(items || [])];
+  const teamPriority = (item) => {
+    const text = String(typeof item === "object" ? (item.label ?? item.value ?? "") : item);
+    if(/^\s*\[클럽\]/.test(text)) return 0;
+    if(/^\s*\[크루\]/.test(text)) return 1;
+    return 2;
+  };
+  const hasTeamItems = sourceItems.some(item => teamPriority(item) < 2);
+  const orderedItems = hasTeamItems
+    ? sourceItems.map((item, index) => ({ item, index, priority: teamPriority(item) }))
+        .sort((a,b) => (a.priority - b.priority) || (a.index - b.index))
+        .map(x => x.item)
+    : sourceItems;
+
+  orderedItems.forEach(item => {
     const op = document.createElement("option");
 
 if(typeof item === "object"){
@@ -9723,12 +9698,12 @@ function initRealUI(forceReload = false) {
   const viewTeam = document.getElementById("viewTeam");
   const viewMember = document.getElementById("viewMember");
 
-  document.getElementById("btnRealRegister").onclick = onRealRegister;
   document.getElementById("viewTeam").onchange = onViewTeamChanged;
   document.getElementById("viewMember").onchange = onLoadMember;
   document.getElementById("btnViewDelete").onclick = onDeleteBtnClicked;
 
   if(window.REAL_TEAM_CACHE && window.REAL_TEAM_CACHE.length && !forceReload){
+    window.REAL_TEAM_CACHE = sortTeamNamesClubFirst(window.REAL_TEAM_CACHE);
     fillSelect(realTeam, window.REAL_TEAM_CACHE, "단체 선택");
     fillSelect(viewTeam, window.REAL_TEAM_CACHE, "단체 선택");
     fillSelect(viewMember, [], "멤버 선택");
@@ -9746,7 +9721,7 @@ function initRealUI(forceReload = false) {
 
       const teamObjs = (res && res.teams) || [];
 
-      const teams = teamObjs.map(t => {
+      const teams = sortTeamNamesClubFirst(teamObjs.map(t => {
         if(typeof t === "string") return t;
 
         return {
@@ -9754,7 +9729,7 @@ function initRealUI(forceReload = false) {
           label: t.certified ? `${t.name} 👍인증 크루` : t.name,
           certified: t.certified
         };
-      });
+      }));
 
       window.REAL_TEAM_CACHE = teams;
 
@@ -9773,31 +9748,61 @@ function initRealUI(forceReload = false) {
     .getTeamList();
 }
 
-function onRealRegister() {
-  const team = document.getElementById("realTeam").value.trim();
-  const nick = document.getElementById("realNick").value.trim();
-  const pin = document.getElementById("realPin").value.trim();
+async function onRealRegister() {
+  const team = String(document.getElementById("realTeam")?.value || "").trim();
+  const nick = String(document.getElementById("realNick")?.value || "").trim();
+  const pin = String(document.getElementById("realPin")?.value || "").trim();
+  const btn = document.getElementById("btnRealRegister");
 
-  showLoading("군실명제 등록 중입니다");
+  if(!team) return toast("등록할 단체를 선택해주세요.");
+  if(!nick) return toast("닉네임을 입력해주세요.");
+  if(!/^\d{5}$/.test(pin)) return toast("군표 비밀번호는 숫자 5자리입니다.");
 
-  google.script.run
-    .withSuccessHandler(() => {
-      hideLoading();
-      toast("군실명제 등록 완료");
+  // 중복 클릭/중복 이벤트 실행 방지
+  if(btn?.dataset?.submitting === "1") return;
+  if(btn){
+    btn.dataset.submitting = "1";
+    btn.disabled = true;
+    btn.textContent = "요청 중...";
+  }
 
-      document.getElementById("registerPopup").classList.add("hidden");
+  showLoading("군실명제 등록요청 중입니다");
+  try{
+    if(!sb) throw new Error("Supabase 연결에 실패했습니다.");
 
-      document.getElementById("realNick").value = "";
-      document.getElementById("realPin").value = "";
+    // 먼저 기존 보안 RPC로 군표 아이디/5자리 비밀번호가 실제로 맞는지 확인합니다.
+    // 잘못된 정보가 승인대기 DB에 들어가는 것을 한 번 더 방지합니다.
+    await loadProfileSupabase(nick, pin);
 
-      window.REAL_TEAM_CACHE = null;
-      initRealUI(true);
-    })
-    .withFailureHandler((e) => {
-      hideLoading();
-      toast(e.message || "군실명제 등록 실패");
-    })
-    .registerToTeam(team, nick, pin);
+    const { data, error } = await sb.rpc("submit_real_register_request", {
+      p_team_name: team,
+      p_nickname: nick,
+      p_pin5: pin
+    });
+    if(error) throw error;
+    if(data === null || data === undefined) throw new Error("등록요청 번호를 받지 못했습니다. Supabase 함수를 확인해주세요.");
+
+    hideLoading();
+    alert("군실명제 등록요청이 완료되었습니다.\n해당 단체 간부의 승인을 기다려주세요.");
+    document.getElementById("realNick").value = "";
+    document.getElementById("realPin").value = "";
+    await loadRealRegisterRequests();
+  }catch(e){
+    hideLoading();
+    console.error("군실명제 등록요청 오류:", e);
+    const msg = String(e?.message || e || "");
+    if(msg.includes("submit_real_register_request") || msg.includes("PGRST202") || msg.includes("Could not find the function")){
+      alert("군실명제 승인요청용 Supabase SQL이 적용되지 않았거나 함수 캐시가 갱신되지 않았습니다. 최신 SQL을 다시 실행해주세요.");
+    }else{
+      alert(msg || "군실명제 등록요청 실패");
+    }
+  }finally{
+    if(btn){
+      btn.dataset.submitting = "0";
+      btn.disabled = false;
+      btn.textContent = "등록 요청";
+    }
+  }
 }
 
 function onViewTeamChanged() {
@@ -11070,6 +11075,7 @@ function closeMemberSearchPopup() {
 
 function openRegisterPopup() {
   document.getElementById("registerPopup").classList.remove("hidden");
+  if(typeof loadRealRegisterRequests === "function") loadRealRegisterRequests();
 }
 
 function closeRegisterPopup() {
@@ -13721,12 +13727,12 @@ const leader = esc(r.leader_name || "");
   ${name}
   ${leader ? `<span class="team-leader-name">대표자 : ${leader}</span>` : ""}
 </div>
-            <div class="team-pending-sub">운영진 비밀번호 확인 후 사진보기/승인 가능</div>
+            <div class="team-pending-sub">운영진 비밀번호 확인 후 사진보기/승인/반려 가능</div>
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
 <button class="btn blue team-photo-btn" type="button" data-view-team-request-photo="${r.id}">사진보기</button>
-<button class="btn red team-approve-btn" type="button" data-approve-team-request="${r.id}">운영진승인</button>
-<button class="btn link team-hold-delete-btn" type="button" data-delete-team-request="${r.id}">보류/삭제</button>
+<button class="btn red team-approve-btn" type="button" data-approve-team-request="${r.id}">승인</button>
+<button class="btn link team-hold-delete-btn" type="button" data-delete-team-request="${r.id}">반려</button>
           </div>
         </div>
       `;
@@ -13829,7 +13835,7 @@ async function deleteTeamRequestById(requestId){
       return;
     }
 
-    if(!confirm("이 등록요청을 보류/삭제 처리하시겠습니까?\n목록에서 사라집니다.")) return;
+    if(!confirm("이 단체 등록요청을 반려하시겠습니까?")) return;
 
     const { error } = await sb.rpc("hold_team_request_admin", {
       p_request_id: Number(requestId),
@@ -13838,11 +13844,11 @@ async function deleteTeamRequestById(requestId){
 
     if(error) throw error;
 
-    alert("등록요청이 보류/삭제 처리되었습니다.");
+    alert("단체 등록요청이 반려되었습니다.");
     await loadTeamRequests();
   }catch(e){
     console.error(e);
-    alert(e.message || "등록요청 보류/삭제 실패");
+    alert(e.message || "단체 등록요청 반려 실패");
   }
 }
 
@@ -13984,241 +13990,228 @@ updateSkipScreenshotUI();
 // 군실명제 탭 진입 전에도 요청 숫자만 미리 갱신
 setTimeout(loadTeamRequests, 800);
 
-  async function loadAdminDeleteTeams(){
-  const sel = document.getElementById("adminDeleteTeamSelect");
-  if(!sel) return;
+  let TEAM_ADMIN_SESSION = null;
 
-  sel.innerHTML = `<option value="">단체 선택</option>`;
-
-  const rows = await sbSelect("club_pw", q =>
-    q.select("club").order("club", { ascending:true })
-  );
-
-  rows.forEach(r => {
-    const club = String(r.club || "").trim();
-    if(!club) return;
-
-    const opt = document.createElement("option");
-    opt.value = club;
-    opt.textContent = club;
-    sel.appendChild(opt);
+function sortTeamNamesClubFirst(items){
+  const arr = Array.isArray(items) ? [...items] : [];
+  const getName = (item) => {
+    if(typeof item === "string") return String(item || "").trim();
+    return String(item?.value ?? item?.name ?? item?.club ?? item?.label ?? "").trim();
+  };
+  const priority = (name) => /^\s*\[클럽\]/.test(name) ? 0 : (/^\s*\[크루\]/.test(name) ? 1 : 2);
+  return arr.sort((a,b) => {
+    const aa = getName(a), bb = getName(b);
+    return (priority(aa) - priority(bb)) || aa.localeCompare(bb, "ko");
   });
 }
 
-function getSelectedAdminTeam(){
-  return String(document.getElementById("adminDeleteTeamSelect")?.value || "").trim();
-}
-
-function requireSelectedAdminTeam(){
-  const teamName = getSelectedAdminTeam();
-  if(!teamName){
-    alert("단체를 선택해주세요");
-    return "";
-  }
-  return teamName;
+async function loadAdminDeleteTeams(){
+  const sel = document.getElementById("adminDeleteTeamSelect");
+  if(!sel) return;
+  const current = sel.value;
+  sel.innerHTML = `<option value="">단체명 선택</option>`;
+  try{
+    const rows = await sbSelect("club_pw", q => q.select("club"));
+    // 단체 관리 드롭다운: 무조건 [클럽] 먼저, [크루] 다음. 같은 종류 안에서는 가나다순.
+    const orderedRows = sortTeamNamesClubFirst(rows || []);
+    orderedRows.forEach(r => {
+      const club = String(r.club || "").trim();
+      if(!club) return;
+      const opt = document.createElement("option");
+      opt.value = club;
+      opt.textContent = club;
+      sel.appendChild(opt);
+    });
+    if(current && Array.from(sel.options).some(o => o.value === current)) sel.value = current;
+  }catch(e){ console.error(e); }
 }
 
 function normalizeTeamRenameName(raw){
   return String(raw || "").trim().replace(/^\[(클럽|크루)\]\s*/, "");
 }
-
+function getTeamTypePrefix(teamName){
+  const m = String(teamName || "").match(/^\[(클럽|크루)\]/);
+  return m ? m[0] : "";
+}
 function resetTeamAdminBoxes(){
   document.getElementById("renameTeamBox")?.classList.add("hidden");
   document.getElementById("changeTeamPwBox")?.classList.add("hidden");
+  ["renameTeamName","oldTeamPwInput","newTeamPwInput","newTeamPwConfirmInput"].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = "";
+  });
 }
-
 async function refreshAfterTeamManage(){
+  window.REAL_TEAM_CACHE = null;
   await loadAdminDeleteTeams();
   if(typeof loadClubCertificationMap === "function") await loadClubCertificationMap();
-  if(typeof initRealUI === "function") await initRealUI();
+  if(typeof initRealUI === "function") initRealUI(true);
   if(typeof loadViewTeams === "function") await loadViewTeams();
 }
-
-async function deleteSelectedTeamAll(){
-  try{
-    const teamName = requireSelectedAdminTeam();
-    if(!teamName) return;
-
-    const inputPw = prompt("단체 비번 혹은 운영진 비번을 기입해주세요");
-    if(!inputPw) return;
-
-    if(!confirm(`[${teamName}] 단체의 모든 사항이 삭제됩니다. 계속하시겠습니까?`)){
-      return;
-    }
-
-    showLoading("단체 삭제 중입니다");
-
-    /*
-      중요: team_members는 RLS 때문에 브라우저에서 직접 delete 하면
-      permission denied가 납니다. 그래서 SECURITY DEFINER RPC로 삭제합니다.
-      Supabase SQL Editor에 delete_team_all_auth 함수를 1회 생성해야 합니다.
-    */
-    const { data, error } = await sb.rpc("delete_team_all_auth", {
-      p_team_name: teamName,
-      p_pw: String(inputPw).trim()
-    });
-
-    if(error) throw error;
-    if(data !== true) throw new Error("단체 비번 또는 운영진 비번이 일치하지 않습니다.");
-
-    hideLoading();
-    alert("단체 삭제가 완료되었습니다.");
-
-    document.getElementById("teamAdminPopup")?.classList.add("hidden");
-    resetTeamAdminBoxes();
-    await refreshAfterTeamManage();
-
-  }catch(e){
-    hideLoading();
-    console.error(e);
-
-    const msg = String(e.message || e || "");
-    if(msg.includes("delete_team_all_auth") || msg.includes("Could not find the function")){
-      alert("Supabase에 delete_team_all_auth 함수가 아직 없습니다. 제가 드린 SQL을 먼저 1회 실행해주세요.");
-      return;
-    }
-
-    alert(msg || "단체 삭제 실패");
+function renderTeamAdminSession(){
+  const logged = !!TEAM_ADMIN_SESSION;
+  document.getElementById("teamAdminLoginStage")?.classList.toggle("hidden", logged);
+  document.getElementById("teamAdminDashboard")?.classList.toggle("hidden", !logged);
+  if(logged){
+    document.getElementById("teamAdminSessionTeam").textContent = TEAM_ADMIN_SESSION.team;
+    document.getElementById("teamAdminCurrentName").textContent = TEAM_ADMIN_SESSION.team;
+    loadTeamAdminRealRequests();
   }
 }
+async function loginTeamAdmin(){
+  const team = String(document.getElementById("adminDeleteTeamSelect")?.value || "").trim();
+  const pw = String(document.getElementById("teamAdminLoginPw")?.value || "").trim();
+  if(!team) return alert("단체명을 선택해주세요.");
+  if(!/^\d{4}$/.test(pw)) return alert("단체 비밀번호는 숫자 4자리입니다.");
+  try{
+    await verifyClubPwSupabase(team, pw);
+    TEAM_ADMIN_SESSION = { team, pw };
+    document.getElementById("teamAdminLoginPw").value = "";
+    resetTeamAdminBoxes();
+    renderTeamAdminSession();
+  }catch(e){ console.error(e); alert(e.message || "단체명 또는 비밀번호가 일치하지 않습니다."); }
+}
+function logoutTeamAdmin(){ TEAM_ADMIN_SESSION = null; resetTeamAdminBoxes(); renderTeamAdminSession(); }
 
 async function renameSelectedTeamAll(){
+  if(!TEAM_ADMIN_SESSION) return alert("단체 관리에 먼저 로그인해주세요.");
+  const oldTeamName = TEAM_ADMIN_SESSION.team;
+  const rawName = normalizeTeamRenameName(document.getElementById("renameTeamName")?.value);
+  if(!rawName) return alert("새로운 단체명을 입력해주세요.");
+  const prefix = getTeamTypePrefix(oldTeamName);
+  const newTeamName = prefix ? `${prefix}${rawName}` : rawName;
+  if(oldTeamName === newTeamName) return alert("기존 단체명과 변경할 단체명이 같습니다.");
+  if(!confirm(`단체명을 ${newTeamName} 으로 변경하시겠습니까?`)) return;
   try{
-    const oldTeamName = requireSelectedAdminTeam();
-    if(!oldTeamName) return;
-
-    const type = String(document.getElementById("renameTeamType")?.value || "").trim();
-    const rawName = normalizeTeamRenameName(document.getElementById("renameTeamName")?.value);
-
-    if(!type || !rawName){
-      alert("변경할 단체명을 기입해주세요");
-      return;
-    }
-
-    const newTeamName = `${type}${rawName}`;
-
-    if(oldTeamName === newTeamName){
-      alert("기존 단체명과 변경할 단체명이 같습니다.");
-      return;
-    }
-
-    const inputPw = prompt("단체 비번 혹은 운영진 비번을 기입해주세요");
-    if(!inputPw) return;
-
-if(!confirm(`[${oldTeamName}] 단체명을 [${newTeamName}](으)로 변경하시겠습니까?`)){
-  return;
-}
-
-alert("변경하기까지는 최대 3분까지도 시간이 소요될수 있습니다.");
-
-const { error } = await sb.rpc("rename_team_all_auth", {
-  p_old_team_name: oldTeamName,
-  p_new_team_name: newTeamName,
-  p_pw: inputPw
-});
-
+    showLoading("단체명 변경 중입니다");
+    const { error } = await sb.rpc("rename_team_all_auth", { p_old_team_name:oldTeamName, p_new_team_name:newTeamName, p_pw:TEAM_ADMIN_SESSION.pw });
     if(error) throw error;
-
-    alert("단체명이 변경되었습니다.");
-    document.getElementById("renameTeamName").value = "";
-    resetTeamAdminBoxes();
-    await refreshAfterTeamManage();
-
-    const sel = document.getElementById("adminDeleteTeamSelect");
-    if(sel) sel.value = newTeamName;
-
-  }catch(e){
-    console.error(e);
-    alert(e.message || "단체명 변경 실패");
-  }
+    TEAM_ADMIN_SESSION.team = newTeamName;
+    hideLoading(); alert("단체명이 변경되었습니다.");
+    resetTeamAdminBoxes(); await refreshAfterTeamManage(); renderTeamAdminSession();
+  }catch(e){ hideLoading(); console.error(e); alert(e.message || "단체명 변경 실패"); }
 }
-
 async function changeSelectedTeamPw(){
+  if(!TEAM_ADMIN_SESSION) return alert("단체 관리에 먼저 로그인해주세요.");
+  const oldPw = String(document.getElementById("oldTeamPwInput")?.value || "").trim();
+  const newPw = String(document.getElementById("newTeamPwInput")?.value || "").trim();
+  const confirmPw = String(document.getElementById("newTeamPwConfirmInput")?.value || "").trim();
+  if(!/^\d{4}$/.test(oldPw) || !/^\d{4}$/.test(newPw) || !/^\d{4}$/.test(confirmPw)) return alert("비밀번호는 모두 숫자 4자리로 입력해주세요.");
+  if(oldPw !== TEAM_ADMIN_SESSION.pw) return alert("현재비밀번호가 로그인한 단체 비밀번호와 일치하지 않습니다.");
+  if(newPw !== confirmPw) return alert("새로운비밀번호와 확인 비밀번호가 일치하지 않습니다.");
+  if(!confirm("비밀번호를 변경하시겠습니까?")) return;
   try{
-    const teamName = requireSelectedAdminTeam();
-    if(!teamName) return;
-
-    const oldPw = String(document.getElementById("oldTeamPwInput")?.value || "").trim();
-    const newPw = String(document.getElementById("newTeamPwInput")?.value || "").trim();
-
-    if(!/^\d{4}$/.test(oldPw) || !/^\d{4}$/.test(newPw)){
-      alert("비번은 숫자 4자리로 입력해주세요");
-      return;
-    }
-
-    const { error } = await sb.rpc("change_club_pw_auth", {
-      p_team_name: teamName,
-      p_old_pw: oldPw,
-      p_new_pw: newPw
-    });
-
+    const { error } = await sb.rpc("change_club_pw_auth", { p_team_name:TEAM_ADMIN_SESSION.team, p_old_pw:oldPw, p_new_pw:newPw });
     if(error) throw error;
+    TEAM_ADMIN_SESSION.pw = newPw;
+    alert("단체 비밀번호가 변경되었습니다."); resetTeamAdminBoxes();
+  }catch(e){ console.error(e); alert(e.message || "단체 비밀번호 변경 실패"); }
+}
+async function deleteSelectedTeamAll(){
+  if(!TEAM_ADMIN_SESSION) return alert("단체 관리에 먼저 로그인해주세요.");
+  const teamName = TEAM_ADMIN_SESSION.team;
+  if(!confirm("단체를 삭제하시겠습니까?")) return;
+  const inputPw = String(prompt("삭제 확인을 위해 단체 비밀번호 4자리를 다시 입력해주세요.") || "").trim();
+  if(!/^\d{4}$/.test(inputPw)) return alert("단체 비밀번호는 숫자 4자리입니다.");
+  try{
+    showLoading("단체 삭제 중입니다");
+    const { data, error } = await sb.rpc("delete_team_all_auth", { p_team_name:teamName, p_pw:inputPw });
+    if(error) throw error;
+    if(data !== true) throw new Error("단체 비밀번호가 일치하지 않습니다.");
+    hideLoading(); alert("단체 삭제가 완료되었습니다.");
+    TEAM_ADMIN_SESSION = null; document.getElementById("teamAdminPopup")?.classList.add("hidden"); await refreshAfterTeamManage();
+  }catch(e){ hideLoading(); console.error(e); alert(e.message || "단체 삭제 실패"); }
+}
 
-    alert("단체 비번이 변경되었습니다.");
-    document.getElementById("oldTeamPwInput").value = "";
-    document.getElementById("newTeamPwInput").value = "";
-    resetTeamAdminBoxes();
-    await refreshAfterTeamManage();
-
-  }catch(e){
-    console.error(e);
-    alert(e.message || "단체 비번 변경 실패");
-  }
+async function fetchRealRegisterRequests(teamName = ""){
+  if(!sb) return [];
+  const { data, error } = await sb.rpc("list_real_register_requests", { p_team_name: teamName ? String(teamName).trim() : null });
+  if(error) throw error;
+  return Array.isArray(data) ? data : [];
+}
+function realRequestActionButtons(r, mode){
+  const rid = Number(r.id);
+  const attr = mode === "admin" ? "data-admin-real-request" : "data-public-real-request";
+  return `<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+    <button type="button" class="btn blue team-approve-btn" ${attr}="approve:${rid}">승인</button>
+    <button type="button" class="btn red team-approve-btn" ${attr}="reject:${rid}">반려</button>
+  </div>`;
+}
+function realRequestRowHtml(r, mode){
+  return `<div class="team-pending-item"><div><div class="team-pending-name">${esc(r.team_name || "")}</div><div class="team-pending-sub">아이디 : ${esc(r.nickname || "")}</div></div>${realRequestActionButtons(r, mode)}</div>`;
+}
+async function loadRealRegisterRequests(){
+  const list = document.getElementById("pendingRealRequestList");
+  const count = document.getElementById("pendingRealRequestCount");
+  if(!list) return;
+  try{
+    const rows = await fetchRealRegisterRequests("");
+    if(count) count.textContent = String(rows.length);
+    list.innerHTML = rows.length ? rows.map(r => realRequestRowHtml(r,"public")).join("") : `<div class="team-pending-sub">현재 대기중인 군실명제 등록요청이 없습니다.</div>`;
+  }catch(e){ console.error(e); if(count) count.textContent="0"; list.innerHTML=`<div class="team-pending-sub">승인요청 DB 설정이 필요합니다. 함께 드린 SQL을 적용해주세요.</div>`; }
+}
+async function loadTeamAdminRealRequests(){
+  const list = document.getElementById("teamAdminRealRequestList");
+  if(!list || !TEAM_ADMIN_SESSION) return;
+  try{
+    const rows = await fetchRealRegisterRequests(TEAM_ADMIN_SESSION.team);
+    list.innerHTML = rows.length ? rows.map(r => realRequestRowHtml(r,"admin")).join("") : `<div class="team-pending-sub">현재 승인 대기중인 요청이 없습니다.</div>`;
+  }catch(e){ console.error(e); list.innerHTML=`<div class="team-pending-sub">승인요청을 불러오지 못했습니다.</div>`; }
+}
+async function actRealRegisterRequest(requestId, action, teamPw){
+  const { data, error } = await sb.rpc("act_real_register_request", { p_request_id:Number(requestId), p_team_pw:String(teamPw||"").trim(), p_action:action });
+  if(error) throw error; return data;
+}
+async function handlePublicRealRequestAction(token){
+  const [action,id] = String(token||"").split(":");
+  const pw=String(prompt("해당 단체의 비밀번호 4자리를 입력해주세요.")||"").trim();
+  if(!/^\d{4}$/.test(pw)) return alert("단체 비밀번호는 숫자 4자리입니다.");
+  if(!confirm(action==="approve"?"이 군실명제 등록요청을 승인하시겠습니까?":"이 군실명제 등록요청을 반려하시겠습니까?")) return;
+  try{
+    await actRealRegisterRequest(id,action,pw);
+    alert(action==="approve"?"군실명제 등록 승인이 완료되었습니다.":"군실명제 등록요청이 반려되었습니다.");
+    window.REAL_TEAM_CACHE=null; await loadRealRegisterRequests(); if(typeof initRealUI==="function") initRealUI(true);
+  }catch(e){console.error(e);alert(e.message||"처리 실패");}
+}
+async function handleAdminRealRequestAction(token){
+  if(!TEAM_ADMIN_SESSION) return alert("단체 관리에 먼저 로그인해주세요.");
+  const [action,id]=String(token||"").split(":");
+  if(!confirm(action==="approve"?"이 군실명제 등록요청을 승인하시겠습니까?":"이 군실명제 등록요청을 반려하시겠습니까?")) return;
+  try{
+    await actRealRegisterRequest(id,action,TEAM_ADMIN_SESSION.pw);
+    alert(action==="approve"?"군실명제 등록 승인이 완료되었습니다.":"군실명제 등록요청이 반려되었습니다.");
+    window.REAL_TEAM_CACHE=null; await loadTeamAdminRealRequests(); await loadRealRegisterRequests(); if(typeof initRealUI==="function") initRealUI(true);
+  }catch(e){console.error(e);alert(e.message||"처리 실패");}
+}
+function updateUnifiedRequestGuide(){
+  const type=document.getElementById("unifiedRegisterRequestType")?.value||"real";
+  const guide=document.getElementById("unifiedRegisterRequestGuide"); if(!guide) return;
+  guide.innerHTML=type==="real"?`<b>군실명제 등록요청</b><br>군표 아이디/5자리 비밀번호로 요청한 뒤, 해당 단체 간부가 단체 4자리 비밀번호로 승인해야 최종 등록됩니다.`:`<b>단체 등록요청</b><br>신규 클럽/크루 정보를 입력해 요청하면 운영진 비밀번호 확인 후 승인 또는 반려됩니다.`;
+}
+function openUnifiedRegisterRequest(){ document.getElementById("unifiedRegisterRequestPopup")?.classList.remove("hidden"); updateUnifiedRequestGuide(); }
+function continueUnifiedRegisterRequest(){
+  const type=document.getElementById("unifiedRegisterRequestType")?.value||"real";
+  document.getElementById("unifiedRegisterRequestPopup")?.classList.add("hidden");
+  if(type==="real") openRegisterPopup(); else{document.getElementById("teamRequestPopup")?.classList.remove("hidden");loadTeamRequests();}
 }
 
 document.addEventListener("click", async function(e){
-  if(e.target.closest("#btnOpenTeamAdminPopup")){
-    e.preventDefault();
-
-    // 비번 없이 팝업은 열리게 처리합니다. 실제 변경/삭제/비번변경 시점에만 비번을 확인합니다.
-    document.getElementById("teamAdminPopup")?.classList.remove("hidden");
-    resetTeamAdminBoxes();
-    await loadAdminDeleteTeams();
-    return;
-  }
-
-  if(e.target.closest("#btnCloseTeamAdminPopup")){
-    e.preventDefault();
-    document.getElementById("teamAdminPopup")?.classList.add("hidden");
-    return;
-  }
-
-  if(e.target.closest("#btnShowRenameTeam")){
-    e.preventDefault();
-    const teamName = requireSelectedAdminTeam();
-    if(!teamName) return;
-    document.getElementById("changeTeamPwBox")?.classList.add("hidden");
-    document.getElementById("renameTeamBox")?.classList.remove("hidden");
-    return;
-  }
-
-  if(e.target.closest("#btnShowChangeTeamPw")){
-    e.preventDefault();
-    const teamName = requireSelectedAdminTeam();
-    if(!teamName) return;
-    document.getElementById("renameTeamBox")?.classList.add("hidden");
-    document.getElementById("changeTeamPwBox")?.classList.remove("hidden");
-    return;
-  }
-
-  if(e.target.closest("#btnDeleteTeamAll")){
-    e.preventDefault();
-    await deleteSelectedTeamAll();
-    return;
-  }
-
-  if(e.target.closest("#btnRenameTeamAll")){
-    e.preventDefault();
-    await renameSelectedTeamAll();
-    return;
-  }
-
-  if(e.target.closest("#btnChangeTeamPw")){
-    e.preventDefault();
-    await changeSelectedTeamPw();
-    return;
-  }
+  if(e.target.closest("#btnOpenUnifiedRegisterRequest")){e.preventDefault();openUnifiedRegisterRequest();return;}
+  if(e.target.closest("#btnCloseUnifiedRegisterRequest")){e.preventDefault();document.getElementById("unifiedRegisterRequestPopup")?.classList.add("hidden");return;}
+  if(e.target.closest("#btnContinueUnifiedRegisterRequest")){e.preventDefault();continueUnifiedRegisterRequest();return;}
+  if(e.target.closest("#btnCloseRegisterPopup2Bottom")){e.preventDefault();closeRegisterPopup();return;}
+  if(e.target.closest("#btnOpenTeamAdminPopup")){e.preventDefault();TEAM_ADMIN_SESSION=null;document.getElementById("teamAdminPopup")?.classList.remove("hidden");resetTeamAdminBoxes();await loadAdminDeleteTeams();renderTeamAdminSession();return;}
+  if(e.target.closest("#btnCloseTeamAdminPopup")){e.preventDefault();TEAM_ADMIN_SESSION=null;document.getElementById("teamAdminPopup")?.classList.add("hidden");return;}
+  if(e.target.closest("#btnTeamAdminLogin")){e.preventDefault();await loginTeamAdmin();return;}
+  if(e.target.closest("#btnTeamAdminLogout")){e.preventDefault();logoutTeamAdmin();return;}
+  if(e.target.closest("#btnShowRenameTeam")){e.preventDefault();document.getElementById("changeTeamPwBox")?.classList.add("hidden");document.getElementById("renameTeamBox")?.classList.toggle("hidden");return;}
+  if(e.target.closest("#btnShowChangeTeamPw")){e.preventDefault();document.getElementById("renameTeamBox")?.classList.add("hidden");document.getElementById("changeTeamPwBox")?.classList.toggle("hidden");return;}
+  if(e.target.closest("#btnRenameTeamAll")){e.preventDefault();await renameSelectedTeamAll();return;}
+  if(e.target.closest("#btnChangeTeamPw")){e.preventDefault();await changeSelectedTeamPw();return;}
+  if(e.target.closest("#btnDeleteTeamAll")){e.preventDefault();await deleteSelectedTeamAll();return;}
+  const pub=e.target.closest("[data-public-real-request]"); if(pub){e.preventDefault();await handlePublicRealRequestAction(pub.dataset.publicRealRequest);return;}
+  const adm=e.target.closest("[data-admin-real-request]"); if(adm){e.preventDefault();await handleAdminRealRequestAction(adm.dataset.adminRealRequest);return;}
 });
+document.getElementById("unifiedRegisterRequestType")?.addEventListener("change",updateUnifiedRequestGuide);
 
 
 async function approveEventPost(id){
