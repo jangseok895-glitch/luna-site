@@ -7527,6 +7527,11 @@ body > #season40PosterPopup.global-top-modal:not(.hidden){
   background:#ffffff !important;
 }
 
+
+/* ===== 등록요청 통합 대기목록 ===== */
+#unifiedPendingRequestList{display:grid !important;gap:7px !important;margin-top:6px !important;}
+#unifiedRegisterRequestPopup .unified-request-box{width:min(680px,95vw) !important;}
+
 </style>
 </head>
 
@@ -8293,6 +8298,8 @@ user-select:none;
     <div class="search-popup-head"><b>등록요청</b><button type="button" id="btnCloseUnifiedRegisterRequest">닫기</button></div><div class="team-request-help">등록하려는 항목을 선택해주세요.</div>
     <select id="unifiedRegisterRequestType" class="select" style="width:100%;margin-bottom:12px;"><option value="real">군실명제 등록요청</option><option value="team">단체 등록요청</option></select>
     <div id="unifiedRegisterRequestGuide" class="unified-request-guide"></div><button type="button" class="btn gold" id="btnContinueUnifiedRegisterRequest" style="width:100%;">계속하기</button>
+    <div class="team-pending-title" style="margin-top:18px;"><span>전체 등록요청 대기목록</span><span>대기 <span class="team-request-badge" id="unifiedPendingTotalCount">0</span></span></div>
+    <div id="unifiedPendingRequestList"><div class="team-pending-sub">대기요청을 불러오는 중...</div></div>
   </div></div>
 
   <!-- 단체 등록요청 팝업 -->
@@ -14082,6 +14089,7 @@ async function approveTeamRequestById(requestId){
 
     alert("승인 완료되었습니다");
     await loadTeamRequests();
+    await loadUnifiedPendingRequests();
     if(typeof initRealUI === "function") initRealUI();
   }catch(e){
     console.error(e);
@@ -14113,6 +14121,7 @@ async function deleteTeamRequestById(requestId){
 
     alert("단체 등록요청이 반려되었습니다.");
     await loadTeamRequests();
+    await loadUnifiedPendingRequests();
   }catch(e){
     console.error(e);
     alert(e.message || "단체 등록요청 반려 실패");
@@ -14438,7 +14447,7 @@ async function handlePublicRealRequestAction(token){
   try{
     await actRealRegisterRequest(id,action,pw);
     alert(action==="approve"?"군실명제 등록 승인이 완료되었습니다.":"군실명제 등록요청이 반려되었습니다.");
-    window.REAL_TEAM_CACHE=null; await loadRealRegisterRequests(); if(typeof initRealUI==="function") initRealUI(true);
+    window.REAL_TEAM_CACHE=null; await loadRealRegisterRequests(); await loadUnifiedPendingRequests(); if(typeof initRealUI==="function") initRealUI(true);
   }catch(e){console.error(e);alert(e.message||"처리 실패");}
 }
 async function handleAdminRealRequestAction(token){
@@ -14448,15 +14457,45 @@ async function handleAdminRealRequestAction(token){
   try{
     await actRealRegisterRequest(id,action,TEAM_ADMIN_SESSION.pw);
     alert(action==="approve"?"군실명제 등록 승인이 완료되었습니다.":"군실명제 등록요청이 반려되었습니다.");
-    window.REAL_TEAM_CACHE=null; await loadTeamAdminRealRequests(); await loadRealRegisterRequests(); if(typeof initRealUI==="function") initRealUI(true);
+    window.REAL_TEAM_CACHE=null; await loadTeamAdminRealRequests(); await loadRealRegisterRequests(); await loadUnifiedPendingRequests(); if(typeof initRealUI==="function") initRealUI(true);
   }catch(e){console.error(e);alert(e.message||"처리 실패");}
 }
+async function loadUnifiedPendingRequests(){
+  const list = document.getElementById("unifiedPendingRequestList");
+  const count = document.getElementById("unifiedPendingTotalCount");
+  if(!list) return;
+  list.innerHTML = `<div class="team-pending-sub">대기요청을 불러오는 중...</div>`;
+  let realRows = [], teamRows = [];
+  try{ realRows = await fetchRealRegisterRequests(""); }catch(e){ console.error("군실명제 요청 조회 오류:",e); }
+  try{
+    await ensureTeamRequestTableReady();
+    teamRows = await sbSelect("team_register_requests", q => q.select("*").eq("status","대기").order("created_at",{ascending:false}));
+  }catch(e){ console.error("단체 등록요청 조회 오류:",e); }
+  __pendingRealRequestCount = realRows.length;
+  __pendingTeamRequestCount = teamRows.length;
+  updateUnifiedRequestCountBadge();
+  const total = realRows.length + teamRows.length;
+  if(count) count.textContent = String(total);
+  if(!total){ list.innerHTML = `<div class="team-pending-sub">현재 대기중인 등록요청이 없습니다.</div>`; return; }
+  const realHtml = realRows.map(r => `
+    <div class="team-pending-item">
+      <div><div class="team-pending-name"><span style="color:#2563eb;">[군실명제]</span> ${esc(r.team_name||"")}</div><div class="team-pending-sub">아이디 : ${esc(r.nickname||"")} · 단체 4자리 비밀번호로 승인/반려</div></div>
+      ${realRequestActionButtons(r,"public")}
+    </div>`).join("");
+  const teamHtml = teamRows.map(r => `
+    <div class="team-pending-item" data-team-request-id="${r.id}">
+      <div><div class="team-pending-name"><span style="color:#dc2626;">[단체등록]</span> ${esc(r.team_name||"")}${r.leader_name?` <span class="team-leader-name">대표자 : ${esc(r.leader_name)}</span>`:""}</div><div class="team-pending-sub">운영진 비밀번호로 승인/반려${r.screenshot_url?" · 사진보기 가능":""}</div></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">${r.screenshot_url?`<button class="btn blue team-photo-btn" type="button" data-view-team-request-photo="${r.id}">사진보기</button>`:""}<button class="btn red team-approve-btn" type="button" data-approve-team-request="${r.id}">승인</button><button class="btn link team-hold-delete-btn" type="button" data-delete-team-request="${r.id}">반려</button></div>
+    </div>`).join("");
+  list.innerHTML = realHtml + teamHtml;
+}
+
 function updateUnifiedRequestGuide(){
   const type=document.getElementById("unifiedRegisterRequestType")?.value||"real";
   const guide=document.getElementById("unifiedRegisterRequestGuide"); if(!guide) return;
   guide.innerHTML=type==="real"?`<b>군실명제 등록요청</b><br>군표 아이디/5자리 비밀번호로 요청한 뒤, 해당 단체 간부가 단체 4자리 비밀번호로 승인해야 최종 등록됩니다.`:`<b>단체 등록요청</b><br>신규 클럽/크루 정보를 입력해 요청하면 운영진 비밀번호 확인 후 승인 또는 반려됩니다.`;
 }
-function openUnifiedRegisterRequest(){ document.getElementById("unifiedRegisterRequestPopup")?.classList.remove("hidden"); updateUnifiedRequestGuide(); }
+function openUnifiedRegisterRequest(){ document.getElementById("unifiedRegisterRequestPopup")?.classList.remove("hidden"); updateUnifiedRequestGuide(); loadUnifiedPendingRequests(); }
 function continueUnifiedRegisterRequest(){
   const type=document.getElementById("unifiedRegisterRequestType")?.value||"real";
   document.getElementById("unifiedRegisterRequestPopup")?.classList.add("hidden");
