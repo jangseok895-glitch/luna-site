@@ -7276,6 +7276,151 @@ body.season40-notice-open{
 #btnCloseTeamAdminPopup:hover{filter:brightness(1.05) !important;}
 #registerPopup .search-popup-box{max-height:88vh !important;}
 @media(max-width:650px){.team-admin-login-grid{grid-template-columns:1fr !important;}.team-admin-setting-main{align-items:flex-start !important;flex-direction:column !important;}}
+
+
+/* ===== 최종 보정: 모든 주요 팝업을 화면 좌측 상단 기준으로 표시 =====
+   - 브라우저 상단 밖으로 밀려 닫기 버튼이 안 보이는 문제 방지
+   - 팝업 본문이 길면 팝업 자체/오버레이에서 스크롤 가능
+*/
+#registerPopup,
+#memberSearchPopup,
+#autoNoticePopup,
+#teamRequestPopup,
+#teamRequestPhotoPopup,
+#teamAdminPopup,
+#rankGraphPopup,
+#rankGuidePopup,
+#tournamentPopup,
+#passwordChangePopup,
+#chatGoPopup,
+#aiRecordPopup,
+#season40NoticePopup,
+#season40PosterPopup,
+#criticalNoticePopup,
+#criticalImagePopup,
+#criticalBracketPopup,
+#mini4545Popup,
+#siegeInfoPopup,
+#siegeTeamStatusPopup,
+#siegeMyInfoPopup,
+#siegeFundPopup,
+.image-popup,
+.event-rank-popup,
+.deathmatch-popup,
+.unified-request-popup,
+.team-admin-modal{
+  align-items:flex-start !important;
+  justify-content:flex-start !important;
+  padding:10px !important;
+  overflow:auto !important;
+  box-sizing:border-box !important;
+}
+
+/* 팝업 박스는 좌측 상단 모서리에서 시작 */
+#registerPopup > *,
+#memberSearchPopup > *,
+#autoNoticePopup > *,
+#teamRequestPopup > *,
+#teamRequestPhotoPopup > *,
+#teamAdminPopup > *,
+#rankGraphPopup > *,
+#rankGuidePopup > *,
+#tournamentPopup > *,
+#passwordChangePopup > *,
+#chatGoPopup > *,
+#aiRecordPopup > *,
+#season40NoticePopup > *,
+#season40PosterPopup > *,
+#criticalNoticePopup > *,
+#criticalImagePopup > *,
+#criticalBracketPopup > *,
+#mini4545Popup > *,
+#siegeInfoPopup > *,
+#siegeTeamStatusPopup > *,
+#siegeMyInfoPopup > *,
+#siegeFundPopup > *,
+.image-popup > *,
+.event-rank-popup > *,
+.deathmatch-popup > *,
+.unified-request-popup > *,
+.team-admin-modal > *{
+  margin:0 !important;
+  max-height:calc(100vh - 20px) !important;
+  box-sizing:border-box !important;
+}
+
+/* 단체 관리 팝업: 과거 음수 margin 위치보정 완전 제거 */
+#teamAdminPopup.team-admin-modal:not(.hidden){
+  align-items:flex-start !important;
+  justify-content:flex-start !important;
+  padding:10px !important;
+  margin:0 !important;
+}
+#teamAdminPopup .team-admin-box{
+  margin:0 !important;
+  max-height:calc(100vh - 20px) !important;
+  overflow-y:auto !important;
+}
+#teamAdminPopup .search-popup-head{
+  position:sticky !important;
+  top:0 !important;
+  z-index:100 !important;
+  margin:0 0 14px !important;
+  padding:10px 0 12px !important;
+  background:#ffffff !important;
+}
+#btnCloseTeamAdminPopup{
+  position:sticky !important;
+  top:0 !important;
+  margin-left:auto !important;
+  flex:0 0 auto !important;
+}
+
+/* 일반 검색형 팝업의 헤더/닫기 버튼도 스크롤 중 상단 유지 */
+.search-popup-box .search-popup-head{
+  position:sticky !important;
+  top:0 !important;
+  z-index:90 !important;
+  background:#ffffff !important;
+}
+
+@media(max-width:700px){
+  #registerPopup,
+  #memberSearchPopup,
+  #autoNoticePopup,
+  #teamRequestPopup,
+  #teamRequestPhotoPopup,
+  #teamAdminPopup,
+  #rankGraphPopup,
+  #rankGuidePopup,
+  #tournamentPopup,
+  #passwordChangePopup,
+  #chatGoPopup,
+  #aiRecordPopup,
+  #season40NoticePopup,
+  #season40PosterPopup,
+  #criticalNoticePopup,
+  #criticalImagePopup,
+  #criticalBracketPopup,
+  #mini4545Popup,
+  #siegeInfoPopup,
+  #siegeTeamStatusPopup,
+  #siegeMyInfoPopup,
+  #siegeFundPopup,
+  .image-popup,
+  .event-rank-popup,
+  .deathmatch-popup,
+  .unified-request-popup,
+  .team-admin-modal{
+    padding:6px !important;
+  }
+  #teamAdminPopup .team-admin-box,
+  .unified-request-box,
+  .team-admin-box,
+  .search-popup-box{
+    max-height:calc(100vh - 12px) !important;
+  }
+}
 </style>
 </head>
 
@@ -8000,7 +8145,7 @@ function escMini4545(v){
   <!-- 관리 버튼 배열 -->
   <div class="real-row real-action-row">
     <div class="real-tag">관리</div>
-    <button class="btn gold" id="btnOpenUnifiedRegisterRequest" type="button">등록요청</button>
+    <button class="btn gold" id="btnOpenUnifiedRegisterRequest" type="button">등록요청 <span class="team-request-badge hidden" id="unifiedRequestCountBadge">0</span></button>
     <button class="btn blue" id="btnOpenTeamAdminPopup" type="button">단체 관리</button>
     <label id="manageLockWrap" style="
 display:flex;
@@ -9608,6 +9753,8 @@ function showReal() {
     refreshHeaderPush();
 
     initRealUI();
+    if(typeof loadTeamRequests === "function") loadTeamRequests();
+    if(typeof loadRealRegisterRequests === "function") loadRealRegisterRequests();
 
   } catch (err) {
     console.error(err);
@@ -13697,6 +13844,16 @@ async function ensureTeamRequestTableReady(){
   if(!sb) throw new Error("Supabase 연결 정보가 없습니다.");
 }
 
+let __pendingTeamRequestCount = 0;
+let __pendingRealRequestCount = 0;
+function updateUnifiedRequestCountBadge(){
+  const badge = document.getElementById("unifiedRequestCountBadge");
+  if(!badge) return;
+  const total = Math.max(0, Number(__pendingTeamRequestCount)||0) + Math.max(0, Number(__pendingRealRequestCount)||0);
+  badge.textContent = String(total);
+  badge.classList.toggle("hidden", total < 1);
+}
+
 async function loadTeamRequests(){
   try{
     await ensureTeamRequestTableReady();
@@ -13705,6 +13862,8 @@ async function loadTeamRequests(){
     );
 
     const count = rows.length;
+    __pendingTeamRequestCount = count;
+    updateUnifiedRequestCountBadge();
     const badge = document.getElementById("teamRequestCountBadge");
     const pendingCount = document.getElementById("pendingTeamCount");
     const list = document.getElementById("pendingTeamList");
@@ -13739,6 +13898,8 @@ const leader = esc(r.leader_name || "");
     }).join("");
   }catch(e){
     console.error(e);
+    __pendingTeamRequestCount = 0;
+    updateUnifiedRequestCountBadge();
     const badge = document.getElementById("teamRequestCountBadge");
     if(badge) badge.textContent = "0";
   }
@@ -14145,9 +14306,11 @@ async function loadRealRegisterRequests(){
   if(!list) return;
   try{
     const rows = await fetchRealRegisterRequests("");
+    __pendingRealRequestCount = rows.length;
+    updateUnifiedRequestCountBadge();
     if(count) count.textContent = String(rows.length);
     list.innerHTML = rows.length ? rows.map(r => realRequestRowHtml(r,"public")).join("") : `<div class="team-pending-sub">현재 대기중인 군실명제 등록요청이 없습니다.</div>`;
-  }catch(e){ console.error(e); if(count) count.textContent="0"; list.innerHTML=`<div class="team-pending-sub">승인요청 DB 설정이 필요합니다. 함께 드린 SQL을 적용해주세요.</div>`; }
+  }catch(e){ console.error(e); __pendingRealRequestCount = 0; updateUnifiedRequestCountBadge(); if(count) count.textContent="0"; list.innerHTML=`<div class="team-pending-sub">승인요청 DB 설정이 필요합니다. 함께 드린 SQL을 적용해주세요.</div>`; }
 }
 async function loadTeamAdminRealRequests(){
   const list = document.getElementById("teamAdminRealRequestList");
