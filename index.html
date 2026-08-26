@@ -8538,10 +8538,10 @@ user-select:none;
       <select id="siegeLoginTeam" class="select"><option value="">단체 선택</option></select>
       <select id="siegeLoginNick" class="select"><option value="">닉네임 선택</option></select>
       <input id="siegeLoginPin" class="text siege-login-pin" type="password" maxlength="5" inputmode="numeric" placeholder="비번 5자리">
+      <span id="siegeLoginState" class="siege-login-state hidden">로그인중</span>
       <button type="button" class="btn" id="btnSiegeLogin">로그인</button>
       <button type="button" class="btn red" id="btnSiegeLogout">로그아웃</button>
       <button type="button" class="btn siege-info-team-btn" id="btnSiegeMyInfo">정보</button>
-      <span id="siegeLoginState" class="siege-login-state">로그인 전</span>
     </div>
     <div class="siege-map" id="siegeMap">
       <img class="siege-map-bg"
@@ -11715,10 +11715,14 @@ async function onSiegeLoginTeamChanged(){
   }catch(e){alert(e.message||"닉네임 목록을 불러오지 못했습니다.");}
 }
 function updateSiegeLoginState(){
-  const el=document.getElementById("siegeLoginState");
-  if(!el)return;
-  if(SIEGE_LOGIN.authenticated){el.textContent="로그인됨";el.classList.add("ok");}
-  else{el.textContent="로그인 전";el.classList.remove("ok");}
+  const el=document.getElementById("siegeLoginState"),
+        pin=document.getElementById("siegeLoginPin");
+  if(el){
+    el.textContent="로그인중";
+    el.classList.toggle("hidden",!SIEGE_LOGIN.authenticated);
+    el.classList.toggle("ok",SIEGE_LOGIN.authenticated);
+  }
+  if(pin)pin.classList.toggle("hidden",SIEGE_LOGIN.authenticated);
   updateSiegeFundWallet();
   populateSiegeFriendlyTeams();
 }
