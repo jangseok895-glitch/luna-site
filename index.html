@@ -4167,9 +4167,32 @@ body.pc-view #goPcBtn{
   }
 }
 
+#liveLogBox{
+  position:relative !important;
+  overflow:hidden !important;
+}
+
+#liveLogTrack{
+  position:absolute !important;
+  left:100% !important;
+  width:max-content !important;
+  max-width:none !important;
+  white-space:nowrap !important;
+
+  animation-name:liveLogScroll !important;
+  animation-duration:11s !important;
+  animation-timing-function:linear !important;
+  animation-iteration-count:infinite !important;
+}
+
 @keyframes liveLogScroll{
-0%{ transform:translateX(100%); }
-  100%{ transform:translateX(-100%); }
+  0%{
+    transform:translateX(0);
+  }
+
+  100%{
+    transform:translateX(calc(-100% - 100vw));
+  }
 }
 
 @keyframes hotPulse{
