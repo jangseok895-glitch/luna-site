@@ -4173,25 +4173,34 @@ body.pc-view #goPcBtn{
 }
 
 #liveLogTrack{
+  position:relative !important;
+  left:auto !important;
+  width:100% !important;
+  height:100% !important;
+  max-width:none !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+  animation:none !important;
+}
+
+.live-log-item{
   position:absolute !important;
   left:100% !important;
+  top:50% !important;
   width:max-content !important;
   max-width:none !important;
   white-space:nowrap !important;
-
-  animation-name:liveLogScroll !important;
-  animation-duration:11s !important;
-  animation-timing-function:linear !important;
-  animation-iteration-count:infinite !important;
+  transform:translateY(-50%);
+  will-change:transform;
+  animation:liveLogItemScroll 20s linear forwards !important;
 }
 
-@keyframes liveLogScroll{
+@keyframes liveLogItemScroll{
   0%{
-    transform:translateX(0);
+    transform:translate(0,-50%);
   }
-
   100%{
-    transform:translateX(calc(-100% - 100vw));
+    transform:translate(calc(-100% - var(--live-log-box-width, 520px)),-50%);
   }
 }
 
@@ -15019,9 +15028,18 @@ function makeLiveLogHTML(item){
 
 async function startLiveLogNeon(){
   const track = document.getElementById("liveLogTrack");
-  if(!track) return;
+  const box = document.getElementById("liveLogBox");
+  if(!track || !box) return;
 
-  track.style.animationDuration = (LIVE_LOG_SCROLL_MS / 1000) + "s";
+  // 기존 한 줄짜리 반복 애니메이션 제거
+  track.style.animation = "none";
+  track.innerHTML = "";
+
+  function syncLiveLogWidth(){
+    track.style.setProperty("--live-log-box-width", box.clientWidth + "px");
+  }
+  syncLiveLogWidth();
+  window.addEventListener("resize", syncLiveLogWidth);
 
   async function refreshLogs(){
     const logs = await getRecentLiveLogs();
@@ -15030,19 +15048,26 @@ async function startLiveLogNeon(){
     }
   }
 
-  function showSyncedLog(){
+  function addLiveLog(){
+    if(!liveLogCache || !liveLogCache.length) return;
+
     const item = pickSyncedLiveLog(liveLogCache);
-    track.innerHTML = makeLiveLogHTML(item);
+    const el = document.createElement("div");
+    el.className = "live-log-item";
+    el.innerHTML = makeLiveLogHTML(item);
+    track.appendChild(el);
+
+    // 왼쪽 밖으로 완전히 지나간 문구는 제거
+    el.addEventListener("animationend", () => el.remove(), { once:true });
   }
 
   await refreshLogs();
-  showSyncedLog();
+  addLiveLog();
 
-  // 중복 이벤트 방지
-  if(track.dataset.liveLogBound !== "1"){
-    track.dataset.liveLogBound = "1";
-    track.addEventListener("animationiteration", showSyncedLog);
-  }
+  // 한 문구는 20초 동안 천천히 이동.
+  // 14초(70%)가 지나면, 즉 앞 문구가 약 30% 남았을 때 다음 문구 등장.
+  if(window.__liveLogSpawnTimer) clearInterval(window.__liveLogSpawnTimer);
+  window.__liveLogSpawnTimer = setInterval(addLiveLog, LIVE_LOG_SCROLL_MS);
 
   if(liveLogRefreshTimer) clearInterval(liveLogRefreshTimer);
   liveLogRefreshTimer = setInterval(refreshLogs, 60000);
@@ -15054,7 +15079,7 @@ setTimeout(startLiveLogNeon, 1200);
   const RANK_GRAPH_LABELS = ["프로","강주력","주력","1군","2군","3군","4군","5군","6군"];
 
   const LUNA_HOME_URL = "https://luna-site.jangseok7.workers.dev/#gunpyo";
-  const LIVE_LOG_SCROLL_MS = 11000;
+  const LIVE_LOG_SCROLL_MS = 14000;
 
   function reloadGunpyoHome(){
     window.location.href = LUNA_HOME_URL;
