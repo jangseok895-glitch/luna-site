@@ -19233,6 +19233,7 @@ async function runAiRecordAnalysis(){
       <div><h2 id="liveListingTitle">실시간 매물보기</h2><span>카카오톡 모집 글 · 최근 30건</span></div>
       <button type="button" class="live-listing-close" onclick="closeLiveListingPopup()">닫기</button>
     </div>
+    <div class="live-listing-columns"><span>구분</span><span>단체명</span><span>시간</span><span>군수</span><span>담당자</span></div>
     <div id="liveListingList" class="live-listing-list"><div class="live-listing-empty">실시간 모집 글을 불러오는 중입니다.</div></div>
   </div>
 </div>
@@ -19432,6 +19433,10 @@ async function runAiRecordAnalysis(){
 .live-listing-list{height:480px;overflow-y:auto;scrollbar-width:thin;background:#fff}.live-listing-row{display:grid;grid-template-columns:92px minmax(0,1fr) 112px;align-items:center;gap:9px;height:32px;padding:0 12px;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:850;white-space:nowrap}.live-listing-row:nth-child(even){background:#f8fcff}.live-listing-badge{display:inline-flex;align-items:center;justify-content:center;height:22px;padding:0 7px;border-radius:999px;background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:1000}.live-listing-badge.mercenary_offer{background:#dcfce7;color:#15803d}.live-listing-badge.mercenary_need{background:#ffedd5;color:#c2410c}.live-listing-badge.individual{background:#f3e8ff;color:#7e22ce}.live-listing-text{overflow:hidden;text-overflow:ellipsis;color:#0f172a}.live-listing-time{text-align:right;color:#64748b;font-size:11px;font-weight:800}.live-listing-empty{display:flex;align-items:center;justify-content:center;height:100%;padding:20px;text-align:center;color:#64748b;font-size:14px;font-weight:850;line-height:1.6}
 .live-listing-status{display:inline-flex;align-items:center;justify-content:center;margin-left:7px;height:21px;padding:0 7px;border-radius:7px;font-size:11px;font-weight:1000;vertical-align:middle}.live-listing-status.cancelled{background:#dc2626;color:#fff;box-shadow:0 2px 7px rgba(220,38,38,.28)}.live-listing-status.closed{background:#475569;color:#fff}.live-listing-row.is-ended .live-listing-text{text-decoration:line-through;color:#94a3b8}
 @media(max-width:620px){.live-listing-row{grid-template-columns:76px minmax(0,1fr);padding:0 8px;font-size:11px}.live-listing-time{display:none}.live-listing-list{height:480px}.live-listing-head h2{font-size:19px}}
+#liveListingPopup .live-listing-box{width:min(650px,95vw)!important;border-radius:22px!important;border-color:#67d5f5!important;box-shadow:0 22px 65px rgba(15,87,130,.34)!important}
+#liveListingPopup .live-listing-head{background:linear-gradient(135deg,#38bdf8,#6366f1)!important}.live-listing-columns,.live-listing-row{display:grid!important;grid-template-columns:90px minmax(86px,1fr) 55px 78px 160px!important;gap:5px!important;align-items:center!important;padding:0 10px!important}
+.live-listing-columns{height:34px;background:#eaf8ff;color:#075985;border-bottom:2px solid #7dd3fc;font-size:14px;font-weight:1000;text-align:center}.live-listing-row{height:34px!important;font-size:15px!important}.live-listing-list{height:510px!important}.live-listing-cell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}.live-listing-team{text-align:left;color:#0f172a;font-weight:950}.live-listing-rank{color:#dc2626;font-weight:1000}.live-listing-manager{color:#475569;font-weight:900}.live-listing-kind{display:flex;align-items:center;justify-content:center;gap:3px;min-width:0}.live-listing-kind .live-listing-badge{font-size:12px;max-width:94px;overflow:hidden;text-overflow:ellipsis}.live-listing-kind .live-listing-status{margin-left:0;padding:0 4px;font-size:10px}
+@media(max-width:620px){#liveListingPopup .live-listing-box{width:96vw!important}.live-listing-columns,.live-listing-row{grid-template-columns:86px minmax(76px,1fr) 52px 76px 86px!important;gap:3px!important;padding:0 6px!important}.live-listing-row{font-size:13px!important}.live-listing-columns{font-size:12px!important}}
 </style>
 
 <script>
@@ -19629,20 +19634,21 @@ async function runAiRecordAnalysis(){
 (function(){
   let liveListingRows=[], liveListingChannel=null;
   function liveEsc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-  function liveBadge(type){return ({friendly:"친선",mercenary_offer:"용병지원",mercenary_need:"용병모집",individual:"개인전"})[type]||"모집";}
+  function liveBadge(type){return ({friendly:"친선",mercenary_offer:"용병지원",mercenary_need:"용병모집",individual:"연방개인전"})[type]||"모집";}
   function liveText(row){return [row.team_name,row.time_text,row.detail_text,row.recruitment_text].map(v=>String(v||"").trim()).filter(Boolean).join(" · ")||String(row.raw_text||"").trim();}
   function liveTime(value){const d=new Date(value);return Number.isNaN(d.getTime())?"":d.toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});}
   function liveStatus(row){if(row.status==="cancelled")return '<b class="live-listing-status cancelled">취소</b>';if(row.status==="closed")return '<b class="live-listing-status closed">마감</b>';return "";}
+  function liveManager(row){return String(row.source_author||"").trim()||"-";}
   function renderLiveListings(){
     const box=document.getElementById("liveListingList");if(!box)return;
     const rows=liveListingRows.slice(0,30);
-    box.innerHTML=rows.length?rows.map(row=>`<div class="live-listing-row ${row.status&&row.status!=="active"?"is-ended":""}" title="${liveEsc(liveText(row))}"><span class="live-listing-badge ${liveEsc(row.listing_type)}">${liveEsc(liveBadge(row.listing_type))}</span><span class="live-listing-text">${liveEsc(liveText(row))}${liveStatus(row)}</span><span class="live-listing-time">${liveEsc(liveTime(row.created_at))}</span></div>`).join(""):'<div class="live-listing-empty">현재 등록된 실시간 매물이 없습니다.</div>';
+    box.innerHTML=rows.length?rows.map(row=>`<div class="live-listing-row ${row.status&&row.status!=="active"?"is-ended":""}" title="${liveEsc(liveText(row))}"><span class="live-listing-kind"><b class="live-listing-badge ${liveEsc(row.listing_type)}">${liveEsc(liveBadge(row.listing_type))}</b>${liveStatus(row)}</span><span class="live-listing-cell live-listing-team">${liveEsc(row.team_name||"-")}</span><span class="live-listing-cell">${liveEsc(row.time_text||"-")}</span><span class="live-listing-cell live-listing-rank">${liveEsc(row.detail_text||"-")}</span><span class="live-listing-cell live-listing-manager">${liveEsc(liveManager(row))}</span></div>`).join(""):'<div class="live-listing-empty">현재 등록된 실시간 매물이 없습니다.</div>';
     box.scrollTop=0;
   }
   async function loadLiveListings(){
     const box=document.getElementById("liveListingList");
     if(!sb){if(box)box.innerHTML='<div class="live-listing-empty">데이터베이스에 연결할 수 없습니다.</div>';return;}
-    const {data,error}=await sb.from("kakao_recruit_feed").select("id,team_name,listing_type,time_text,detail_text,recruitment_text,raw_text,status,created_at").order("created_at",{ascending:false}).limit(30);
+    const {data,error}=await sb.from("kakao_recruit_feed").select("id,team_name,listing_type,time_text,detail_text,recruitment_text,raw_text,source_author,status,created_at").order("created_at",{ascending:false}).limit(30);
     if(error){console.error(error);if(box)box.innerHTML='<div class="live-listing-empty">실시간 매물을 불러오지 못했습니다.</div>';return;}
     liveListingRows=data||[];renderLiveListings();
   }
