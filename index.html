@@ -8214,7 +8214,7 @@ function escMini4545(v){
             <button class="btn" id="btnReset">초기화</button>
             <button class="btn" id="btnJpg">스크린샷</button>
             <span class="main-btn-divider"></span>
-<button class="btn blue" id="btnRankGraph" onclick="openRankGraphPopup()">루칭방 그래프</button>
+<button class="btn blue" id="btnRankGraph" onclick="openLiveListingPopup()">실시간 매물보기</button>
 <span class="pw-change-wrap">
   <button class="btn gold" id="btnChangePassword" type="button" onclick="openPasswordChangePopup()">설정</button>
 </span>
@@ -19229,6 +19229,16 @@ async function runAiRecordAnalysis(){
 </div>
 </div>
 
+<div id="liveListingPopup" class="hidden" role="dialog" aria-modal="true" aria-labelledby="liveListingTitle" onclick="closeLiveListingPopup()">
+  <div class="live-listing-box" onclick="event.stopPropagation()">
+    <div class="live-listing-head">
+      <div><h2 id="liveListingTitle">실시간 매물보기</h2><span>카카오톡 모집 글 · 최근 30건</span></div>
+      <button type="button" class="live-listing-close" onclick="closeLiveListingPopup()">닫기</button>
+    </div>
+    <div id="liveListingList" class="live-listing-list"><div class="live-listing-empty">실시간 모집 글을 불러오는 중입니다.</div></div>
+  </div>
+</div>
+
 <div id="rankGuidePopup" class="hidden">
   <div class="rank-guide-box">
     <button class="rank-guide-close" type="button" onclick="closeRankGuidePopup()">닫기</button>
@@ -19365,7 +19375,7 @@ async function runAiRecordAnalysis(){
   const GLOBAL_MODAL_IDS = [
     'loadingOverlay','unifiedRegisterRequestPopup','registerPopup','memberSearchPopup','autoNoticePopup',
     'teamRequestPopup','teamRequestPhotoPopup','teamAdminPopup',
-    'rankGraphPopup','rankGuidePopup','mini4545Popup','imagePopup',
+    'rankGraphPopup','liveListingPopup','rankGuidePopup','mini4545Popup','imagePopup',
     'criticalNoticePopup','criticalImagePopup','criticalBracketPopup','criticalHitPopup','criticalPrelimPopup',
     'tournamentPopup','deathmatchPopup','aiRecordPopup','passwordChangePopup','chatGoPopup',
     'season40NoticePopup','season40PosterPopup','eventRankPopup',
@@ -19418,14 +19428,11 @@ async function runAiRecordAnalysis(){
 .rf-time{font-size:12px;color:#64748b;font-weight:800}.rf-versus{display:grid;grid-template-columns:1fr 36px 1fr;gap:6px;align-items:stretch}.rf-side{border:1px solid #dbeafe;border-radius:10px;background:#fff;padding:7px;text-align:center;min-width:0}.rf-side-name{font-size:17px;font-weight:1000;color:#075985;margin-bottom:5px}.rf-members{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:nowrap;color:#334155;font-weight:800;white-space:nowrap}.rf-member{display:inline-flex;align-items:center;gap:3px;min-width:0;font-size:12px}.rf-rank{display:inline-flex;flex:0 0 22px;width:22px;height:22px;align-items:center;justify-content:center;border-radius:50%;background:#ef4444;color:#fff;font-size:11px;font-weight:1000;box-shadow:0 2px 5px rgba(239,68,68,.25)}.rf-attachments{display:flex;justify-content:center;align-items:center;gap:5px;margin-top:6px}.rf-attachment-btn{border:1px solid #7dd3fc;border-radius:8px;background:#e0f7ff;color:#075985;padding:5px 8px;font-size:11px;font-weight:900;cursor:pointer}.rf-game-upload{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border:1px dashed #f59e0b;border-radius:8px;background:#fffbeb;color:#92400e;font-size:11px;font-weight:900}.rf-game-upload input{font-size:10px;max-width:230px}.rf-action-row{display:flex;justify-content:center;gap:5px;flex-wrap:wrap;margin-top:6px}.rf-action-row .btn{font-size:12px!important;padding:6px 9px!important}.rf-side-state{margin-top:5px;font-size:11px;font-weight:900;color:#64748b}.rf-result{margin-top:6px;padding:6px;border-radius:9px;background:#eff6ff;text-align:center;font-size:15px;font-weight:1000;color:#1d4ed8}.rf-empty{padding:18px;text-align:center;border:1px dashed #94a3b8;border-radius:14px;color:#64748b;font-weight:900;background:rgba(255,255,255,.55)}
 @media(max-width:720px){.rf-team-grid,.rf-versus{grid-template-columns:1fr}.rf-vs{font-size:18px}.rf-form{padding:10px}.rf-member-selects{grid-template-columns:repeat(4,minmax(80px,1fr));overflow-x:auto}.rf-members{overflow-x:auto;justify-content:flex-start}.rf-files{grid-template-columns:1fr}}
 .rf-rank-popup{position:fixed;inset:0;z-index:20050;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(15,23,42,.58)}.rf-rank-popup.hidden{display:none!important}.rf-rank-box{width:min(620px,96vw);max-height:86vh;overflow:hidden;background:#fff;border:2px solid #38bdf8;border-radius:16px;box-shadow:0 18px 55px rgba(0,0,0,.28)}.rf-rank-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:linear-gradient(135deg,#e0f7ff,#bae6fd)}.rf-rank-head h3{margin:0;color:#075985;font-size:22px}.rf-rank-close{border:0;border-radius:9px;background:#ef4444;color:#fff;padding:7px 11px;font-weight:1000;cursor:pointer}.rf-rank-scroll{max-height:calc(86vh - 58px);overflow-y:auto}.rf-rank-table{width:100%;border-collapse:collapse;table-layout:fixed}.rf-rank-table th{position:sticky;top:0;z-index:1;background:#075985;color:#fff;padding:10px 7px;font-size:13px}.rf-rank-table td{padding:9px 7px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:850}.rf-rank-table th:nth-child(1),.rf-rank-table td:nth-child(1){width:58px}.rf-rank-table th:nth-child(3),.rf-rank-table td:nth-child(3),.rf-rank-table th:nth-child(4),.rf-rank-table td:nth-child(4){width:70px}.rf-rank-table th:nth-child(5),.rf-rank-table td:nth-child(5){width:85px}.rf-rank-team{text-align:left!important;color:#075985}.rf-rank-top{background:#fffbea}.rf-rank-rule{padding:9px 14px;text-align:center;color:#64748b;font-size:12px;font-weight:800;background:#f8fafc}
-.rf-top-layout{display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:12px;align-items:start;margin-bottom:14px}
-.rf-entry-col{min-width:0}.rf-live-panel{overflow:hidden;border:2px solid #38bdf8;border-radius:14px;background:#fff;box-shadow:0 7px 20px rgba(2,132,199,.13)}
-.rf-live-head{display:flex;align-items:center;justify-content:space-between;gap:8px;height:42px;padding:0 12px;background:linear-gradient(135deg,#075985,#0284c7);color:#fff}.rf-live-head strong{font-size:15px;font-weight:1000}
-.rf-live-state{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:900;color:#dff8ff}.rf-live-state::before{content:"";width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 7px #4ade80}
-.rf-live-list{height:390px;overflow-y:auto;scrollbar-width:thin;background:#fff}.rf-live-row{display:grid;grid-template-columns:76px minmax(0,1fr);align-items:center;gap:7px;height:26px;padding:0 9px;border-bottom:1px solid #e2e8f0;font-size:11px;font-weight:850;white-space:nowrap}.rf-live-row:nth-child(even){background:#f8fcff}
-.rf-live-badge{display:inline-flex;align-items:center;justify-content:center;height:19px;padding:0 6px;border-radius:999px;background:#e0f2fe;color:#0369a1;font-size:10px;font-weight:1000}.rf-live-badge.mercenary_offer{background:#dcfce7;color:#15803d}.rf-live-badge.mercenary_need{background:#ffedd5;color:#c2410c}.rf-live-badge.individual{background:#f3e8ff;color:#7e22ce}
-.rf-live-text{overflow:hidden;text-overflow:ellipsis;color:#0f172a}.rf-live-empty{display:flex;align-items:center;justify-content:center;height:100%;padding:20px;text-align:center;color:#64748b;font-size:13px;font-weight:850;line-height:1.6}
-@media(max-width:900px){.rf-top-layout{grid-template-columns:1fr}.rf-live-panel{order:-1}.rf-live-list{height:390px}}
+#liveListingPopup{position:fixed!important;inset:0!important;z-index:2147483645!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:16px!important;background:rgba(15,23,42,.62)!important;backdrop-filter:blur(4px)!important}
+#liveListingPopup.hidden{display:none!important}.live-listing-box{width:min(920px,96vw)!important;max-height:92vh!important;overflow:hidden!important;border:2px solid #38bdf8!important;border-radius:18px!important;background:#fff!important;box-shadow:0 20px 60px rgba(0,0,0,.38)!important}
+.live-listing-head{height:64px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;background:linear-gradient(135deg,#075985,#0284c7);color:#fff}.live-listing-head h2{margin:0 0 2px;font-size:22px;font-weight:1000}.live-listing-head span{font-size:11px;font-weight:850;color:#dff8ff}.live-listing-close{border:0;border-radius:10px;padding:8px 14px;background:#ef4444;color:#fff;font-weight:1000;cursor:pointer}
+.live-listing-list{height:480px;overflow-y:auto;scrollbar-width:thin;background:#fff}.live-listing-row{display:grid;grid-template-columns:92px minmax(0,1fr) 112px;align-items:center;gap:9px;height:32px;padding:0 12px;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:850;white-space:nowrap}.live-listing-row:nth-child(even){background:#f8fcff}.live-listing-badge{display:inline-flex;align-items:center;justify-content:center;height:22px;padding:0 7px;border-radius:999px;background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:1000}.live-listing-badge.mercenary_offer{background:#dcfce7;color:#15803d}.live-listing-badge.mercenary_need{background:#ffedd5;color:#c2410c}.live-listing-badge.individual{background:#f3e8ff;color:#7e22ce}.live-listing-text{overflow:hidden;text-overflow:ellipsis;color:#0f172a}.live-listing-time{text-align:right;color:#64748b;font-size:11px;font-weight:800}.live-listing-empty{display:flex;align-items:center;justify-content:center;height:100%;padding:20px;text-align:center;color:#64748b;font-size:14px;font-weight:850;line-height:1.6}
+@media(max-width:620px){.live-listing-row{grid-template-columns:76px minmax(0,1fr);padding:0 8px;font-size:11px}.live-listing-time{display:none}.live-listing-list{height:480px}.live-listing-head h2{font-size:19px}}
 </style>
 
 <script>
@@ -19434,16 +19441,13 @@ async function runAiRecordAnalysis(){
   const MATCH_PREFIX="[군실명제 친선]";
   const SIX_HOURS=6*60*60*1000, DAY=24*60*60*1000;
   let rfTeams=[], rfMembers={}, rfRows=[], rfBusy=false;
-  let rfLiveRows=[], rfLiveChannel=null;
 
   const section=document.getElementById("siegeSection");
   if(section){
     section.innerHTML=`<div class="rf-wrap">
       <div class="rf-title-row"><h2 class="rf-title">군실명제 친선</h2><button type="button" class="btn rf-rank-open" id="rfRankOpenBtn">순위보기</button></div>
-      <div class="rf-top-layout">
-       <div class="rf-entry-col">
-        <div class="rf-guide">군실명제에 등록된 단체라면 누구나 친선 매칭을 올릴 수 있습니다.</div>
-        <div class="rf-form">
+      <div class="rf-guide">군실명제에 등록된 단체라면 누구나 친선 매칭을 올릴 수 있습니다.</div>
+      <div class="rf-form">
         <div class="rf-team-grid">
           ${rfTeamFormHtml("left","좌측")}
           <div class="rf-vs">VS</div>
@@ -19454,13 +19458,7 @@ async function runAiRecordAnalysis(){
           <label for="rfHour">경기시간</label><select id="rfHour" class="select"><option value="">몇 시</option>${Array.from({length:24},(_,i)=>`<option value="${i+1}">${i+1}시</option>`).join("")}</select>
         </div>
         <div class="rf-files"><label class="rf-file">매칭 시 대화내용 스크린샷 <input id="rfChatFile" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"></label></div>
-          <div class="rf-submit-row"><button type="button" class="btn gold" id="rfCreateBtn">대기중 매칭 등록</button></div>
-        </div>
-       </div>
-       <aside class="rf-live-panel" aria-label="실시간 카카오톡 모집 현황">
-        <div class="rf-live-head"><strong>실시간 모집 현황</strong><span class="rf-live-state">LIVE · 최근 30건</span></div>
-        <div id="rfLiveList" class="rf-live-list"><div class="rf-live-empty">실시간 모집 글을 불러오는 중입니다.</div></div>
-       </aside>
+        <div class="rf-submit-row"><button type="button" class="btn gold" id="rfCreateBtn">대기중 매칭 등록</button></div>
       </div>
       <div class="rf-section-title">진행 중인 매칭 <span class="rf-count" id="rfActiveCount">0</span></div>
       <div id="rfActiveList" class="rf-list"><div class="rf-empty">매칭을 불러오는 중입니다.</div></div>
@@ -19494,27 +19492,6 @@ async function runAiRecordAnalysis(){
   }
   function rfStatusText(status){return ({waiting:"대기중 매칭",approved:"승인된 매칭",hold:"보류중 매칭",finished:"종료된 매칭"})[status]||"대기중 매칭";}
   function rfDate(v){const d=new Date(v);return Number.isNaN(d.getTime())?"":d.toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});}
-  function rfLiveBadge(type){return ({friendly:"친선",mercenary_offer:"용병지원",mercenary_need:"용병모집",individual:"개인전"})[type]||"모집";}
-  function rfLiveText(row){
-    const parts=[row.team_name,row.time_text,row.detail_text,row.recruitment_text].map(v=>String(v||"").trim()).filter(Boolean);
-    return parts.join(" · ")||String(row.raw_text||"").trim();
-  }
-  function rfRenderLive(){
-    const box=document.getElementById("rfLiveList");if(!box)return;
-    const rows=rfLiveRows.slice(0,30);
-    box.innerHTML=rows.length?rows.map(row=>`<div class="rf-live-row" title="${rfEsc(rfLiveText(row))}"><span class="rf-live-badge ${rfEsc(row.listing_type)}">${rfEsc(rfLiveBadge(row.listing_type))}</span><span class="rf-live-text">${rfEsc(rfLiveText(row))}</span></div>`).join(""):'<div class="rf-live-empty">현재 등록된 실시간 모집 글이 없습니다.</div>';
-    box.scrollTop=0;
-  }
-  async function rfLoadLive(){
-    const box=document.getElementById("rfLiveList");if(!sb){if(box)box.innerHTML='<div class="rf-live-empty">데이터베이스에 연결할 수 없습니다.</div>';return;}
-    const {data,error}=await sb.from("kakao_recruit_feed").select("id,team_name,listing_type,time_text,detail_text,recruitment_text,raw_text,created_at").order("created_at",{ascending:false}).limit(30);
-    if(error){console.error(error);if(box)box.innerHTML='<div class="rf-live-empty">실시간 모집 목록을 불러오지 못했습니다.<br>먼저 제공된 SQL을 실행해주세요.</div>';return;}
-    rfLiveRows=data||[];rfRenderLive();
-  }
-  function rfStartLive(){
-    rfLoadLive();if(!sb||rfLiveChannel)return;
-    rfLiveChannel=sb.channel("kakao-recruit-feed-live").on("postgres_changes",{event:"*",schema:"public",table:"kakao_recruit_feed"},()=>rfLoadLive()).subscribe();
-  }
   function rfFillTeamSelects(){
     ["left","right"].forEach(side=>{const s=document.getElementById(`rf_${side}_team`);if(!s)return;s.innerHTML='<option value="">단체 선택</option>'+rfTeams.map(t=>`<option value="${rfEsc(t)}">${rfEsc(t)}</option>`).join("");});
   }
@@ -19640,13 +19617,45 @@ async function runAiRecordAnalysis(){
   }
   function rfShow(){
     document.getElementById("gunpyoTopPanel")?.classList.add("hidden");document.getElementById("gunpyoSection")?.classList.add("hidden");document.getElementById("realTopPanel")?.classList.add("hidden");document.getElementById("realSection")?.classList.add("hidden");document.getElementById("boardSection")?.classList.add("hidden");section?.classList.remove("hidden");
-    const a=document.getElementById("gunpyoTopBtns"),b=document.getElementById("realTopBtns");if(a)a.style.display="none";if(b)b.style.display="none";document.body.classList.remove("real-mode","real-scrolled");setActiveTab("event");refreshHeaderPush();rfLoad();rfStartLive();
+    const a=document.getElementById("gunpyoTopBtns"),b=document.getElementById("realTopBtns");if(a)a.style.display="none";if(b)b.style.display="none";document.body.classList.remove("real-mode","real-scrolled");setActiveTab("event");refreshHeaderPush();rfLoad();
   }
   window.showSiege=rfShow;window.rfMatchAct=rfAct;window.rfOpenAttachment=rfOpenAttachment;
   document.getElementById("rfCreateBtn")?.addEventListener("click",rfCreate);
   document.getElementById("rfRankOpenBtn")?.addEventListener("click",rfOpenRank);document.getElementById("rfRankCloseBtn")?.addEventListener("click",rfCloseRank);document.getElementById("rfRankPopup")?.addEventListener("click",rfCloseRank);
   document.getElementById("rf_left_team")?.addEventListener("change",()=>rfLoadMembers("left"));document.getElementById("rf_right_team")?.addEventListener("change",()=>rfLoadMembers("right"));
   setInterval(()=>{if(section&&!section.classList.contains("hidden"))rfLoad();},60000);
+})();
+
+/* ===== 첫 화면 : 실시간 매물보기 팝업 ===== */
+(function(){
+  let liveListingRows=[], liveListingChannel=null;
+  function liveEsc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+  function liveBadge(type){return ({friendly:"친선",mercenary_offer:"용병지원",mercenary_need:"용병모집",individual:"개인전"})[type]||"모집";}
+  function liveText(row){return [row.team_name,row.time_text,row.detail_text,row.recruitment_text].map(v=>String(v||"").trim()).filter(Boolean).join(" · ")||String(row.raw_text||"").trim();}
+  function liveTime(value){const d=new Date(value);return Number.isNaN(d.getTime())?"":d.toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});}
+  function renderLiveListings(){
+    const box=document.getElementById("liveListingList");if(!box)return;
+    const rows=liveListingRows.slice(0,30);
+    box.innerHTML=rows.length?rows.map(row=>`<div class="live-listing-row" title="${liveEsc(liveText(row))}"><span class="live-listing-badge ${liveEsc(row.listing_type)}">${liveEsc(liveBadge(row.listing_type))}</span><span class="live-listing-text">${liveEsc(liveText(row))}</span><span class="live-listing-time">${liveEsc(liveTime(row.created_at))}</span></div>`).join(""):'<div class="live-listing-empty">현재 등록된 실시간 매물이 없습니다.</div>';
+    box.scrollTop=0;
+  }
+  async function loadLiveListings(){
+    const box=document.getElementById("liveListingList");
+    if(!sb){if(box)box.innerHTML='<div class="live-listing-empty">데이터베이스에 연결할 수 없습니다.</div>';return;}
+    const {data,error}=await sb.from("kakao_recruit_feed").select("id,team_name,listing_type,time_text,detail_text,recruitment_text,raw_text,created_at").order("created_at",{ascending:false}).limit(30);
+    if(error){console.error(error);if(box)box.innerHTML='<div class="live-listing-empty">실시간 매물을 불러오지 못했습니다.</div>';return;}
+    liveListingRows=data||[];renderLiveListings();
+  }
+  function startLiveListingSubscription(){
+    if(!sb||liveListingChannel)return;
+    liveListingChannel=sb.channel("main-live-listing-popup").on("postgres_changes",{event:"*",schema:"public",table:"kakao_recruit_feed"},loadLiveListings).subscribe();
+  }
+  window.openLiveListingPopup=function(){
+    document.getElementById("liveListingPopup")?.classList.remove("hidden");
+    document.body.style.overflow="hidden";loadLiveListings();startLiveListingSubscription();
+  };
+  window.closeLiveListingPopup=function(){document.getElementById("liveListingPopup")?.classList.add("hidden");document.body.style.overflow="";};
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!document.getElementById("liveListingPopup")?.classList.contains("hidden"))window.closeLiveListingPopup();});
 })();
 </script>
 
