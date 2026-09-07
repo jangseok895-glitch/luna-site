@@ -8079,9 +8079,10 @@ function escMini4545(v){
   /* ===== 크리티컬 히트 공지 팝업 이전/다음 강제 생성 ===== */
 
 
-  /* 모바일 뒤로가기: 사이트 종료 방지 + 이전 탭으로 이동 */
+  /* PC/모바일 뒤로가기: 실제로 방문한 직전 탭으로 이동 */
 (function(){
   let ignoreHistory = false;
+  let currentHistoryTab = "";
 
   function getActiveTab(){
     return document.querySelector(".main-tab.active")?.dataset.tab || "gunpyo";
@@ -8100,9 +8101,10 @@ function escMini4545(v){
     }
   }
 
-  // 최초 진입 기록 저장
-  const firstTab = location.hash ? location.hash.replace("#", "") : getActiveTab();
-  history.replaceState({ tab: firstTab }, "", `#${firstTab}`);
+  // 현재 실제로 보이는 탭을 최초 화면으로 기록합니다.
+  const firstTab = getActiveTab();
+  currentHistoryTab = firstTab;
+  history.replaceState({ ...(history.state || {}), tab: firstTab }, "", `#${firstTab}`);
 
   // 탭 클릭할 때마다 기록 쌓기
   document.addEventListener("click", function(e){
@@ -8110,13 +8112,18 @@ function escMini4545(v){
     if(!tabBtn || ignoreHistory) return;
 
     const tabName = tabBtn.dataset.tab;
+    if(tabName === currentHistoryTab) return;
+    currentHistoryTab = tabName;
     history.pushState({ tab: tabName }, "", `#${tabName}`);
   });
 
-  // 모바일/브라우저 뒤로가기 처리
+  // PC/모바일 브라우저 뒤로가기·앞으로가기 처리
   window.addEventListener("popstate", function(e){
-    const tabName = e.state?.tab || "gunpyo";
-    openTabByName(tabName, false);
+    const tabName = e.state?.tab;
+    if(tabName && document.querySelector(`.main-tab[data-tab="${tabName}"]`)){
+      currentHistoryTab = tabName;
+      openTabByName(tabName, false);
+    }
   });
 })();
 </script>
@@ -10451,6 +10458,10 @@ bindBtn("btnOpenRegisterPopup", openRegisterPopup);
 
   bindBtn("btnReset", () => {
     resetSel();
+    const nicknameInput = document.getElementById("nickname");
+    const pinInput = document.getElementById("pin5");
+    if(nicknameInput) nicknameInput.value = "";
+    if(pinInput) pinInput.value = "";
     calc();
     toast("초기화 완료");
   });
@@ -19392,7 +19403,7 @@ async function runAiRecordAnalysis(){
 <style>
 /* ===== EVENT : 군실명제 친선 ===== */
 #siegeSection .rf-wrap{max-width:1080px;margin:0 auto;padding:8px 0 34px}
-#siegeSection .rf-title{text-align:center;margin:4px 0 6px;font-size:32px;font-weight:1000;color:#075985}
+#siegeSection .rf-title-row{display:flex;align-items:center;justify-content:center;gap:10px;margin:4px 0 6px}#siegeSection .rf-title{margin:0;font-size:32px;font-weight:1000;color:#075985}.rf-rank-open{font-size:13px!important;padding:8px 12px!important}
 #siegeSection .rf-guide{text-align:center;color:#64748b;font-weight:800;margin-bottom:16px}
 .rf-form,.rf-card{background:linear-gradient(135deg,#fff,#e8f8ff);border:1px solid #bae6fd;border-radius:16px;box-shadow:0 6px 18px rgba(2,132,199,.12)}
 .rf-form{padding:13px}.rf-team-grid{display:grid;grid-template-columns:1fr 48px 1fr;gap:10px;align-items:center}
@@ -19406,6 +19417,7 @@ async function runAiRecordAnalysis(){
 .rf-status{display:inline-flex;padding:6px 12px;border-radius:999px;font-weight:1000;font-size:14px}.rf-status.waiting{background:#fef3c7;color:#92400e}.rf-status.approved{background:#dcfce7;color:#166534}.rf-status.hold{background:#fee2e2;color:#991b1b}.rf-status.finished{background:#dbeafe;color:#1e40af}
 .rf-time{font-size:12px;color:#64748b;font-weight:800}.rf-versus{display:grid;grid-template-columns:1fr 36px 1fr;gap:6px;align-items:stretch}.rf-side{border:1px solid #dbeafe;border-radius:10px;background:#fff;padding:7px;text-align:center;min-width:0}.rf-side-name{font-size:17px;font-weight:1000;color:#075985;margin-bottom:5px}.rf-members{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:nowrap;color:#334155;font-weight:800;white-space:nowrap}.rf-member{display:inline-flex;align-items:center;gap:3px;min-width:0;font-size:12px}.rf-rank{display:inline-flex;flex:0 0 22px;width:22px;height:22px;align-items:center;justify-content:center;border-radius:50%;background:#ef4444;color:#fff;font-size:11px;font-weight:1000;box-shadow:0 2px 5px rgba(239,68,68,.25)}.rf-attachments{display:flex;justify-content:center;align-items:center;gap:5px;margin-top:6px}.rf-attachment-btn{border:1px solid #7dd3fc;border-radius:8px;background:#e0f7ff;color:#075985;padding:5px 8px;font-size:11px;font-weight:900;cursor:pointer}.rf-game-upload{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border:1px dashed #f59e0b;border-radius:8px;background:#fffbeb;color:#92400e;font-size:11px;font-weight:900}.rf-game-upload input{font-size:10px;max-width:230px}.rf-action-row{display:flex;justify-content:center;gap:5px;flex-wrap:wrap;margin-top:6px}.rf-action-row .btn{font-size:12px!important;padding:6px 9px!important}.rf-side-state{margin-top:5px;font-size:11px;font-weight:900;color:#64748b}.rf-result{margin-top:6px;padding:6px;border-radius:9px;background:#eff6ff;text-align:center;font-size:15px;font-weight:1000;color:#1d4ed8}.rf-empty{padding:18px;text-align:center;border:1px dashed #94a3b8;border-radius:14px;color:#64748b;font-weight:900;background:rgba(255,255,255,.55)}
 @media(max-width:720px){.rf-team-grid,.rf-versus{grid-template-columns:1fr}.rf-vs{font-size:18px}.rf-form{padding:10px}.rf-member-selects{grid-template-columns:repeat(4,minmax(80px,1fr));overflow-x:auto}.rf-members{overflow-x:auto;justify-content:flex-start}.rf-files{grid-template-columns:1fr}}
+.rf-rank-popup{position:fixed;inset:0;z-index:20050;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(15,23,42,.58)}.rf-rank-popup.hidden{display:none!important}.rf-rank-box{width:min(620px,96vw);max-height:86vh;overflow:hidden;background:#fff;border:2px solid #38bdf8;border-radius:16px;box-shadow:0 18px 55px rgba(0,0,0,.28)}.rf-rank-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:linear-gradient(135deg,#e0f7ff,#bae6fd)}.rf-rank-head h3{margin:0;color:#075985;font-size:22px}.rf-rank-close{border:0;border-radius:9px;background:#ef4444;color:#fff;padding:7px 11px;font-weight:1000;cursor:pointer}.rf-rank-scroll{max-height:calc(86vh - 58px);overflow-y:auto}.rf-rank-table{width:100%;border-collapse:collapse;table-layout:fixed}.rf-rank-table th{position:sticky;top:0;z-index:1;background:#075985;color:#fff;padding:10px 7px;font-size:13px}.rf-rank-table td{padding:9px 7px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:850}.rf-rank-table th:nth-child(1),.rf-rank-table td:nth-child(1){width:58px}.rf-rank-table th:nth-child(3),.rf-rank-table td:nth-child(3),.rf-rank-table th:nth-child(4),.rf-rank-table td:nth-child(4){width:70px}.rf-rank-table th:nth-child(5),.rf-rank-table td:nth-child(5){width:85px}.rf-rank-team{text-align:left!important;color:#075985}.rf-rank-top{background:#fffbea}.rf-rank-rule{padding:9px 14px;text-align:center;color:#64748b;font-size:12px;font-weight:800;background:#f8fafc}
 </style>
 
 <script>
@@ -19418,7 +19430,7 @@ async function runAiRecordAnalysis(){
   const section=document.getElementById("siegeSection");
   if(section){
     section.innerHTML=`<div class="rf-wrap">
-      <h2 class="rf-title">군실명제 친선</h2>
+      <div class="rf-title-row"><h2 class="rf-title">군실명제 친선</h2><button type="button" class="btn rf-rank-open" id="rfRankOpenBtn">순위보기</button></div>
       <div class="rf-guide">군실명제에 등록된 단체라면 누구나 친선 매칭을 올릴 수 있습니다.</div>
       <div class="rf-form">
         <div class="rf-team-grid">
@@ -19437,6 +19449,9 @@ async function runAiRecordAnalysis(){
       <div id="rfActiveList" class="rf-list"><div class="rf-empty">매칭을 불러오는 중입니다.</div></div>
       <div class="rf-section-title">종료된 매칭 <span class="rf-count" id="rfFinishedCount">0</span></div>
       <div id="rfFinishedList" class="rf-list"><div class="rf-empty">종료된 매칭이 없습니다.</div></div>
+      <div id="rfRankPopup" class="rf-rank-popup hidden" role="dialog" aria-modal="true" aria-labelledby="rfRankTitle">
+        <div class="rf-rank-box" onclick="event.stopPropagation()"><div class="rf-rank-head"><h3 id="rfRankTitle">군실명제 친선 전체순위</h3><button type="button" class="rf-rank-close" id="rfRankCloseBtn">닫기</button></div><div class="rf-rank-rule">승리 +1.5점 · 패배 -1점 · 총점 우선 → 승리 수 우선 → 완전 동률은 무작위</div><div class="rf-rank-scroll"><table class="rf-rank-table"><thead><tr><th>순위</th><th>단체명</th><th>승</th><th>패</th><th>총점</th></tr></thead><tbody id="rfRankBody"></tbody></table></div></div>
+      </div>
     </div>`;
   }
 
@@ -19559,6 +19574,20 @@ async function runAiRecordAnalysis(){
     document.getElementById("rfActiveList").innerHTML=active.length?active.map(rfCard).join(""):'<div class="rf-empty">현재 진행 중인 매칭이 없습니다.</div>';
     document.getElementById("rfFinishedList").innerHTML=done.length?done.map(rfCard).join(""):'<div class="rf-empty">아직 종료된 매칭이 없습니다.</div>';
   }
+  function rfScoreText(v){const n=Math.round((Number(v)||0)*10)/10;return Number.isInteger(n)?String(n):n.toFixed(1);}
+  function rfOpenRank(){
+    const stats=new Map(rfTeams.map(team=>[team,{team,wins:0,losses:0,score:0,tie:Math.random()}]));
+    rfRows.filter(m=>m.status==="finished"&&m.result?.winner).forEach(m=>{
+      [m.left?.team,m.right?.team].filter(Boolean).forEach(team=>{if(!stats.has(team))stats.set(team,{team,wins:0,losses:0,score:0,tie:Math.random()});});
+      const winner=m.result.winner,loser=m.left?.team===winner?m.right?.team:m.left?.team;
+      if(stats.has(winner)){stats.get(winner).wins++;stats.get(winner).score+=1.5;}
+      if(loser&&stats.has(loser)){stats.get(loser).losses++;stats.get(loser).score-=1;}
+    });
+    const rows=[...stats.values()].sort((a,b)=>b.score-a.score||b.wins-a.wins||a.tie-b.tie),body=document.getElementById("rfRankBody");
+    if(body)body.innerHTML=rows.length?rows.map((r,i)=>`<tr class="${i<3?"rf-rank-top":""}"><td>(${i+1})</td><td class="rf-rank-team">${rfEsc(r.team)}</td><td>${r.wins}</td><td>${r.losses}</td><td>${rfScoreText(r.score)}</td></tr>`).join(""):'<tr><td colspan="5">등록된 단체가 없습니다.</td></tr>';
+    document.getElementById("rfRankPopup")?.classList.remove("hidden");
+  }
+  function rfCloseRank(){document.getElementById("rfRankPopup")?.classList.add("hidden");}
   async function rfCleanup(){
     const expired=rfRows.filter(m=>m.status!=="finished"&&Date.now()-new Date(m.createdAt||0).getTime()>=DAY);
     for(const m of expired){try{await sb.from("event").delete().eq("id",m.id);}catch(_e){}}
@@ -19577,6 +19606,7 @@ async function runAiRecordAnalysis(){
   }
   window.showSiege=rfShow;window.rfMatchAct=rfAct;window.rfOpenAttachment=rfOpenAttachment;
   document.getElementById("rfCreateBtn")?.addEventListener("click",rfCreate);
+  document.getElementById("rfRankOpenBtn")?.addEventListener("click",rfOpenRank);document.getElementById("rfRankCloseBtn")?.addEventListener("click",rfCloseRank);document.getElementById("rfRankPopup")?.addEventListener("click",rfCloseRank);
   document.getElementById("rf_left_team")?.addEventListener("change",()=>rfLoadMembers("left"));document.getElementById("rf_right_team")?.addEventListener("change",()=>rfLoadMembers("right"));
   setInterval(()=>{if(section&&!section.classList.contains("hidden"))rfLoad();},60000);
 })();
