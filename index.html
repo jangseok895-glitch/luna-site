@@ -19389,5 +19389,173 @@ async function runAiRecordAnalysis(){
 })();
 </script>
 
+<style>
+/* ===== EVENT : 군실명제 친선 ===== */
+#siegeSection .rf-wrap{max-width:1080px;margin:0 auto;padding:8px 0 34px}
+#siegeSection .rf-title{text-align:center;margin:4px 0 6px;font-size:32px;font-weight:1000;color:#075985}
+#siegeSection .rf-guide{text-align:center;color:#64748b;font-weight:800;margin-bottom:16px}
+.rf-form,.rf-card{background:linear-gradient(135deg,#fff,#e8f8ff);border:1px solid #bae6fd;border-radius:16px;box-shadow:0 6px 18px rgba(2,132,199,.12)}
+.rf-form{padding:18px}.rf-team-grid{display:grid;grid-template-columns:1fr 64px 1fr;gap:14px;align-items:center}
+.rf-team-box{padding:14px;border:1px solid #cbd5e1;border-radius:14px;background:rgba(255,255,255,.72)}
+.rf-team-label{font-size:17px;font-weight:1000;color:#0369a1;margin-bottom:9px}.rf-team-box .select{width:100%!important;margin-bottom:8px}
+.rf-vs{text-align:center;font-size:28px;font-weight:1000;color:#ef4444}.rf-submit-row{text-align:center;margin-top:14px}
+.rf-section-title{display:flex;align-items:center;gap:9px;margin:22px 2px 10px;font-size:20px;font-weight:1000;color:#0f172a}
+.rf-count{display:inline-flex;min-width:28px;height:28px;align-items:center;justify-content:center;border-radius:999px;background:#0ea5e9;color:#fff;font-size:14px}
+.rf-list{display:grid;gap:12px}.rf-card{padding:14px 16px;position:relative}.rf-card-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px}
+.rf-status{display:inline-flex;padding:6px 12px;border-radius:999px;font-weight:1000;font-size:14px}.rf-status.waiting{background:#fef3c7;color:#92400e}.rf-status.approved{background:#dcfce7;color:#166534}.rf-status.hold{background:#fee2e2;color:#991b1b}.rf-status.finished{background:#dbeafe;color:#1e40af}
+.rf-time{font-size:12px;color:#64748b;font-weight:800}.rf-versus{display:grid;grid-template-columns:1fr 52px 1fr;gap:12px;align-items:stretch}.rf-side{border:1px solid #dbeafe;border-radius:12px;background:#fff;padding:12px;text-align:center}.rf-side-name{font-size:20px;font-weight:1000;color:#075985;margin-bottom:8px}.rf-members{display:grid;gap:5px;color:#334155;font-weight:800}.rf-action-row{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:11px}.rf-action-row .btn{font-size:14px!important;padding:9px 12px!important}.rf-side-state{margin-top:8px;font-size:13px;font-weight:900;color:#64748b}.rf-result{margin-top:12px;padding:10px;border-radius:10px;background:#eff6ff;text-align:center;font-size:17px;font-weight:1000;color:#1d4ed8}.rf-empty{padding:24px;text-align:center;border:1px dashed #94a3b8;border-radius:14px;color:#64748b;font-weight:900;background:rgba(255,255,255,.55)}
+@media(max-width:720px){.rf-team-grid,.rf-versus{grid-template-columns:1fr}.rf-vs{font-size:20px}.rf-form{padding:12px}}
+</style>
+
+<script>
+/* ===== EVENT 공성전 교체 : 군실명제 친선 ===== */
+(function(){
+  const MATCH_PREFIX="[군실명제 친선]";
+  const SIX_HOURS=6*60*60*1000, DAY=24*60*60*1000;
+  let rfTeams=[], rfMembers={}, rfRows=[], rfBusy=false;
+
+  const section=document.getElementById("siegeSection");
+  if(section){
+    section.innerHTML=`<div class="rf-wrap">
+      <h2 class="rf-title">군실명제 친선</h2>
+      <div class="rf-guide">군실명제에 등록된 단체라면 누구나 친선 매칭을 올릴 수 있습니다.</div>
+      <div class="rf-form">
+        <div class="rf-team-grid">
+          ${rfTeamFormHtml("left","좌측")}
+          <div class="rf-vs">VS</div>
+          ${rfTeamFormHtml("right","우측")}
+        </div>
+        <div class="rf-submit-row"><button type="button" class="btn gold" id="rfCreateBtn">대기중 매칭 등록</button></div>
+      </div>
+      <div class="rf-section-title">진행 중인 매칭 <span class="rf-count" id="rfActiveCount">0</span></div>
+      <div id="rfActiveList" class="rf-list"><div class="rf-empty">매칭을 불러오는 중입니다.</div></div>
+      <div class="rf-section-title">종료된 매칭 <span class="rf-count" id="rfFinishedCount">0</span></div>
+      <div id="rfFinishedList" class="rf-list"><div class="rf-empty">종료된 매칭이 없습니다.</div></div>
+    </div>`;
+  }
+
+  function rfTeamFormHtml(side,label){
+    return `<div class="rf-team-box"><div class="rf-team-label">${label} 단체</div>
+      <select id="rf_${side}_team" class="select"><option value="">군실명제 단체 선택</option></select>
+      ${[1,2,3,4].map(i=>`<select id="rf_${side}_m${i}" class="select"><option value="">멤버 ${i} 선택</option></select>`).join("")}
+    </div>`;
+  }
+  function rfEsc(v){return String(v??"").replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+  function rfRank(total){try{return typeof getRankFromTotal==="function"?getRankFromTotal(Number(total)||0):"";}catch(_e){return "";}}
+  function rfOptionMember(m){const rank=rfRank(m.total);return `${m.nickname}${rank?` (${rank})`:""}`;}
+  function rfParse(row){
+    try{const d=JSON.parse(row.content||"{}");if(d&&d.kind==="realname_friendly")return {...d,id:row.id,createdAt:d.createdAt||row.created_at};}catch(_e){}
+    return null;
+  }
+  function rfEffectiveStatus(m){
+    if(m.status==="finished")return "finished";
+    const age=Date.now()-new Date(m.createdAt||0).getTime();
+    return age>=SIX_HOURS?"hold":(m.status||"waiting");
+  }
+  function rfStatusText(status){return ({waiting:"대기중 매칭",approved:"승인된 매칭",hold:"보류중 매칭",finished:"종료된 매칭"})[status]||"대기중 매칭";}
+  function rfDate(v){const d=new Date(v);return Number.isNaN(d.getTime())?"":d.toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});}
+  function rfFillTeamSelects(){
+    ["left","right"].forEach(side=>{const s=document.getElementById(`rf_${side}_team`);if(!s)return;s.innerHTML='<option value="">군실명제 단체 선택</option>'+rfTeams.map(t=>`<option value="${rfEsc(t)}">${rfEsc(t)}</option>`).join("");});
+  }
+  async function rfLoadMembers(side){
+    const team=document.getElementById(`rf_${side}_team`)?.value||"";
+    if(team&&!rfMembers[team]){
+      const rows=await sbSelect("team_members",q=>q.select("nickname,total").eq("team_name",team).order("nickname",{ascending:true}));
+      rfMembers[team]=(rows||[]).map(r=>({nickname:String(r.nickname||"").trim(),total:Number(r.total)||0})).filter(r=>r.nickname);
+    }
+    const list=rfMembers[team]||[];
+    for(let i=1;i<=4;i++){const s=document.getElementById(`rf_${side}_m${i}`);if(s)s.innerHTML=`<option value="">멤버 ${i} 선택</option>`+list.map(m=>`<option value="${rfEsc(m.nickname)}">${rfEsc(rfOptionMember(m))}</option>`).join("");}
+  }
+  function rfSelected(side){
+    const team=document.getElementById(`rf_${side}_team`)?.value||"";
+    const members=[1,2,3,4].map(i=>document.getElementById(`rf_${side}_m${i}`)?.value||"");
+    return {team,members:members.map(n=>{const x=(rfMembers[team]||[]).find(m=>m.nickname===n);return {nickname:n,total:Number(x?.total)||0,rank:rfRank(x?.total)};})};
+  }
+  async function rfCreate(){
+    if(rfBusy)return;const left=rfSelected("left"),right=rfSelected("right");
+    if(!left.team||!right.team)return alert("좌측과 우측 단체를 모두 선택해주세요.");
+    if(left.team===right.team)return alert("서로 다른 두 단체를 선택해주세요.");
+    if(left.members.some(m=>!m.nickname)||right.members.some(m=>!m.nickname))return alert("양쪽 멤버를 각각 4명씩 선택해주세요.");
+    if(new Set(left.members.map(m=>m.nickname)).size!==4||new Set(right.members.map(m=>m.nickname)).size!==4)return alert("한 단체에서 같은 멤버를 중복 선택할 수 없습니다.");
+    const createdAt=new Date().toISOString();
+    const data={kind:"realname_friendly",version:1,status:"waiting",createdAt,left:{...left,approved:false},right:{...right,approved:false},result:{winner:"",reporter:"",loserConfirmed:false}};
+    rfBusy=true;try{
+      const {error}=await sb.from("event").insert({team_name:left.team,opponent_team:right.team,title:`${MATCH_PREFIX} ${left.team} vs ${right.team}`,content:JSON.stringify(data),member1:left.members[0].nickname,member2:left.members[1].nickname,member3:left.members[2].nickname,member4:left.members[3].nickname,is_notice:0,is_approved:0,approved:0,views:0,created_at:createdAt});
+      if(error)throw error;alert("대기중 매칭으로 등록되었습니다.");await rfLoad();
+    }catch(e){console.error(e);alert(e.message||"매칭 등록에 실패했습니다.");}finally{rfBusy=false;}
+  }
+  async function rfVerify(team){
+    const pw=prompt(`${team} 단체의 비밀번호 숫자 4자리를 입력해주세요.`);if(pw===null)return false;
+    if(!/^\d{4}$/.test(String(pw).trim())){alert("비밀번호는 숫자 4자리입니다.");return false;}
+    try{await verifyClubPwSupabase(team,String(pw).trim());return true;}catch(e){alert(e.message||"단체 비밀번호가 일치하지 않습니다.");return false;}
+  }
+  async function rfSave(m){
+    const copy={...m};delete copy.id;const {error}=await sb.from("event").update({content:JSON.stringify(copy),is_approved:copy.status==="approved"||copy.status==="finished"?1:0,approved:copy.status==="approved"||copy.status==="finished"?1:0}).eq("id",m.id);if(error)throw error;
+  }
+  async function rfAct(id,side,action){
+    if(rfBusy)return;const m=rfRows.find(x=>String(x.id)===String(id));if(!m)return;
+    const own=m[side],other=m[side==="left"?"right":"left"];if(!own)return;
+    if(!(await rfVerify(own.team)))return;rfBusy=true;
+    try{
+      if(action==="cancel"){
+        m.status="cancelled";await rfSave(m);await sb.from("event").delete().eq("id",m.id);alert("매칭 대기가 취소되었습니다.");
+      }else if(action==="approve"){
+        own.approved=true;if(m.left.approved&&m.right.approved)m.status="approved";await rfSave(m);
+      }else if(action==="win"||action==="lose"){
+        if(m.result?.winner)return alert("이미 한쪽 단체가 결과를 선택했습니다.");
+        const winner=action==="win"?own.team:other.team;m.result={winner,reporter:own.team,loserConfirmed:false};await rfSave(m);
+      }else if(action==="confirmLose"){
+        if(!m.result?.winner||m.result.winner===own.team)return alert("패배 단체만 확인할 수 있습니다.");
+        m.result.loserConfirmed=true;m.status="finished";m.finishedAt=new Date().toISOString();await rfSave(m);
+      }
+      await rfLoad();
+    }catch(e){console.error(e);alert(e.message||"처리 중 오류가 발생했습니다.");}finally{rfBusy=false;}
+  }
+  function rfSideHtml(m,side,status){
+    const s=m[side],other=m[side==="left"?"right":"left"],phase=m.status||"waiting",members=(s.members||[]).map(x=>`<div>${rfEsc(x.nickname)} <span style="color:#0284c7">${rfEsc(x.rank||rfRank(x.total))}</span></div>`).join("");
+    let actions="",state="";
+    if(phase==="waiting"&&!s.approved)actions=`<button class="btn gold" onclick="rfMatchAct('${m.id}','${side}','approve')">매칭확정</button><button class="btn red" onclick="rfMatchAct('${m.id}','${side}','cancel')">취소</button>`;
+    else if(phase==="waiting"&&s.approved)state='<div class="rf-side-state">매칭확정 완료</div>';
+    if(phase==="approved"&&!m.result?.winner)actions=`<button class="btn gold" onclick="rfMatchAct('${m.id}','${side}','win')">승리</button><button class="btn red" onclick="rfMatchAct('${m.id}','${side}','lose')">패배</button>`;
+    if(m.result?.winner&&status!=="finished"){
+      if(m.result.winner===s.team)state='<div class="rf-side-state" style="color:#16a34a">승리 입력 완료</div>';
+      else actions=`<button class="btn red" onclick="rfMatchAct('${m.id}','${side}','confirmLose')">패배</button>`;
+    }
+    return `<div class="rf-side"><div class="rf-side-name">${rfEsc(s.team)}</div><div class="rf-members">${members}</div>${state}<div class="rf-action-row">${actions}</div></div>`;
+  }
+  function rfCard(m){
+    const status=rfEffectiveStatus(m),result=status==="finished"?`<div class="rf-result">${rfEsc(m.result?.winner||"")} 승리</div>`:"";
+    return `<div class="rf-card"><div class="rf-card-head"><span class="rf-status ${status}">${rfStatusText(status)}</span><span class="rf-time">등록 ${rfDate(m.createdAt)}</span></div><div class="rf-versus">${rfSideHtml(m,"left",status)}<div class="rf-vs">VS</div>${rfSideHtml(m,"right",status)}</div>${result}</div>`;
+  }
+  function rfRender(){
+    const visible=rfRows.filter(m=>m.status!=="cancelled"&&Date.now()-new Date(m.createdAt||0).getTime()<DAY),finished=rfRows.filter(m=>m.status==="finished");
+    const active=visible.filter(m=>m.status!=="finished"),done=finished;
+    document.getElementById("rfActiveCount").textContent=active.length;document.getElementById("rfFinishedCount").textContent=done.length;
+    document.getElementById("rfActiveList").innerHTML=active.length?active.map(rfCard).join(""):'<div class="rf-empty">현재 진행 중인 매칭이 없습니다.</div>';
+    document.getElementById("rfFinishedList").innerHTML=done.length?done.map(rfCard).join(""):'<div class="rf-empty">아직 종료된 매칭이 없습니다.</div>';
+  }
+  async function rfCleanup(){
+    const expired=rfRows.filter(m=>m.status!=="finished"&&Date.now()-new Date(m.createdAt||0).getTime()>=DAY);
+    for(const m of expired){try{await sb.from("event").delete().eq("id",m.id);}catch(_e){}}
+    if(expired.length)rfRows=rfRows.filter(m=>!expired.some(x=>String(x.id)===String(m.id)));
+  }
+  async function rfLoad(){
+    if(!sb){document.getElementById("rfActiveList").innerHTML='<div class="rf-empty">데이터베이스에 연결할 수 없습니다.</div>';return;}
+    try{
+      const [teamsRes,rowsRes]=await Promise.all([getTeamListSupabase(),sb.from("event").select("id,title,content,team_name,opponent_team,created_at").like("title",`${MATCH_PREFIX}%`).order("created_at",{ascending:false}).range(0,999)]);
+      if(rowsRes.error)throw rowsRes.error;rfTeams=(teamsRes?.teams||[]).map(t=>typeof t==="string"?t:t.name).filter(Boolean);rfFillTeamSelects();rfRows=(rowsRes.data||[]).map(rfParse).filter(Boolean);await rfCleanup();rfRender();
+    }catch(e){console.error(e);document.getElementById("rfActiveList").innerHTML='<div class="rf-empty">매칭 목록을 불러오지 못했습니다.</div>';}
+  }
+  function rfShow(){
+    document.getElementById("gunpyoTopPanel")?.classList.add("hidden");document.getElementById("gunpyoSection")?.classList.add("hidden");document.getElementById("realTopPanel")?.classList.add("hidden");document.getElementById("realSection")?.classList.add("hidden");document.getElementById("boardSection")?.classList.add("hidden");section?.classList.remove("hidden");
+    const a=document.getElementById("gunpyoTopBtns"),b=document.getElementById("realTopBtns");if(a)a.style.display="none";if(b)b.style.display="none";document.body.classList.remove("real-mode","real-scrolled");setActiveTab("event");refreshHeaderPush();rfLoad();
+  }
+  window.showSiege=rfShow;window.rfMatchAct=rfAct;
+  document.getElementById("rfCreateBtn")?.addEventListener("click",rfCreate);
+  document.getElementById("rf_left_team")?.addEventListener("change",()=>rfLoadMembers("left"));document.getElementById("rf_right_team")?.addEventListener("change",()=>rfLoadMembers("right"));
+  setInterval(()=>{if(section&&!section.classList.contains("hidden"))rfLoad();},60000);
+})();
+</script>
+
 </body>
 </html>
