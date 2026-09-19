@@ -7320,10 +7320,7 @@ body.season40-notice-open{
 @media(max-width:650px){.team-admin-login-grid{grid-template-columns:1fr !important;}.team-admin-setting-main{align-items:flex-start !important;flex-direction:column !important;}}
 
 
-/* ===== 최종 보정: 모든 주요 팝업을 화면 좌측 상단 기준으로 표시 =====
-   - 브라우저 상단 밖으로 밀려 닫기 버튼이 안 보이는 문제 방지
-   - 팝업 본문이 길면 팝업 자체/오버레이에서 스크롤 가능
-*/
+/* ===== 주요 팝업 위치 보정: 좌측 상단에서 약간 안쪽으로 ===== */
 #registerPopup,
 #memberSearchPopup,
 #autoNoticePopup,
@@ -7353,7 +7350,7 @@ body.season40-notice-open{
 .team-admin-modal{
   align-items:flex-start !important;
   justify-content:flex-start !important;
-  padding:10px !important;
+  padding:48px 16px 16px 34px !important;
   overflow:auto !important;
   box-sizing:border-box !important;
 }
@@ -7387,7 +7384,7 @@ body.season40-notice-open{
 .unified-request-popup > *,
 .team-admin-modal > *{
   margin:0 !important;
-  max-height:calc(100vh - 20px) !important;
+  max-height:calc(100vh - 64px) !important;
   box-sizing:border-box !important;
 }
 
