@@ -7320,7 +7320,7 @@ body.season40-notice-open{
 @media(max-width:650px){.team-admin-login-grid{grid-template-columns:1fr !important;}.team-admin-setting-main{align-items:flex-start !important;flex-direction:column !important;}}
 
 
-/* ===== 주요 팝업 위치 보정: 좌측 상단에서 약간 안쪽으로 ===== */
+/* ===== 주요 팝업 위치 보정: 군표 영역 좌측 상단에서 시작 ===== */
 #registerPopup,
 #memberSearchPopup,
 #autoNoticePopup,
@@ -7350,7 +7350,7 @@ body.season40-notice-open{
 .team-admin-modal{
   align-items:flex-start !important;
   justify-content:flex-start !important;
-  padding:48px 16px 16px 34px !important;
+  padding:var(--real-popup-anchor-top, 48px) 16px 16px var(--real-popup-anchor-left, 34px) !important;
   overflow:auto !important;
   box-sizing:border-box !important;
 }
@@ -7394,6 +7394,16 @@ body.season40-notice-open{
   justify-content:flex-start !important;
   padding:10px !important;
   margin:0 !important;
+}
+
+/* 군표 기준으로 별도 배치하는 관리 팝업은 자식 박스의 여백만 사용 */
+#unifiedRegisterRequestPopup,
+#registerPopup,
+#teamRequestPopup,
+#teamAdminPopup,
+#memberSearchPopup,
+#teamRequestPhotoPopup{
+  padding:0 !important;
 }
 #teamAdminPopup .team-admin-box{
   margin:0 !important;
