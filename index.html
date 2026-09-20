@@ -8133,6 +8133,25 @@ function escMini4545(v){
     }
   });
 })();
+
+/* ===== 친선 투표 : 단체 앞 2자리 로그인 전용 ===== */
+(function(){
+  let club="", prefix="", rows=[], teams=[], busy=false;
+  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const order=r=>({"프":0,"강":1,"주":2,"1":3,"2":4,"3":5,"4":6,"5":7,"6":8})[r]??99;
+  const members=a=>[...(a||[])].sort((x,y)=>order(x.rank)-order(y.rank)||String(x.nickname).localeCompare(String(y.nickname),"ko"));
+  function fill(){const a=document.getElementById("fvTeam"),b=document.getElementById("fvHour");if(a)a.innerHTML='<option value="">단체 선택</option>'+teams.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");if(b)b.innerHTML='<option value="">시간 선택</option>'+Array.from({length:24},(_,i)=>`<option value="${i+1}">${String(i+1).padStart(2,"0")}시</option>`).join("");}
+  function render(){const box=document.getElementById("friendlyVoteList");if(!box||!club)return;const all=[...rows];[18,19,20,21,22,23].forEach(hour=>{if(!all.some(x=>Number(x.hour)===hour))all.push({id:"empty-"+hour,hour,members:[],empty:true,created_at:""});});all.sort((a,b)=>Number(a.hour)-Number(b.hour)||String(a.created_at).localeCompare(String(b.created_at)));box.innerHTML=all.map(r=>{const same=all.filter(x=>Number(x.hour)===Number(r.hour));const m=members(r.members),name=`${String(r.hour).padStart(2,"0")}시${same.length>1?` ${same.indexOf(r)+1}팀`:" 1팀"}`,rank=m.map(x=>x.rank).join("")||"-";return `<div class="friendly-vote-card"><div class="friendly-vote-card-head"><div><span class="friendly-vote-time">${name}</span> <span class="friendly-vote-count">(${rank}) · ${m.length}/4명</span></div><div class="friendly-vote-team">${esc(club)}</div></div><div class="friendly-vote-members">${m.map(x=>`<span class="friendly-vote-member"><b class="friendly-vote-rank">${esc(x.rank)}</b><span>${esc(x.nickname)}<button type="button" class="friendly-vote-delete" onclick="friendlyVoteDelete('${r.id}','${esc(x.nickname)}')">삭제</button></span></span>`).join("")}${Array.from({length:4-m.length},()=>'<span class="friendly-vote-empty-slot">참여 가능</span>').join("")}</div><div class="friendly-vote-actions">${r.empty?`<button class="btn blue" onclick="friendlyVoteJoin('${r.hour}')">나도 등록하기</button>`:m.length<4?`<button class="btn blue" onclick="friendlyVoteJoin('${r.id}')">나도 등록하기</button>`:""}${!r.empty?`<button class="btn gold" onclick="friendlyVoteListing('${r.id}')">매물올리기</button>`:""}</div></div>`;}).join("");}
+  async function load(){if(!club)return;const {data,error}=await sb.rpc("fv_list",{p_club:club,p_prefix:prefix});if(error)throw error;rows=data||[];render();}
+  async function profileInputs(){const nick=prompt("군표 아이디를 입력해주세요."),pin=nick===null?null:prompt("군표 비번 5자리를 입력해주세요.");if(nick===null||pin===null)return null;if(!/^\d{5}$/.test(pin.trim()))throw new Error("군표 비밀번호는 숫자 5자리입니다.");return {nick:nick.trim(),pin:pin.trim()};}
+  window.loginFriendlyVote=async function(){const chosen=document.getElementById("fvTeam")?.value||"",p=(document.getElementById("fvClubPrefix")?.value||"").trim();if(!chosen||!/^\d{2}$/.test(p))return alert("단체를 선택하고 단체 비번 앞의 두자리를 입력해주세요.");try{const {data,error}=await sb.rpc("fv_check_prefix",{p_club:chosen,p_prefix:p});if(error)throw error;if(!data)throw new Error("단체 비밀번호 앞의 두자리가 일치하지 않습니다.");club=chosen;prefix=p;document.getElementById("fvLoginArea").classList.add("hidden");document.getElementById("fvVoteArea").classList.remove("hidden");document.getElementById("fvSessionTeam").textContent=club;await load();}catch(e){alert(e.message||"로그인에 실패했습니다.");}};
+  window.logoutFriendlyVote=function(){club="";prefix="";rows=[];document.getElementById("fvLoginArea").classList.remove("hidden");document.getElementById("fvVoteArea").classList.add("hidden");document.getElementById("friendlyVoteList").innerHTML='<div class="live-listing-empty">단체를 선택해 로그인해주세요.</div>';};
+  window.submitFriendlyVote=async function(){const hour=Number(document.getElementById("fvHour")?.value||0),nick=(document.getElementById("fvNick")?.value||"").trim(),pin=(document.getElementById("fvPin")?.value||"").trim();if(!hour||!nick||!/^\d{5}$/.test(pin))return alert("시간, 아이디, 군표 비번 5자리를 모두 입력해주세요.");if(busy)return;busy=true;try{const {error}=await sb.rpc("fv_add",{p_club:club,p_prefix:prefix,p_hour:hour,p_nick:nick,p_pin5:pin});if(error)throw error;document.getElementById("fvNick").value="";document.getElementById("fvPin").value="";await load();}catch(e){alert(e.message||"등록에 실패했습니다.");}finally{busy=false;}};
+  window.friendlyVoteJoin=async function(id){try{const x=await profileInputs();if(!x)return;busy=true;if(String(id).startsWith("empty-")||!String(id).match(/^\d+$/)){const {error}=await sb.rpc("fv_add",{p_club:club,p_prefix:prefix,p_hour:Number(String(id).replace("empty-","")),p_nick:x.nick,p_pin5:x.pin});if(error)throw error;}else{const {error}=await sb.rpc("fv_join",{p_id:Number(id),p_club:club,p_prefix:prefix,p_nick:x.nick,p_pin5:x.pin});if(error)throw error;}await load();}catch(e){alert(e.message||"등록에 실패했습니다.");}finally{busy=false;}};
+  window.friendlyVoteDelete=async function(id,nick){const pw=prompt("단체비번 4자리 혹은 개인비번 5자리를 입력해주세요.");if(pw===null)return;try{const {error}=await sb.rpc("fv_delete_member",{p_id:Number(id),p_club:club,p_nick:nick,p_password:pw.trim()});if(error)throw error;await load();}catch(e){alert(e.message||"삭제에 실패했습니다.");}};
+  window.friendlyVoteListing=async function(id){const r=rows.find(x=>String(x.id)===String(id));if(!r)return;const msg=`${club}\n${String(r.hour).padStart(2,"0")}시 ${members(r.members).map(x=>x.rank).join("")||"-"}\n구합니다.`;await navigator.clipboard.writeText(msg).catch(()=>{});if(confirm("매물구하기 메세지가 복사됬습니다. 매칭방으로 자동 전환되며, 붙여넣기를 하시면 바로 매물이 올라갑니다."))window.open("https://open.kakao.com/o/gCODetOi","_blank","noopener");};
+  window.openFriendlyVotePopup=async function(){document.getElementById("friendlyVotePopup")?.classList.remove("hidden");if(!teams.length){const x=await getTeamListSupabase();teams=(x?.teams||[]).map(v=>typeof v==="string"?v:v.name).filter(Boolean);fill();}if(club)load();};window.closeFriendlyVotePopup=()=>document.getElementById("friendlyVotePopup")?.classList.add("hidden");
+})();
 </script>
   
 <div id="imagePopup" class="image-popup hidden" onclick="closeImagePopup()">
@@ -19236,13 +19255,21 @@ async function runAiRecordAnalysis(){
 
 <div id="friendlyVotePopup" class="hidden" role="dialog" aria-modal="true" aria-labelledby="friendlyVoteTitle" onclick="closeFriendlyVotePopup()">
   <div class="friendly-vote-box" onclick="event.stopPropagation()">
-    <div class="friendly-vote-head"><div><h2 id="friendlyVoteTitle">친선 투표</h2><span>단체별 시간대 모집 · 팀당 최대 4명</span></div><button type="button" class="live-listing-close" onclick="closeFriendlyVotePopup()">닫기</button></div>
-    <div class="friendly-vote-form">
+    <div class="friendly-vote-head"><div><h2 id="friendlyVoteTitle">친선 투표</h2><span>내 단체 전용 시간대 모집 · 팀당 최대 4명</span></div><button type="button" class="live-listing-close" onclick="closeFriendlyVotePopup()">닫기</button></div>
+    <div id="fvLoginArea" class="friendly-vote-form friendly-vote-login">
       <label>단체<select id="fvTeam" class="select"><option value="">단체 선택</option></select></label>
-      <label>시간<select id="fvHour" class="select"><option value="">시간 선택</option></select></label>
-      <label>아이디<input id="fvNick" class="text" maxlength="30" placeholder="군표 아이디"></label>
-      <label>군표 비번 5자리<input id="fvPin" class="text pin" type="password" maxlength="5" inputmode="numeric" placeholder="숫자 5자리"></label>
-      <button type="button" class="btn gold" id="fvSubmitBtn" onclick="submitFriendlyVote()">확인</button>
+      <label>로그인 비번<input id="fvClubPrefix" class="text pin" type="password" maxlength="2" inputmode="numeric" placeholder="앞 2자리"></label>
+      <button type="button" class="btn gold" onclick="loginFriendlyVote()">로그인</button>
+      <p class="friendly-vote-login-help">로그인 : 단체 비번 앞의 두자리를 입력해주세요.</p>
+    </div>
+    <div id="fvVoteArea" class="hidden">
+      <div class="friendly-vote-session"><b id="fvSessionTeam">-</b><button type="button" class="btn link" onclick="logoutFriendlyVote()">단체 변경</button></div>
+      <div class="friendly-vote-form">
+        <label>시간<select id="fvHour" class="select"><option value="">시간 선택</option></select></label>
+        <label>아이디<input id="fvNick" class="text" maxlength="30" placeholder="군표 아이디"></label>
+        <label>군표 비번 5자리<input id="fvPin" class="text pin" type="password" maxlength="5" inputmode="numeric" placeholder="숫자 5자리"></label>
+        <button type="button" class="btn gold" id="fvSubmitBtn" onclick="submitFriendlyVote()">확인</button>
+      </div>
     </div>
     <p class="friendly-vote-help">같은 시간에 새로 등록하면 다음 팀으로 생성됩니다. 이미 있는 팀에는 <b>나도 등록하기</b>로 최대 4명까지 참여할 수 있습니다.</p>
     <div id="friendlyVoteList" class="friendly-vote-list"><div class="live-listing-empty">투표 목록을 불러오는 중입니다.</div></div>
@@ -19452,7 +19479,8 @@ async function runAiRecordAnalysis(){
 #friendlyVotePopup.hidden{display:none!important}.friendly-vote-box{width:min(760px,calc(100vw - 32px));max-height:calc(100vh - 64px);overflow:hidden;border:2px solid #67d5f5;border-radius:22px;background:#fff;box-shadow:0 22px 65px rgba(15,87,130,.34)}
 .friendly-vote-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:linear-gradient(135deg,#38bdf8,#6366f1);color:#fff}.friendly-vote-head h2{margin:0 0 2px;font-size:23px;font-weight:1000}.friendly-vote-head span{font-size:12px;font-weight:850;color:#dff8ff}
 .friendly-vote-form{display:grid;grid-template-columns:1.4fr .75fr 1fr 1fr auto;gap:8px;align-items:end;padding:14px 16px 10px;background:#f0f9ff}.friendly-vote-form label{display:grid;gap:4px;color:#075985;font-size:12px;font-weight:1000}.friendly-vote-form .select,.friendly-vote-form .text{width:100%;height:40px!important;padding:0 9px!important;font-size:14px!important}.friendly-vote-form .btn{height:40px;white-space:nowrap;padding:0 14px!important}.friendly-vote-help{margin:0;padding:0 16px 12px;color:#64748b;font-size:12px;font-weight:800;line-height:1.45}
-.friendly-vote-list{max-height:500px;overflow:auto;padding:0 16px 16px;display:grid;gap:10px}.friendly-vote-card{border:1px solid #bae6fd;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 3px 10px rgba(14,116,144,.08)}.friendly-vote-card-head{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:10px 12px;background:#e0f2fe}.friendly-vote-time{color:#075985;font-size:17px;font-weight:1000}.friendly-vote-team{color:#0f172a;font-size:14px;font-weight:950;text-align:right}.friendly-vote-members{display:flex;flex-wrap:wrap;gap:7px;padding:11px 12px}.friendly-vote-member{display:inline-flex;align-items:center;gap:5px;border:1px solid #bae6fd;border-radius:999px;padding:5px 9px;background:#f8fdff;color:#334155;font-size:13px;font-weight:900}.friendly-vote-rank{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:50%;background:#2563eb;color:#fff;font-size:12px;font-weight:1000}.friendly-vote-empty-slot{color:#94a3b8;font-size:12px;font-weight:800;padding:5px}.friendly-vote-actions{display:flex;flex-wrap:wrap;gap:7px;padding:0 12px 12px}.friendly-vote-actions .btn{font-size:13px!important;padding:7px 10px!important}.friendly-vote-count{color:#475569;font-size:12px;font-weight:900}
+.friendly-vote-login{grid-template-columns:1.4fr 1fr auto}.friendly-vote-login-help{grid-column:1/-1;margin:0;color:#64748b;font-size:12px;font-weight:850}.friendly-vote-session{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 16px;background:#e0f2fe;color:#075985}.friendly-vote-session b{font-size:15px}
+.friendly-vote-list{max-height:500px;overflow:auto;padding:0 16px 16px;display:grid;gap:10px}.friendly-vote-card{border:1px solid #bae6fd;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 3px 10px rgba(14,116,144,.08)}.friendly-vote-card-head{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:10px 12px;background:#e0f2fe}.friendly-vote-time{color:#075985;font-size:17px;font-weight:1000}.friendly-vote-team{color:#0f172a;font-size:14px;font-weight:950;text-align:right}.friendly-vote-members{display:flex;flex-wrap:wrap;gap:7px;padding:11px 12px}.friendly-vote-member{display:inline-flex;align-items:center;gap:5px;border:1px solid #bae6fd;border-radius:999px;padding:5px 9px;background:#f8fdff;color:#334155;font-size:13px;font-weight:900}.friendly-vote-rank{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:50%;background:#2563eb;color:#fff;font-size:12px;font-weight:1000}.friendly-vote-empty-slot{color:#94a3b8;font-size:12px;font-weight:800;padding:5px}.friendly-vote-actions{display:flex;flex-wrap:wrap;gap:7px;padding:0 12px 12px}.friendly-vote-actions .btn{font-size:13px!important;padding:7px 10px!important}.friendly-vote-count{color:#475569;font-size:12px;font-weight:900}.friendly-vote-delete{display:block;margin:3px auto 0;border:0;background:transparent;color:#ef4444;font-size:10px;font-weight:1000;cursor:pointer;padding:0}
 @media(max-width:720px){#friendlyVotePopup{padding:var(--real-popup-anchor-top,48px) 8px 8px var(--real-popup-anchor-left,8px)!important}.friendly-vote-box{width:calc(100vw - 16px)}.friendly-vote-form{grid-template-columns:1fr 1fr;padding:12px}.friendly-vote-form .btn{grid-column:span 2}.friendly-vote-list{padding:0 10px 12px}.friendly-vote-card-head{align-items:flex-start;flex-direction:column}.friendly-vote-team{text-align:left}}
 </style>
 
@@ -19679,24 +19707,24 @@ async function runAiRecordAnalysis(){
   }
   async function save(r){const copy={...r};delete copy.id;const {error}=await sb.from("event").update({content:JSON.stringify(copy)}).eq("id",r.id);if(error)throw error;}
   async function verify(nick,pin){const profile=await loadProfileSupabase(nick,pin);return {nickname:String(nick).trim(),total:Number(profile.totalScore)||0,rank:rankFromTotal(profile.totalScore)};}
-  window.submitFriendlyVote=async function(){
+  window.legacySubmitFriendlyVote=async function(){
     if(busy)return;const team=String(document.getElementById("fvTeam")?.value||"").trim(),hour=Number(document.getElementById("fvHour")?.value||0),nick=String(document.getElementById("fvNick")?.value||"").trim(),pin=String(document.getElementById("fvPin")?.value||"").trim();
     if(!team||!hour||!nick||!/^\d{5}$/.test(pin))return alert("단체, 시간, 아이디와 군표 비번 5자리를 모두 입력해주세요.");
     busy=true;try{const member=await verify(nick,pin);const data={kind:"friendly_vote",version:1,status:"active",team,hour,members:[member],createdAt:new Date().toISOString()};const {error}=await sb.from("event").insert({team_name:team,title:`${PREFIX} ${String(hour).padStart(2,"0")}시`,content:JSON.stringify(data),member1:member.nickname,is_notice:0,is_approved:0,approved:0,views:0,created_at:data.createdAt});if(error)throw error;document.getElementById("fvNick").value="";document.getElementById("fvPin").value="";await load();}catch(e){console.error(e);alert(e.message||"친선 투표 등록에 실패했습니다.");}finally{busy=false;}
   };
-  window.friendlyVoteJoin=async function(id){
+  window.legacyFriendlyVoteJoin=async function(id){
     const r=rows.find(x=>String(x.id)===String(id));if(!r||busy)return;if((r.members||[]).length>=4)return alert("이 팀은 이미 4명이 등록되었습니다.");
     const nick=prompt("군표 아이디를 입력해주세요.");if(nick===null)return;const pin=prompt("군표 비번 5자리를 입력해주세요.");if(pin===null)return;if(!/^\d{5}$/.test(pin.trim()))return alert("비밀번호는 숫자 5자리입니다.");
     busy=true;try{const member=await verify(nick,pin.trim());if((r.members||[]).some(m=>m.nickname===member.nickname))throw new Error("이미 이 팀에 등록된 아이디입니다.");r.members.push(member);await save(r);await load();}catch(e){console.error(e);alert(e.message||"등록에 실패했습니다.");}finally{busy=false;}
   };
-  window.friendlyVoteCancel=async function(id){
+  window.legacyFriendlyVoteCancel=async function(id){
     const r=rows.find(x=>String(x.id)===String(id));if(!r||busy)return;alert("단체비번 4자리 또는 개인비번 5자리를 입력해주세요.");const pw=prompt("단체비번 4자리 또는 개인비번 5자리");if(pw===null)return;const value=pw.trim();
     busy=true;try{if(/^\d{4}$/.test(value)){await verifyClubPwSupabase(r.team,value);await sb.from("event").delete().eq("id",r.id);}else if(/^\d{5}$/.test(value)){const nick=prompt("취소할 본인 군표 아이디를 입력해주세요.");if(nick===null)return;const member=await verify(nick,value);const before=r.members.length;r.members=r.members.filter(m=>m.nickname!==member.nickname);if(before===r.members.length)throw new Error("이 팀에 등록된 아이디가 아닙니다.");if(r.members.length)await save(r);else{const {error}=await sb.from("event").delete().eq("id",r.id);if(error)throw error;}}else throw new Error("단체비번 4자리 또는 개인비번 5자리를 입력해주세요.");await load();}catch(e){console.error(e);alert(e.message||"취소에 실패했습니다.");}finally{busy=false;}
   };
-  window.friendlyVoteListing=async function(id){
+  window.legacyFriendlyVoteListing=async function(id){
     const r=rows.find(x=>String(x.id)===String(id));if(!r)return;const ranks=sortMembers(r.members).map(m=>m.rank).join("")||"-";const msg=`${r.team}\n${String(r.hour).padStart(2,"0")}시 ${ranks}\n구합니다.`;try{await navigator.clipboard.writeText(msg);}catch(_){const t=document.createElement("textarea");t.value=msg;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove();}if(confirm("매물구하기 메세지가 복사됬습니다. 매칭방으로 자동 전환되며, 붙여넣기를 하시면 바로 매물이 올라갑니다\n\n확인을 누르면 매칭방을 엽니다."))window.open(KAKAO_URL,"_blank","noopener");};
-  window.openFriendlyVotePopup=function(){document.getElementById("friendlyVotePopup")?.classList.remove("hidden");load();if(sb&&!channel)channel=sb.channel("friendly-vote-popup").on("postgres_changes",{event:"*",schema:"public",table:"event"},load).subscribe();};
-  window.closeFriendlyVotePopup=function(){document.getElementById("friendlyVotePopup")?.classList.add("hidden");};
+  window.legacyOpenFriendlyVotePopup=function(){document.getElementById("friendlyVotePopup")?.classList.remove("hidden");load();if(sb&&!channel)channel=sb.channel("friendly-vote-popup").on("postgres_changes",{event:"*",schema:"public",table:"event"},load).subscribe();};
+  window.legacyCloseFriendlyVotePopup=function(){document.getElementById("friendlyVotePopup")?.classList.add("hidden");};
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!document.getElementById("friendlyVotePopup")?.classList.contains("hidden"))window.closeFriendlyVotePopup();});
 })();
 </script>
