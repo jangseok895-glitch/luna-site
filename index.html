@@ -8221,7 +8221,7 @@ function escMini4545(v){
             <button class="btn" id="btnReset">초기화</button>
             <button class="btn" id="btnJpg">스크린샷</button>
             <span class="main-btn-divider"></span>
-<button class="btn blue" id="btnRankGraph" onclick="openLiveListingPopup()" style="border:3px solid #ff2d2d!important;box-shadow:0 0 0 2px rgba(255,45,45,.18),0 4px 10px rgba(220,38,38,.28)!important;">실시간 매물보기</button>
+<button class="btn blue" id="btnFriendlyVote" type="button" onclick="openFriendlyVotePopup()" style="border:3px solid #ff2d2d!important;box-shadow:0 0 0 2px rgba(255,45,45,.18),0 4px 10px rgba(220,38,38,.28)!important;">친선 투표</button>
 <span class="pw-change-wrap">
   <button class="btn gold" id="btnChangePassword" type="button" onclick="openPasswordChangePopup()">설정</button>
 </span>
@@ -19234,14 +19234,18 @@ async function runAiRecordAnalysis(){
 </div>
 </div>
 
-<div id="liveListingPopup" class="hidden" role="dialog" aria-modal="true" aria-labelledby="liveListingTitle" onclick="closeLiveListingPopup()">
-  <div class="live-listing-box" onclick="event.stopPropagation()">
-    <div class="live-listing-head">
-      <div><h2 id="liveListingTitle">실시간 매물보기</h2><span>카카오톡 모집 글 · 최근 30건</span></div>
-      <button type="button" class="live-listing-close" onclick="closeLiveListingPopup()">닫기</button>
+<div id="friendlyVotePopup" class="hidden" role="dialog" aria-modal="true" aria-labelledby="friendlyVoteTitle" onclick="closeFriendlyVotePopup()">
+  <div class="friendly-vote-box" onclick="event.stopPropagation()">
+    <div class="friendly-vote-head"><div><h2 id="friendlyVoteTitle">친선 투표</h2><span>단체별 시간대 모집 · 팀당 최대 4명</span></div><button type="button" class="live-listing-close" onclick="closeFriendlyVotePopup()">닫기</button></div>
+    <div class="friendly-vote-form">
+      <label>단체<select id="fvTeam" class="select"><option value="">단체 선택</option></select></label>
+      <label>시간<select id="fvHour" class="select"><option value="">시간 선택</option></select></label>
+      <label>아이디<input id="fvNick" class="text" maxlength="30" placeholder="군표 아이디"></label>
+      <label>군표 비번 5자리<input id="fvPin" class="text pin" type="password" maxlength="5" inputmode="numeric" placeholder="숫자 5자리"></label>
+      <button type="button" class="btn gold" id="fvSubmitBtn" onclick="submitFriendlyVote()">확인</button>
     </div>
-    <div class="live-listing-columns"><span>구분</span><span>단체명</span><span>시간</span><span>군수</span><span>담당자</span></div>
-    <div id="liveListingList" class="live-listing-list"><div class="live-listing-empty">실시간 모집 글을 불러오는 중입니다.</div></div>
+    <p class="friendly-vote-help">같은 시간에 새로 등록하면 다음 팀으로 생성됩니다. 이미 있는 팀에는 <b>나도 등록하기</b>로 최대 4명까지 참여할 수 있습니다.</p>
+    <div id="friendlyVoteList" class="friendly-vote-list"><div class="live-listing-empty">투표 목록을 불러오는 중입니다.</div></div>
   </div>
 </div>
 
@@ -19381,7 +19385,7 @@ async function runAiRecordAnalysis(){
   const GLOBAL_MODAL_IDS = [
     'loadingOverlay','unifiedRegisterRequestPopup','registerPopup','memberSearchPopup','autoNoticePopup',
     'teamRequestPopup','teamRequestPhotoPopup','teamAdminPopup',
-    'rankGraphPopup','liveListingPopup','rankGuidePopup','mini4545Popup','imagePopup',
+    'rankGraphPopup','friendlyVotePopup','rankGuidePopup','mini4545Popup','imagePopup',
     'criticalNoticePopup','criticalImagePopup','criticalBracketPopup','criticalHitPopup','criticalPrelimPopup',
     'tournamentPopup','deathmatchPopup','aiRecordPopup','passwordChangePopup','chatGoPopup',
     'season40NoticePopup','season40PosterPopup','eventRankPopup',
@@ -19444,6 +19448,12 @@ async function runAiRecordAnalysis(){
 #liveListingPopup .live-listing-head{background:linear-gradient(135deg,#38bdf8,#6366f1)!important}.live-listing-columns,.live-listing-row{display:grid!important;grid-template-columns:90px minmax(86px,1fr) 55px 78px 160px!important;gap:5px!important;align-items:center!important;padding:0 10px!important}
 .live-listing-columns{height:34px;background:#eaf8ff;color:#075985;border-bottom:2px solid #7dd3fc;font-size:14px;font-weight:1000;text-align:center}.live-listing-row{height:34px!important;font-size:15px!important}.live-listing-list{height:510px!important}.live-listing-cell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}.live-listing-team{text-align:left;color:#0f172a;font-weight:950}.live-listing-rank{color:#dc2626;font-weight:1000}.live-listing-manager{color:#475569;font-weight:900}.live-listing-kind{display:flex;align-items:center;justify-content:center;gap:3px;min-width:0}.live-listing-kind .live-listing-badge{font-size:12px;max-width:94px;overflow:hidden;text-overflow:ellipsis}.live-listing-kind .live-listing-status{margin-left:0;padding:0 4px;font-size:10px}
 @media(max-width:620px){#liveListingPopup .live-listing-box{width:96vw!important}.live-listing-columns,.live-listing-row{grid-template-columns:86px minmax(76px,1fr) 52px 76px 86px!important;gap:3px!important;padding:0 6px!important}.live-listing-row{font-size:13px!important}.live-listing-columns{font-size:12px!important}}
+#friendlyVotePopup{position:fixed!important;inset:0!important;z-index:2147483645!important;display:flex!important;align-items:flex-start!important;justify-content:flex-start!important;padding:var(--real-popup-anchor-top,48px) 16px 16px var(--real-popup-anchor-left,34px)!important;background:rgba(15,23,42,.62)!important;backdrop-filter:blur(4px)!important;overflow:auto!important;box-sizing:border-box!important}
+#friendlyVotePopup.hidden{display:none!important}.friendly-vote-box{width:min(760px,calc(100vw - 32px));max-height:calc(100vh - 64px);overflow:hidden;border:2px solid #67d5f5;border-radius:22px;background:#fff;box-shadow:0 22px 65px rgba(15,87,130,.34)}
+.friendly-vote-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:linear-gradient(135deg,#38bdf8,#6366f1);color:#fff}.friendly-vote-head h2{margin:0 0 2px;font-size:23px;font-weight:1000}.friendly-vote-head span{font-size:12px;font-weight:850;color:#dff8ff}
+.friendly-vote-form{display:grid;grid-template-columns:1.4fr .75fr 1fr 1fr auto;gap:8px;align-items:end;padding:14px 16px 10px;background:#f0f9ff}.friendly-vote-form label{display:grid;gap:4px;color:#075985;font-size:12px;font-weight:1000}.friendly-vote-form .select,.friendly-vote-form .text{width:100%;height:40px!important;padding:0 9px!important;font-size:14px!important}.friendly-vote-form .btn{height:40px;white-space:nowrap;padding:0 14px!important}.friendly-vote-help{margin:0;padding:0 16px 12px;color:#64748b;font-size:12px;font-weight:800;line-height:1.45}
+.friendly-vote-list{max-height:500px;overflow:auto;padding:0 16px 16px;display:grid;gap:10px}.friendly-vote-card{border:1px solid #bae6fd;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 3px 10px rgba(14,116,144,.08)}.friendly-vote-card-head{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:10px 12px;background:#e0f2fe}.friendly-vote-time{color:#075985;font-size:17px;font-weight:1000}.friendly-vote-team{color:#0f172a;font-size:14px;font-weight:950;text-align:right}.friendly-vote-members{display:flex;flex-wrap:wrap;gap:7px;padding:11px 12px}.friendly-vote-member{display:inline-flex;align-items:center;gap:5px;border:1px solid #bae6fd;border-radius:999px;padding:5px 9px;background:#f8fdff;color:#334155;font-size:13px;font-weight:900}.friendly-vote-rank{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:50%;background:#2563eb;color:#fff;font-size:12px;font-weight:1000}.friendly-vote-empty-slot{color:#94a3b8;font-size:12px;font-weight:800;padding:5px}.friendly-vote-actions{display:flex;flex-wrap:wrap;gap:7px;padding:0 12px 12px}.friendly-vote-actions .btn{font-size:13px!important;padding:7px 10px!important}.friendly-vote-count{color:#475569;font-size:12px;font-weight:900}
+@media(max-width:720px){#friendlyVotePopup{padding:var(--real-popup-anchor-top,48px) 8px 8px var(--real-popup-anchor-left,8px)!important}.friendly-vote-box{width:calc(100vw - 16px)}.friendly-vote-form{grid-template-columns:1fr 1fr;padding:12px}.friendly-vote-form .btn{grid-column:span 2}.friendly-vote-list{padding:0 10px 12px}.friendly-vote-card-head{align-items:flex-start;flex-direction:column}.friendly-vote-team{text-align:left}}
 </style>
 
 <script>
@@ -19637,38 +19647,57 @@ async function runAiRecordAnalysis(){
   setInterval(()=>{if(section&&!section.classList.contains("hidden"))rfLoad();},60000);
 })();
 
-/* ===== 첫 화면 : 실시간 매물보기 팝업 ===== */
+/* ===== 첫 화면 : 친선 투표 ===== */
 (function(){
-  let liveListingRows=[], liveListingChannel=null;
-  function liveEsc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-  function liveBadge(type){return ({friendly:"친선",mercenary_offer:"용병지원",mercenary_need:"용병모집",individual:"연방개인전",one_on_one:"일대일"})[type]||"모집";}
-  function liveText(row){return [row.team_name,row.time_text,row.detail_text,row.recruitment_text].map(v=>String(v||"").trim()).filter(Boolean).join(" · ")||String(row.raw_text||"").trim();}
-  function liveTime(value){const d=new Date(value);return Number.isNaN(d.getTime())?"":d.toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});}
-  function liveStatus(row){if(row.status==="cancelled")return '<b class="live-listing-status cancelled">취소</b>';if(row.status==="closed")return '<b class="live-listing-status closed">마감</b>';return "";}
-  function liveManager(row){return String(row.source_author||"").trim()||"-";}
-  function renderLiveListings(){
-    const box=document.getElementById("liveListingList");if(!box)return;
-    const rows=liveListingRows.slice(0,30);
-    box.innerHTML=rows.length?rows.map(row=>`<div class="live-listing-row ${row.status&&row.status!=="active"?"is-ended":""}" title="${liveEsc(liveText(row))}"><span class="live-listing-kind"><b class="live-listing-badge ${liveEsc(row.listing_type)}">${liveEsc(liveBadge(row.listing_type))}</b>${liveStatus(row)}</span><span class="live-listing-cell live-listing-team">${liveEsc(row.team_name||"-")}</span><span class="live-listing-cell">${liveEsc(row.time_text||"-")}</span><span class="live-listing-cell live-listing-rank">${liveEsc(row.detail_text||"-")}</span><span class="live-listing-cell live-listing-manager">${liveEsc(liveManager(row))}</span></div>`).join(""):'<div class="live-listing-empty">현재 등록된 실시간 매물이 없습니다.</div>';
-    box.scrollTop=0;
+  const PREFIX="[친선 투표]";
+  const KAKAO_URL="https://open.kakao.com/o/gCODetOi";
+  let rows=[], teams=[], busy=false, channel=null;
+  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const rankFromTotal=total=>{const raw=typeof getRankFromTotal==="function"?getRankFromTotal(Number(total)||0):"6군";const n=String(raw).replace(/군$/," ").trim();return ({"프로":"프","강주력":"강","주력":"주"})[n]||n||"6";};
+  const rankOrder=rank=>({"프":0,"강":1,"주":2,"1":3,"2":4,"3":5,"4":6,"5":7,"6":8})[String(rank)]??99;
+  const sortMembers=members=>[...(members||[])].sort((a,b)=>rankOrder(a.rank)-rankOrder(b.rank)||String(a.nickname).localeCompare(String(b.nickname),"ko"));
+  const parse=row=>{try{const d=JSON.parse(row.content||"{}");return d?.kind==="friendly_vote"?{...d,id:row.id,createdAt:d.createdAt||row.created_at}:null;}catch(_){return null;}};
+  const active=()=>rows.filter(r=>r.status!=="cancelled");
+  const teamLabel=(r,allAtHour)=>`${String(r.hour).padStart(2,"0")}시${allAtHour.length>1?` ${allAtHour.indexOf(r)+1}팀`:""}`;
+  function fillForm(){
+    const ts=document.getElementById("fvTeam"),hs=document.getElementById("fvHour");
+    if(ts)ts.innerHTML='<option value="">단체 선택</option>'+teams.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join("");
+    if(hs)hs.innerHTML='<option value="">시간 선택</option>'+Array.from({length:24},(_,i)=>`<option value="${i+1}">${String(i+1).padStart(2,"0")}시</option>`).join("");
   }
-  async function loadLiveListings(){
-    const box=document.getElementById("liveListingList");
-    if(!sb){if(box)box.innerHTML='<div class="live-listing-empty">데이터베이스에 연결할 수 없습니다.</div>';return;}
-    const {data,error}=await sb.from("kakao_recruit_feed").select("id,team_name,listing_type,time_text,detail_text,recruitment_text,raw_text,source_author,status,created_at").order("created_at",{ascending:false}).limit(30);
-    if(error){console.error(error);if(box)box.innerHTML='<div class="live-listing-empty">실시간 매물을 불러오지 못했습니다.</div>';return;}
-    liveListingRows=data||[];renderLiveListings();
+  function render(){
+    const box=document.getElementById("friendlyVoteList");if(!box)return;
+    const list=active().sort((a,b)=>Number(a.hour)-Number(b.hour)||new Date(a.createdAt)-new Date(b.createdAt));
+    box.innerHTML=list.length?list.map(r=>{
+      const same=list.filter(x=>Number(x.hour)===Number(r.hour));const ms=sortMembers(r.members);
+      const ranks=ms.map(m=>m.rank).join("");
+      return `<div class="friendly-vote-card"><div class="friendly-vote-card-head"><div><span class="friendly-vote-time">${esc(teamLabel(r,same))}</span> <span class="friendly-vote-count">(${esc(ranks||"-")}) · ${ms.length}/4명</span></div><div class="friendly-vote-team">${esc(r.team||"단체 미지정")}</div></div><div class="friendly-vote-members">${ms.map(m=>`<span class="friendly-vote-member"><b class="friendly-vote-rank">${esc(m.rank)}</b>${esc(m.nickname)}</span>`).join("")}${Array.from({length:Math.max(0,4-ms.length)},()=>'<span class="friendly-vote-empty-slot">참여 가능</span>').join("")}</div><div class="friendly-vote-actions">${ms.length<4?`<button class="btn blue" type="button" onclick="friendlyVoteJoin('${r.id}')">나도 등록하기</button>`:""}<button class="btn gold" type="button" onclick="friendlyVoteListing('${r.id}')">매물올리기</button><button class="btn red" type="button" onclick="friendlyVoteCancel('${r.id}')">취소하기</button></div></div>`;
+    }).join(""):'<div class="live-listing-empty">아직 등록된 친선 투표가 없습니다.</div>';
   }
-  function startLiveListingSubscription(){
-    if(!sb||liveListingChannel)return;
-    liveListingChannel=sb.channel("main-live-listing-popup").on("postgres_changes",{event:"*",schema:"public",table:"kakao_recruit_feed"},loadLiveListings).subscribe();
+  async function load(){
+    const box=document.getElementById("friendlyVoteList");if(!sb){if(box)box.innerHTML='<div class="live-listing-empty">데이터베이스에 연결할 수 없습니다.</div>';return;}
+    try{const [tr,rr]=await Promise.all([getTeamListSupabase(),sb.from("event").select("id,content,created_at").like("title",`${PREFIX}%`).order("created_at",{ascending:true}).range(0,999)]);if(rr.error)throw rr.error;teams=(tr?.teams||[]).map(x=>typeof x==="string"?x:x.name).filter(Boolean);rows=(rr.data||[]).map(parse).filter(Boolean);fillForm();render();}catch(e){console.error(e);if(box)box.innerHTML='<div class="live-listing-empty">친선 투표를 불러오지 못했습니다.</div>';}
   }
-  window.openLiveListingPopup=function(){
-    document.getElementById("liveListingPopup")?.classList.remove("hidden");
-    document.body.style.overflow="hidden";loadLiveListings();startLiveListingSubscription();
+  async function save(r){const copy={...r};delete copy.id;const {error}=await sb.from("event").update({content:JSON.stringify(copy)}).eq("id",r.id);if(error)throw error;}
+  async function verify(nick,pin){const profile=await loadProfileSupabase(nick,pin);return {nickname:String(nick).trim(),total:Number(profile.totalScore)||0,rank:rankFromTotal(profile.totalScore)};}
+  window.submitFriendlyVote=async function(){
+    if(busy)return;const team=String(document.getElementById("fvTeam")?.value||"").trim(),hour=Number(document.getElementById("fvHour")?.value||0),nick=String(document.getElementById("fvNick")?.value||"").trim(),pin=String(document.getElementById("fvPin")?.value||"").trim();
+    if(!team||!hour||!nick||!/^\d{5}$/.test(pin))return alert("단체, 시간, 아이디와 군표 비번 5자리를 모두 입력해주세요.");
+    busy=true;try{const member=await verify(nick,pin);const data={kind:"friendly_vote",version:1,status:"active",team,hour,members:[member],createdAt:new Date().toISOString()};const {error}=await sb.from("event").insert({team_name:team,title:`${PREFIX} ${String(hour).padStart(2,"0")}시`,content:JSON.stringify(data),member1:member.nickname,is_notice:0,is_approved:0,approved:0,views:0,created_at:data.createdAt});if(error)throw error;document.getElementById("fvNick").value="";document.getElementById("fvPin").value="";await load();}catch(e){console.error(e);alert(e.message||"친선 투표 등록에 실패했습니다.");}finally{busy=false;}
   };
-  window.closeLiveListingPopup=function(){document.getElementById("liveListingPopup")?.classList.add("hidden");document.body.style.overflow="";};
-  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!document.getElementById("liveListingPopup")?.classList.contains("hidden"))window.closeLiveListingPopup();});
+  window.friendlyVoteJoin=async function(id){
+    const r=rows.find(x=>String(x.id)===String(id));if(!r||busy)return;if((r.members||[]).length>=4)return alert("이 팀은 이미 4명이 등록되었습니다.");
+    const nick=prompt("군표 아이디를 입력해주세요.");if(nick===null)return;const pin=prompt("군표 비번 5자리를 입력해주세요.");if(pin===null)return;if(!/^\d{5}$/.test(pin.trim()))return alert("비밀번호는 숫자 5자리입니다.");
+    busy=true;try{const member=await verify(nick,pin.trim());if((r.members||[]).some(m=>m.nickname===member.nickname))throw new Error("이미 이 팀에 등록된 아이디입니다.");r.members.push(member);await save(r);await load();}catch(e){console.error(e);alert(e.message||"등록에 실패했습니다.");}finally{busy=false;}
+  };
+  window.friendlyVoteCancel=async function(id){
+    const r=rows.find(x=>String(x.id)===String(id));if(!r||busy)return;alert("단체비번 4자리 또는 개인비번 5자리를 입력해주세요.");const pw=prompt("단체비번 4자리 또는 개인비번 5자리");if(pw===null)return;const value=pw.trim();
+    busy=true;try{if(/^\d{4}$/.test(value)){await verifyClubPwSupabase(r.team,value);await sb.from("event").delete().eq("id",r.id);}else if(/^\d{5}$/.test(value)){const nick=prompt("취소할 본인 군표 아이디를 입력해주세요.");if(nick===null)return;const member=await verify(nick,value);const before=r.members.length;r.members=r.members.filter(m=>m.nickname!==member.nickname);if(before===r.members.length)throw new Error("이 팀에 등록된 아이디가 아닙니다.");if(r.members.length)await save(r);else{const {error}=await sb.from("event").delete().eq("id",r.id);if(error)throw error;}}else throw new Error("단체비번 4자리 또는 개인비번 5자리를 입력해주세요.");await load();}catch(e){console.error(e);alert(e.message||"취소에 실패했습니다.");}finally{busy=false;}
+  };
+  window.friendlyVoteListing=async function(id){
+    const r=rows.find(x=>String(x.id)===String(id));if(!r)return;const ranks=sortMembers(r.members).map(m=>m.rank).join("")||"-";const msg=`${r.team}\n${String(r.hour).padStart(2,"0")}시 ${ranks}\n구합니다.`;try{await navigator.clipboard.writeText(msg);}catch(_){const t=document.createElement("textarea");t.value=msg;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove();}if(confirm("매물구하기 메세지가 복사됬습니다. 매칭방으로 자동 전환되며, 붙여넣기를 하시면 바로 매물이 올라갑니다\n\n확인을 누르면 매칭방을 엽니다."))window.open(KAKAO_URL,"_blank","noopener");};
+  window.openFriendlyVotePopup=function(){document.getElementById("friendlyVotePopup")?.classList.remove("hidden");load();if(sb&&!channel)channel=sb.channel("friendly-vote-popup").on("postgres_changes",{event:"*",schema:"public",table:"event"},load).subscribe();};
+  window.closeFriendlyVotePopup=function(){document.getElementById("friendlyVotePopup")?.classList.add("hidden");};
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!document.getElementById("friendlyVotePopup")?.classList.contains("hidden"))window.closeFriendlyVotePopup();});
 })();
 </script>
 
