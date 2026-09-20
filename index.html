@@ -4987,7 +4987,7 @@ html, body{
       rgba(255,255,255,.20),
       rgba(255,255,255,.42)
     ),
-    url("https://i.ibb.co/S7czvjT2/16b1cc51-12f0-4877-9e4b-fdb0dcc62fed.png")
+    url("autumn-luna-background.png")
     center top / cover fixed no-repeat !important;
   color:var(--text) !important;
 }
@@ -5000,10 +5000,10 @@ html, body{
 
 /* 상단 고정바 */
 .sticky-top{
-  background:rgba(255,247,232,.78) !important;
+  background:rgba(255,250,240,.80) !important;
   backdrop-filter:blur(14px) saturate(1.25) !important;
   border-bottom:1px solid rgba(255,255,255,.7) !important;
-  box-shadow:0 8px 24px rgba(98,199,245,.18) !important;
+  box-shadow:0 8px 24px rgba(180,112,54,.18) !important;
 }
 
 /* 패널 / 카드 유리 느낌 */
@@ -5320,7 +5320,7 @@ tbody tr:hover{
       rgba(255,255,255,.18),
       rgba(255,255,255,.28)
     ),
-    url("https://i.ibb.co/67ZR4mhT/4.jpg")
+    linear-gradient(105deg,rgba(255,210,126,.42),rgba(255,246,220,.18),rgba(210,229,245,.45))
     center center / cover no-repeat !important;
 
   height:58px !important;
@@ -5328,7 +5328,7 @@ tbody tr:hover{
   border:2px solid rgba(255,255,255,.85) !important;
   border-radius:12px !important;
   box-shadow:
-    0 4px 14px rgba(98,199,245,.28),
+    0 4px 14px rgba(196,132,63,.28),
     inset 0 1px 0 rgba(255,255,255,.75) !important;
 }
 
@@ -8224,7 +8224,7 @@ function escMini4545(v){
 <button class="main-tab" data-tab="eventTournament">
   대회
 </button>
-  <button class="main-tab" data-tab="event">EVENT<span class="main-tab-new">NEW</span></button>
+  <button class="main-tab" data-tab="event">EVENT</button>
   <button class="main-tab" data-tab="promo">홍보/자유</button>
 </div>
 
@@ -8248,7 +8248,7 @@ function escMini4545(v){
             <button class="btn" id="btnReset">초기화</button>
             <button class="btn" id="btnJpg">스크린샷</button>
             <span class="main-btn-divider"></span>
-<button class="btn blue" id="btnFriendlyVote" type="button" onclick="openFriendlyVotePopup()" style="border:3px solid #ff2d2d!important;box-shadow:0 0 0 2px rgba(255,45,45,.18),0 4px 10px rgba(220,38,38,.28)!important;">친선 투표</button>
+<button class="btn" id="btnFriendlyVote" type="button" onclick="openFriendlyVotePopup()">친선 투표</button>
 <span class="pw-change-wrap">
   <button class="btn gold" id="btnChangePassword" type="button" onclick="openPasswordChangePopup()">설정</button>
 </span>
@@ -19744,5 +19744,125 @@ async function runAiRecordAnalysis(){
 })();
 </script>
 
+<!-- 단일 HTML용 가을 테마: 군표 난이도별 기록 색상은 변경하지 않음 -->
+<style id="autumn-single-file-theme">
+  html, body {
+    background:
+      radial-gradient(ellipse at 5% 12%, rgba(251,191,36,.30) 0, transparent 34%),
+      radial-gradient(ellipse at 95% 16%, rgba(220,38,38,.17) 0, transparent 33%),
+      radial-gradient(ellipse at 50% 100%, rgba(34,197,94,.10) 0, transparent 40%),
+      linear-gradient(135deg, #fff7ed 0%, #fffaf5 48%, #eff6ff 100%) !important;
+    background-attachment: fixed !important;
+  }
+  .sticky-top {
+    background: rgba(255,250,241,.90) !important;
+    border-color: rgba(251,191,36,.34) !important;
+    box-shadow: 0 8px 24px rgba(146,64,14,.18) !important;
+  }
+  .main-tabs { background: rgba(255,251,235,.70) !important; }
+  .main-tab[data-tab="gunpyo"] { background: linear-gradient(135deg,#c2410c,#f97316) !important; }
+  .main-tab[data-tab="real"] { background: linear-gradient(135deg,#6b7f37,#9a7b2f) !important; }
+  .main-tab[data-tab="eventTournament"] { background: linear-gradient(135deg,#a64b37,#ca7a4a) !important; }
+  .main-tab[data-tab="event"] { background: linear-gradient(135deg,#bf7d21,#e5a640) !important; }
+  .main-tab[data-tab="promo"] { background: linear-gradient(135deg,#7c5a3c,#ad7d58) !important; }
+  #gunpyoTopPanel.panel {
+    background: rgba(255,252,245,.91) !important;
+    box-shadow: 0 12px 30px rgba(120,69,27,.14) !important;
+  }
+  #gunpyoTopPanel #btnSave, #gunpyoTopPanel #btnChangePassword {
+    background: linear-gradient(135deg,#f3ae35,#d97706) !important;
+  }
+  #gunpyoTopPanel #btnLoad, #gunpyoTopPanel #btnReset,
+  #gunpyoTopPanel #btnJpg, #gunpyoTopPanel #btnFriendlyVote {
+    background: linear-gradient(135deg,#b45309,#ea580c) !important;
+  }
+  #gunpyoTopPanel #btnFriendlyVote {
+    border: 1px solid #9f3a17 !important;
+    padding: 14px 18px !important;
+    box-shadow: 0 0 0 2px rgba(159,58,23,.16), 0 4px 10px rgba(146,64,14,.28) !important;
+  }
+  #gunpyoTopPanel .input-wrap input { border-color: rgba(180,100,30,.35) !important; }
+
+  /* 군표 난이도 행과 무관한 상단 등급 안내의 가을 나뭇잎 장식 */
+  #bigRank {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(90deg, rgba(255,237,201,.92), rgba(255,255,255,.96), rgba(238,247,231,.92)) !important;
+    border-color: rgba(202,138,4,.42) !important;
+  }
+  #bigRank::before, #bigRank::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 13px;
+    border-radius: 100% 0 100% 0;
+    background: linear-gradient(135deg, rgba(244,145,49,.62), rgba(177,76,20,.58));
+    pointer-events: none;
+    opacity: .72;
+  }
+  #bigRank::before {
+    left: 17%;
+    top: 8px;
+    transform: rotate(-22deg);
+    box-shadow: 25px 20px 0 -3px rgba(221,116,33,.50), 8px 30px 0 -4px rgba(126,140,54,.52);
+  }
+  #bigRank::after {
+    right: 17%;
+    bottom: 7px;
+    transform: rotate(152deg);
+    box-shadow: 24px -16px 0 -3px rgba(203,92,28,.45), 8px -28px 0 -4px rgba(126,140,54,.48);
+  }
+  #bigRank .rank-text { position: relative; z-index: 1; }
+
+  /* 군실명제·대회·EVENT: 군표 기록 셀을 제외한 버튼만 가을 팔레트로 통일 */
+  #realTopPanel .btn, #realSection .btn, #boardSection .btn,
+  body.event-tournament-mode .btn, #tournamentPopup .tournament-overlay-btn,
+  #tournamentPopup .tournament-broadcast-btn, #tournamentPopup .tournament-arrow {
+    background: linear-gradient(135deg, #9a5a22, #c76b2e) !important;
+    color: #fffdf7 !important;
+    border-color: rgba(255,241,208,.82) !important;
+    box-shadow: 0 5px 14px rgba(120,69,27,.25), inset 0 1px 0 rgba(255,255,255,.20) !important;
+    text-shadow: 0 1px 1px rgba(71,35,10,.35) !important;
+  }
+  #realTopPanel .btn.gold, #realSection .btn.gold, #boardSection .btn.gold,
+  body.event-tournament-mode .btn.gold {
+    background: linear-gradient(135deg, #e5ad43, #c77a1d) !important;
+    color: #3d250e !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,.50) !important;
+  }
+  #realTopPanel .btn.red, #realSection .btn.red, #boardSection .btn.red,
+  body.event-tournament-mode .btn.red {
+    background: linear-gradient(135deg, #b84c2f, #8f3023) !important;
+    color: #fffaf2 !important;
+  }
+  #realTopPanel .btn.link, #realSection .btn.link, #boardSection .btn.link,
+  body.event-tournament-mode .btn.link {
+    background: linear-gradient(135deg, #f5e4c4, #e8c58d) !important;
+    color: #5c3817 !important;
+    border-color: rgba(151,94,35,.35) !important;
+    text-shadow: none !important;
+  }
+  #boardSection .board-search-btn {
+    background: linear-gradient(135deg, #7c5a3c, #a86f3d) !important;
+    color: #fffdf7 !important;
+    border-color: rgba(255,241,208,.75) !important;
+    box-shadow: 0 4px 10px rgba(120,69,27,.22) !important;
+  }
+  #tournamentPopup .tournament-close {
+    background: linear-gradient(135deg, #b84c2f, #8f3023) !important;
+    color: #fffaf2 !important;
+  }
+
+  /* 군표/군실명제 표의 '맵이름 · 군 등급' 헤더 줄만 가을 톤으로 변경 */
+  #pcTableSection thead th, #realPcTableSection thead th {
+    background: linear-gradient(135deg, #9b5b2c 0%, #c78039 48%, #b6953a 100%) !important;
+    color: #fffdf7 !important;
+    border-bottom-color: rgba(255,238,199,.82) !important;
+    text-shadow: 0 1px 2px rgba(70,38,12,.38) !important;
+  }
+  #pcTableSection thead th:first-child, #realPcTableSection thead th:first-child {
+    background: linear-gradient(135deg, #7a4a27, #a9642f) !important;
+  }
+</style>
 </body>
 </html>
