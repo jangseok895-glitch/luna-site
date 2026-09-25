@@ -8281,11 +8281,14 @@ function escMini4545(v){
       <div>• 클럽 / 크루 <b>중복 등록가능</div>
     </div>
 
-    <div class="real-msg">
+  <div class="real-msg">
       <div style="font-weight:900;color:#e8ecf5;">군 실명제</div>
       <div>등록된 군표는 누구나 열람할 수 있습니다.</div>
     </div>
   </div>
+
+  <!-- 운영진 비밀번호 확인 후에만 단체 비밀번호를 조회합니다. -->
+  <button id="btnAdminMode" type="button" class="btn gold">운영진모드</button>
 
   <div class="big-rank real-rank-line" id="realBigRank" style="margin-top:14px">
   <div class="rank-text" id="realRankText">선택된 멤버가 없습니다</div>
@@ -8314,9 +8317,6 @@ function escMini4545(v){
   <div id="realPercentBadge">-</div>
 
 <button id="rankGuideBtn" type="button" onclick="openRankGuidePopup()">표 보기</button>
-
-<!-- 운영진 비밀번호 확인 후에만 단체 비밀번호를 조회합니다. -->
-<button id="btnAdminMode" type="button" class="btn gold">운영진모드</button>
 
   <div id="realPercentSubText">군실명제 등록자 기준</div>
 </div>
@@ -19878,12 +19878,12 @@ async function runAiRecordAnalysis(){
     background: linear-gradient(135deg, #7a4a27, #a9642f) !important;
   }
 
-  /* 운영진모드 버튼: 군실명제 등급표 아래, 백분위 그래프 위 중앙 */
-  #realPercentGraphBox { position:relative; }
+  /* 운영진모드 버튼: 군실명제 안내 영역 중앙 */
+  #realTopPanel { position:relative; }
   #btnAdminMode {
     position:absolute;
-    left:50%;
-    top:-48px;
+    left:46%;
+    top:18px;
     transform:translateX(-50%);
     z-index:6;
     padding:9px 16px !important;
