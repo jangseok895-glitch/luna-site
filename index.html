@@ -8315,6 +8315,9 @@ function escMini4545(v){
 
 <button id="rankGuideBtn" type="button" onclick="openRankGuidePopup()">표 보기</button>
 
+<!-- 운영진 비밀번호 확인 후에만 단체 비밀번호를 조회합니다. -->
+<button id="btnAdminMode" type="button" class="btn gold">운영진모드</button>
+
   <div id="realPercentSubText">군실명제 등록자 기준</div>
 </div>
 
@@ -8450,6 +8453,17 @@ user-select:none;
       <div class="team-admin-setting-card"><div class="team-admin-setting-main"><span>비밀번호 : <b>****</b></span><button class="btn blue team-admin-small-btn" id="btnShowChangeTeamPw" type="button">비밀번호 변경하기</button></div><div id="changeTeamPwBox" class="hidden team-admin-inline-form"><input id="oldTeamPwInput" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="현재비밀번호 4자리"><input id="newTeamPwInput" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="새로운비밀번호 4자리"><input id="newTeamPwConfirmInput" class="text pin" type="password" maxlength="4" inputmode="numeric" placeholder="새로운비밀번호 확인"><button class="btn blue" id="btnChangeTeamPw" type="button">비밀번호 변경하기</button></div></div>
       <div class="team-admin-setting-card"><div class="team-admin-section-title">군실명제 승인요청</div><div id="teamAdminRealRequestList"><div class="team-pending-sub">승인요청을 불러오는 중...</div></div></div><button class="btn red team-admin-delete-btn" id="btnDeleteTeamAll" type="button">단체 삭제하기</button>
     </div>
+  </div></div>
+
+  <!-- 운영진모드: system_pw 확인 후 club_pw를 조회하는 전용 창 -->
+  <div id="adminModePopup" class="team-admin-modal hidden"><div class="team-admin-box admin-mode-box">
+    <div class="search-popup-head"><b>운영진모드 · 단체 비밀번호 조회</b><button type="button" id="btnCloseAdminMode" class="team-admin-close">닫기</button></div>
+    <div class="team-request-help">운영진 비밀번호가 확인되었습니다. 조회할 단체를 선택해주세요.</div>
+    <div class="team-admin-login-grid admin-mode-grid">
+      <select id="adminModeClubSelect" class="select" style="width:100%;"><option value="">단체명 선택</option></select>
+      <button class="btn gold" id="btnAdminModeReveal" type="button">비밀번호 보기</button>
+    </div>
+    <div class="admin-mode-password"><span>클럽 비밀번호</span><b id="adminModeClubPw">----</b></div>
   </div></div>
 
   <!-- 단체 등록요청 사진보기 팝업 -->
@@ -19374,7 +19388,7 @@ async function runAiRecordAnalysis(){
 /* ===== 군표 탭을 기준으로 관리 팝업 위치 계산 ===== */
 (function(){
   const ANCHORED_MODAL_IDS = new Set([
-    'unifiedRegisterRequestPopup','registerPopup','teamRequestPopup','teamAdminPopup',
+    'unifiedRegisterRequestPopup','registerPopup','teamRequestPopup','teamAdminPopup','adminModePopup',
     'memberSearchPopup','teamRequestPhotoPopup'
   ]);
 
@@ -19425,7 +19439,7 @@ async function runAiRecordAnalysis(){
 (function(){
   const GLOBAL_MODAL_IDS = [
     'loadingOverlay','unifiedRegisterRequestPopup','registerPopup','memberSearchPopup','autoNoticePopup',
-    'teamRequestPopup','teamRequestPhotoPopup','teamAdminPopup',
+    'teamRequestPopup','teamRequestPhotoPopup','teamAdminPopup','adminModePopup',
     'rankGraphPopup','friendlyVotePopup','rankGuidePopup','mini4545Popup','imagePopup',
     'criticalNoticePopup','criticalImagePopup','criticalBracketPopup','criticalHitPopup','criticalPrelimPopup',
     'tournamentPopup','deathmatchPopup','aiRecordPopup','passwordChangePopup','chatGoPopup',
@@ -19863,6 +19877,117 @@ async function runAiRecordAnalysis(){
   #pcTableSection thead th:first-child, #realPcTableSection thead th:first-child {
     background: linear-gradient(135deg, #7a4a27, #a9642f) !important;
   }
+
+  /* 운영진모드 버튼: 군실명제 등급표 아래, 백분위 그래프 위 중앙 */
+  #realPercentGraphBox { position:relative; }
+  #btnAdminMode {
+    position:absolute;
+    left:50%;
+    top:-48px;
+    transform:translateX(-50%);
+    z-index:6;
+    padding:9px 16px !important;
+    font-size:15px !important;
+    border-radius:10px !important;
+    box-shadow:0 4px 12px rgba(120,69,27,.28) !important;
+  }
+  .admin-mode-box { width:min(500px, calc(100vw - 24px)); }
+  .admin-mode-grid { grid-template-columns:minmax(0,1fr) auto; align-items:center; }
+  .admin-mode-password {
+    margin-top:16px;
+    padding:14px 16px;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:linear-gradient(135deg,#fff7dc,#f4d48d);
+    border:1px solid rgba(151,94,35,.30);
+    color:#5c3817;
+    font-weight:900;
+  }
+  .admin-mode-password b { font-size:24px; letter-spacing:2px; color:#8a2d1d; }
 </style>
+<script>
+/* ===== 운영진모드: system_pw 인증 후 club_pw 조회 ===== */
+(function(){
+  let adminModeSystemPw = "";
+
+  function resetAdminMode(){
+    adminModeSystemPw = "";
+    const select = document.getElementById("adminModeClubSelect");
+    if(select) select.value = "";
+    const result = document.getElementById("adminModeClubPw");
+    if(result) result.textContent = "----";
+  }
+
+  async function loadAdminModeClubs(){
+    const select = document.getElementById("adminModeClubSelect");
+    if(!select) return;
+    select.innerHTML = '<option value="">단체명 선택</option>';
+    try{
+      const rows = await sbSelect("club_pw", q => q.select("club"));
+      sortTeamNamesClubFirst(rows || []).forEach(row => {
+        const club = String(row?.club || "").trim();
+        if(!club) return;
+        const option = document.createElement("option");
+        option.value = club;
+        option.textContent = club;
+        select.appendChild(option);
+      });
+    }catch(error){
+      console.error(error);
+      alert("단체 목록을 불러오지 못했습니다.");
+    }
+  }
+
+  async function openAdminMode(){
+    const enteredPw = prompt("운영진 비밀번호 4자리를 입력하세요.");
+    if(enteredPw === null) return;
+    const pw = String(enteredPw).trim();
+    if(!/^\d{4}$/.test(pw)) return alert("운영진 비밀번호는 숫자 4자리입니다.");
+    try{
+      if(!(await isAdminPwValue(pw))) return alert("운영진 비밀번호가 틀렸습니다.");
+      adminModeSystemPw = pw;
+      resetAdminMode();
+      adminModeSystemPw = pw;
+      await loadAdminModeClubs();
+      document.getElementById("adminModePopup")?.classList.remove("hidden");
+    }catch(error){
+      console.error(error);
+      alert(error.message || "운영진 인증에 실패했습니다.");
+    }
+  }
+
+  async function revealAdminClubPw(){
+    const club = String(document.getElementById("adminModeClubSelect")?.value || "").trim();
+    if(!adminModeSystemPw) return alert("운영진모드에 다시 로그인해주세요.");
+    if(!club) return alert("단체를 선택해주세요.");
+    try{
+      const { data, error } = await sb.rpc("get_club_pw_for_admin", {
+        p_system_pw: adminModeSystemPw,
+        p_club: club
+      });
+      if(error) throw error;
+      if(!/^\d{4}$/.test(String(data || ""))) throw new Error("해당 단체의 비밀번호를 찾지 못했습니다.");
+      document.getElementById("adminModeClubPw").textContent = String(data);
+    }catch(error){
+      console.error(error);
+      alert(error.message || "비밀번호 조회에 실패했습니다. 안내된 SQL을 먼저 실행해주세요.");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    document.getElementById("btnAdminMode")?.addEventListener("click", openAdminMode);
+    document.getElementById("btnCloseAdminMode")?.addEventListener("click", function(){
+      document.getElementById("adminModePopup")?.classList.add("hidden");
+      resetAdminMode();
+    });
+    document.getElementById("btnAdminModeReveal")?.addEventListener("click", revealAdminClubPw);
+    document.getElementById("adminModeClubSelect")?.addEventListener("change", function(){
+      document.getElementById("adminModeClubPw").textContent = "----";
+    });
+  });
+})();
+</script>
 </body>
 </html>
