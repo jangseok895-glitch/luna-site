@@ -7585,6 +7585,22 @@ body > #season40PosterPopup.global-top-modal:not(.hidden){
 </head>
 
 <body>
+<script>
+/* 거래소 탭은 기존 EVENT 전환 코드와 분리해 즉시 표시합니다. */
+window.showMarketplace = function(){
+  ['gunpyoTopPanel','gunpyoSection','realTopPanel','realSection','boardSection','siegeSection'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.classList.add('hidden');
+  });
+  var market=document.getElementById('marketSection');
+  if(market) market.classList.remove('hidden');
+  var gunBtns=document.getElementById('gunpyoTopBtns'), realBtns=document.getElementById('realTopBtns');
+  if(gunBtns) gunBtns.style.display='none';
+  if(realBtns) realBtns.style.display='none';
+  document.body.classList.remove('real-mode','real-scrolled');
+  if(typeof setActiveTab==='function') setActiveTab('marketplace');
+  if(typeof refreshHeaderPush==='function') refreshHeaderPush();
+};
+</script>
 
 <!-- ===== 최초 접속 안내 팝업 ===== -->
 <div id="season40NoticePopup" class="hidden" role="dialog" aria-modal="true" aria-labelledby="season40NoticeTitle">
