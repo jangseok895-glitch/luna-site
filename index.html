@@ -8240,7 +8240,7 @@ function escMini4545(v){
 <button class="main-tab" data-tab="eventTournament">
   대회
 </button>
-  <button class="main-tab" data-tab="marketplace" onclick="if(window.showMarketplace){window.showMarketplace();}">거래소</button>
+  <button class="main-tab" data-tab="marketplace" style="background:linear-gradient(135deg,#0f766e,#14b8a6)!important;color:#fff!important;border-color:#0f766e!important;" onclick="['gunpyoTopPanel','gunpyoSection','realTopPanel','realSection','boardSection','siegeSection'].forEach(function(i){var e=document.getElementById(i);if(e)e.classList.add('hidden');});var m=document.getElementById('marketSection');if(m)m.classList.remove('hidden');var g=document.getElementById('gunpyoTopBtns'),r=document.getElementById('realTopBtns');if(g)g.style.display='none';if(r)r.style.display='none';document.querySelectorAll('.main-tab').forEach(function(b){b.classList.toggle('active',b.dataset.tab==='marketplace');});">거래소</button>
   <button class="main-tab" data-tab="promo">홍보/자유</button>
 </div>
 
