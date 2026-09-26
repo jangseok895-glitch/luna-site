@@ -8224,7 +8224,7 @@ function escMini4545(v){
 <button class="main-tab" data-tab="eventTournament">
   대회
 </button>
-  <button class="main-tab" data-tab="marketplace">거래소</button>
+  <button class="main-tab" data-tab="marketplace" onclick="if(window.showMarketplace){window.showMarketplace();}">거래소</button>
   <button class="main-tab" data-tab="promo">홍보/자유</button>
 </div>
 
@@ -20115,6 +20115,20 @@ async function runAiRecordAnalysis(){
   async function active(){await getTx();const list=$('marketActiveList');list.innerHTML=txRows.length?txRows.map(r=>`<div class="tx-card"><span class="tx-status">${esc(r.status||'거래중')}</span> <b>${esc(r.role)}</b><h3 style="margin:8px 0">${esc(r.post_title)}</h3><div>인증번호: ${esc(r.cert_code)} · 인증일: ${new Date(r.created_at).toLocaleString('ko-KR')}</div></div>`).join(''):'<div class="market-empty">현재 거래중인 인증거래가 없습니다.</div>';$('marketActiveModal').classList.remove('hidden');}
   async function admin(){const pw=$('marketAdminPw').value.trim();if(!/^\d{4}$/.test(pw))return alert('system_pw 4자리를 입력해주세요.');try{if(typeof isAdminPwValue==='function'&&!(await isAdminPwValue(pw)))return alert('운영진 비밀번호가 틀렸습니다.');const r=await sb.rpc('marketplace_admin_transactions',{p_system_pw:pw});if(r.error)throw r.error;const rows=r.data||[];$('marketAdminLogin').classList.add('hidden');const box=$('marketAdminList');box.classList.remove('hidden');box.innerHTML=rows.length?rows.map(x=>`<div class="tx-card tx-admin-body"><span class="tx-status">${esc(x.status)}</span> <b>${esc(x.role)}</b><h3>${esc(x.post_title)}</h3><div>인증번호: ${esc(x.cert_code)}</div><div>이름: ${esc(x.name)} / 전화번호: ${esc(x.phone)}</div><div>${x.role==='구매'?'환불 시 계좌':'정산 계좌'}: ${esc(x.account)}</div><div>인증일: ${new Date(x.created_at).toLocaleString('ko-KR')}</div>${x.id_image?.data?`<div>신분증 확인<br><img src="${esc(x.id_image.data)}" alt="신분증"></div>`:''}</div>`).join(''):'<div class="market-empty">현재 거래중인 인증거래가 없습니다.</div>';}catch(e){console.error(e);alert(e.message||'거래중 내용을 불러오지 못했습니다. SQL 설정을 먼저 실행해주세요.');}}
   document.addEventListener('DOMContentLoaded',()=>{$('btnMarketStart').onclick=()=>{resetStart();$('marketStartModal').classList.remove('hidden');};$('btnMarketActive').onclick=active;$('btnMarketAdmin').onclick=()=>{$('marketAdminPw').value='';$('marketAdminLogin').classList.remove('hidden');$('marketAdminList').classList.add('hidden');$('marketAdminModal').classList.remove('hidden');};$('btnTxFind').onclick=find;$('btnTxYes').onclick=startForm;$('btnTxNo').onclick=()=>{alert('인증번호를 다시 확인 후 이용해주시기 바랍니다.');resetStart();};$('btnTxSubmit').onclick=submit;$('btnMarketAdminLogin').onclick=admin;});
+})();
+</script>
+<script>
+/* 기존 EVENT(공성전/친선) 화면 완전 제거: 거래소로 대체 */
+(function(){
+  function removeLegacyEvent(){
+    document.getElementById('siegeSection')?.remove();
+    ['siegeInfoPopup','siegeTeamStatusPopup','siegeMyInfoPopup','siegeFundPopup'].forEach(id=>document.getElementById(id)?.remove());
+    window.showSiege=function(){
+      if(typeof window.showMarketplace==='function') window.showMarketplace();
+    };
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',removeLegacyEvent);
+  else removeLegacyEvent();
 })();
 </script>
 </body>
