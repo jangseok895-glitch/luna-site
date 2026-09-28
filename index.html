@@ -20214,6 +20214,7 @@ async function runAiRecordAnalysis(){
 body.luna-market-only > :not(#marketplaceSection):not(#marketModal):not(style):not(script){display:none!important}
 body.luna-market-only #marketplaceSection{display:block!important;width:100%!important;max-width:1100px!important;margin:12px auto!important;box-sizing:border-box!important}
 body.luna-market-only{min-height:100vh;background:#f3f6fa!important}
+.luna-nego-mark{color:#d62727!important;font-weight:900!important;margin-right:2px}
 #marketplaceSection .market-table th,#marketplaceSection .market-table td,#marketplaceSection .market-search-bar input,#marketplaceSection .market-search-bar select,#marketplaceSection .market-search-bar button,#marketplaceSection .market-filters{font-size:14px!important}
 @media(max-width:680px){#marketplaceSection .luna-kakao-open{margin-left:0;width:100%}.luna-kakao-window{padding:6px}.luna-kakao-frame{height:calc(100vh - 12px)}.luna-kakao-columns{grid-template-columns:1fr}.luna-kakao-group table{min-width:450px}}
 </style>
@@ -20233,17 +20234,30 @@ body.luna-market-only{min-height:100vh;background:#f3f6fa!important}
     const details=lines.filter((line,i)=>i>0&&line&&!/^(?:관련 내용을 안내|자세한 사항은 게시자에게 문의)/.test(line));
     const classified=kinds.filter(k=>!/(?:중개 제공|중개인 구함)/.test(k));
     const output=[];
+    const negotiable=/(?:네고|흥정|가격\s*협의)\s*(?:쌉\s*)?(?:가능|가|OK|ok)?/.test(String(row.raw_text||row.display_text||''));
+    let section='';
     const rawLicense=String(row.raw_text||'').match(/(?:프로라이센스|프로라센|프로라이선스|프라)\s*(?:대리|ㄷㄹ)?\s*\r?\n\s*(?:맵\s*[:：]?\s*)?([^\r\n]{1,26})\s*\r?\n\s*(?:가격\s*[:：]?\s*)?(제시(?:해\s*(?:주십셔|주세요|주십시오))?)/);
     const legacyMap=rawLicense&&!/(?:대리|ㄷㄹ|계정|랭|트챔|어택|군)/.test(rawLicense[1])?rawLicense[1].trim():null;
     for(const line of details){
       if(legacyMap&&(line===legacyMap||line==='맵 '+legacyMap||/^(?:프로라이센스\s*대리|제시(?:해\s*주십셔)?|가격\s*[:：]?\s*제시)$/.test(line)))continue;
+      if(/^(?:타임\s*어택|어택)(?:\s*대리)?$/.test(line)){section='attack';continue}
+      if(/^(?:프로라이센스|프로라센|프로라이선스|프라)(?:\s*대리)?$/.test(line)){section='license';continue}
+      if(section==='attack'&&/^(?:군대리\s*)?(?:프로군|강주력|주력|[1-6]군)(?:\s*대리)?\b|^(?:군대리\s*)?(?:프로군|강주력|주력|[1-6]군)(?:\s*대리)?\s/.test(line)){
+        const spec=line.match(/(?:프로군|강주력|주력|[1-6]군)/)?.[0];
+        if(spec){output.push({rowId:row.id,kind:'타임어택 대리',category:'proxy',label:'타임어택 대리',description:spec+' 기록',price:money(line)==='문의'?'제시':money(line),author,raw:row.raw_text||'',createdAt:row.created_at||'',search:line,negotiable});continue}
+      }
+      if(section==='license'&&!/(?:트랙챔피언|트챔|랭킹전|군대리|계정|대리|어택|https?:\/\/)/.test(line)){
+        const map=line.match(/^(?:맵\s*)?([가-힣A-Za-z][가-힣A-Za-z0-9\s]{0,24}?)\s*(?:(?:가격|금액)\s*[:：]?\s*)?(?:\(?\d{1,3}(?:,\d{3})*\s*원\)?|\(?\d{1,2}\.\d\)?|제시)?$/);
+        if(map&&(/\d|제시/.test(line)||/올\s*클리어/.test(line))){const mapName=map[1].trim();output.push({rowId:row.id,kind:'프로라이센스 대리',category:'proxy',label:'프로라이센스 대리',description:/올\s*클리어/.test(mapName)?'전체 맵 클리어':'맵 '+mapName,price:/제시/.test(line)||money(line)==='문의'?'제시':money(line),author,raw:row.raw_text||'',createdAt:row.created_at||'',search:line,negotiable});continue}
+      }
+      if(/(?:트랙챔피언|트챔|스타선수|랭킹전|고수영상|계정)/.test(line))section='';
       const combinedKinds=classified.filter(k=>!accountKind(k)&&({
         '랭킹전 대리':/랭킹전|랭\s*대리/,
         '트랙챔피언 대리':/트랙\s*챔피언|트챔/,
         '고수영상 대리':/고수\s*영상|고영/
       }[k]?.test(line)));
       if(combinedKinds.length>1&&money(line)==='문의'){
-        for(const k of combinedKinds)output.push({rowId:row.id,kind:k,category:'proxy',label:k,description:'세부사항 문의',price:'제시',author,raw:row.raw_text||'',createdAt:row.created_at||'',search:line});
+        for(const k of combinedKinds)output.push({rowId:row.id,kind:k,category:'proxy',label:k,description:'세부사항 문의',price:'제시',author,raw:row.raw_text||'',createdAt:row.created_at||'',search:line,negotiable});
         continue;
       }
       const found=classified.find(k=>accountKind(k)===/계정|판매|구입|구매|대여/.test(line)&&new RegExp(k.replace(/\s*대리$/,'').replace('랭킹전','랭')).test(line))||classified.find(k=>accountKind(k)===/계정|판매|구입|구매|대여/.test(line))||classified[0];
@@ -20252,16 +20266,17 @@ body.luna-market-only{min-height:100vh;background:#f3f6fa!important}
       if(!/(?:대리|계정|어택|트챔|스선|라이센스|라센|프라|랭|고영|신트챌|맵|\d[\d,]*\s*원|\d{1,2}\.\d|제시)/.test(line)){if(output.length&&output[output.length-1].category==='account')output[output.length-1].description+=' · '+line;continue}
       const account=accountKind(found),label=account?(line.match(/(?:아이템|스피드)\s*계정|계정\s*(?:판매|구입|구매|대여)/)?.[0]||found):({군대리:'군대리','타임어택 대리':'타임어택 대리'}[found]||found);
       let description=line.replace(/^(?:군대리|타임어택 대리|트랙챔피언 대리|프로라이센스(?:\s*대리)?|스타선수 대리|랭킹전 대리|고수영상 대리|신규트랙챌린지 대리|기록대리|계정판매|계정구입|계정대여|아이템계정|스피드계정|계정거래)\s*[:：]?\s*/,'').replace(/(?:가격|금액)\s*[:：]?\s*제시|제시해주십셔/g,'').replace(/(?:\d{1,3}(?:,\d{3})+|\d+)\s*원/g,'').replace(/\b\d{1,2}\.\d\b/g,'').replace(/^[\s,:：()]+|[\s,:：()]+$/g,'').trim();
+      if(/올\s*클리어/.test(description)&&found==='프로라이센스 대리')description='전체 맵 클리어';
       if(!description&&money(line)==='문의'&&!/(?:제시|대리|계정|문의|구함|판매|구매)/.test(line))continue;
       const price=/제시/.test(line)?'제시':money(line)==='문의'&&!account?'제시':money(line);if(description==='대리')description='세부사항 문의';
-      output.push({rowId:row.id,kind:found,category:account?'account':'proxy',label,description:description||'세부사항 문의',price,author,raw:row.raw_text||'',createdAt:row.created_at||'',search:line});
+      output.push({rowId:row.id,kind:found,category:account?'account':'proxy',label,description:description||'세부사항 문의',price,author,raw:row.raw_text||'',createdAt:row.created_at||'',search:line,negotiable});
     }
-    if(legacyMap&&!output.some(item=>item.kind==='프로라이센스 대리'&&item.description.includes(legacyMap)))output.push({rowId:row.id,kind:'프로라이센스 대리',category:'proxy',label:'프로라이센스 대리',description:'맵 '+legacyMap,price:'제시',author,raw:row.raw_text||'',createdAt:row.created_at||'',search:'프로라이센스 '+legacyMap+' 제시'});
-    if(!output.length&&classified.length){const kind=classified[0],account=accountKind(kind),value=String(row.raw_text||'').trim();if(value)output.push({rowId:row.id,kind,category:account?'account':'proxy',label:kind,description:value.slice(0,150),price:money(value)==='문의'&&!account?'제시':money(value),author,raw:value,createdAt:row.created_at||'',search:value})}
+    if(legacyMap&&!output.some(item=>item.kind==='프로라이센스 대리'&&item.description.includes(legacyMap)))output.push({rowId:row.id,kind:'프로라이센스 대리',category:'proxy',label:'프로라이센스 대리',description:/올\s*클리어/.test(legacyMap)?'전체 맵 클리어':'맵 '+legacyMap,price:'제시',author,raw:row.raw_text||'',createdAt:row.created_at||'',search:'프로라이센스 '+legacyMap+' 제시',negotiable});
+    if(!output.length&&classified.length){const kind=classified[0],account=accountKind(kind),value=String(row.raw_text||'').trim();if(value)output.push({rowId:row.id,kind,category:account?'account':'proxy',label:kind,description:value.slice(0,150),price:money(value)==='문의'&&!account?'제시':money(value),author,raw:value,createdAt:row.created_at||'',search:value,negotiable})}
     return output;
   }
   function render(){const kind=$('lunaKakaoKind').value,term=$('lunaKakaoSearch').value.trim().toLowerCase();let proxyCount=0;entries=rows.flatMap(splitListing).filter(e=>e.category!=='proxy'||proxyCount++<102).filter(e=>(!kind||e.kind===kind)&&(!term||[e.author,e.label,e.description,e.search].join(' ').toLowerCase().includes(term)));$('lunaKakaoMeta').textContent=`매물 ${entries.length}건 · 최신순 · 대리 매물 최대 102개 · 15초마다 자동 갱신 · 행을 누르면 중개인을 선택할 수 있습니다.`;
-    for(const [category,target] of [['proxy','lunaProxyRows'],['account','lunaAccountRows']]){const parts=entries.map((e,i)=>({e,i})).filter(x=>x.e.category===category);$(target).innerHTML=parts.map(({e,i})=>`<tr data-entry="${i}" tabindex="0" title="${esc(e.label+' · '+e.description+' · '+e.price+' · 거래자 '+e.author)}" aria-label="${esc(e.label+' '+e.description+' '+e.price+', 거래자 '+e.author)}"><td colspan="4"><div class="luna-compact-top"><strong>${esc(e.label)}</strong><b>${esc(e.price)}</b></div><div class="luna-compact-bottom"><span>${esc(e.description)}</span><span>${esc(e.author)}</span></div></td></tr>`).join('')||'<tr><td class="luna-kakao-empty" colspan="4">표시할 매물이 없습니다.</td></tr>'}
+    for(const [category,target] of [['proxy','lunaProxyRows'],['account','lunaAccountRows']]){const parts=entries.map((e,i)=>({e,i})).filter(x=>x.e.category===category);$(target).innerHTML=parts.map(({e,i})=>`<tr data-entry="${i}" tabindex="0" title="${esc(e.label+' · '+e.description+' · '+(e.negotiable?'네고 가능 · ':'')+e.price+' · 거래자 '+e.author)}" aria-label="${esc(e.label+' '+e.description+' '+(e.negotiable?'네고 가능 ':'')+e.price+', 거래자 '+e.author)}"><td colspan="4"><div class="luna-compact-top"><strong>${esc(e.label)}</strong><b>${e.negotiable?'<span class="luna-nego-mark">(네)</span>':''}${esc(e.price)}</b></div><div class="luna-compact-bottom"><span>${esc(e.description)}</span><span>${esc(e.author)}</span></div></td></tr>`).join('')||'<tr><td class="luna-kakao-empty" colspan="4">표시할 매물이 없습니다.</td></tr>'}
   }
   async function load(){if(busy)return;busy=true;try{if(typeof sb==='undefined'||!sb)throw Error('사이트 데이터 연결을 확인해 주세요.');const {data,error}=await sb.from('luna_kakao_market_feed').select('id,source_author,kinds,display_text,raw_text,created_at').order('created_at',{ascending:false}).order('id',{ascending:false}).limit(500);if(error)throw error;rows=data||[];render()}catch(error){$('lunaKakaoMeta').textContent='매물을 불러오지 못했습니다.';for(const id of ['lunaProxyRows','lunaAccountRows'])$(id).innerHTML='<tr><td colspan="4" class="luna-kakao-empty">'+esc(error.message||error)+'</td></tr>'}finally{busy=false}}
   function closeBroker(){broker.classList.add('hidden');selected=null}
