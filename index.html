@@ -2215,7 +2215,10 @@ body.pc-view #goPcBtn{
 .stinger-team-popup .tournament-popup-box{width:min(760px,94vw);}
 .stinger-team-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px;}
 .stinger-team-card{padding:13px;border:1px solid rgba(14,165,233,.3);border-radius:12px;background:#f8fdff;box-shadow:0 2px 8px rgba(14,165,233,.09);}
-.stinger-team-name{color:#075985;font-size:19px;font-weight:1000;margin-bottom:7px;}
+.stinger-team-head{display:flex;align-items:center;gap:9px;margin-bottom:7px;}
+.stinger-team-name{color:#075985;font-size:19px;font-weight:1000;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.stinger-team-mark{width:34px;height:34px;flex:0 0 34px;border-radius:8px;object-fit:cover;border:1px solid #7dd3fc;background:#fff;}
+.stinger-team-mark-empty{width:34px;height:34px;flex:0 0 34px;border-radius:8px;border:1px dashed #bae6fd;color:#94a3b8;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;background:#fff;}
 .stinger-team-members{display:grid;gap:4px;color:#334155;font-size:15px;font-weight:800;line-height:1.35;}
 .stinger-team-candidate{color:#b45309;margin-top:4px;}
 .stinger-admin-note{margin:8px 0 2px;color:#64748b;font-size:13px;font-weight:800;text-align:center;}
@@ -2223,6 +2226,11 @@ body.pc-view #goPcBtn{
 .stinger-admin-card{padding:12px;border:1px solid rgba(14,165,233,.35);border-radius:12px;background:#f8fdff;}
 .stinger-admin-card label{display:block;margin:7px 0 3px;color:#075985;font-size:13px;font-weight:900;}
 .stinger-admin-card input{width:100%;padding:9px 10px;border:1px solid #bae6fd;border-radius:8px;color:#0f172a;background:#fff;font:inherit;font-size:14px;}
+.stinger-mark-upload{display:flex;align-items:center;gap:9px;margin-top:8px;}
+.stinger-mark-upload input{padding:6px!important;font-size:12px!important;}
+.stinger-mark-preview{width:42px;height:42px;border-radius:8px;border:1px solid #7dd3fc;object-fit:cover;background:#fff;}
+.stinger-menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px;}
+.stinger-menu-grid .tournament-apply-btn{margin-top:0!important;}
 .stinger-admin-actions{display:flex;gap:8px;margin-top:14px;}
 .stinger-admin-actions .tournament-apply-btn{margin-top:0!important;}
 #stingerCupPopup,#stingerTeamsPopup{
@@ -2242,6 +2250,9 @@ body.pc-view #goPcBtn{
   max-height:90vh!important;
   overflow-y:auto!important;
 }
+#stingerMarkViewer{position:fixed!important;inset:0!important;z-index:2147483647!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:18px!important;background:rgba(15,23,42,.78)!important;backdrop-filter:blur(4px)!important;}
+#stingerMarkViewer .stinger-mark-viewer-box{position:relative;max-width:92vw;max-height:90vh;}
+#stingerMarkViewer img{display:block;max-width:92vw;max-height:84vh;width:auto;height:auto;object-fit:contain;border-radius:14px;background:#fff;}
 @media(max-width:650px){.stinger-team-list,.stinger-admin-grid{grid-template-columns:1fr;}}
 
 #liveLogBox{
@@ -12795,7 +12806,8 @@ function normalizeStingerCupTeams(value){
     return {
       name:String(row.name||`${index+1}팀`).trim()||`${index+1}팀`,
       members:Array.from({length:4},(_,memberIndex)=>String(members[memberIndex]||"").trim()),
-      candidate:String(row.candidate||"").trim()
+      candidate:String(row.candidate||"").trim(),
+      mark:String(row.mark||"").trim()
     };
   });
 }
@@ -12854,7 +12866,7 @@ function openStingerCupPopup(){
   const popup=document.createElement("div");
   popup.id="stingerCupPopup";
   popup.className="tournament-popup";
-  popup.innerHTML=`<div class="tournament-popup-box"><button class="tournament-close" onclick="closeStingerCupPopup()">X</button><div class="tournament-popup-title">10월 23일 - 스팅거컵 (아이템전)</div><div class="tournament-image-wrap"><img class="tournament-popup-img" src="${STINGER_CUP_POSTER_URL}" alt="스팅거컵 아이템전 포스터"></div><button type="button" class="tournament-apply-btn" onclick="window.open('https://open.kakao.com/o/glAIWfLi','_blank')">지원하기</button><button type="button" class="tournament-apply-btn" onclick="openStingerTeamsPopup()">현재 참가자</button></div>`;
+  popup.innerHTML=`<div class="tournament-popup-box"><button class="tournament-close" onclick="closeStingerCupPopup()">X</button><div class="tournament-popup-title">10월 23일 - 스팅거컵 (아이템전)</div><div class="tournament-image-wrap"><img class="tournament-popup-img" src="${STINGER_CUP_POSTER_URL}" alt="스팅거컵 아이템전 포스터"></div><div class="stinger-menu-grid"><button type="button" class="tournament-apply-btn" onclick="window.open('https://open.kakao.com/o/glAIWfLi','_blank')">지원하기</button><button type="button" class="tournament-apply-btn" onclick="openStingerTeamsPopup()">참가 팀</button><button type="button" class="tournament-apply-btn" onclick="alert('준비중입니다')">대진표1</button><button type="button" class="tournament-apply-btn" onclick="alert('준비중입니다')">대진표2</button></div></div>`;
   document.body.appendChild(popup);
 }
 
@@ -12878,8 +12890,19 @@ function renderStingerTeams(teams){
   if(!target) return;
   target.innerHTML=normalizeStingerCupTeams(teams).map(team=>{
     const memberHtml=team.members.map((member,index)=>`<div>${index+1}. ${stingerText(member)||"-"}</div>`).join("");
-    return `<article class="stinger-team-card"><div class="stinger-team-name">${stingerText(team.name)}</div><div class="stinger-team-members">${memberHtml}<div class="stinger-team-candidate">후보: ${stingerText(team.candidate)||"-"}</div></div></article>`;
+    const mark=team.mark?`<img class="stinger-team-mark" src="${stingerText(team.mark)}" alt="${stingerText(team.name)} 마크" title="클릭하면 확대됩니다" onclick="openStingerMarkViewer(this.src,'${stingerText(team.name)} 마크')">`:`<div class="stinger-team-mark-empty">마크</div>`;
+    return `<article class="stinger-team-card"><div class="stinger-team-head"><div class="stinger-team-name">${stingerText(team.name)}</div>${mark}</div><div class="stinger-team-members">${memberHtml}<div class="stinger-team-candidate">후보: ${stingerText(team.candidate)||"-"}</div></div></article>`;
   }).join("");
+}
+
+function openStingerMarkViewer(src,title){
+  if(!src) return;
+  document.getElementById("stingerMarkViewer")?.remove();
+  const popup=document.createElement("div");
+  popup.id="stingerMarkViewer";
+  popup.onclick=()=>popup.remove();
+  popup.innerHTML=`<div class="stinger-mark-viewer-box" onclick="event.stopPropagation()"><button class="tournament-close" onclick="document.getElementById('stingerMarkViewer')?.remove()">X</button><img src="${stingerText(src)}" alt="${stingerText(title||'팀 마크')}"></div>`;
+  document.body.appendChild(popup);
 }
 
 async function openStingerAdminMode(){
@@ -12895,7 +12918,7 @@ async function openStingerAdminMode(){
   popup.querySelector(".tournament-popup-title").textContent="스팅거컵 참가팀 관리";
   const content=popup.querySelector("#stingerTeamsContent");
   content.className="stinger-admin-grid";
-  content.innerHTML=teams.map((team,index)=>`<section class="stinger-admin-card" data-team-index="${index}"><label>팀명</label><input data-field="name" value="${stingerText(team.name)}" maxlength="30"><label>멤버 1</label><input data-member="0" value="${stingerText(team.members[0])}" maxlength="30"><label>멤버 2</label><input data-member="1" value="${stingerText(team.members[1])}" maxlength="30"><label>멤버 3</label><input data-member="2" value="${stingerText(team.members[2])}" maxlength="30"><label>멤버 4</label><input data-member="3" value="${stingerText(team.members[3])}" maxlength="30"><label>후보 1명</label><input data-field="candidate" value="${stingerText(team.candidate)}" maxlength="30"></section>`).join("");
+  content.innerHTML=teams.map((team,index)=>`<section class="stinger-admin-card" data-team-index="${index}" data-mark="${stingerText(team.mark)}"><label>팀명</label><input data-field="name" value="${stingerText(team.name)}" maxlength="30"><label>멤버 1</label><input data-member="0" value="${stingerText(team.members[0])}" maxlength="30"><label>멤버 2</label><input data-member="1" value="${stingerText(team.members[1])}" maxlength="30"><label>멤버 3</label><input data-member="2" value="${stingerText(team.members[2])}" maxlength="30"><label>멤버 4</label><input data-member="3" value="${stingerText(team.members[3])}" maxlength="30"><label>후보 1명</label><input data-field="candidate" value="${stingerText(team.candidate)}" maxlength="30"><label>팀 마크</label><div class="stinger-mark-upload">${team.mark?`<img class="stinger-mark-preview" src="${stingerText(team.mark)}" alt="팀 마크">`:''}<input data-field="mark" type="file" accept="image/*"></div></section>`).join("");
   const action=document.createElement("div");
   action.className="stinger-admin-actions";
   action.innerHTML='<button type="button" class="tournament-apply-btn" onclick="saveStingerAdminTeams()">저장하기</button><button type="button" class="tournament-apply-btn red-tournament-btn" onclick="openStingerTeamsPopup()">취소</button>';
@@ -12904,12 +12927,18 @@ async function openStingerAdminMode(){
 
 async function saveStingerAdminTeams(){
   const cards=[...document.querySelectorAll("#stingerTeamsContent .stinger-admin-card")];
-  const teams=cards.map((card,index)=>({
-    name:card.querySelector('[data-field="name"]')?.value||`${index+1}팀`,
-    members:[0,1,2,3].map(memberIndex=>card.querySelector(`[data-member="${memberIndex}"]`)?.value||""),
-    candidate:card.querySelector('[data-field="candidate"]')?.value||""
-  }));
   try{
+    const teams=await Promise.all(cards.map(async(card,index)=>{
+      const markInput=card.querySelector('[data-field="mark"]');
+      let mark=card.dataset.mark||"";
+      if(markInput?.files?.[0]) mark=await readStingerTeamMark(markInput.files[0]);
+      return {
+        name:card.querySelector('[data-field="name"]')?.value||`${index+1}팀`,
+        members:[0,1,2,3].map(memberIndex=>card.querySelector(`[data-member="${memberIndex}"]`)?.value||""),
+        candidate:card.querySelector('[data-field="candidate"]')?.value||"",
+        mark
+      };
+    }));
     const result=await saveStingerCupTeams(teams);
     alert(result.shared?"참가팀 명단을 저장했습니다.":"이 기기에 참가팀 명단을 저장했습니다.");
     await openStingerTeamsPopup();
@@ -12917,6 +12946,17 @@ async function saveStingerAdminTeams(){
     console.error(error);
     alert("참가팀 명단 저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
   }
+}
+
+function readStingerTeamMark(file){
+  return new Promise((resolve,reject)=>{
+    if(!file.type.startsWith("image/")) return reject(new Error("팀 마크는 이미지 파일만 등록할 수 있습니다."));
+    if(file.size>700*1024) return reject(new Error("팀 마크는 700KB 이하 이미지로 올려주세요."));
+    const reader=new FileReader();
+    reader.onload=()=>resolve(String(reader.result||""));
+    reader.onerror=()=>reject(new Error("팀 마크 파일을 읽지 못했습니다."));
+    reader.readAsDataURL(file);
+  });
 }
 
 const TOURNAMENT_POSTERS = {
