@@ -2215,10 +2215,12 @@ body.pc-view #goPcBtn{
 .stinger-team-popup .tournament-popup-box{width:min(760px,94vw);}
 .stinger-team-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px;}
 .stinger-team-card{padding:13px;border:1px solid rgba(14,165,233,.3);border-radius:12px;background:#f8fdff;box-shadow:0 2px 8px rgba(14,165,233,.09);}
+.stinger-team-layout{display:flex;align-items:flex-start;gap:10px;}
+.stinger-team-content{min-width:0;flex:1;}
 .stinger-team-head{display:flex;align-items:center;gap:9px;margin-bottom:7px;}
 .stinger-team-name{color:#075985;font-size:19px;font-weight:1000;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.stinger-team-mark{width:34px;height:34px;flex:0 0 34px;border-radius:8px;object-fit:cover;border:1px solid #7dd3fc;background:#fff;}
-.stinger-team-mark-empty{width:34px;height:34px;flex:0 0 34px;border-radius:8px;border:1px dashed #bae6fd;color:#94a3b8;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;background:#fff;}
+.stinger-team-mark{width:52px;height:52px;flex:0 0 52px;border-radius:9px;object-fit:cover;border:1px solid #7dd3fc;background:#fff;}
+.stinger-team-mark-empty{width:52px;height:52px;flex:0 0 52px;border-radius:9px;border:1px dashed #bae6fd;color:#94a3b8;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;background:#fff;}
 .stinger-team-members{display:grid;gap:4px;color:#334155;font-size:15px;font-weight:800;line-height:1.35;}
 .stinger-team-candidate{color:#b45309;margin-top:4px;}
 .stinger-admin-note{margin:8px 0 2px;color:#64748b;font-size:13px;font-weight:800;text-align:center;}
@@ -12891,7 +12893,7 @@ function renderStingerTeams(teams){
   target.innerHTML=normalizeStingerCupTeams(teams).map(team=>{
     const memberHtml=team.members.map((member,index)=>`<div>${index+1}. ${stingerText(member)||"-"}</div>`).join("");
     const mark=team.mark?`<img class="stinger-team-mark" src="${stingerText(team.mark)}" alt="${stingerText(team.name)} 마크" title="클릭하면 확대됩니다" onclick="openStingerMarkViewer(this.src,'${stingerText(team.name)} 마크')">`:`<div class="stinger-team-mark-empty">마크</div>`;
-    return `<article class="stinger-team-card"><div class="stinger-team-head"><div class="stinger-team-name">${stingerText(team.name)}</div>${mark}</div><div class="stinger-team-members">${memberHtml}<div class="stinger-team-candidate">후보: ${stingerText(team.candidate)||"-"}</div></div></article>`;
+    return `<article class="stinger-team-card"><div class="stinger-team-layout">${mark}<div class="stinger-team-content"><div class="stinger-team-head"><div class="stinger-team-name">${stingerText(team.name)}</div></div><div class="stinger-team-members">${memberHtml}<div class="stinger-team-candidate">후보: ${stingerText(team.candidate)||"-"}</div></div></div></div></article>`;
   }).join("");
 }
 
