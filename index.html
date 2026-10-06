@@ -12682,7 +12682,7 @@ function showBoard(board){
 
       <div class="tournament-thumb-card" onclick="openStingerCupPopup()">
         <div class="tournament-title">10월 23일 - 스팅거컵 (아이템전)</div>
-        <img class="tournament-thumb-img" src="https://i.ibb.co/Ld0pv3fK/30a766e2-2ecd-43a9-b9c9-4445c8f9d237.png" alt="스팅거컵 아이템전">
+        <img class="tournament-thumb-img" src="https://i.ibb.co/Ld0pv3fK/30a766e2-2ecd-43a9-b9c9-4445c8f9d237.png" alt="스팅거컵 아이템전" onclick="event.stopPropagation(); openStingerCupPopup();" style="cursor:zoom-in;">
 
         <button type="button" class="tournament-apply-btn" onclick="event.stopPropagation(); openStingerCupPopup();">대회 진행/공지</button>
       </div>
@@ -12866,7 +12866,7 @@ function openStingerCupPopup(){
   const popup=document.createElement("div");
   popup.id="stingerCupPopup";
   popup.className="tournament-popup";
-  popup.innerHTML=`<div class="tournament-popup-box"><button class="tournament-close" onclick="closeStingerCupPopup()">X</button><div class="tournament-popup-title">10월 23일 - 스팅거컵 (아이템전)</div><div class="tournament-image-wrap"><img class="tournament-popup-img" src="${STINGER_CUP_POSTER_URL}" alt="스팅거컵 아이템전 포스터"></div><div class="stinger-menu-grid"><button type="button" class="tournament-apply-btn" onclick="window.open('https://open.kakao.com/o/glAIWfLi','_blank')">지원하기</button><button type="button" class="tournament-apply-btn" onclick="openStingerTeamsPopup()">참가 팀</button><button type="button" class="tournament-apply-btn" onclick="alert('준비중입니다')">대진표1</button><button type="button" class="tournament-apply-btn" onclick="alert('준비중입니다')">대진표2</button></div></div>`;
+  popup.innerHTML=`<div class="tournament-popup-box"><button class="tournament-close" onclick="closeStingerCupPopup()">X</button><div class="tournament-popup-title">10월 23일 - 스팅거컵 (아이템전)</div><div class="tournament-image-wrap"><img class="tournament-popup-img" src="${STINGER_CUP_POSTER_URL}" alt="스팅거컵 아이템전 포스터" title="클릭하면 확대됩니다" onclick="openStingerMarkViewer(this.src,'스팅거컵 아이템전 안내')" style="cursor:zoom-in;"></div><div class="stinger-menu-grid"><button type="button" class="tournament-apply-btn" onclick="window.open('https://open.kakao.com/o/glAIWfLi','_blank')">지원하기</button><button type="button" class="tournament-apply-btn" onclick="openStingerTeamsPopup()">참가 팀</button><button type="button" class="tournament-apply-btn" onclick="alert('준비중입니다')">대진표1</button><button type="button" class="tournament-apply-btn" onclick="alert('준비중입니다')">대진표2</button></div></div>`;
   document.body.appendChild(popup);
 }
 
@@ -12951,9 +12951,25 @@ async function saveStingerAdminTeams(){
 function readStingerTeamMark(file){
   return new Promise((resolve,reject)=>{
     if(!file.type.startsWith("image/")) return reject(new Error("팀 마크는 이미지 파일만 등록할 수 있습니다."));
-    if(file.size>700*1024) return reject(new Error("팀 마크는 700KB 이하 이미지로 올려주세요."));
+    if(file.size>5*1024*1024) return reject(new Error("팀 마크는 5MB 이하 이미지로 올려주세요."));
     const reader=new FileReader();
-    reader.onload=()=>resolve(String(reader.result||""));
+    reader.onload=()=>{
+      const image=new Image();
+      image.onload=()=>{
+        const maxSize=120;
+        const scale=Math.min(1,maxSize/Math.max(image.naturalWidth||1,image.naturalHeight||1));
+        const canvas=document.createElement("canvas");
+        canvas.width=Math.max(1,Math.round((image.naturalWidth||1)*scale));
+        canvas.height=Math.max(1,Math.round((image.naturalHeight||1)*scale));
+        const context=canvas.getContext("2d");
+        context.fillStyle="#ffffff";
+        context.fillRect(0,0,canvas.width,canvas.height);
+        context.drawImage(image,0,0,canvas.width,canvas.height);
+        resolve(canvas.toDataURL("image/jpeg",.82));
+      };
+      image.onerror=()=>reject(new Error("팀 마크 이미지를 처리하지 못했습니다."));
+      image.src=String(reader.result||"");
+    };
     reader.onerror=()=>reject(new Error("팀 마크 파일을 읽지 못했습니다."));
     reader.readAsDataURL(file);
   });
