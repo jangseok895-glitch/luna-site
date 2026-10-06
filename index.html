@@ -2212,6 +2212,21 @@ body.pc-view #goPcBtn{
   filter:brightness(1.05);
 }
 
+.stinger-team-popup .tournament-popup-box{width:min(760px,94vw);}
+.stinger-team-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px;}
+.stinger-team-card{padding:13px;border:1px solid rgba(14,165,233,.3);border-radius:12px;background:#f8fdff;box-shadow:0 2px 8px rgba(14,165,233,.09);}
+.stinger-team-name{color:#075985;font-size:19px;font-weight:1000;margin-bottom:7px;}
+.stinger-team-members{display:grid;gap:4px;color:#334155;font-size:15px;font-weight:800;line-height:1.35;}
+.stinger-team-candidate{color:#b45309;margin-top:4px;}
+.stinger-admin-note{margin:8px 0 2px;color:#64748b;font-size:13px;font-weight:800;text-align:center;}
+.stinger-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px;max-height:62vh;overflow:auto;padding:2px;}
+.stinger-admin-card{padding:12px;border:1px solid rgba(14,165,233,.35);border-radius:12px;background:#f8fdff;}
+.stinger-admin-card label{display:block;margin:7px 0 3px;color:#075985;font-size:13px;font-weight:900;}
+.stinger-admin-card input{width:100%;padding:9px 10px;border:1px solid #bae6fd;border-radius:8px;color:#0f172a;background:#fff;font:inherit;font-size:14px;}
+.stinger-admin-actions{display:flex;gap:8px;margin-top:14px;}
+.stinger-admin-actions .tournament-apply-btn{margin-top:0!important;}
+@media(max-width:650px){.stinger-team-list,.stinger-admin-grid{grid-template-columns:1fr;}}
+
 #liveLogBox{
   flex:1 1 auto !important;
   width:auto !important;
@@ -7592,9 +7607,11 @@ body > #season40PosterPopup.global-top-modal:not(.hidden){
     <h2 id="season40NoticeTitle" class="season40-notice-heading">📢 안내 🚨</h2>
 
     <div class="season40-notice-info">
+      <div class="season40-notice-info-row">
+        스팅거컵(아이템전 대회) 공고중 <span style="font-size:.9em;">*(자세한 사항은 대회탭)</span>
+      </div>
       <div class="season40-notice-info-row season40-notice-recruit-row">
         <span>모니터링요원, 기타 운영진 모집중</span>
-        <button type="button" class="season40-poster-link" onclick="openSeason40Poster()">포스터확인</button>
       </div>
       <div class="season40-notice-info-row">
         시즌 41 군표 업데이트
@@ -8226,13 +8243,7 @@ function escMini4545(v){
 </button>
   <button class="main-tab" data-tab="event">EVENT</button>
   <button class="main-tab" data-tab="promo">홍보/자유</button>
-  <button class="main-tab" data-tab="market">거래소</button>
 </div>
-
-<!-- ===== 거래소 (준비중) ===== -->
-<section id="marketSection" class="panel hidden" style="margin-top:18px;min-height:240px;display:flex;align-items:center;justify-content:center;">
-  <p style="margin:0;font-size:24px;font-weight:800;color:#374151;text-align:center;">거래소는 준비중입니다.</p>
-</section>
 
 <!-- ===== 군표 상단 패널 ===== -->
 <div id="gunpyoTopPanel" class="panel">
@@ -12641,6 +12652,14 @@ function showBoard(board){
     list.innerHTML = `
     <div class="tournament-main-grid">
 
+      <div class="tournament-thumb-card" onclick="openStingerCupPopup()">
+        <div class="tournament-title">10월 23일 - 스팅거컵 (아이템전)</div>
+        <img class="tournament-thumb-img" src="https://i.ibb.co/Ld0pv3fK/30a766e2-2ecd-43a9-b9c9-4445c8f9d237.png" alt="스팅거컵 아이템전">
+
+        <button type="button" class="tournament-apply-btn" onclick="event.stopPropagation(); window.open('https://open.kakao.com/o/glAIWfLi','_blank');">지원하기</button>
+        <button type="button" class="tournament-apply-btn" onclick="event.stopPropagation(); openStingerTeamsPopup();">현재 참가자</button>
+      </div>
+
       <div class="tournament-thumb-card" onclick="openTournamentPoster('sticker3839')">
         <div class="tournament-title">38,39시즌 카트 스티커대회</div>
         <div class="tournament-soon-badge">종 료</div>
@@ -12740,6 +12759,150 @@ function showBoard(board){
 }
 
 /* ===== 대회 팝업 ===== */
+const STINGER_CUP_POSTER_URL = "https://i.ibb.co/xK7ZGLD9/2.jpg";
+const STINGER_CUP_STATE_TITLE = "__STINGER_CUP_TEAMS_2026_10_23__";
+const STINGER_CUP_LOCAL_KEY = "stinger_cup_2026_10_23_teams";
+
+function getDefaultStingerCupTeams(){
+  return Array.from({length:16},(_,index)=>({
+    name:`${index+1}팀`,
+    members:["","","",""],
+    candidate:""
+  }));
+}
+
+function normalizeStingerCupTeams(value){
+  const source=Array.isArray(value)?value:[];
+  return Array.from({length:16},(_,index)=>{
+    const row=source[index]||{};
+    const members=Array.isArray(row.members)?row.members:[];
+    return {
+      name:String(row.name||`${index+1}팀`).trim()||`${index+1}팀`,
+      members:Array.from({length:4},(_,memberIndex)=>String(members[memberIndex]||"").trim()),
+      candidate:String(row.candidate||"").trim()
+    };
+  });
+}
+
+function getLocalStingerCupTeams(){
+  try{return normalizeStingerCupTeams(JSON.parse(localStorage.getItem(STINGER_CUP_LOCAL_KEY)||"[]"));}
+  catch(_e){return getDefaultStingerCupTeams();}
+}
+
+function saveLocalStingerCupTeams(teams){
+  localStorage.setItem(STINGER_CUP_LOCAL_KEY,JSON.stringify(normalizeStingerCupTeams(teams)));
+}
+
+async function loadStingerCupTeams(){
+  const fallback=getLocalStingerCupTeams();
+  if(!sb) return fallback;
+  try{
+    const {data,error}=await sb.from("event").select("id,content").eq("title",STINGER_CUP_STATE_TITLE).order("created_at",{ascending:true}).limit(1);
+    if(error) throw error;
+    if(!data?.[0]?.content) return fallback;
+    const parsed=JSON.parse(data[0].content);
+    const teams=normalizeStingerCupTeams(parsed.teams||parsed);
+    saveLocalStingerCupTeams(teams);
+    return teams;
+  }catch(error){
+    console.warn("스팅거컵 참가팀을 불러오지 못했습니다.",error);
+    return fallback;
+  }
+}
+
+async function saveStingerCupTeams(teams){
+  const normalized=normalizeStingerCupTeams(teams);
+  saveLocalStingerCupTeams(normalized);
+  if(!sb) return {shared:false};
+  const content=JSON.stringify({kind:"stinger_cup_teams",teams:normalized,updatedAt:new Date().toISOString()});
+  const {data:found,error:findError}=await sb.from("event").select("id").eq("title",STINGER_CUP_STATE_TITLE).order("created_at",{ascending:true}).limit(1);
+  if(findError) throw findError;
+  let error;
+  if(found?.[0]?.id){
+    ({error}=await sb.from("event").update({content}).eq("id",found[0].id));
+  }else{
+    ({error}=await sb.from("event").insert({
+      title:STINGER_CUP_STATE_TITLE,content,team_name:"스팅거컵",member1:"참가팀",is_notice:0,is_approved:0,approved:0,views:0,created_at:new Date().toISOString()
+    }));
+  }
+  if(error) throw error;
+  return {shared:true};
+}
+
+function stingerText(value){
+  return String(value||"").replace(/[&<>\"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[char]));
+}
+
+function openStingerCupPopup(){
+  document.getElementById("stingerCupPopup")?.remove();
+  const popup=document.createElement("div");
+  popup.id="stingerCupPopup";
+  popup.className="tournament-popup";
+  popup.innerHTML=`<div class="tournament-popup-box"><button class="tournament-close" onclick="closeStingerCupPopup()">X</button><div class="tournament-popup-title">10월 23일 - 스팅거컵 (아이템전)</div><div class="tournament-image-wrap"><img class="tournament-popup-img" src="${STINGER_CUP_POSTER_URL}" alt="스팅거컵 아이템전 포스터"></div><button type="button" class="tournament-apply-btn" onclick="window.open('https://open.kakao.com/o/glAIWfLi','_blank')">지원하기</button><button type="button" class="tournament-apply-btn" onclick="openStingerTeamsPopup()">현재 참가자</button></div>`;
+  document.body.appendChild(popup);
+}
+
+function closeStingerCupPopup(){document.getElementById("stingerCupPopup")?.remove();}
+
+async function openStingerTeamsPopup(){
+  closeStingerCupPopup();
+  document.getElementById("stingerTeamsPopup")?.remove();
+  const popup=document.createElement("div");
+  popup.id="stingerTeamsPopup";
+  popup.className="tournament-popup stinger-team-popup";
+  popup.innerHTML=`<div class="tournament-popup-box"><button class="tournament-close" onclick="closeStingerTeamsPopup()">X</button><div class="tournament-popup-title">스팅거컵 현재 참가자</div><div id="stingerTeamsContent" class="stinger-team-list"><div class="stinger-admin-note" style="grid-column:1/-1">참가팀을 불러오는 중입니다.</div></div><button type="button" class="tournament-apply-btn" onclick="openStingerAdminMode()">운영진모드</button></div>`;
+  document.body.appendChild(popup);
+  renderStingerTeams(await loadStingerCupTeams());
+}
+
+function closeStingerTeamsPopup(){document.getElementById("stingerTeamsPopup")?.remove();}
+
+function renderStingerTeams(teams){
+  const target=document.getElementById("stingerTeamsContent");
+  if(!target) return;
+  target.innerHTML=normalizeStingerCupTeams(teams).map(team=>{
+    const memberHtml=team.members.map((member,index)=>`<div>${index+1}. ${stingerText(member)||"-"}</div>`).join("");
+    return `<article class="stinger-team-card"><div class="stinger-team-name">${stingerText(team.name)}</div><div class="stinger-team-members">${memberHtml}<div class="stinger-team-candidate">후보: ${stingerText(team.candidate)||"-"}</div></div></article>`;
+  }).join("");
+}
+
+async function openStingerAdminMode(){
+  const password=prompt("운영진 비밀번호를 입력하세요.");
+  if(password===null) return;
+  if(String(password).trim()!=="5432"){
+    alert("운영진 비밀번호가 일치하지 않습니다.");
+    return;
+  }
+  const teams=await loadStingerCupTeams();
+  const popup=document.getElementById("stingerTeamsPopup");
+  if(!popup) return;
+  popup.querySelector(".tournament-popup-title").textContent="스팅거컵 참가팀 관리";
+  const content=popup.querySelector("#stingerTeamsContent");
+  content.className="stinger-admin-grid";
+  content.innerHTML=teams.map((team,index)=>`<section class="stinger-admin-card" data-team-index="${index}"><label>팀명</label><input data-field="name" value="${stingerText(team.name)}" maxlength="30"><label>멤버 1</label><input data-member="0" value="${stingerText(team.members[0])}" maxlength="30"><label>멤버 2</label><input data-member="1" value="${stingerText(team.members[1])}" maxlength="30"><label>멤버 3</label><input data-member="2" value="${stingerText(team.members[2])}" maxlength="30"><label>멤버 4</label><input data-member="3" value="${stingerText(team.members[3])}" maxlength="30"><label>후보 1명</label><input data-field="candidate" value="${stingerText(team.candidate)}" maxlength="30"></section>`).join("");
+  const action=document.createElement("div");
+  action.className="stinger-admin-actions";
+  action.innerHTML='<button type="button" class="tournament-apply-btn" onclick="saveStingerAdminTeams()">저장하기</button><button type="button" class="tournament-apply-btn red-tournament-btn" onclick="openStingerTeamsPopup()">취소</button>';
+  content.after(action);
+}
+
+async function saveStingerAdminTeams(){
+  const cards=[...document.querySelectorAll("#stingerTeamsContent .stinger-admin-card")];
+  const teams=cards.map((card,index)=>({
+    name:card.querySelector('[data-field="name"]')?.value||`${index+1}팀`,
+    members:[0,1,2,3].map(memberIndex=>card.querySelector(`[data-member="${memberIndex}"]`)?.value||""),
+    candidate:card.querySelector('[data-field="candidate"]')?.value||""
+  }));
+  try{
+    const result=await saveStingerCupTeams(teams);
+    alert(result.shared?"참가팀 명단을 저장했습니다.":"이 기기에 참가팀 명단을 저장했습니다.");
+    await openStingerTeamsPopup();
+  }catch(error){
+    console.error(error);
+    alert("참가팀 명단 저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
+  }
+}
+
 const TOURNAMENT_POSTERS = {
   sticker3839: {
     title: "38,39시즌 카트 스티커대회",
