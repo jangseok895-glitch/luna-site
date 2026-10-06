@@ -2225,6 +2225,23 @@ body.pc-view #goPcBtn{
 .stinger-admin-card input{width:100%;padding:9px 10px;border:1px solid #bae6fd;border-radius:8px;color:#0f172a;background:#fff;font:inherit;font-size:14px;}
 .stinger-admin-actions{display:flex;gap:8px;margin-top:14px;}
 .stinger-admin-actions .tournament-apply-btn{margin-top:0!important;}
+#stingerCupPopup,#stingerTeamsPopup{
+  position:fixed!important;
+  inset:0!important;
+  z-index:2147483647!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:18px!important;
+  overflow:auto!important;
+  background:rgba(15,23,42,.68)!important;
+  backdrop-filter:blur(4px)!important;
+}
+#stingerCupPopup .tournament-popup-box,#stingerTeamsPopup .tournament-popup-box{
+  width:min(760px,94vw)!important;
+  max-height:90vh!important;
+  overflow-y:auto!important;
+}
 @media(max-width:650px){.stinger-team-list,.stinger-admin-grid{grid-template-columns:1fr;}}
 
 #liveLogBox{
@@ -12656,8 +12673,7 @@ function showBoard(board){
         <div class="tournament-title">10월 23일 - 스팅거컵 (아이템전)</div>
         <img class="tournament-thumb-img" src="https://i.ibb.co/Ld0pv3fK/30a766e2-2ecd-43a9-b9c9-4445c8f9d237.png" alt="스팅거컵 아이템전">
 
-        <button type="button" class="tournament-apply-btn" onclick="event.stopPropagation(); window.open('https://open.kakao.com/o/glAIWfLi','_blank');">지원하기</button>
-        <button type="button" class="tournament-apply-btn" onclick="event.stopPropagation(); openStingerTeamsPopup();">현재 참가자</button>
+        <button type="button" class="tournament-apply-btn" onclick="event.stopPropagation(); openStingerCupPopup();">대회 진행/공지</button>
       </div>
 
       <div class="tournament-thumb-card" onclick="openTournamentPoster('sticker3839')">
