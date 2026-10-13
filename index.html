@@ -8503,15 +8503,30 @@ user-select:none;
     </div>
   </div></div>
 
-  <!-- 운영진모드: system_pw 확인 후 club_pw를 조회하는 전용 창 -->
+  <!-- 운영진모드: system_pw 인증 후 단체 비밀번호와 검색된 프로필 정보를 조회 -->
   <div id="adminModePopup" class="team-admin-modal hidden"><div class="team-admin-box admin-mode-box">
-    <div class="search-popup-head"><b>운영진모드 · 단체 비밀번호 조회</b><button type="button" id="btnCloseAdminMode" class="team-admin-close">닫기</button></div>
-    <div class="team-request-help">운영진 비밀번호가 확인되었습니다. 조회할 단체를 선택해주세요.</div>
+    <div class="search-popup-head"><b>운영진모드 · 비밀번호 조회</b><button type="button" id="btnCloseAdminMode" class="team-admin-close">닫기</button></div>
+    <div class="team-request-help">운영진 비밀번호가 확인되었습니다. 필요한 정보를 조회해주세요.</div>
     <div class="team-admin-login-grid admin-mode-grid">
       <select id="adminModeClubSelect" class="select" style="width:100%;"><option value="">단체명 선택</option></select>
       <button class="btn gold" id="btnAdminModeReveal" type="button">비밀번호 보기</button>
     </div>
     <div class="admin-mode-password"><span>클럽 비밀번호</span><b id="adminModeClubPw">----</b></div>
+    <div class="admin-profile-lookup">
+      <div class="team-admin-section-title">군실명제 닉네임 · 비밀번호 조회</div>
+      <div class="team-request-help">닉네임 일부를 검색한 뒤, 결과에서 닉네임을 눌러야 비밀번호와 저장일을 확인할 수 있습니다.</div>
+      <div class="admin-profile-search-row">
+        <input id="adminProfileSearchInput" class="text" type="search" maxlength="40" placeholder="닉네임 검색" autocomplete="off">
+        <button class="btn gold" id="btnAdminProfileSearch" type="button">검색</button>
+      </div>
+      <div id="adminProfileSearchStatus" class="admin-profile-status" aria-live="polite"></div>
+      <div id="adminProfileSearchResults" class="admin-profile-results" role="list"></div>
+      <div id="adminProfileDetail" class="admin-profile-detail hidden" aria-live="polite">
+        <div><span>닉네임</span><b id="adminProfileNickname">-</b></div>
+        <div><span>비번 5자리</span><b id="adminProfilePin">-----</b></div>
+        <div><span>저장한 날짜</span><b id="adminProfileCreatedAt">-</b></div>
+      </div>
+    </div>
   </div></div>
 
   <!-- 단체 등록요청 사진보기 팝업 -->
@@ -20174,11 +20189,43 @@ async function runAiRecordAnalysis(){
     font-weight:900;
   }
   .admin-mode-password b { font-size:24px; letter-spacing:2px; color:#8a2d1d; }
+  .admin-profile-lookup{margin-top:20px;padding-top:18px;border-top:1px solid rgba(30,80,120,.2)}
+  .admin-profile-search-row{display:flex;gap:8px;margin-top:10px}
+  .admin-profile-search-row input{min-width:0;flex:1}
+  .admin-profile-status{min-height:22px;margin-top:8px;color:#475569;font-size:14px;font-weight:700}
+  .admin-profile-results{display:grid;gap:7px;max-height:230px;overflow:auto}
+  .admin-profile-result{width:100%;text-align:left;padding:10px 12px;border:1px solid rgba(14,165,233,.3);border-radius:10px;background:#fff;color:#111827;font-weight:800;cursor:pointer}
+  .admin-profile-result:hover,.admin-profile-result:focus{background:#e0f2fe;outline:2px solid #38bdf8}
+  .admin-profile-detail{display:grid;gap:8px;margin-top:12px;padding:12px 14px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe}
+  .admin-profile-detail>div{display:flex;justify-content:space-between;gap:12px;align-items:center}
+  .admin-profile-detail span{color:#475569;font-weight:800}
+  .admin-profile-detail b{color:#0f172a;text-align:right;overflow-wrap:anywhere}
+  #adminProfilePin{font-size:22px;letter-spacing:2px;color:#9a3412}
+  @media(max-width:620px){.admin-profile-search-row{align-items:stretch}.admin-profile-search-row .btn{padding:12px!important}.admin-profile-detail>div{align-items:flex-start;flex-direction:column;gap:2px}}
 </style>
 <script>
-/* ===== 운영진모드: system_pw 인증 후 club_pw 조회 ===== */
+/* ===== 운영진모드: system_pw 인증 후 단체 비밀번호와 검색된 profiles 조회 ===== */
 (function(){
   let adminModeSystemPw = "";
+  let profileSearchRows = [];
+
+  function clearAdminProfileDetail(){
+    document.getElementById("adminProfileDetail")?.classList.add("hidden");
+    document.getElementById("adminProfileNickname").textContent = "-";
+    document.getElementById("adminProfilePin").textContent = "-----";
+    document.getElementById("adminProfileCreatedAt").textContent = "-";
+  }
+
+  function resetAdminProfileSearch(){
+    profileSearchRows = [];
+    const input = document.getElementById("adminProfileSearchInput");
+    const status = document.getElementById("adminProfileSearchStatus");
+    const results = document.getElementById("adminProfileSearchResults");
+    if(input) input.value = "";
+    if(status) status.textContent = "";
+    if(results) results.replaceChildren();
+    clearAdminProfileDetail();
+  }
 
   function resetAdminMode(){
     adminModeSystemPw = "";
@@ -20186,6 +20233,7 @@ async function runAiRecordAnalysis(){
     if(select) select.value = "";
     const result = document.getElementById("adminModeClubPw");
     if(result) result.textContent = "----";
+    resetAdminProfileSearch();
   }
 
   async function loadAdminModeClubs(){
@@ -20244,6 +20292,67 @@ async function runAiRecordAnalysis(){
     }
   }
 
+  async function searchAdminProfiles(){
+    const keyword = String(document.getElementById("adminProfileSearchInput")?.value || "").trim();
+    const status = document.getElementById("adminProfileSearchStatus");
+    const results = document.getElementById("adminProfileSearchResults");
+    if(!adminModeSystemPw) return alert("운영진모드에 다시 로그인해주세요.");
+    clearAdminProfileDetail();
+    profileSearchRows = [];
+    results?.replaceChildren();
+    if(!keyword){ if(status) status.textContent = "검색할 닉네임을 입력해주세요."; return; }
+    if(status) status.textContent = "검색 중...";
+    try{
+      const { data, error } = await sb.rpc("admin_search_profile_nicknames", {
+        p_system_pw: adminModeSystemPw,
+        p_keyword: keyword
+      });
+      if(error) throw error;
+      profileSearchRows = Array.isArray(data) ? data : [];
+      if(!profileSearchRows.length){ if(status) status.textContent = "일치하는 닉네임이 없습니다."; return; }
+      if(status) status.textContent = `${profileSearchRows.length}개 결과입니다. 같은 닉네임은 저장일로 구분하고, 항목을 눌러 상세정보를 확인하세요. (최대 30개 표시)`;
+      profileSearchRows.forEach((row, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "admin-profile-result";
+        button.setAttribute("role", "listitem");
+        const created = row.created_at ? new Date(row.created_at) : null;
+        const createdLabel = created && !Number.isNaN(created.getTime()) ? created.toLocaleString("ko-KR") : String(row.created_at || "저장일 없음");
+        button.textContent = `${String(row.nickname || "")} · ${createdLabel}`;
+        button.addEventListener("click", () => revealAdminProfile(index));
+        results?.appendChild(button);
+      });
+    }catch(error){
+      console.error(error);
+      if(status) status.textContent = "";
+      alert(error.message || "프로필 검색에 실패했습니다. 안내된 SQL을 먼저 실행해주세요.");
+    }
+  }
+
+  async function revealAdminProfile(index){
+    const selected = profileSearchRows[index];
+    if(!selected || !adminModeSystemPw) return alert("운영진모드에 다시 로그인해주세요.");
+    clearAdminProfileDetail();
+    try{
+      const { data, error } = await sb.rpc("admin_get_profile_credentials", {
+        p_system_pw: adminModeSystemPw,
+        p_nickname: String(selected.nickname || ""),
+        p_created_at: String(selected.created_at || "")
+      });
+      if(error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      if(!row) throw new Error("해당 프로필 정보를 찾을 수 없습니다.");
+      document.getElementById("adminProfileNickname").textContent = String(row.nickname || "-");
+      document.getElementById("adminProfilePin").textContent = String(row.pin5 || "-----");
+      const date = row.created_at ? new Date(row.created_at) : null;
+      document.getElementById("adminProfileCreatedAt").textContent = date && !Number.isNaN(date.getTime()) ? date.toLocaleString("ko-KR") : String(row.created_at || "-");
+      document.getElementById("adminProfileDetail")?.classList.remove("hidden");
+    }catch(error){
+      console.error(error);
+      alert(error.message || "비밀번호 조회에 실패했습니다. 안내된 SQL을 먼저 실행해주세요.");
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", function(){
     document.getElementById("btnAdminMode")?.addEventListener("click", openAdminMode);
     document.getElementById("btnCloseAdminMode")?.addEventListener("click", function(){
@@ -20253,6 +20362,10 @@ async function runAiRecordAnalysis(){
     document.getElementById("btnAdminModeReveal")?.addEventListener("click", revealAdminClubPw);
     document.getElementById("adminModeClubSelect")?.addEventListener("change", function(){
       document.getElementById("adminModeClubPw").textContent = "----";
+    });
+    document.getElementById("btnAdminProfileSearch")?.addEventListener("click", searchAdminProfiles);
+    document.getElementById("adminProfileSearchInput")?.addEventListener("keydown", function(event){
+      if(event.key === "Enter"){ event.preventDefault(); searchAdminProfiles(); }
     });
   });
 })();
