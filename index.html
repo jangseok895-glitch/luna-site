@@ -19917,9 +19917,10 @@ async function runAiRecordAnalysis(){
     const pw=prompt("운영진 비밀번호를 입력해주세요.");if(pw===null)return;
     rfBusy=true;
     try{
-      const {data,error}=await sb.from("system_pw").select("id").eq("id",1).eq("pw",pw.trim()).maybeSingle();
-      if(error)throw error;
-      if(!data)return alert("운영진 비밀번호가 일치하지 않습니다.");
+      // 기존 운영진 인증과 동일한 서버 함수 사용 (system_pw 직접 조회 금지).
+      const {data,error}=await sb.rpc("check_system_pw",{p_pw:pw.trim()});
+      if(error)throw new Error("운영진 인증 요청에 실패했습니다. 잠시 후 다시 시도해주세요. ("+(error.message||"서버 오류")+")");
+      if(data!==true)return alert("운영진 비밀번호가 일치하지 않습니다.");
       if(!confirm(`${match.left.team} vs ${match.right.team} 매칭을 삭제하시겠습니까?\n삭제한 매칭은 복구할 수 없으며 종료된 경기의 순위 집계에서도 제외됩니다.`))return;
       const result=await sb.from("event").delete().eq("id",match.id).like("title",`${MATCH_PREFIX}%`).select("id");
       if(result.error)throw result.error;
