@@ -7674,54 +7674,7 @@ body > #season40PosterPopup.global-top-modal:not(.hidden){
   </div>
 </div>
 
-<audio id="bgm" loop playsinline preload="auto">
-  <source src="https://github.com/jangseok895-glitch/asia-ox-sound/raw/refs/heads/main/260604%20kartremix.mp3" type="audio/mpeg">
-</audio>
-
-<button id="bgmOffBtn" onclick="turnOffBGM()">
-  🔇 음악끄기
-</button>
-
 <script>
-let bgmStoppedForever = false;
-let bgmStarted = false;
-
-document.addEventListener("click", startBGMOnce);
-
-function startBGMOnce(){
-  if(bgmStoppedForever || bgmStarted) return;
-
-  const bgm = document.getElementById("bgm");
-  const btn = document.getElementById("bgmOffBtn");
-
-  bgm.volume = 0.35;
-
-  bgm.play().then(() => {
-    bgmStarted = true;
-    btn.classList.remove("hide");
-    btn.classList.add("show");
-  }).catch(() => {
-    console.log("음악 재생 실패");
-  });
-}
-
-function turnOffBGM(){
-  const bgm = document.getElementById("bgm");
-  const btn = document.getElementById("bgmOffBtn");
-
-  bgmStoppedForever = true;
-
-  bgm.pause();
-  bgm.currentTime = 0;
-
-  btn.classList.remove("show");
-  btn.classList.add("hide");
-
-  setTimeout(() => {
-    btn.style.display = "none";
-  }, 350);
-}
-
 document.addEventListener("DOMContentLoaded", function(){
   const rankGuideBtn = document.getElementById("rankGuideBtn");
   const rankGuidePopup = document.getElementById("rankGuidePopup");
@@ -19760,6 +19713,11 @@ async function runAiRecordAnalysis(){
 
 <style>
 /* ===== EVENT : 군실명제 친선 ===== */
+.rf-pages{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin:12px 0}
+.rf-page-btn{min-width:36px;padding:8px;border:1px solid #7dd3fc;border-radius:8px;background:white;color:#075985;cursor:pointer;font-weight:900}
+.rf-page-btn[aria-current="page"]{background:#0284c7;color:white}
+.rf-admin-delete{background:#fee2e2!important;border-color:#fca5a5!important;color:#b91c1c!important}
+.rf-attachments{flex-wrap:wrap}
 #siegeSection .rf-wrap{max-width:1080px;margin:0 auto;padding:8px 0 34px}
 #siegeSection .rf-title-row{display:flex;align-items:center;justify-content:center;gap:10px;margin:4px 0 6px}#siegeSection .rf-title{margin:0;font-size:32px;font-weight:1000;color:#075985}.rf-rank-open{font-size:13px!important;padding:8px 12px!important}
 #siegeSection .rf-guide{text-align:center;color:#64748b;font-weight:800;margin-bottom:16px}
@@ -19802,6 +19760,8 @@ async function runAiRecordAnalysis(){
   const MATCH_PREFIX="[군실명제 친선]";
   const SIX_HOURS=6*60*60*1000, DAY=24*60*60*1000;
   let rfTeams=[], rfMembers={}, rfRows=[], rfBusy=false;
+  const RF_PAGE_SIZE=5, rfPages={active:1,finished:1};
+  const rfMemberDrafts={left:{},right:{}}, rfMemberTeams={left:"",right:""}, rfMemberRequests={left:0,right:0};
 
   const section=document.getElementById("siegeSection");
   if(section){
@@ -19823,8 +19783,10 @@ async function runAiRecordAnalysis(){
       </div>
       <div class="rf-section-title">진행 중인 매칭 <span class="rf-count" id="rfActiveCount">0</span></div>
       <div id="rfActiveList" class="rf-list"><div class="rf-empty">매칭을 불러오는 중입니다.</div></div>
+      <nav id="rfActivePages" class="rf-pages" aria-label="진행 중인 매칭 페이지"></nav>
       <div class="rf-section-title">종료된 매칭 <span class="rf-count" id="rfFinishedCount">0</span></div>
       <div id="rfFinishedList" class="rf-list"><div class="rf-empty">종료된 매칭이 없습니다.</div></div>
+      <nav id="rfFinishedPages" class="rf-pages" aria-label="종료된 매칭 페이지"></nav>
       <div id="rfRankPopup" class="rf-rank-popup hidden" role="dialog" aria-modal="true" aria-labelledby="rfRankTitle">
         <div class="rf-rank-box" onclick="event.stopPropagation()"><div class="rf-rank-head"><h3 id="rfRankTitle">군실명제 친선 전체순위</h3><button type="button" class="rf-rank-close" id="rfRankCloseBtn">닫기</button></div><div class="rf-rank-rule">승리 +1.5점 · 패배 -1점 · 총점 우선 → 승리 수 우선 → 완전 동률은 무작위</div><div class="rf-rank-scroll"><table class="rf-rank-table"><thead><tr><th>순위</th><th>단체명</th><th>승</th><th>패</th><th>총점</th></tr></thead><tbody id="rfRankBody"></tbody></table></div></div>
       </div>
@@ -19854,16 +19816,34 @@ async function runAiRecordAnalysis(){
   function rfStatusText(status){return ({waiting:"대기중 매칭",approved:"승인된 매칭",hold:"보류중 매칭",finished:"종료된 매칭"})[status]||"대기중 매칭";}
   function rfDate(v){const d=new Date(v);return Number.isNaN(d.getTime())?"":d.toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});}
   function rfFillTeamSelects(){
-    ["left","right"].forEach(side=>{const s=document.getElementById(`rf_${side}_team`);if(!s)return;s.innerHTML='<option value="">단체 선택</option>'+rfTeams.map(t=>`<option value="${rfEsc(t)}">${rfEsc(t)}</option>`).join("");});
+    ["left","right"].forEach(side=>{
+      const el=document.getElementById(`rf_${side}_team`);if(!el)return;
+      const value=el.value, teams=[...new Set([...rfTeams,...(value?[value]:[])])];
+      const html='<option value="">단체 선택</option>'+teams.map(t=>`<option value="${rfEsc(t)}">${rfEsc(t)}</option>`).join("");
+      if(el.innerHTML!==html){el.innerHTML=html;el.value=value;}
+    });
   }
   async function rfLoadMembers(side){
-    const team=document.getElementById(`rf_${side}_team`)?.value||"";
-    if(team&&!rfMembers[team]){
-      const rows=await sbSelect("team_members",q=>q.select("nickname,total").eq("team_name",team).order("nickname",{ascending:true}));
-      rfMembers[team]=(rows||[]).map(r=>({nickname:String(r.nickname||"").trim(),total:Number(r.total)||0})).filter(r=>r.nickname);
-    }
-    const list=rfMembers[team]||[];
-    for(let i=1;i<=4;i++){const s=document.getElementById(`rf_${side}_m${i}`);if(s)s.innerHTML=`<option value="">멤버 ${i}</option>`+list.map(m=>`<option value="${rfEsc(m.nickname)}">${rfEsc(rfOptionMember(m))}</option>`).join("");}
+    const el=document.getElementById(`rf_${side}_team`), team=el?.value||"";
+    const previous=rfMemberTeams[side];
+    if(previous&&!document.getElementById(`rf_${side}_m1`)?.disabled)rfMemberDrafts[side][previous]=[1,2,3,4].map(i=>document.getElementById(`rf_${side}_m${i}`)?.value||"");
+    rfMemberTeams[side]=team;
+    const request=++rfMemberRequests[side];
+    for(let i=1;i<=4;i++){const select=document.getElementById(`rf_${side}_m${i}`);if(select){select.disabled=true;select.innerHTML=`<option value="">멤버 ${i}</option>`;}}
+    try{
+      if(team&&!rfMembers[team]){
+        const rows=await sbSelect("team_members",q=>q.select("nickname,total").eq("team_name",team).order("nickname",{ascending:true}));
+        rfMembers[team]=(rows||[]).map(r=>({nickname:String(r.nickname||"").trim(),total:Number(r.total)||0})).filter(r=>r.nickname);
+      }
+      if(request!==rfMemberRequests[side]||el.value!==team)return;
+      const list=rfMembers[team]||[],draft=rfMemberDrafts[side][team]||[];
+      for(let i=1;i<=4;i++){
+        const select=document.getElementById(`rf_${side}_m${i}`);if(!select)continue;
+        select.innerHTML=`<option value="">멤버 ${i}</option>`+list.map(m=>`<option value="${rfEsc(m.nickname)}">${rfEsc(rfOptionMember(m))}</option>`).join("");
+        select.value=list.some(m=>m.nickname===draft[i-1])?draft[i-1]:"";
+      }
+    }catch(e){if(request===rfMemberRequests[side])alert(e.message||"멤버를 불러오지 못했습니다. 단체를 다시 선택해주세요.");}
+    finally{if(request===rfMemberRequests[side])for(let i=1;i<=4;i++){const select=document.getElementById(`rf_${side}_m${i}`);if(select)select.disabled=false;}}
   }
   function rfSelected(side){
     const team=document.getElementById(`rf_${side}_team`)?.value||"";
@@ -19931,10 +19911,27 @@ async function runAiRecordAnalysis(){
     }
     return `<div class="rf-side"><div class="rf-side-name">${rfEsc(s.team)}</div><div class="rf-members">${members}</div>${state}<div class="rf-action-row">${actions}</div></div>`;
   }
+  async function rfAdminDelete(id){
+    if(rfBusy)return;
+    const match=rfRows.find(m=>String(m.id)===String(id));if(!match)return;
+    const pw=prompt("운영진 비밀번호를 입력해주세요.");if(pw===null)return;
+    rfBusy=true;
+    try{
+      const {data,error}=await sb.from("system_pw").select("id").eq("id",1).eq("pw",pw.trim()).maybeSingle();
+      if(error)throw error;
+      if(!data)return alert("운영진 비밀번호가 일치하지 않습니다.");
+      if(!confirm(`${match.left.team} vs ${match.right.team} 매칭을 삭제하시겠습니까?\n삭제한 매칭은 복구할 수 없으며 종료된 경기의 순위 집계에서도 제외됩니다.`))return;
+      const result=await sb.from("event").delete().eq("id",match.id).like("title",`${MATCH_PREFIX}%`).select("id");
+      if(result.error)throw result.error;
+      if(!result.data?.length)throw new Error("삭제되지 않았습니다. 삭제 권한 또는 매칭 상태를 확인해주세요.");
+      rfRows=rfRows.filter(m=>String(m.id)!==String(id));rfRender();
+      alert("매칭이 삭제되었습니다.");
+    }catch(e){console.error(e);alert(e.message||"매칭 삭제에 실패했습니다.");}finally{rfBusy=false;}
+  }
   function rfAttachmentHtml(m,status){
-    if(!Array.isArray(m.attachments)||!m.attachments[0])return "";
-    if(status==="finished")return `<div class="rf-attachments"><button type="button" class="rf-attachment-btn" onclick="rfOpenAttachment('${m.id}',0)">첨부파일 보기1</button><button type="button" class="rf-attachment-btn" onclick="rfOpenAttachment('${m.id}',1)">첨부파일 보기2</button></div>`;
-    return `<div class="rf-attachments"><button type="button" class="rf-attachment-btn" onclick="rfOpenAttachment('${m.id}',0)">첨부파일 보기</button></div>`;
+    const buttons=Array.isArray(m.attachments)&&m.attachments[0]
+      ? (status==="finished"?`<button type="button" class="rf-attachment-btn" onclick="rfOpenAttachment('${m.id}',0)">첨부파일 보기1</button><button type="button" class="rf-attachment-btn" onclick="rfOpenAttachment('${m.id}',1)">첨부파일 보기2</button>`:`<button type="button" class="rf-attachment-btn" onclick="rfOpenAttachment('${m.id}',0)">첨부파일 보기</button>`):"";
+    return `<div class="rf-attachments">${buttons}<button type="button" class="rf-attachment-btn rf-admin-delete" onclick="rfAdminDelete('${m.id}')">운영진삭제</button></div>`;
   }
   function rfOpenAttachment(id,index){const m=rfRows.find(x=>String(x.id)===String(id)),src=m?.attachments?.[Number(index)];if(!src)return alert("첨부파일이 없습니다.");const popup=document.getElementById("imagePopup"),img=document.getElementById("imagePopupImg");if(img)img.src=src;if(popup)popup.classList.remove("hidden");}
   function rfCard(m){
@@ -19943,13 +19940,21 @@ async function runAiRecordAnalysis(){
     const gameUpload=m.status==="approved"&&!m.result?.winner?`<div class="rf-attachments"><label class="rf-game-upload">인게임 매칭 스크린샷 <input id="rfGameFile_${m.id}" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"></label></div>`:"";
     return `<div class="rf-card"><div class="rf-card-head"><span class="rf-status ${status}">${rfStatusText(status)}</span><span class="rf-time">${schedule}등록 ${rfDate(m.createdAt)}</span></div><div class="rf-versus">${rfSideHtml(m,"left",status)}<div class="rf-vs">VS</div>${rfSideHtml(m,"right",status)}</div>${gameUpload}${rfAttachmentHtml(m,status)}${result}</div>`;
   }
-  function rfRender(){
-    const visible=rfRows.filter(m=>m.status!=="cancelled"&&Date.now()-new Date(m.createdAt||0).getTime()<DAY),finished=rfRows.filter(m=>m.status==="finished");
-    const active=visible.filter(m=>m.status!=="finished"),done=finished;
-    document.getElementById("rfActiveCount").textContent=active.length;document.getElementById("rfFinishedCount").textContent=done.length;
-    document.getElementById("rfActiveList").innerHTML=active.length?active.map(rfCard).join(""):'<div class="rf-empty">현재 진행 중인 매칭이 없습니다.</div>';
-    document.getElementById("rfFinishedList").innerHTML=done.length?done.map(rfCard).join(""):'<div class="rf-empty">아직 종료된 매칭이 없습니다.</div>';
+  function rfRenderPage(kind,rows,listId,pagesId,empty){
+    const count=Math.max(1,Math.ceil(rows.length/RF_PAGE_SIZE));
+    rfPages[kind]=Math.min(Math.max(1,rfPages[kind]),count);
+    const page=rfPages[kind];
+    document.getElementById(listId).innerHTML=rows.length?rows.slice((page-1)*RF_PAGE_SIZE,page*RF_PAGE_SIZE).map(rfCard).join(""):`<div class="rf-empty">${empty}</div>`;
+    document.getElementById(pagesId).innerHTML=count>1?Array.from({length:count},(_,i)=>`<button type="button" class="rf-page-btn" ${i+1===page?'aria-current="page"':''} onclick="rfChangePage('${kind}',${i+1})">${i+1}</button>`).join(""):"";
   }
+  function rfRender(){
+    const active=rfRows.filter(m=>m.status!=="cancelled"&&m.status!=="finished"&&Date.now()-new Date(m.createdAt||0).getTime()<DAY),done=rfRows.filter(m=>m.status==="finished");
+    document.getElementById("rfActiveCount").textContent=active.length;document.getElementById("rfFinishedCount").textContent=done.length;
+    rfRenderPage("active",active,"rfActiveList","rfActivePages","현재 진행 중인 매칭이 없습니다.");
+    rfRenderPage("finished",done,"rfFinishedList","rfFinishedPages","아직 종료된 매칭이 없습니다.");
+  }
+  window.rfChangePage=function(kind,page){if(!(kind in rfPages))return;rfPages[kind]=Number(page)||1;rfRender();};
+  window.rfAdminDelete=rfAdminDelete;
   function rfScoreText(v){const n=Math.round((Number(v)||0)*10)/10;return Number.isInteger(n)?String(n):n.toFixed(1);}
   function rfOpenRank(){
     const stats=new Map(rfTeams.map(team=>[team,{team,wins:0,losses:0,score:0,tie:Math.random()}]));
@@ -20001,8 +20006,10 @@ async function runAiRecordAnalysis(){
   const teamLabel=(r,allAtHour)=>`${String(r.hour).padStart(2,"0")}시${allAtHour.length>1?` ${allAtHour.indexOf(r)+1}팀`:""}`;
   function fillForm(){
     const ts=document.getElementById("fvTeam"),hs=document.getElementById("fvHour");
+    const savedTeam=ts?.value||"",savedHour=hs?.value||"";
     if(ts)ts.innerHTML='<option value="">단체 선택</option>'+teams.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join("");
     if(hs)hs.innerHTML='<option value="">시간 선택</option>'+Array.from({length:24},(_,i)=>`<option value="${i+1}">${String(i+1).padStart(2,"0")}시</option>`).join("");
+    if(ts)ts.value=savedTeam;if(hs)hs.value=savedHour;
   }
   function render(){
     const box=document.getElementById("friendlyVoteList");if(!box)return;
