@@ -7642,10 +7642,6 @@ body > #season40PosterPopup.global-top-modal:not(.hidden){
       <div class="season40-notice-info-row"><strong>42군표 업데이트!</strong></div>
       <div class="season40-notice-info-row"><span>시즌42 시작맵 : 빌리지 운명의 다리</span></div>
       <div class="season40-notice-info-row"><span>삭제맵 : 카타콤</span></div>
-      <div class="season40-notice-info-row">
-        <span>42시즌 커피 이벤트 <button type="button" class="season42-event-view" onclick="openSeason40Poster()" aria-label="42시즌 커피 이벤트 사진 보기">보기</button></span>
-      </div>
-      <p style="margin:4px 0 0;color:#075985;font-size:15px;font-weight:900;line-height:1.5;">EVENT 탭에서 참여하시면 됩니다.</p>
     </div>
 
     <div class="season40-notice-bottom">
@@ -7661,18 +7657,6 @@ body > #season40PosterPopup.global-top-modal:not(.hidden){
   </div>
 </div>
 
-<!-- ===== 42시즌 커피 이벤트 사진 팝업 ===== -->
-<div id="season40PosterPopup" class="season40-poster-popup hidden" role="dialog" aria-modal="true" aria-label="42시즌 커피 이벤트 안내 사진" onclick="closeSeason40Poster()">
-  <div class="season40-poster-box" onclick="event.stopPropagation()">
-    <button type="button" class="season40-poster-close" onclick="closeSeason40Poster()">닫기</button>
-    <img
-      class="season40-poster-img"
-      src="https://i.ibb.co/nMxfGSCY/Kakao-Talk-20261110-113533790.jpg"
-      alt="42시즌 커피 이벤트 안내"
-      onclick="closeSeason40Poster()"
-    >
-  </div>
-</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function(){
@@ -8642,169 +8626,7 @@ user-select:none;
 
 
 <!-- ===== EVENT : 공성전 ===== -->
-<div id="siegeSection" class="hidden">
-  <div class="siege-wrap">
-    <h2 class="siege-title">공성전</h2>
-    <div class="siege-controlbar">
-      <button type="button" class="btn gold" id="btnSiegeFund">자금 모으기</button>
-      <button type="button" class="btn blue" id="btnSiegeTeamStatus">단체 상태보기</button>
-      <select id="siegeLoginTeam" class="select"><option value="">단체 선택</option></select>
-      <select id="siegeLoginNick" class="select"><option value="">닉네임 선택</option></select>
-      <input id="siegeLoginPin" class="text siege-login-pin" type="password" maxlength="5" inputmode="numeric" placeholder="비번 5자리">
-      <span id="siegeLoginState" class="siege-login-state hidden">로그인중</span>
-      <button type="button" class="btn" id="btnSiegeLogin">로그인</button>
-      <button type="button" class="btn red" id="btnSiegeLogout">로그아웃</button>
-      <button type="button" class="btn siege-info-team-btn" id="btnSiegeMyInfo">정보</button>
-    </div>
-    <div class="siege-map" id="siegeMap">
-      <img class="siege-map-bg"
-           src="https://i.ibb.co/whWDsXb4/1.jpg"
-           alt="공성전 대한민국 지도">
-      <div class="siege-time-notice">공성전은 밤 22시~23시에만 가능합니다</div>
-      <div id="siegeRepresentativeLog" class="siege-representative-log"><div class="siege-representative-log-row siege-representative-log-empty">아직 대표 로그가 없습니다.</div></div>
-      <button type="button" class="siege-castle" data-castle="선봉" data-slot="1" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:94.57%;top:8.81%;" aria-label="선봉 성">
-        <span class="siege-city">선봉</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="청진" data-slot="2" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:83.86%;top:15.38%;" aria-label="청진 성">
-        <span class="siege-city">청진</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="혜산" data-slot="3" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:58.75%;top:16.92%;" aria-label="혜산 성">
-        <span class="siege-city">혜산</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="만포" data-slot="4" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:30.35%;top:22.00%;" aria-label="만포 성">
-        <span class="siege-city">만포</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="김책" data-slot="5" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:73.84%;top:24.44%;" aria-label="김책 성">
-        <span class="siege-city">김책</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="강계" data-slot="6" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:35.84%;top:26.83%;" aria-label="강계 성">
-        <span class="siege-city">강계</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="신의주" data-slot="7" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:6.60%;top:30.16%;" aria-label="신의주 성">
-        <span class="siege-city">신의주</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="함흥" data-slot="8" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:50.80%;top:30.93%;" aria-label="함흥 성">
-        <span class="siege-city">함흥</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="정주" data-slot="9" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:16.55%;top:34.55%;" aria-label="정주 성">
-        <span class="siege-city">정주</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="원산" data-slot="10" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:50.81%;top:39.72%;" aria-label="원산 성">
-        <span class="siege-city">원산</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="평양" data-slot="11" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:26.77%;top:41.55%;" aria-label="평양 성">
-        <span class="siege-city">평양</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="남포" data-slot="12" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:17.32%;top:43.93%;" aria-label="남포 성">
-        <span class="siege-city">남포</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="사리원" data-slot="13" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:24.50%;top:47.98%;" aria-label="사리원 성">
-        <span class="siege-city">사리원</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="속초" data-slot="14" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:66.66%;top:49.78%;" aria-label="속초 성">
-        <span class="siege-city">속초</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="해주" data-slot="15" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:21.15%;top:52.44%;" aria-label="해주 성">
-        <span class="siege-city">해주</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="원주" data-slot="16" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:54.70%;top:52.70%;" aria-label="원주 성">
-        <span class="siege-city">원주</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="파주" data-slot="17" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:38.19%;top:52.70%;" aria-label="파주 성">
-        <span class="siege-city">파주</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="강릉" data-slot="18" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:73.84%;top:54.51%;" aria-label="강릉 성">
-        <span class="siege-city">강릉</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="서울" data-slot="19" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:44.80%;top:56.28%;" aria-label="서울 성">
-        <span class="siege-city">서울</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="울릉도" data-slot="20" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:89.88%;top:56.27%;" aria-label="울릉도 성">
-        <span class="siege-city">울릉도</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="인천" data-slot="21" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:33.07%;top:57.50%;" aria-label="인천 성">
-        <span class="siege-city">인천</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="여주" data-slot="22" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:58.42%;top:59.11%;" aria-label="여주 성">
-        <span class="siege-city">여주</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="서산" data-slot="23" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:26.77%;top:62.21%;" aria-label="서산 성">
-        <span class="siege-city">서산</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="세종" data-slot="24" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:40.67%;top:66.26%;" aria-label="세종 성">
-        <span class="siege-city">세종</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="대전" data-slot="25" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:48.62%;top:66.88%;" aria-label="대전 성">
-        <span class="siege-city">대전</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="포항" data-slot="26" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:77.75%;top:68.06%;" aria-label="포항 성">
-        <span class="siege-city">포항</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="군산" data-slot="27" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:30.59%;top:71.39%;" aria-label="군산 성">
-        <span class="siege-city">군산</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="대구" data-slot="28" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:64.78%;top:71.39%;" aria-label="대구 성">
-        <span class="siege-city">대구</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="울산" data-slot="29" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:78.71%;top:73.01%;" aria-label="울산 성">
-        <span class="siege-city">울산</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="부산" data-slot="30" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:73.69%;top:78.69%;" aria-label="부산 성">
-        <span class="siege-city">부산</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="광주" data-slot="31" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:34.35%;top:80.66%;" aria-label="광주 성">
-        <span class="siege-city">광주</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="통영" data-slot="32" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:52.46%;top:82.41%;" aria-label="통영 성">
-        <span class="siege-city">통영</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="목포" data-slot="33" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:26.38%;top:84.21%;" aria-label="목포 성">
-        <span class="siege-city">목포</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="여수" data-slot="34" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:42.29%;top:84.81%;" aria-label="여수 성">
-        <span class="siege-city">여수</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-      <button type="button" class="siege-castle" data-castle="제주" data-slot="35" data-owner="현재클럽없음" data-promo="현재 등록된 홍보 메시지가 없습니다." data-durability="100" style="left:27.22%;top:96.62%;" aria-label="제주 성">
-        <span class="siege-city">제주</span>
-        <span class="siege-owner">현재단체없음</span>
-      </button>
-    </div>
-  </div>
-</div>
+<div id="siegeSection" class="hidden"><p style="text-align:center;font-weight:700">[준비중입니다]</p></div>
 
 
 <!-- ===== 공성전 성 정보 팝업 ===== -->
@@ -12571,7 +12393,6 @@ async function repairSiegeCastle(){
 }
 document.addEventListener("click",function(e){const castleBtn=e.target.closest(".siege-castle");if(castleBtn){e.preventDefault();openSiegeInfoPopup(castleBtn);return;}if(e.target&&e.target.id==="siegeInfoPopup")closeSiegeInfoPopup();});
 document.addEventListener("keydown",function(e){if(e.key==="Escape"){closeSiegeInfoPopup();closeSiegeTeamStatusPopup();closeSiegeMyInfoPopup();closeSiegeFundPopup();}});
-setInterval(()=>{if(document.getElementById("siegeSection")&&!document.getElementById("siegeSection").classList.contains("hidden"))syncSiegeFromSupabase();},15000);
 document.addEventListener("DOMContentLoaded",async function(){await syncSiegeFromSupabase();initializeSiegeCastles();refreshSiegeRepresentativeLogs();loadSiegeLoginTeams();document.getElementById("siegeLoginTeam")?.addEventListener("change",onSiegeLoginTeamChanged);document.getElementById("btnSiegeLogin")?.addEventListener("click",submitSiegeLogin);document.getElementById("btnSiegeLogout")?.addEventListener("click",logoutSiege);document.getElementById("btnSiegeMyInfo")?.addEventListener("click",openSiegeMyInfoPopup);document.getElementById("btnSiegeTeamStatus")?.addEventListener("click",openSiegeTeamStatusPopup);document.getElementById("btnSiegeFund")?.addEventListener("click",openSiegeFundPopup);document.getElementById("siegeLoginPin")?.addEventListener("keydown",e=>{if(e.key==="Enter")submitSiegeLogin();});document.getElementById("siegeFriendlyFile")?.addEventListener("change",handleSiegeFriendlyFileChange);});
 document.addEventListener("DOMContentLoaded",function(){
   const logoInput=document.getElementById("siegeTeamLogoFile");
@@ -12580,7 +12401,6 @@ document.addEventListener("DOMContentLoaded",function(){
   logoInput?.addEventListener("change",handleSiegeTeamLogoFileChange);
 });
 
-setInterval(()=>{const sec=document.getElementById("siegeSection");if(sec&&!sec.classList.contains("hidden"))refreshSiegeRepresentativeLogs();},30000);
 function showSiege(){
   document.getElementById("gunpyoTopPanel")?.classList.add("hidden");
   document.getElementById("gunpyoSection")?.classList.add("hidden");
@@ -12591,7 +12411,6 @@ function showSiege(){
   document.getElementById("marketSection")?.classList.add("hidden");
   const gunBtns=document.getElementById("gunpyoTopBtns"), realBtns=document.getElementById("realTopBtns"); if(gunBtns)gunBtns.style.display="none"; if(realBtns)realBtns.style.display="none";
   document.body.classList.remove("real-mode"); document.body.classList.remove("real-scrolled"); setActiveTab("event"); refreshHeaderPush();
-  syncSiegeFromSupabase().then(()=>initializeSiegeCastles()); if(!document.getElementById("siegeLoginTeam")?.options?.length || document.getElementById("siegeLoginTeam")?.options?.length<=1) loadSiegeLoginTeams();
 }
 
 function showBoard(board){
@@ -19755,243 +19574,6 @@ async function runAiRecordAnalysis(){
 </style>
 
 <script>
-/* ===== EVENT 공성전 교체 : 군실명제 친선 ===== */
-(function(){
-  const MATCH_PREFIX="[군실명제 친선]";
-  const SIX_HOURS=6*60*60*1000, DAY=24*60*60*1000;
-  let rfTeams=[], rfMembers={}, rfRows=[], rfBusy=false;
-  const RF_PAGE_SIZE=5, rfPages={active:1,finished:1};
-  const rfMemberDrafts={left:{},right:{}}, rfMemberTeams={left:"",right:""}, rfMemberRequests={left:0,right:0};
-
-  const section=document.getElementById("siegeSection");
-  if(section){
-    section.innerHTML=`<div class="rf-wrap">
-      <div class="rf-title-row"><h2 class="rf-title">군실명제 친선</h2><button type="button" class="btn rf-rank-open" id="rfRankOpenBtn">순위보기</button></div>
-      <div class="rf-guide">군실명제에 등록된 단체라면 누구나 친선 매칭을 올릴 수 있습니다.</div>
-      <div class="rf-form">
-        <div class="rf-team-grid">
-          ${rfTeamFormHtml("left","좌측")}
-          <div class="rf-vs">VS</div>
-          ${rfTeamFormHtml("right","우측")}
-        </div>
-        <div class="rf-meta-row">
-          <label for="rfDay">경기일</label><select id="rfDay" class="select"><option value="">몇 일</option>${Array.from({length:31},(_,i)=>`<option value="${i+1}">${i+1}일</option>`).join("")}</select>
-          <label for="rfHour">경기시간</label><select id="rfHour" class="select"><option value="">몇 시</option>${Array.from({length:24},(_,i)=>`<option value="${i+1}">${i+1}시</option>`).join("")}</select>
-        </div>
-        <div class="rf-files"><label class="rf-file">매칭 시 대화내용 스크린샷 <input id="rfChatFile" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"></label></div>
-        <div class="rf-submit-row"><button type="button" class="btn gold" id="rfCreateBtn">대기중 매칭 등록</button></div>
-      </div>
-      <div class="rf-section-title">진행 중인 매칭 <span class="rf-count" id="rfActiveCount">0</span></div>
-      <div id="rfActiveList" class="rf-list"><div class="rf-empty">매칭을 불러오는 중입니다.</div></div>
-      <nav id="rfActivePages" class="rf-pages" aria-label="진행 중인 매칭 페이지"></nav>
-      <div class="rf-section-title">종료된 매칭 <span class="rf-count" id="rfFinishedCount">0</span></div>
-      <div id="rfFinishedList" class="rf-list"><div class="rf-empty">종료된 매칭이 없습니다.</div></div>
-      <nav id="rfFinishedPages" class="rf-pages" aria-label="종료된 매칭 페이지"></nav>
-      <div id="rfRankPopup" class="rf-rank-popup hidden" role="dialog" aria-modal="true" aria-labelledby="rfRankTitle">
-        <div class="rf-rank-box" onclick="event.stopPropagation()"><div class="rf-rank-head"><h3 id="rfRankTitle">군실명제 친선 전체순위</h3><button type="button" class="rf-rank-close" id="rfRankCloseBtn">닫기</button></div><div class="rf-rank-rule">승리 +1.5점 · 패배 -1점 · 총점 우선 → 승리 수 우선 → 완전 동률은 무작위</div><div class="rf-rank-scroll"><table class="rf-rank-table"><thead><tr><th>순위</th><th>단체명</th><th>승</th><th>패</th><th>총점</th></tr></thead><tbody id="rfRankBody"></tbody></table></div></div>
-      </div>
-    </div>`;
-  }
-
-  function rfTeamFormHtml(side,label){
-    return `<div class="rf-team-box"><div class="rf-team-label">${label} 단체</div>
-      <select id="rf_${side}_team" class="select"><option value="">단체 선택</option></select>
-      <div class="rf-member-selects">${[1,2,3,4].map(i=>`<select id="rf_${side}_m${i}" class="select"><option value="">멤버 ${i}</option></select>`).join("")}</div>
-    </div>`;
-  }
-  function rfEsc(v){return String(v??"").replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-  function rfRank(total){try{const raw=typeof getRankFromTotal==="function"?getRankFromTotal(Number(total)||0):"6군";const n=String(raw).replace(/군$/g,"");return ({"프로":"프","강주력":"강","주력":"주"})[n]||n||"6";}catch(_e){return "6";}}
-  function rfRankOrder(rank){return ({"프":0,"강":1,"주":2,"1":3,"2":4,"3":5,"4":6,"5":7,"6":8})[String(rank)]??99;}
-  function rfSortMembers(members){return [...members].sort((a,b)=>rfRankOrder(a.rank||rfRank(a.total))-rfRankOrder(b.rank||rfRank(b.total))||String(a.nickname).localeCompare(String(b.nickname),"ko"));}
-  function rfOptionMember(m){return `[${rfRank(m.total)}] ${m.nickname}`;}
-  function rfParse(row){
-    try{const d=JSON.parse(row.content||"{}");if(d&&d.kind==="realname_friendly")return {...d,id:row.id,createdAt:d.createdAt||row.created_at,attachments:[row.screenshot1,row.screenshot2].filter(Boolean)};}catch(_e){}
-    return null;
-  }
-  function rfEffectiveStatus(m){
-    if(m.status==="finished")return "finished";
-    const age=Date.now()-new Date(m.createdAt||0).getTime();
-    return age>=SIX_HOURS?"hold":(m.status||"waiting");
-  }
-  function rfStatusText(status){return ({waiting:"대기중 매칭",approved:"승인된 매칭",hold:"보류중 매칭",finished:"종료된 매칭"})[status]||"대기중 매칭";}
-  function rfDate(v){const d=new Date(v);return Number.isNaN(d.getTime())?"":d.toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});}
-  function rfFillTeamSelects(){
-    ["left","right"].forEach(side=>{
-      const el=document.getElementById(`rf_${side}_team`);if(!el)return;
-      const value=el.value, teams=[...new Set([...rfTeams,...(value?[value]:[])])];
-      const html='<option value="">단체 선택</option>'+teams.map(t=>`<option value="${rfEsc(t)}">${rfEsc(t)}</option>`).join("");
-      if(el.innerHTML!==html){el.innerHTML=html;el.value=value;}
-    });
-  }
-  async function rfLoadMembers(side){
-    const el=document.getElementById(`rf_${side}_team`), team=el?.value||"";
-    const previous=rfMemberTeams[side];
-    if(previous&&!document.getElementById(`rf_${side}_m1`)?.disabled)rfMemberDrafts[side][previous]=[1,2,3,4].map(i=>document.getElementById(`rf_${side}_m${i}`)?.value||"");
-    rfMemberTeams[side]=team;
-    const request=++rfMemberRequests[side];
-    for(let i=1;i<=4;i++){const select=document.getElementById(`rf_${side}_m${i}`);if(select){select.disabled=true;select.innerHTML=`<option value="">멤버 ${i}</option>`;}}
-    try{
-      if(team&&!rfMembers[team]){
-        const rows=await sbSelect("team_members",q=>q.select("nickname,total").eq("team_name",team).order("nickname",{ascending:true}));
-        rfMembers[team]=(rows||[]).map(r=>({nickname:String(r.nickname||"").trim(),total:Number(r.total)||0})).filter(r=>r.nickname);
-      }
-      if(request!==rfMemberRequests[side]||el.value!==team)return;
-      const list=rfMembers[team]||[],draft=rfMemberDrafts[side][team]||[];
-      for(let i=1;i<=4;i++){
-        const select=document.getElementById(`rf_${side}_m${i}`);if(!select)continue;
-        select.innerHTML=`<option value="">멤버 ${i}</option>`+list.map(m=>`<option value="${rfEsc(m.nickname)}">${rfEsc(rfOptionMember(m))}</option>`).join("");
-        select.value=list.some(m=>m.nickname===draft[i-1])?draft[i-1]:"";
-      }
-    }catch(e){if(request===rfMemberRequests[side])alert(e.message||"멤버를 불러오지 못했습니다. 단체를 다시 선택해주세요.");}
-    finally{if(request===rfMemberRequests[side])for(let i=1;i<=4;i++){const select=document.getElementById(`rf_${side}_m${i}`);if(select)select.disabled=false;}}
-  }
-  function rfSelected(side){
-    const team=document.getElementById(`rf_${side}_team`)?.value||"";
-    const members=[1,2,3,4].map(i=>document.getElementById(`rf_${side}_m${i}`)?.value||"");
-    return {team,members:members.map(n=>{const x=(rfMembers[team]||[]).find(m=>m.nickname===n);return {nickname:n,total:Number(x?.total)||0,rank:rfRank(x?.total)};})};
-  }
-  async function rfCreate(){
-    if(rfBusy)return;const left=rfSelected("left"),right=rfSelected("right");
-    const day=document.getElementById("rfDay")?.value||"",hour=document.getElementById("rfHour")?.value||"",chatFile=document.getElementById("rfChatFile")?.files?.[0];
-    if(!left.team||!right.team)return alert("좌측과 우측 단체를 모두 선택해주세요.");
-    if(left.team===right.team)return alert("서로 다른 두 단체를 선택해주세요.");
-    if(left.members.some(m=>!m.nickname)||right.members.some(m=>!m.nickname))return alert("양쪽 멤버를 각각 4명씩 선택해주세요.");
-    if(new Set(left.members.map(m=>m.nickname)).size!==4||new Set(right.members.map(m=>m.nickname)).size!==4)return alert("한 단체에서 같은 멤버를 중복 선택할 수 없습니다.");
-    if(!day||!hour)return alert("경기 날짜와 시간을 선택해주세요.");
-    if(!chatFile)return alert("매칭 시 대화내용 스크린샷을 첨부해주세요.");
-    left.members=rfSortMembers(left.members);right.members=rfSortMembers(right.members);
-    const createdAt=new Date().toISOString();
-    rfBusy=true;try{
-      const chatImage=await rfImageData(chatFile);
-      const data={kind:"realname_friendly",version:2,status:"waiting",createdAt,matchDay:Number(day),matchHour:Number(hour),left:{...left,approved:false},right:{...right,approved:false},result:{winner:"",reporter:"",loserConfirmed:false}};
-      const {error}=await sb.from("event").insert({team_name:left.team,opponent_team:right.team,title:`${MATCH_PREFIX} ${left.team} vs ${right.team}`,content:JSON.stringify(data),member1:left.members[0].nickname,member2:left.members[1].nickname,member3:left.members[2].nickname,member4:left.members[3].nickname,screenshot1:chatImage,screenshot2:"",is_notice:0,is_approved:0,approved:0,views:0,created_at:createdAt});
-      if(error)throw error;alert("대기중 매칭으로 등록되었습니다.");await rfLoad();
-    }catch(e){console.error(e);alert(e.message||"매칭 등록에 실패했습니다.");}finally{rfBusy=false;}
-  }
-  function rfImageData(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(new Error("첨부파일을 읽지 못했습니다."));reader.onload=()=>{const img=new Image();img.onerror=()=>reject(new Error("이미지 파일만 첨부할 수 있습니다."));img.onload=()=>{const max=1100,scale=Math.min(1,max/Math.max(img.width,img.height)),canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL("image/jpeg",.72));};img.src=reader.result;};reader.readAsDataURL(file);});}
-  async function rfVerify(team){
-    const pw=prompt(`${team} 단체의 비밀번호 숫자 4자리를 입력해주세요.`);if(pw===null)return false;
-    if(!/^\d{4}$/.test(String(pw).trim())){alert("비밀번호는 숫자 4자리입니다.");return false;}
-    try{await verifyClubPwSupabase(team,String(pw).trim());return true;}catch(e){alert(e.message||"단체 비밀번호가 일치하지 않습니다.");return false;}
-  }
-  async function rfSave(m,extra={}){
-    const copy={...m};delete copy.id;delete copy.attachments;const {error}=await sb.from("event").update({content:JSON.stringify(copy),is_approved:copy.status==="approved"||copy.status==="finished"?1:0,approved:copy.status==="approved"||copy.status==="finished"?1:0,...extra}).eq("id",m.id);if(error)throw error;
-  }
-  async function rfAct(id,side,action){
-    if(rfBusy)return;const m=rfRows.find(x=>String(x.id)===String(id));if(!m)return;
-    const own=m[side],other=m[side==="left"?"right":"left"];if(!own)return;
-    if(!(await rfVerify(own.team)))return;rfBusy=true;
-    try{
-      if(action==="cancel"){
-        m.status="cancelled";await rfSave(m);await sb.from("event").delete().eq("id",m.id);alert("매칭 대기가 취소되었습니다.");
-      }else if(action==="approve"){
-        own.approved=true;if(m.left.approved&&m.right.approved)m.status="approved";await rfSave(m);
-      }else if(action==="win"||action==="lose"){
-        if(m.result?.winner)return alert("이미 한쪽 단체가 결과를 선택했습니다.");
-        const gameFile=document.getElementById(`rfGameFile_${m.id}`)?.files?.[0];
-        if(!gameFile)return alert("종료 결과를 입력하려면 인게임 매칭 스크린샷을 첨부해주세요.");
-        const gameImage=await rfImageData(gameFile),winner=action==="win"?own.team:other.team;
-        m.result={winner,reporter:own.team,loserConfirmed:false};m.attachments=[m.attachments?.[0]||"",gameImage];await rfSave(m,{screenshot2:gameImage});
-      }else if(action==="confirmLose"){
-        if(!m.result?.winner||m.result.winner===own.team)return alert("패배 단체만 확인할 수 있습니다.");
-        m.result.loserConfirmed=true;m.status="finished";m.finishedAt=new Date().toISOString();await rfSave(m);
-      }
-      await rfLoad();
-    }catch(e){console.error(e);alert(e.message||"처리 중 오류가 발생했습니다.");}finally{rfBusy=false;}
-  }
-  function rfSideHtml(m,side,status){
-    const s=m[side],other=m[side==="left"?"right":"left"],phase=m.status||"waiting",members=rfSortMembers(s.members||[]).map(x=>`<span class="rf-member"><span class="rf-rank">${rfEsc(x.rank||rfRank(x.total))}</span><span>${rfEsc(x.nickname)}</span></span>`).join("");
-    let actions="",state="";
-    if(phase==="waiting"&&!s.approved)actions=`<button class="btn gold" onclick="rfMatchAct('${m.id}','${side}','approve')">매칭확정</button><button class="btn red" onclick="rfMatchAct('${m.id}','${side}','cancel')">취소</button>`;
-    else if(phase==="waiting"&&s.approved)state='<div class="rf-side-state">매칭확정 완료</div>';
-    if(phase==="approved"&&!m.result?.winner)actions=`<button class="btn gold" onclick="rfMatchAct('${m.id}','${side}','win')">승리</button><button class="btn red" onclick="rfMatchAct('${m.id}','${side}','lose')">패배</button>`;
-    if(m.result?.winner&&status!=="finished"){
-      if(m.result.winner===s.team)state='<div class="rf-side-state" style="color:#16a34a">승리 입력 완료</div>';
-      else actions=`<button class="btn red" onclick="rfMatchAct('${m.id}','${side}','confirmLose')">패배</button>`;
-    }
-    return `<div class="rf-side"><div class="rf-side-name">${rfEsc(s.team)}</div><div class="rf-members">${members}</div>${state}<div class="rf-action-row">${actions}</div></div>`;
-  }
-  async function rfAdminDelete(id){
-    if(rfBusy)return;
-    const match=rfRows.find(m=>String(m.id)===String(id));if(!match)return;
-    const pw=prompt("운영진 비밀번호를 입력해주세요.");if(pw===null)return;
-    rfBusy=true;
-    try{
-      // 기존 운영진 인증과 동일한 서버 함수 사용 (system_pw 직접 조회 금지).
-      const {data,error}=await sb.rpc("check_system_pw",{p_pw:pw.trim()});
-      if(error)throw new Error("운영진 인증 요청에 실패했습니다. 잠시 후 다시 시도해주세요. ("+(error.message||"서버 오류")+")");
-      if(data!==true)return alert("운영진 비밀번호가 일치하지 않습니다.");
-      if(!confirm(`${match.left.team} vs ${match.right.team} 매칭을 삭제하시겠습니까?\n삭제한 매칭은 복구할 수 없으며 종료된 경기의 순위 집계에서도 제외됩니다.`))return;
-      const result=await sb.from("event").delete().eq("id",match.id).like("title",`${MATCH_PREFIX}%`).select("id");
-      if(result.error)throw result.error;
-      if(!result.data?.length)throw new Error("삭제되지 않았습니다. 삭제 권한 또는 매칭 상태를 확인해주세요.");
-      rfRows=rfRows.filter(m=>String(m.id)!==String(id));rfRender();
-      alert("매칭이 삭제되었습니다.");
-    }catch(e){console.error(e);alert(e.message||"매칭 삭제에 실패했습니다.");}finally{rfBusy=false;}
-  }
-  function rfAttachmentHtml(m,status){
-    const buttons=Array.isArray(m.attachments)&&m.attachments[0]
-      ? (status==="finished"?`<button type="button" class="rf-attachment-btn" onclick="rfOpenAttachment('${m.id}',0)">첨부파일 보기1</button><button type="button" class="rf-attachment-btn" onclick="rfOpenAttachment('${m.id}',1)">첨부파일 보기2</button>`:`<button type="button" class="rf-attachment-btn" onclick="rfOpenAttachment('${m.id}',0)">첨부파일 보기</button>`):"";
-    return `<div class="rf-attachments">${buttons}<button type="button" class="rf-attachment-btn rf-admin-delete" onclick="rfAdminDelete('${m.id}')">운영진삭제</button></div>`;
-  }
-  function rfOpenAttachment(id,index){const m=rfRows.find(x=>String(x.id)===String(id)),src=m?.attachments?.[Number(index)];if(!src)return alert("첨부파일이 없습니다.");const popup=document.getElementById("imagePopup"),img=document.getElementById("imagePopupImg");if(img)img.src=src;if(popup)popup.classList.remove("hidden");}
-  function rfCard(m){
-    const status=rfEffectiveStatus(m),result=status==="finished"?`<div class="rf-result">${rfEsc(m.result?.winner||"")} 승리</div>`:"";
-    const schedule=m.matchDay&&m.matchHour?`<b style="color:#dc2626">${rfEsc(m.matchDay)}일 ${rfEsc(m.matchHour)}시</b> · `:"";
-    const gameUpload=m.status==="approved"&&!m.result?.winner?`<div class="rf-attachments"><label class="rf-game-upload">인게임 매칭 스크린샷 <input id="rfGameFile_${m.id}" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"></label></div>`:"";
-    return `<div class="rf-card"><div class="rf-card-head"><span class="rf-status ${status}">${rfStatusText(status)}</span><span class="rf-time">${schedule}등록 ${rfDate(m.createdAt)}</span></div><div class="rf-versus">${rfSideHtml(m,"left",status)}<div class="rf-vs">VS</div>${rfSideHtml(m,"right",status)}</div>${gameUpload}${rfAttachmentHtml(m,status)}${result}</div>`;
-  }
-  function rfRenderPage(kind,rows,listId,pagesId,empty){
-    const count=Math.max(1,Math.ceil(rows.length/RF_PAGE_SIZE));
-    rfPages[kind]=Math.min(Math.max(1,rfPages[kind]),count);
-    const page=rfPages[kind];
-    document.getElementById(listId).innerHTML=rows.length?rows.slice((page-1)*RF_PAGE_SIZE,page*RF_PAGE_SIZE).map(rfCard).join(""):`<div class="rf-empty">${empty}</div>`;
-    document.getElementById(pagesId).innerHTML=count>1?Array.from({length:count},(_,i)=>`<button type="button" class="rf-page-btn" ${i+1===page?'aria-current="page"':''} onclick="rfChangePage('${kind}',${i+1})">${i+1}</button>`).join(""):"";
-  }
-  function rfRender(){
-    const active=rfRows.filter(m=>m.status!=="cancelled"&&m.status!=="finished"&&Date.now()-new Date(m.createdAt||0).getTime()<DAY),done=rfRows.filter(m=>m.status==="finished");
-    document.getElementById("rfActiveCount").textContent=active.length;document.getElementById("rfFinishedCount").textContent=done.length;
-    rfRenderPage("active",active,"rfActiveList","rfActivePages","현재 진행 중인 매칭이 없습니다.");
-    rfRenderPage("finished",done,"rfFinishedList","rfFinishedPages","아직 종료된 매칭이 없습니다.");
-  }
-  window.rfChangePage=function(kind,page){if(!(kind in rfPages))return;rfPages[kind]=Number(page)||1;rfRender();};
-  window.rfAdminDelete=rfAdminDelete;
-  function rfScoreText(v){const n=Math.round((Number(v)||0)*10)/10;return Number.isInteger(n)?String(n):n.toFixed(1);}
-  function rfOpenRank(){
-    const stats=new Map(rfTeams.map(team=>[team,{team,wins:0,losses:0,score:0,tie:Math.random()}]));
-    rfRows.filter(m=>m.status==="finished"&&m.result?.winner).forEach(m=>{
-      [m.left?.team,m.right?.team].filter(Boolean).forEach(team=>{if(!stats.has(team))stats.set(team,{team,wins:0,losses:0,score:0,tie:Math.random()});});
-      const winner=m.result.winner,loser=m.left?.team===winner?m.right?.team:m.left?.team;
-      if(stats.has(winner)){stats.get(winner).wins++;stats.get(winner).score+=1.5;}
-      if(loser&&stats.has(loser)){stats.get(loser).losses++;stats.get(loser).score-=1;}
-    });
-    const rows=[...stats.values()].sort((a,b)=>b.score-a.score||b.wins-a.wins||a.tie-b.tie),body=document.getElementById("rfRankBody");
-    if(body)body.innerHTML=rows.length?rows.map((r,i)=>`<tr class="${i<3?"rf-rank-top":""}"><td>(${i+1})</td><td class="rf-rank-team">${rfEsc(r.team)}</td><td>${r.wins}</td><td>${r.losses}</td><td>${rfScoreText(r.score)}</td></tr>`).join(""):'<tr><td colspan="5">등록된 단체가 없습니다.</td></tr>';
-    document.getElementById("rfRankPopup")?.classList.remove("hidden");
-  }
-  function rfCloseRank(){document.getElementById("rfRankPopup")?.classList.add("hidden");}
-  async function rfCleanup(){
-    const expired=rfRows.filter(m=>m.status!=="finished"&&Date.now()-new Date(m.createdAt||0).getTime()>=DAY);
-    for(const m of expired){try{await sb.from("event").delete().eq("id",m.id);}catch(_e){}}
-    if(expired.length)rfRows=rfRows.filter(m=>!expired.some(x=>String(x.id)===String(m.id)));
-  }
-  async function rfLoad(){
-    if(!sb){document.getElementById("rfActiveList").innerHTML='<div class="rf-empty">데이터베이스에 연결할 수 없습니다.</div>';return;}
-    try{
-      const [teamsRes,rowsRes]=await Promise.all([getTeamListSupabase(),sb.from("event").select("id,title,content,team_name,opponent_team,created_at,screenshot1,screenshot2").like("title",`${MATCH_PREFIX}%`).order("created_at",{ascending:false}).range(0,999)]);
-      if(rowsRes.error)throw rowsRes.error;rfTeams=(teamsRes?.teams||[]).map(t=>typeof t==="string"?t:t.name).filter(Boolean);rfFillTeamSelects();rfRows=(rowsRes.data||[]).map(rfParse).filter(Boolean);await rfCleanup();rfRender();
-    }catch(e){console.error(e);document.getElementById("rfActiveList").innerHTML='<div class="rf-empty">매칭 목록을 불러오지 못했습니다.</div>';}
-  }
-  function rfShow(){
-    document.getElementById("gunpyoTopPanel")?.classList.add("hidden");document.getElementById("gunpyoSection")?.classList.add("hidden");document.getElementById("realTopPanel")?.classList.add("hidden");document.getElementById("realSection")?.classList.add("hidden");document.getElementById("boardSection")?.classList.add("hidden");section?.classList.remove("hidden");
-    const a=document.getElementById("gunpyoTopBtns"),b=document.getElementById("realTopBtns");if(a)a.style.display="none";if(b)b.style.display="none";document.body.classList.remove("real-mode","real-scrolled");setActiveTab("event");refreshHeaderPush();rfLoad();
-  }
-  window.showSiege=rfShow;window.rfMatchAct=rfAct;window.rfOpenAttachment=rfOpenAttachment;
-  document.getElementById("rfCreateBtn")?.addEventListener("click",rfCreate);
-  document.getElementById("rfRankOpenBtn")?.addEventListener("click",rfOpenRank);document.getElementById("rfRankCloseBtn")?.addEventListener("click",rfCloseRank);document.getElementById("rfRankPopup")?.addEventListener("click",rfCloseRank);
-  document.getElementById("rf_left_team")?.addEventListener("change",()=>rfLoadMembers("left"));document.getElementById("rf_right_team")?.addEventListener("change",()=>rfLoadMembers("right"));
-  setInterval(()=>{if(section&&!section.classList.contains("hidden"))rfLoad();},60000);
-})();
 
 /* ===== 첫 화면 : 친선 투표 ===== */
 (function(){
