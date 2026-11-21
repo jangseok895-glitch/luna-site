@@ -20051,6 +20051,8 @@ const penaltyOptions=["-1점 역주행,막자행위", "-1점 방사", "-1점 지
 const ratingOptions=["미입력", "클럽", "6개월이상 유지된 크루"];
 function totalPenalty(g){return (g.history||[]).reduce((n,row)=>n+Number(row.points),0)}
 function statusOf(g){
+ if(!g.mode||g.mode==='기본')return '정지예정';
+ if(g.mode==='활성')return '좋음';
  if(g.mode==='정지예정'||g.mode==='신규')return g.mode;
 
  const points=totalPenalty(g);
@@ -20074,7 +20076,7 @@ function profile(){
  const g=current();if(!g){detail.innerHTML='';if($('mdDialog').open)$('mdDialog').close();return}
  const leaders=officers(g).map((o,i)=>infoRow(roles(g)[i],escape(o.name||'미등록')+(validLink(o.link)?' · <a href="'+escape(o.link)+'" target="_blank" rel="noopener noreferrer">개인톡</a>':''))).join('');
  const facts=[['단체 인원',g.players.length+'명 (군실명제 등록 기준)'],['신용평가',g.rating],['패널티',g.penalty],['특이사항',g.notes||'미등록']];
- detail.innerHTML='<article><h3>'+escape(g.name)+signal(g)+staffButton('name')+'</h3>'+(g.mode==='정지예정'?'<p style="color:#b4232b;font-weight:700">곧 삭제예정인 단체입니다.</p>':'')+'<table><tbody>'+leaders+facts.map(factRow).join('')+'</tbody></table><div class="rowx">'+btn('share','4명 선수 공유하기')+btn('manage','단체 관리')+'</div><div id="mdAction"></div></article><article><h3>단체 댓글</h3><form id="mdComment"><label>댓글 작성<textarea name="body" required maxlength="500"></textarea></label><button>등록</button></form>'+g.comments.map(c=>'<article><small>'+escape(c.date)+' <button type="button" aria-label="댓글 삭제" style="padding:1px 7px;color:#ae3535" data-remove-comment="'+escape(c.id)+'">×</button></small><p>'+escape(c.body)+'</p>'+[1,-1].map(v=>'<button data-comment="'+escape(c.id)+'" data-vote="'+v+'" aria-pressed="'+(c.vote===v)+'">'+(v===1?'좋아요':'싫어요')+' '+Number(c.vote===v)+'</button>').join(' ')+'</article>').join('')+'</article>';
+ detail.innerHTML='<article><h3>'+escape(g.name)+signal(g)+staffButton('name')+(statusOf(g)==='정지예정'?' <button type="button" data-md="awake">휴먼 풀기</button>':'')+'</h3>'+(statusOf(g)==='정지예정'?'<p style="color:#b4232b;font-weight:700">곧 삭제예정인 단체입니다.</p>':'')+'<table><tbody>'+leaders+facts.map(factRow).join('')+'</tbody></table><div class="rowx">'+btn('share','4명 선수 공유하기')+btn('manage','단체 관리')+'</div><div id="mdAction"></div></article><article><h3>단체 댓글</h3><form id="mdComment"><label>댓글 작성<textarea name="body" required maxlength="500"></textarea></label><button>등록</button></form>'+g.comments.map(c=>'<article><small>'+escape(c.date)+' <button type="button" aria-label="댓글 삭제" style="padding:1px 7px;color:#ae3535" data-remove-comment="'+escape(c.id)+'">×</button></small><p>'+escape(c.body)+'</p>'+[1,-1].map(v=>'<button data-comment="'+escape(c.id)+'" data-vote="'+v+'" aria-pressed="'+(c.vote===v)+'">'+(v===1?'좋아요':'싫어요')+' '+Number(c.vote===v)+'</button>').join(' ')+'</article>').join('')+'</article>';
 }
 const field=(label,name,value='',type='text',extra='')=>'<label>'+label+'<input name="'+name+'" type="'+type+'" value="'+escape(value)+'" '+extra+'></label>';
 const pwField=(label,name)=>field(label,name,'','password','inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required');
@@ -20086,7 +20088,7 @@ function manage(){
  const officerRows=officers(g).map((o,i)=>infoRow(roles(g)[i],
    field('이름','leader'+i,o.name)+field('카카오톡 개인톡 링크','link'+i,o.link,'url'))).join('');
  const facts=[['단체 인원',g.players.length+'명 (군실명제 등록 기준)'],['신용평가',g.rating],['패널티',g.penalty]];
- form.innerHTML='<h3>'+escape(g.name)+signal(g)+staffButton('name')+'</h3>'+
+ form.innerHTML='<h3>'+escape(g.name)+signal(g)+staffButton('name')+(statusOf(g)==='정지예정'?' <button type="button" data-md="awake">휴먼 풀기</button>':'')+'</h3>'+
    '<table><tbody>'+officerRows+facts.map(factRow).join('')+
    infoRow('특이사항','<textarea aria-label="특이사항" name="notes" maxlength="1000">'+escape(g.notes)+'</textarea>')+
    infoRow('단체 비밀번호',field('변경 시 새 비밀번호 입력','pw','','password','pattern="[0-9]{4}" maxlength="4"'))+
@@ -20122,7 +20124,7 @@ async function syncDirectory(){
   const g=old.find(x=>x.source===name||(x.clubId&&x.clubId===clubIds.get(name)))||{...example('club-'+name,name,[]),source:name,pw:''};
   g.source=g.name=name;g.clubId=clubIds.get(name);
   const review=reviews.find(r=>r.club_id===g.clubId);
-  g.history=review?.history||[];g.mode=review?.mode||'기본';g.rating=review?.rating||'미평가';g.penalty=review?.penalty||'미입력';
+  g.history=review?.history||[];g.mode=review?.mode||'정지예정';g.rating=review?.rating||'미평가';g.penalty=review?.penalty||'미입력';
   g.players=players;groups.push(g);
  }
  save();list();if(!$('mdDialog').open||!current())profile();
@@ -20203,13 +20205,30 @@ root.onclick=async e=>{
   };
   return;
  }
+ if(a==='awake'&&g){
+  if(!g.clubId)return alert('단체 등록정보를 불러온 뒤 다시 시도해주세요.');
+  const dlg=document.createElement('dialog');
+  dlg.innerHTML='<form><h3>휴먼 풀기</h3><p>'+escape(g.name)+'</p>'+pwField('단체 비밀번호','secret')+'<button>해제</button> <button type="button">취소</button><p role="alert"></p></form>';
+  root.append(dlg);dlg.showModal();dlg.onclose=()=>dlg.remove();
+  const f=dlg.querySelector('form');f.querySelector('[type=button]').onclick=()=>dlg.close();
+  f.onsubmit=async ev=>{
+   ev.preventDefault();ev.stopPropagation();
+   const submit=f.querySelector('button');submit.disabled=true;
+   try{
+    const {error}=await sb.rpc('luna_awaken',{p_club_id:g.clubId,p_secret:f.elements.secret.value});
+    if(error)throw error;
+    g.mode='활성';save();list();profile();dlg.close();
+   }catch(e){f.querySelector('[role=alert]').textContent=e.message||'해제 실패';f.elements.secret.select()}
+   finally{submit.disabled=false}
+  };return;
+ }
  if(b.dataset.staff&&g){
   const k=b.dataset.staff,label={name:'단체명',rating:'신용평가',penalty:'패널티'}[k];
   if(!g.source)return alert('군실명제 등록 단체에서 수정할 수 있습니다.');
   {
    const dlg=document.createElement('dialog');
    const setting=k==='name'?field('단체명','name',g.name,'text','required maxlength="45"')+
-     '<label>상태 판정<select name="status">'+options(['기본','자동','신규','정지예정'],g.mode||'기본')+'</select></label>':
+     '<label>상태 판정<select name="status">'+options(['기본','자동','신규','정지예정',...(g.mode==='활성'?['활성']:[])],g.mode||'정지예정')+'</select></label>':
      '<label>'+label+'<select required name="choice">'+(k==='penalty'?'<option value="">유형 선택</option>':'')+options(k==='penalty'?penaltyOptions:ratingOptions,g[k])+'</select></label>';
    dlg.innerHTML='<form><h3>'+label+(k==='penalty'?' 등록':' 수정')+'</h3>'+setting+pwField('운영진 비밀번호','secret')+'<button>저장</button> <button type="button">취소</button></form>';
    root.append(dlg);dlg.showModal();
