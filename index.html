@@ -20045,12 +20045,12 @@ const penaltyOptions=["-1점 역주행,막자행위", "-1점 방사", "-1점 지
 const ratingOptions=["미입력", "클럽", "6개월이상 유지된 크루"];
 function totalPenalty(g){return (g.history||[]).reduce((n,row)=>n+Number(row.points),0)}
 function statusOf(g){
- if(g.mode==='신규')return '신규';
+ if(g.mode==='정지예정'||g.mode==='신규')return g.mode;
 
  const points=totalPenalty(g);
  return points<=-3?'주의':points===-2?'중간':'좋음';
 }
-function signal(g){const state=statusOf(g);return ' <span style="white-space:nowrap;font-size:.8em">'+({'좋음':'🟢','중간':'🟡','주의':'🔴','신규':'🟠'}[state])+' '+state+'</span>'}
+function signal(g){const state=statusOf(g);return ' <span style="white-space:nowrap;font-size:.8em">'+({'좋음':'🟢','중간':'🟡','주의':'🔴','신규':'🟠','정지예정':'❌'}[state])+' '+state+'</span>'}
 function options(items,current){return items.map(x=>'<option'+(x===current?' selected':'')+'>'+escape(x)+'</option>').join('')}
 function staffButton(key){return ' <button type="button" data-staff="'+key+'">수정</button>'}
 function factRow([label,value]){
@@ -20068,7 +20068,7 @@ function profile(){
  const g=current();if(!g){detail.innerHTML='';if($('mdDialog').open)$('mdDialog').close();return}
  const leaders=officers(g).map((o,i)=>infoRow(roles(g)[i],escape(o.name||'미등록')+(validLink(o.link)?' · <a href="'+escape(o.link)+'" target="_blank" rel="noopener noreferrer">개인톡</a>':''))).join('');
  const facts=[['단체 인원',g.players.length+'명 (군실명제 등록 기준)'],['신용평가',g.rating],['패널티',g.penalty],['특이사항',g.notes||'미등록']];
- detail.innerHTML='<article><h3>'+escape(g.name)+signal(g)+staffButton('name')+'</h3><table><tbody>'+leaders+facts.map(factRow).join('')+'</tbody></table><div class="rowx">'+btn('share','4명 선수 공유하기')+btn('manage','단체 관리')+'</div><div id="mdAction"></div></article><article><h3>단체 댓글</h3><form id="mdComment"><label>댓글 작성<textarea name="body" required maxlength="500"></textarea></label><button>등록</button></form>'+g.comments.map(c=>'<article><small>'+escape(c.date)+' <button type="button" aria-label="댓글 삭제" style="padding:1px 7px;color:#ae3535" data-remove-comment="'+escape(c.id)+'">×</button></small><p>'+escape(c.body)+'</p>'+[1,-1].map(v=>'<button data-comment="'+escape(c.id)+'" data-vote="'+v+'" aria-pressed="'+(c.vote===v)+'">'+(v===1?'좋아요':'싫어요')+' '+Number(c.vote===v)+'</button>').join(' ')+'</article>').join('')+'</article>';
+ detail.innerHTML='<article><h3>'+escape(g.name)+signal(g)+staffButton('name')+'</h3>'+(g.mode==='정지예정'?'<p style="color:#b4232b;font-weight:700">곧 삭제예정인 단체입니다.</p>':'')+'<table><tbody>'+leaders+facts.map(factRow).join('')+'</tbody></table><div class="rowx">'+btn('share','4명 선수 공유하기')+btn('manage','단체 관리')+'</div><div id="mdAction"></div></article><article><h3>단체 댓글</h3><form id="mdComment"><label>댓글 작성<textarea name="body" required maxlength="500"></textarea></label><button>등록</button></form>'+g.comments.map(c=>'<article><small>'+escape(c.date)+' <button type="button" aria-label="댓글 삭제" style="padding:1px 7px;color:#ae3535" data-remove-comment="'+escape(c.id)+'">×</button></small><p>'+escape(c.body)+'</p>'+[1,-1].map(v=>'<button data-comment="'+escape(c.id)+'" data-vote="'+v+'" aria-pressed="'+(c.vote===v)+'">'+(v===1?'좋아요':'싫어요')+' '+Number(c.vote===v)+'</button>').join(' ')+'</article>').join('')+'</article>';
 }
 const field=(label,name,value='',type='text',extra='')=>'<label>'+label+'<input name="'+name+'" type="'+type+'" value="'+escape(value)+'" '+extra+'></label>';
 const pwField=(label,name)=>field(label,name,'','password','inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required');
@@ -20203,7 +20203,7 @@ root.onclick=async e=>{
   {
    const dlg=document.createElement('dialog');
    const setting=k==='name'?field('단체명','name',g.name,'text','required maxlength="45"')+
-     '<label>상태 판정<select name="status">'+options(['기본','자동','신규'],g.mode||'기본')+'</select></label>':
+     '<label>상태 판정<select name="status">'+options(['기본','자동','신규','정지예정'],g.mode||'기본')+'</select></label>':
      '<label>'+label+'<select required name="choice">'+(k==='penalty'?'<option value="">유형 선택</option>':'')+options(k==='penalty'?penaltyOptions:ratingOptions,g[k])+'</select></label>';
    dlg.innerHTML='<form><h3>'+label+(k==='penalty'?' 등록':' 수정')+'</h3>'+setting+pwField('운영진 비밀번호','secret')+'<button>저장</button> <button type="button">취소</button></form>';
    root.append(dlg);dlg.showModal();
