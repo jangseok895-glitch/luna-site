@@ -8583,6 +8583,7 @@ user-select:none;
 #mdList section+section{border:1px solid #c7cdd2;background:#f3f4f5}
 #matchDemo #mdList section+section>h3{background:#e3e6e8;color:#424c55;margin:-8px -8px 8px;padding:9px 12px;border-radius:8px 8px 0 0}
 #matchDemo #mdList section+section button{border-color:#c7cdd2}
+#matchDemo button[data-md="awake"]{border:3px solid #f5c400}
 </style>
 <div class="rowx"><h2>루칭방단체</h2><button type="button" class="primary" id="btnOpenTeamRequestPopup">단체등록요청</button></div><small id="mdStatus">군실명제 단체를 불러오는 중입니다.</small>
 <div class="rowx"><input id="mdSearch" type="search" aria-label="단체 검색" placeholder="클럽·크루 이름 검색"></div>
@@ -8855,7 +8856,7 @@ user-select:none;
     <div class="password-change-field">
       <label for="settingsMenuSelect">설정 메뉴</label>
       <select id="settingsMenuSelect" onchange="switchSettingsMenu(this.value)">
-        <option value="password">PW 변경</option>
+        <option value="password">개인정보 변경</option>
         <option value="recovery">아이디 복구</option>
       </select>
     </div>
@@ -8867,16 +8868,21 @@ user-select:none;
       </div>
 
       <div class="password-change-field">
+        <label for="pwChangeNextNickname">새로운 닉네임</label>
+        <input id="pwChangeNextNickname" maxlength="30" placeholder="변경을 원치 않을 경우 빈공간">
+      </div>
+
+      <div class="password-change-field">
         <label for="pwChangeCurrent">현재 비밀번호 5자리</label>
         <input id="pwChangeCurrent" type="password" maxlength="5" inputmode="numeric" autocomplete="current-password" placeholder="현재 비밀번호">
       </div>
 
       <div class="password-change-field">
         <label for="pwChangeNew">새로운 비밀번호 5자리</label>
-        <input id="pwChangeNew" type="password" maxlength="5" inputmode="numeric" autocomplete="new-password" placeholder="새 비밀번호">
+        <input id="pwChangeNew" type="password" maxlength="5" inputmode="numeric" autocomplete="new-password" placeholder="변경을 원치 않을 경우 빈공간">
       </div>
 
-      <div class="password-change-help">군표와 군실명제에 저장된 본인의 5자리 비밀번호가 모두 함께 변경됩니다.</div>
+      <div class="password-change-help">변경할 항목만 입력하세요. 군표 저장 이력과 소속 단체의 군실명제 기록에 함께 반영됩니다.</div>
 
       <div class="password-change-actions">
         <button type="button" class="btn link" onclick="closePasswordChangePopup()">취소</button>
@@ -15240,6 +15246,7 @@ setTimeout(startLiveLogNeon, 1200);
 
     if(menu) menu.value = "password";
     if(nickInput) nickInput.value = mainNickname;
+    document.getElementById("pwChangeNextNickname").value = "";
     if(currentInput) currentInput.value = "";
     if(newInput) newInput.value = "";
     if(recoveryNick) recoveryNick.value = mainNickname;
@@ -15254,7 +15261,7 @@ setTimeout(startLiveLogNeon, 1200);
     document.getElementById("passwordChangePane")?.classList.toggle("hidden", isRecovery);
     document.getElementById("profileRecoveryPane")?.classList.toggle("hidden", !isRecovery);
     const title = document.getElementById("passwordChangeTitle");
-    if(title) title.textContent = isRecovery ? "아이디 복구" : "PW 변경";
+    if(title) title.textContent = isRecovery ? "아이디 복구" : "개인정보 변경";
     setTimeout(() => {
       if(isRecovery){
         const nick = document.getElementById("profileRecoveryNickname");
@@ -15269,33 +15276,37 @@ setTimeout(startLiveLogNeon, 1200);
 
   async function submitPasswordChange(){
     const nickname = String(document.getElementById("pwChangeNickname")?.value || "").trim();
+    const newName = document.getElementById("pwChangeNextNickname").value.trim();
     const currentPin = String(document.getElementById("pwChangeCurrent")?.value || "").trim();
     const newPin = String(document.getElementById("pwChangeNew")?.value || "").trim();
     const confirmBtn = document.getElementById("btnConfirmPasswordChange");
 
     if(!nickname) return toast("현재 닉네임을 입력해주세요.");
     if(!/^\d{5}$/.test(currentPin)) return toast("현재 비밀번호는 숫자 5자리입니다.");
-    if(!/^\d{5}$/.test(newPin)) return toast("새 비밀번호는 숫자 5자리입니다.");
-    if(currentPin === newPin) return toast("현재 비밀번호와 다른 새 비밀번호를 입력해주세요.");
+    if(newPin && !/^\d{5}$/.test(newPin)) return toast("새 비밀번호는 숫자 5자리입니다.");
+    if((newName || nickname) === nickname && (newPin || currentPin) === currentPin) return toast("변경할 새 닉네임 또는 비밀번호를 입력해주세요.");
 
     try{
       if(confirmBtn){
         confirmBtn.disabled = true;
         confirmBtn.style.opacity = ".55";
       }
-      showLoading("비밀번호를 변경하는 중입니다");
-      await changeUserPasswordSupabase(nickname, currentPin, newPin);
+      showLoading("개인정보를 변경하는 중입니다");
+      const {error}=await sb.rpc("luna_change_personal_info",{
+        p_nickname:nickname,p_pin:currentPin,p_new_nickname:newName,p_new_pin:newPin
+      });
+      if(error)throw error;
 
       const mainNick = document.getElementById("nickname");
       const mainPin = document.getElementById("pin5");
-      if(mainNick) mainNick.value = nickname;
-      if(mainPin) mainPin.value = newPin;
+      if(mainNick) mainNick.value = newName || nickname;
+      if(mainPin) mainPin.value = newPin || currentPin;
 
       closePasswordChangePopup();
-      toast("비밀번호 변경 완료");
+      toast("개인정보 변경 완료");
     }catch(e){
       console.error(e);
-      toast(e?.message || "비밀번호 변경 실패");
+      toast(e?.message || "개인정보 변경 실패");
     }finally{
       hideLoading();
       if(confirmBtn){
@@ -20025,7 +20036,7 @@ function profile(){
  const g=current();if(!g){detail.innerHTML='';if($('mdDialog').open)$('mdDialog').close();return}
  const leaders=officers(g).map((o,i)=>infoRow(roles(g)[i],escape(o.name||'미등록')+(validLink(o.link)?' · <a href="'+escape(o.link)+'" target="_blank" rel="noopener noreferrer">개인톡</a>':''))).join('');
  const facts=[['단체 인원',g.players.length+'명 (군실명제 등록 기준)'],['신용평가',g.rating],['패널티',g.penalty],['특이사항',g.notes||'미등록']];
- detail.innerHTML='<article><h3>'+escape(g.name)+signal(g)+staffButton('name')+(statusOf(g)==='정지예정'?' <button type="button" data-md="awake">휴먼 풀기</button>':'')+'</h3>'+(statusOf(g)==='정지예정'?'<p style="color:#b4232b;font-weight:700">곧 삭제예정인 단체입니다.</p>':'')+'<table><tbody>'+leaders+facts.map(factRow).join('')+'</tbody></table><div class="rowx">'+btn('share','4명 선수 공유하기')+btn('manage','단체 관리')+'</div><div id="mdAction"></div></article><article><h3>단체 댓글</h3><form id="mdComment"><label>댓글 작성<textarea name="body" required maxlength="500"></textarea></label><button>등록</button></form>'+g.comments.map(c=>'<article><small>'+escape(c.date)+' <button type="button" aria-label="댓글 삭제" style="padding:1px 7px;color:#ae3535" data-remove-comment="'+escape(c.id)+'">×</button></small><p>'+escape(c.body)+'</p>'+[1,-1].map(v=>'<button data-comment="'+escape(c.id)+'" data-vote="'+v+'" aria-pressed="'+(c.vote===v)+'">'+(v===1?'좋아요':'싫어요')+' '+Number(c.vote===v)+'</button>').join(' ')+'</article>').join('')+'</article>';
+ detail.innerHTML='<article><h3>'+escape(g.name)+signal(g)+staffButton('name')+(statusOf(g)==='정지예정'?' <button type="button" data-md="awake">휴면해제</button>':'')+'</h3>'+(statusOf(g)==='정지예정'?'<p style="color:#b4232b;font-weight:700">곧 삭제예정인 단체입니다.</p>':'')+'<table><tbody>'+leaders+facts.map(factRow).join('')+'</tbody></table><div class="rowx">'+btn('share','4명 선수 공유하기')+btn('manage','단체 관리')+'</div><div id="mdAction"></div></article><article><h3>단체 댓글</h3><form id="mdComment"><label>댓글 작성<textarea name="body" required maxlength="500"></textarea></label><button>등록</button></form>'+g.comments.map(c=>'<article><small>'+escape(c.date)+' <button type="button" aria-label="댓글 삭제" style="padding:1px 7px;color:#ae3535" data-remove-comment="'+escape(c.id)+'">×</button></small><p>'+escape(c.body)+'</p>'+[1,-1].map(v=>'<button data-comment="'+escape(c.id)+'" data-vote="'+v+'" aria-pressed="'+(c.vote===v)+'">'+(v===1?'좋아요':'싫어요')+' '+Number(c.vote===v)+'</button>').join(' ')+'</article>').join('')+'</article>';
  if(g.source){
   const section=document.createElement('article');
   section.innerHTML='<h3>실명제 등록 승인</h3><div>신청 목록을 불러오는 중입니다.</div>';
@@ -20048,7 +20059,7 @@ function manage(){
  const officerRows=officers(g).map((o,i)=>infoRow(roles(g)[i],
    field('이름','leader'+i,o.name)+field('카카오톡 개인톡 링크','link'+i,o.link,'url'))).join('');
  const facts=[['단체 인원',g.players.length+'명 (군실명제 등록 기준)'],['신용평가',g.rating],['패널티',g.penalty]];
- form.innerHTML='<h3>'+escape(g.name)+signal(g)+staffButton('name')+(statusOf(g)==='정지예정'?' <button type="button" data-md="awake">휴먼 풀기</button>':'')+'</h3>'+
+ form.innerHTML='<h3>'+escape(g.name)+signal(g)+staffButton('name')+(statusOf(g)==='정지예정'?' <button type="button" data-md="awake">휴면해제</button>':'')+'</h3>'+
    '<table><tbody>'+officerRows+facts.map(factRow).join('')+
    infoRow('특이사항','<textarea aria-label="특이사항" name="notes" maxlength="1000">'+escape(g.notes)+'</textarea>')+
    infoRow('단체 비밀번호',field('변경 시 새 비밀번호 입력','pw','','password','pattern="[0-9]{4}" maxlength="4"'))+
@@ -20173,7 +20184,7 @@ root.onclick=async e=>{
  if(a==='awake'&&g){
   if(!g.clubId)return alert('단체 등록정보를 불러온 뒤 다시 시도해주세요.');
   const dlg=document.createElement('dialog');
-  dlg.innerHTML='<form><h3>휴먼 풀기</h3><p>'+escape(g.name)+'</p>'+pwField('단체 비밀번호','secret')+'<button>해제</button> <button type="button">취소</button><p role="alert"></p></form>';
+  dlg.innerHTML='<form><h3>휴면해제</h3><p>'+escape(g.name)+'</p>'+pwField('단체 비밀번호','secret')+'<button>해제</button> <button type="button">취소</button><p role="alert"></p></form>';
   root.append(dlg);dlg.showModal();dlg.onclose=()=>dlg.remove();
   const f=dlg.querySelector('form');f.querySelector('[type=button]').onclick=()=>dlg.close();
   f.onsubmit=async ev=>{
