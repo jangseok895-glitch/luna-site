@@ -7630,6 +7630,7 @@ body > #season40PosterPopup.global-top-modal:not(.hidden){
 
 </style>
 <style>[data-history-hidden]{display:none!important}</style>
+<style>body #realTopPanel .real-action-row #btnRealJpg{border:3px solid #bf2030!important}</style>
 </head>
 
 <body>
@@ -8329,7 +8330,8 @@ function escMini4545(v){
   <!-- 관리 버튼 배열 -->
   <div class="real-row real-action-row">
     <div class="real-tag">관리</div>
-    <button class="btn gold" id="btnOpenUnifiedRegisterRequest" type="button">등록요청 <span class="team-request-badge hidden" id="unifiedRequestCountBadge">0</span></button>
+    <button class="btn gold" id="btnOpenUnifiedRegisterRequest" type="button">실명제등록 <span class="team-request-badge hidden" id="unifiedRequestCountBadge">0</span></button>
+    <button class="btn blue" id="btnRealJpg">스크린샷</button>
     <label id="manageLockWrap" style="
 display:flex;
 align-items:center;
@@ -8410,10 +8412,7 @@ user-select:none;
           <input id="reqScreenshotFile" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden">
         </div>
 
-        <label style="display:flex;align-items:center;gap:6px;margin-top:2px;font-weight:800;">
-          <input type="checkbox" id="skipScreenshotCheck">
-          소통방 스크린샷 제외
-        </label>
+        
       </div>
 
       <div class="team-request-help">
@@ -8490,7 +8489,6 @@ user-select:none;
     <button type="button" class="btn blue" id="realMemberLink">개인 링크 복사</button>
     <button class="btn red" id="btnViewDelete">삭제</button>
     <button class="btn" id="btnMemberSearchReset">초기화</button>
-    <button class="btn blue" id="btnRealJpg">스크린샷</button>
 
     <span id="delPinWrap" class="hidden" style="display:flex;gap:8px;align-items:center;">
       <input id="viewPin" class="text pin" type="password" maxlength="5" inputmode="numeric" placeholder="비밀번호"/>
@@ -8586,7 +8584,7 @@ user-select:none;
 #matchDemo #mdList section+section>h3{background:#e3e6e8;color:#424c55;margin:-8px -8px 8px;padding:9px 12px;border-radius:8px 8px 0 0}
 #matchDemo #mdList section+section button{border-color:#c7cdd2}
 </style>
-<h2>루칭방단체</h2><small id="mdStatus">군실명제 단체를 불러오는 중입니다.</small>
+<div class="rowx"><h2>루칭방단체</h2><button type="button" class="primary" id="btnOpenTeamRequestPopup">단체등록요청</button></div><small id="mdStatus">군실명제 단체를 불러오는 중입니다.</small>
 <div class="rowx"><input id="mdSearch" type="search" aria-label="단체 검색" placeholder="클럽·크루 이름 검색"></div>
 <div class="cards" id="mdList"></div><dialog id="mdDialog" aria-label="단체 프로필"><button data-md="close" class="mdClose">닫기 ×</button><div id="mdDetail"></div></dialog>
 </section>
@@ -14326,23 +14324,11 @@ async function handleTeamScreenshotFile(file){
 
 async function viewTeamRequestPhotoById(requestId){
   try{
-    const rows = await sbSelect("team_register_requests", q =>
-      q.select("screenshot_url").eq("id", requestId).limit(1)
-    );
-
-    if(!rows.length) throw new Error("사진 정보를 찾지 못했습니다.");
-
-    const imgData = String(rows[0].screenshot_url || "").trim();
-
-    // 사진이 없으면 운영진 비번 입력 전에 먼저 안내
-    if(!imgData || imgData === "스크린샷 제외"){
-      alert("등록된 사진이 없습니다.");
-      return;
-    }
-
-    // 사진이 있을 때만 운영진 비번 확인
-    if(!(await checkAdminPw())) return;
-
+    const secret=askAdminPw();
+    if(!secret)return;
+    const {data:imgData,error}=await sb.rpc("luna_request_photo",{p_id:Number(requestId),p_secret:secret});
+    if(error)throw error;
+    if(!imgData||imgData==="스크린샷 제외")return alert("등록된 사진이 없습니다.");
     const img = document.getElementById("teamRequestPhotoImg");
     const pop = document.getElementById("teamRequestPhotoPopup");
 
@@ -14364,7 +14350,7 @@ let __pendingRealRequestCount = 0;
 function updateUnifiedRequestCountBadge(){
   const badge = document.getElementById("unifiedRequestCountBadge");
   if(!badge) return;
-  const total = Math.max(0, Number(__pendingTeamRequestCount)||0) + Math.max(0, Number(__pendingRealRequestCount)||0);
+  const total = Math.max(0, Number(__pendingRealRequestCount)||0);
   badge.textContent = String(total);
   badge.classList.toggle("hidden", total < 1);
 }
@@ -14432,9 +14418,9 @@ if(!leaderName) throw new Error("단체대표 아이디를 입력해주세요.")
     const screenshotData = String(TEAM_REQUEST_SCREENSHOT_DATA || "").trim();
 
     if(!/^\d{4}$/.test(pw)) throw new Error("비밀번호는 숫자 4자리로 입력해주세요.");
-    const skipScreenshot = !!document.getElementById("skipScreenshotCheck")?.checked;
 
-    if(!skipScreenshot && !screenshotData){
+
+    if(!screenshotData){
       throw new Error("소통방 스크린샷을 올려주세요.");
     }
 
@@ -14447,7 +14433,7 @@ if(!leaderName) throw new Error("단체대표 아이디를 입력해주세요.")
       team_name: teamName,
  leader_name: leaderName,
       pw: pw,
-      screenshot_url: skipScreenshot ? "스크린샷 제외" : screenshotData,
+      screenshot_url: screenshotData,
       status: "대기"
     });
     if(error) throw error;
@@ -14464,9 +14450,7 @@ if(!leaderName) throw new Error("단체대표 아이디를 입력해주세요.")
       fileLabel.textContent = "선택된 사진 없음";
       fileLabel.classList.remove("team-file-ok");
     }
-    const skipCheck = document.getElementById("skipScreenshotCheck");
-    if(skipCheck) skipCheck.checked = false;
-    updateSkipScreenshotUI();
+
 
     alert("등록요청이 완료되었습니다");
     await loadTeamRequests();
@@ -14586,10 +14570,7 @@ document.addEventListener("click", function(e){
 
   if(e.target.closest("#btnOpenScreenshotUpload")){
     e.preventDefault();
-    if(document.getElementById("skipScreenshotCheck")?.checked){
-      alert("소통방 스크린샷 제외가 체크되어 있습니다.");
-      return;
-    }
+
     document.getElementById("reqScreenshotFile")?.click();
     return;
   }
@@ -14631,40 +14612,9 @@ if(deleteBtn){
 });
 
 document.getElementById("reqScreenshotFile")?.addEventListener("change", function(){
-  if(document.getElementById("skipScreenshotCheck")?.checked) return;
+
   handleTeamScreenshotFile(this.files && this.files[0]);
 });
-
-function updateSkipScreenshotUI(){
-  const skipCheck = document.getElementById("skipScreenshotCheck");
-  const btn = document.getElementById("btnOpenScreenshotUpload");
-  const fileInput = document.getElementById("reqScreenshotFile");
-  const fileLabel = document.getElementById("reqScreenshotFileName");
-
-  if(!skipCheck || !btn) return;
-
-  btn.disabled = skipCheck.checked;
-  btn.style.opacity = skipCheck.checked ? "0.45" : "1";
-  btn.style.cursor = skipCheck.checked ? "not-allowed" : "pointer";
-
-  if(skipCheck.checked){
-    TEAM_REQUEST_SCREENSHOT_DATA = "";
-    TEAM_REQUEST_SCREENSHOT_NAME = "";
-    if(fileInput) fileInput.value = "";
-    if(fileLabel){
-      fileLabel.textContent = "스크린샷 제외 선택됨";
-      fileLabel.classList.remove("team-file-ok");
-    }
-  }else{
-    if(fileLabel && !TEAM_REQUEST_SCREENSHOT_DATA){
-      fileLabel.textContent = "선택된 사진 없음";
-      fileLabel.classList.remove("team-file-ok");
-    }
-  }
-}
-
-document.getElementById("skipScreenshotCheck")?.addEventListener("change", updateSkipScreenshotUI);
-updateSkipScreenshotUI();
 
 // 군실명제 탭 진입 전에도 요청 숫자만 미리 갱신
 setTimeout(loadTeamRequests, 800);
@@ -14841,7 +14791,7 @@ async function handlePublicRealRequestAction(token){
   try{
     await actRealRegisterRequest(id,action,pw);
     alert(action==="approve"?"군실명제 등록 승인이 완료되었습니다.":"군실명제 등록요청이 반려되었습니다.");
-    window.REAL_TEAM_CACHE=null; await loadRealRegisterRequests(); await loadUnifiedPendingRequests(); if(typeof initRealUI==="function") initRealUI(true);
+    window.REAL_TEAM_CACHE=null; document.dispatchEvent(new Event("luna-real-request-changed")); await loadRealRegisterRequests(); if(typeof initRealUI==="function") initRealUI(true);
   }catch(e){console.error(e);alert(e.message||"처리 실패");}
 }
 async function handleAdminRealRequestAction(token){
@@ -14894,7 +14844,7 @@ function continueUnifiedRegisterRequest(){
 }
 
 document.addEventListener("click", async function(e){
-  if(e.target.closest("#btnOpenUnifiedRegisterRequest")){e.preventDefault();openUnifiedRegisterRequest();return;}
+  if(e.target.closest("#btnOpenUnifiedRegisterRequest")){e.preventDefault();openRegisterPopup();return;}
   if(e.target.closest("#btnCloseUnifiedRegisterRequest")){e.preventDefault();document.getElementById("unifiedRegisterRequestPopup")?.classList.add("hidden");return;}
   if(e.target.closest("#btnContinueUnifiedRegisterRequest")){e.preventDefault();continueUnifiedRegisterRequest();return;}
   if(e.target.closest("#btnCloseRegisterPopup2Bottom")){e.preventDefault();closeRegisterPopup();return;}
@@ -20052,13 +20002,12 @@ const ratingOptions=["미입력", "클럽", "6개월이상 유지된 크루"];
 function totalPenalty(g){return (g.history||[]).reduce((n,row)=>n+Number(row.points),0)}
 function statusOf(g){
  if(!g.mode||g.mode==='기본')return '정지예정';
- if(g.mode==='활성')return '좋음';
  if(g.mode==='정지예정'||g.mode==='신규')return g.mode;
 
  const points=totalPenalty(g);
- return points<=-3?'주의':points===-2?'중간':'좋음';
+ return points<=-3?'주의':points===-2?'일반':'정상';
 }
-function signal(g){const state=statusOf(g);return ' <span style="white-space:nowrap;font-size:.8em">'+({'좋음':'🟢','중간':'🟡','주의':'🔴','신규':'🟠','정지예정':'❌'}[state])+' '+state+'</span>'}
+function signal(g){const state=statusOf(g);return ' <span style="white-space:nowrap;font-size:.8em">'+({'정상':'🟢','일반':'🟡','주의':'🔴','신규':'🟠','정지예정':'❌'}[state])+' '+state+'</span>'}
 function options(items,current){return items.map(x=>'<option'+(x===current?' selected':'')+'>'+escape(x)+'</option>').join('')}
 function staffButton(key){return ' <button type="button" data-staff="'+key+'">수정</button>'}
 function factRow([label,value]){
@@ -20077,6 +20026,17 @@ function profile(){
  const leaders=officers(g).map((o,i)=>infoRow(roles(g)[i],escape(o.name||'미등록')+(validLink(o.link)?' · <a href="'+escape(o.link)+'" target="_blank" rel="noopener noreferrer">개인톡</a>':''))).join('');
  const facts=[['단체 인원',g.players.length+'명 (군실명제 등록 기준)'],['신용평가',g.rating],['패널티',g.penalty],['특이사항',g.notes||'미등록']];
  detail.innerHTML='<article><h3>'+escape(g.name)+signal(g)+staffButton('name')+(statusOf(g)==='정지예정'?' <button type="button" data-md="awake">휴먼 풀기</button>':'')+'</h3>'+(statusOf(g)==='정지예정'?'<p style="color:#b4232b;font-weight:700">곧 삭제예정인 단체입니다.</p>':'')+'<table><tbody>'+leaders+facts.map(factRow).join('')+'</tbody></table><div class="rowx">'+btn('share','4명 선수 공유하기')+btn('manage','단체 관리')+'</div><div id="mdAction"></div></article><article><h3>단체 댓글</h3><form id="mdComment"><label>댓글 작성<textarea name="body" required maxlength="500"></textarea></label><button>등록</button></form>'+g.comments.map(c=>'<article><small>'+escape(c.date)+' <button type="button" aria-label="댓글 삭제" style="padding:1px 7px;color:#ae3535" data-remove-comment="'+escape(c.id)+'">×</button></small><p>'+escape(c.body)+'</p>'+[1,-1].map(v=>'<button data-comment="'+escape(c.id)+'" data-vote="'+v+'" aria-pressed="'+(c.vote===v)+'">'+(v===1?'좋아요':'싫어요')+' '+Number(c.vote===v)+'</button>').join(' ')+'</article>').join('')+'</article>';
+ if(g.source){
+  const section=document.createElement('article');
+  section.innerHTML='<h3>실명제 등록 승인</h3><div>신청 목록을 불러오는 중입니다.</div>';
+  detail.append(section);
+  fetchRealRegisterRequests(g.source).then(rows=>{
+   if(!section.isConnected)return;
+   const own=rows.filter(row=>row.team_name===g.source);
+   section.lastElementChild.innerHTML=own.length?own.map(row=>realRequestRowHtml(row,'public')).join(''):'대기 중인 신청이 없습니다.';
+  }).catch(()=>{section.lastElementChild.textContent='신청 목록을 불러오지 못했습니다.'});
+ }
+
 }
 const field=(label,name,value='',type='text',extra='')=>'<label>'+label+'<input name="'+name+'" type="'+type+'" value="'+escape(value)+'" '+extra+'></label>';
 const pwField=(label,name)=>field(label,name,'','password','inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required');
@@ -20130,6 +20090,11 @@ async function syncDirectory(){
  save();list();if(!$('mdDialog').open||!current())profile();
  $('mdStatus').textContent='군실명제 연동 · 프로필 편집과 댓글은 이 브라우저에 샘플로 저장됩니다.';
 }
+document.addEventListener('luna-real-request-changed',async()=>{
+ if(!$('mdDialog').open)return;
+ profile();
+ try{await syncDirectory();if($('mdDialog').open)profile()}catch(e){console.warn(e)}
+});
 window.openMatchDemo=()=>{
  showGunpyo();setActiveTab('matching');
  ['gunpyoTopPanel','gunpyoSection'].forEach(x=>$(x).classList.add('hidden'));
@@ -20217,7 +20182,7 @@ root.onclick=async e=>{
    try{
     const {error}=await sb.rpc('luna_awaken',{p_club_id:g.clubId,p_secret:f.elements.secret.value});
     if(error)throw error;
-    g.mode='활성';save();list();profile();dlg.close();
+    g.mode='자동';save();list();profile();dlg.close();
    }catch(e){f.querySelector('[role=alert]').textContent=e.message||'해제 실패';f.elements.secret.select()}
    finally{submit.disabled=false}
   };return;
@@ -20228,7 +20193,7 @@ root.onclick=async e=>{
   {
    const dlg=document.createElement('dialog');
    const setting=k==='name'?field('단체명','name',g.name,'text','required maxlength="45"')+
-     '<label>상태 판정<select name="status">'+options(['기본','자동','신규','정지예정',...(g.mode==='활성'?['활성']:[])],g.mode||'정지예정')+'</select></label>':
+     '<label>상태 판정<select name="status">'+options(['자동','신규','정지예정'],g.mode==='활성'?'자동':g.mode==='기본'?'정지예정':g.mode||'정지예정')+'</select></label>':
      '<label>'+label+'<select required name="choice">'+(k==='penalty'?'<option value="">유형 선택</option>':'')+options(k==='penalty'?penaltyOptions:ratingOptions,g[k])+'</select></label>';
    dlg.innerHTML='<form><h3>'+label+(k==='penalty'?' 등록':' 수정')+'</h3>'+setting+pwField('운영진 비밀번호','secret')+'<button>저장</button> <button type="button">취소</button></form>';
    root.append(dlg);dlg.showModal();
