@@ -8575,6 +8575,10 @@ user-select:none;
 #mdList section+section .mdTiles{grid-template-columns:repeat(3,minmax(0,1fr))}
 #matchDemo .mdTiles button{margin:0;min-width:0;padding:7px;font-size:14px}
 #matchDemo #mdEdit input,#matchDemo #mdEdit textarea{width:100%}
+#matchDemo button:is([data-md="share"],[data-md="copy"]){background:#bd2230;color:#fff;border-color:#a91c29;font-weight:800}
+#matchDemo button:is([data-md="share"],[data-md="copy"]):enabled:hover{background:#9e1927}
+#matchDemo button[data-md="copy"]:disabled{background:#a45259;color:#fff;opacity:1;cursor:not-allowed}
+#mdDetail .mdPenaltyHistory{color:#b4232b;font-weight:700}
 </style>
 <h2>루칭방단체</h2><small id="mdStatus">군실명제 단체를 불러오는 중입니다.</small>
 <div class="rowx"><input id="mdSearch" type="search" aria-label="단체 검색" placeholder="클럽·크루 이름 검색"></div>
@@ -20055,7 +20059,7 @@ function factRow([label,value]){
   const g=current(),rows=[...(g.history||[])].reverse();
   const legacy=g.penalty&&g.penalty!=='미입력'?'기존 메모 · '+escape(g.penalty):'';
   return infoRow(label,'<b>현재 패널티 점수 총점 : '+totalPenalty(g)+'점</b> '+staffButton(key)+
-   '<div>'+rows.map(r=>escape(formatSavedAt(r.at))+' · '+escape(r.type)+(r.id?' <button type="button" style="padding:1px 7px;color:#ae3535" aria-label="'+escape(r.type)+' 이력 삭제" data-remove-penalty="'+escape(r.id)+'">×</button>':'')).join('<br>')+'</div>'+legacy);
+   '<div class="mdPenaltyHistory">'+rows.map(r=>escape(formatSavedAt(r.at))+' · '+escape(r.type)+(r.id?' <button type="button" style="padding:1px 7px;color:#ae3535" aria-label="'+escape(r.type)+' 이력 삭제" data-remove-penalty="'+escape(r.id)+'">×</button>':'')).join('<br>')+'</div>'+legacy);
  }
  if(key==='rating'&&!ratingOptions.includes(value))value='미입력';
  return infoRow(label,escape(value)+(key?staffButton(key):''));
@@ -20094,11 +20098,11 @@ async function syncDirectory(){
  const clubs=await sbSelect("club_pw",q=>q.select("id,club").order("id").range(0,999));
  for(const c of clubs)if(c.club)latest.set(c.club,[]);
  for(let start=0;;start+=500){
-  const rows=await sbSelect("team_members",q=>q.select("id,team_name,nickname").order("id").range(start,start+499));
+  const rows=await sbSelect("team_members",q=>q.select("id,team_name,nickname,total").order("id").range(start,start+499));
   for(const r of rows){
    if(!r.team_name||!r.nickname)continue;
    if(!latest.has(r.team_name))latest.set(r.team_name,[]);
-   latest.get(r.team_name).push({id:'member-'+r.id,nick:r.nickname});
+   latest.get(r.team_name).push({id:'member-'+r.id,nick:r.nickname,rank:r.total==null?'군 미확인':getRankNameFromTotal(r.total)});
   }
   if(rows.length<500)break;
  }
@@ -20127,6 +20131,12 @@ window.openMatchDemo=()=>{
  }).finally(()=>pending=null);
 };
 $('mdSearch').oninput=list;
+function rankedRoster(players){
+ const order=TIERS_DESC.map(t=>t.label);
+ const priority=p=>order.includes(p.rank)?order.indexOf(p.rank):order.length;
+ return [...players].sort((a,b)=>priority(a)-priority(b)||a.nick.localeCompare(b.nick,'ko'));
+}
+function shareLabel(p){return p.nick+' ['+(p.rank||'군 미확인')+']'}
 function shareBase(){
  let base=location.href;
  if(!['https:','http:'].includes(location.protocol)){
@@ -20220,10 +20230,14 @@ root.onclick=async e=>{
  if(a==='back')profile();
  if(a==='logout'){session=null;profile()}
  if(a==='delete'&&session===id&&confirm(g.name+'의 샘플 단체와 댓글을 삭제하시겠습니까?')){if(g.source){const hidden=JSON.parse(localStorage.getItem(key+'.hidden')||'[]');hidden.push(g.source);localStorage.setItem(key+'.hidden',JSON.stringify(hidden))}groups=groups.filter(x=>x.id!==id);save();id=session=null;list();profile()}
- if(a==='share'){$('mdAction').innerHTML='<h3>공유할 선수 선택</h3><div class="roster">'+g.players.map(p=>'<label><input type="checkbox" value="'+escape(p.id)+'"> '+escape(p.nick)+'</label>').join('')+'</div>'+(g.players.length?'<button disabled data-md="copy">공유하기 (0/4)</button>':'등록된 선수가 없습니다.')}
+ if(a==='share'){$('mdAction').innerHTML='<h3>공유할 선수 선택</h3><div class="roster">'+rankedRoster(g.players).map(p=>'<label><input type="checkbox" value="'+escape(p.id)+'"> '+escape(shareLabel(p))+'</label>').join('')+'</div>'+(g.players.length?'<button disabled data-md="copy">공유하기 (0/4)</button>':'등록된 선수가 없습니다.')}
  if(a==='copy'){
  const base=shareBase();if(!base)return;
- const links=[...$('mdAction').querySelectorAll('input:checked')].slice(0,4).map(x=>{const u=new URL(base);u.hash='';u.searchParams.set('matchPlayer',x.value);return g.players.find(p=>p.id===x.value).nick+'\n'+u.href}).join('\n');
+ const checked=new Set([...$('mdAction').querySelectorAll('input:checked')].map(x=>x.value));
+ const links=rankedRoster(g.players.filter(p=>checked.has(p.id))).slice(0,4).map(p=>{
+  const url=new URL(base);url.hash='';url.searchParams.set('matchPlayer',p.id);
+  return shareLabel(p)+'\n'+url.href;
+ }).join('\n');
  try{await navigator.clipboard.writeText(links);b.textContent='링크 복사 완료'}catch{const t=document.createElement('textarea');t.value=links;$('mdAction').append(t);t.select();b.textContent='선택된 링크를 복사하세요'}
  }
 };
