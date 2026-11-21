@@ -20008,7 +20008,7 @@ function roles(g){const t=kind(g);return [t+'장','부'+t+'장 1','부'+t+'장 2
 function officers(g){return g.officers||[{name:'',link:g.kakao||''},{name:'',link:''},{name:'',link:''}]}
 function validLink(link){try{const u=new URL(link);return u.protocol==='https:'&&['open.kakao.com','pf.kakao.com','qr.kakao.com'].includes(u.hostname)}catch{return false}}
 function infoRow(label,value){return '<tr><th scope="row">'+escape(label)+'</th><td>'+value+'</td></tr>'}
-const penaltyOptions=["-1점 역주행,막자행위", "-1점 방사", "-1점 지각", "-1점 고지 미준수", "-1점 게임방해행위", "-1점 버그빌드사용", "-1점 매칭방이용불량", "-2점 비하/욕설", "-2점 주차", "-2점 노쇼", "-2점 탈주", "-2점 기타"];
+const penaltyOptions=["-1점 역주행,막자행위", "-1점 방사", "-1점 지각", "-1점 고지 미준수", "-1점 게임방해행위", "-1점 버그빌드사용", "-1점 매칭방이용불량", "-1점 주차", "-2점 비하/욕설", "-2점 주차", "-2점 노쇼", "-2점 탈주", "-2점 기타"];
 const ratingOptions=["미입력", "클럽", "6개월이상 유지된 크루"];
 function totalPenalty(g){return (g.history||[]).reduce((n,row)=>n+Number(row.points),0)}
 function statusOf(g){
