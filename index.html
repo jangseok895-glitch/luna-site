@@ -8398,6 +8398,7 @@ user-select:none;
 
   <b>단체대표</b>
   <input id="reqTeamLeaderName" class="text" placeholder="대표자 아이디">
+</div><div class="team-request-form-row"><label for="reqLeaderLink">단체 대표자 카카오톡 링크</label><input id="reqLeaderLink" type="url" class="text" required placeholder="https://open.kakao.com/…">
 </div>
 
       <div class="team-request-form-row">
@@ -8579,14 +8580,23 @@ user-select:none;
 #mdDetail .mdPenaltyHistory{color:#b4232b;font-weight:700}
 #mdList section:first-child{border:3px solid #08786e;background:#edf8f5}
 #matchDemo #mdList section:first-child>h3{background:#075e57;color:white;margin:-8px -8px 8px;padding:9px 12px;border-radius:6px 6px 0 0;font-weight:800}
-#matchDemo #mdList section:first-child button{border-color:#6daea5;border-left:3px solid #138478}
+#matchDemo #mdList section:first-child button[data-group]{border-color:#6daea5;border-left:3px solid #138478}
 #mdList section+section{border:1px solid #c7cdd2;background:#f3f4f5}
 #matchDemo #mdList section+section>h3{background:#e3e6e8;color:#424c55;margin:-8px -8px 8px;padding:9px 12px;border-radius:8px 8px 0 0}
 #matchDemo #mdList section+section button{border-color:#c7cdd2}
 #matchDemo button[data-md="awake"]{border:3px solid #f5c400}
+#matchDemo .mdDirectoryHead{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
+#mdFavorites{background:#fffaf0;border:1px solid #e4cc91;border-radius:10px;padding:10px}
+#matchDemo .mdFavChip{display:inline-flex;align-items:center;background:white;border:1px solid #b4c3dc;border-radius:8px} #matchDemo .mdFavChip button{margin:0;border:0;background:transparent} #matchDemo .mdFavChip button[data-unfavorite]{min-width:24px;padding:4px;color:#985454;font-size:16px} #mdFavoriteLinks{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+#mdList .mdFavoriteTile{position:relative;display:grid;min-width:0}
+#matchDemo #mdList button[data-group]{padding-right:30px;overflow-wrap:anywhere}
+#matchDemo #mdList button[data-favorite]{position:absolute;right:2px;top:3px;width:28px;height:30px;padding:0;background:transparent;border:0;color:#796224;font:22px/1 sans-serif;box-shadow:none}
+#matchDemo #mdList button[data-favorite][aria-pressed=true]{color:#bf8200}
+@media(max-width:680px){#matchDemo .mdDirectoryHead{grid-template-columns:1fr}}
 </style>
-<div class="rowx"><h2>루칭방단체</h2><button type="button" class="primary" id="btnOpenTeamRequestPopup">단체등록요청</button></div><small id="mdStatus">군실명제 단체를 불러오는 중입니다.</small>
+<div class="mdDirectoryHead"><div><div class="rowx"><h2>루칭방단체</h2><button type="button" class="primary" id="btnOpenTeamRequestPopup">단체등록요청</button></div><small id="mdStatus">군실명제 단체를 불러오는 중입니다.</small>
 <div class="rowx"><input id="mdSearch" type="search" aria-label="단체 검색" placeholder="클럽·크루 이름 검색"></div>
+</div><aside id="mdFavorites"><strong>즐겨찾기 <span id="mdFavoriteCount"></span></strong><div id="mdFavoriteLinks"></div></aside></div>
 <div class="cards" id="mdList"></div><dialog id="mdDialog" aria-label="단체 프로필"><button data-md="close" class="mdClose">닫기 ×</button><div id="mdDetail"></div></dialog>
 </section>
 
@@ -14420,6 +14430,8 @@ const teamName = getTeamRequestName();
 const leaderName = String(document.getElementById("reqTeamLeaderName")?.value || "").trim();
 const pw = String(document.getElementById("reqTeamPw")?.value || "").trim();
 
+const leaderLink=document.getElementById('reqLeaderLink').value.trim();
+if(!/^https:\/\/(open|pf|qr)\.kakao\.com\/[^\s]+$/.test(leaderLink))throw new Error('대표자의 카카오톡 개인톡 링크를 입력해주세요.');
 if(!leaderName) throw new Error("단체대표 아이디를 입력해주세요.");
     const screenshotData = String(TEAM_REQUEST_SCREENSHOT_DATA || "").trim();
 
@@ -14437,7 +14449,7 @@ if(!leaderName) throw new Error("단체대표 아이디를 입력해주세요.")
 
     const { error } = await sb.from("team_register_requests").insert({
       team_name: teamName,
- leader_name: leaderName,
+ leader_name: leaderName, leader_kakao: leaderLink,
       pw: pw,
       screenshot_url: screenshotData,
       status: "대기"
@@ -14445,7 +14457,7 @@ if(!leaderName) throw new Error("단체대표 아이디를 입력해주세요.")
     if(error) throw error;
 
     document.getElementById("reqTeamType").value = "club";
-    document.getElementById("reqTeamRawName").value = "";
+    document.getElementById("reqTeamRawName").value = ""; document.getElementById("reqLeaderLink").value=""; document.getElementById("reqTeamLeaderName").value="";
     document.getElementById("reqTeamPw").value = "";
     TEAM_REQUEST_SCREENSHOT_DATA = "";
     TEAM_REQUEST_SCREENSHOT_NAME = "";
@@ -14473,7 +14485,7 @@ async function approveTeamRequestById(requestId){
     const adminPw = askAdminPw();
     if(!adminPw) return;
 
-    const { error } = await sb.rpc("approve_team_request_admin", {
+    const { error } = await sb.rpc("luna_approve_with_contact", {
       p_request_id: Number(requestId),
       p_admin_pw: adminPw
     });
@@ -19994,13 +20006,30 @@ const read=()=>JSON.parse(localStorage.getItem(key)||JSON.stringify(initial));
 let groups=read(),id=null,session=null;
 const current=()=>groups.find(g=>g.id===id);
 const save=()=>localStorage.setItem(key,JSON.stringify(groups));
-const btn=(action,label)=>'<button data-md="'+action+'">'+label+'</button>';
+const btn=(action,label)=>'<button type="button" data-md="'+action+'">'+label+'</button>';
+const favoriteKey=key+'.favorites';
+const favoriteId=g=>g.clubId!=null?'club:'+g.clubId:g.id;
+function favoriteIds(){
+ try{
+  const ids=JSON.parse(localStorage.getItem(favoriteKey)||'[]');
+  return Array.isArray(ids)?ids.filter(id=>typeof id==='string').slice(0,3):[];
+ }catch{return []}
+}
 function list(){
+ const saved=favoriteIds();
+ const favorites=saved.map(id=>groups.find(g=>favoriteId(g)===id)).filter(Boolean);
+ $('mdFavoriteCount').textContent=favorites.length+'/3';
+ $('mdFavoriteLinks').innerHTML=favorites.map(g=>'<span class="mdFavChip"><button type="button" data-group="'+escape(g.id)+'">'+escape(g.name)+'</button><button type="button" data-unfavorite="'+escape(favoriteId(g))+'" aria-label="'+escape(g.name)+' 즐겨찾기 해제">×</button></span>').join('');
+ const tile=g=>{
+  const fid=favoriteId(g),active=saved.includes(fid);
+  return '<div class="mdFavoriteTile"><button data-group="'+escape(g.id)+'"><b>'+escape(bare(g))+signal(g)+'</b><small>'+g.players.length+'명 등록</small></button>'+
+   '<button type="button" data-favorite="'+escape(fid)+'" aria-label="'+escape(g.name)+' 즐겨찾기" aria-pressed="'+active+'">'+(active?'★':'☆')+'</button></div>';
+ };
  const q=$('mdSearch').value.trim().toLowerCase();
  const collator=new Intl.Collator('ko',{numeric:true});
  const bare=g=>g.name.replace(/^\[(클럽|크루)\]\s*/,'');
  const hits=groups.filter(g=>g.name.toLowerCase().includes(q)).sort((a,b)=>collator.compare(bare(a),bare(b)));
- const column=(title,items)=>'<section><h3>'+title+'</h3><div class="mdTiles">'+ (items.map(g=>'<button data-group="'+escape(g.id)+'"><b>'+escape(bare(g))+signal(g)+'</b><small>'+g.players.length+'명 등록</small></button>').join('')||'<small>검색 결과 없음</small>')+'</div></section>';
+ const column=(title,items)=>'<section><h3>'+title+'</h3><div class="mdTiles">'+ (items.map(tile).join('')||'<small>검색 결과 없음</small>')+'</div></section>';
  $('mdList').innerHTML=column('클럽',hits.filter(g=>kind(g)==='클럽'))+column('크루',hits.filter(g=>kind(g)==='크루'));
 }
 function kind(g){return (g.source||g.name).startsWith('[클럽]')?'클럽':'크루'}
@@ -20036,7 +20065,7 @@ function profile(){
  const g=current();if(!g){detail.innerHTML='';if($('mdDialog').open)$('mdDialog').close();return}
  const leaders=officers(g).map((o,i)=>infoRow(roles(g)[i],escape(o.name||'미등록')+(validLink(o.link)?' · <a href="'+escape(o.link)+'" target="_blank" rel="noopener noreferrer">개인톡</a>':''))).join('');
  const facts=[['단체 인원',g.players.length+'명 (군실명제 등록 기준)'],['신용평가',g.rating],['패널티',g.penalty],['특이사항',g.notes||'미등록']];
- detail.innerHTML='<article><h3>'+escape(g.name)+signal(g)+staffButton('name')+(statusOf(g)==='정지예정'?' <button type="button" data-md="awake">휴면해제</button>':'')+'</h3>'+(statusOf(g)==='정지예정'?'<p style="color:#b4232b;font-weight:700">곧 삭제예정인 단체입니다.</p>':'')+'<table><tbody>'+leaders+facts.map(factRow).join('')+'</tbody></table><div class="rowx">'+btn('share','4명 선수 공유하기')+btn('manage','단체 관리')+'</div><div id="mdAction"></div></article><article><h3>단체 댓글</h3><form id="mdComment"><label>댓글 작성<textarea name="body" required maxlength="500"></textarea></label><button>등록</button></form>'+g.comments.map(c=>'<article><small>'+escape(c.date)+' <button type="button" aria-label="댓글 삭제" style="padding:1px 7px;color:#ae3535" data-remove-comment="'+escape(c.id)+'">×</button></small><p>'+escape(c.body)+'</p>'+[1,-1].map(v=>'<button data-comment="'+escape(c.id)+'" data-vote="'+v+'" aria-pressed="'+(c.vote===v)+'">'+(v===1?'좋아요':'싫어요')+' '+Number(c.vote===v)+'</button>').join(' ')+'</article>').join('')+'</article>';
+ detail.innerHTML='<article><h3>'+escape(g.name)+signal(g)+staffButton('name')+(g.clubId?' '+btn('attachment','단체 첨부파일'):'')+(statusOf(g)==='정지예정'?' <button type="button" data-md="awake">휴면해제</button>':'')+'</h3>'+(statusOf(g)==='정지예정'?'<p style="color:#b4232b;font-weight:700">곧 삭제예정인 단체입니다.</p>':'')+'<table><tbody>'+leaders+facts.map(factRow).join('')+'</tbody></table><div class="rowx">'+btn('share','4명 선수 공유하기')+btn('manage','단체 관리')+'</div><div id="mdAction"></div></article><article><h3>단체 댓글</h3><form id="mdComment"><label>댓글 작성<textarea name="body" required maxlength="500"></textarea></label><button>등록</button></form>'+g.comments.map(c=>'<article><small>'+escape(c.date)+' <button type="button" aria-label="댓글 삭제" style="padding:1px 7px;color:#ae3535" data-remove-comment="'+escape(c.id)+'">×</button></small><p>'+escape(c.body)+'</p>'+[1,-1].map(v=>'<button data-comment="'+escape(c.id)+'" data-vote="'+v+'" aria-pressed="'+(c.vote===v)+'">'+(v===1?'좋아요':'싫어요')+' '+Number(c.vote===v)+'</button>').join(' ')+'</article>').join('')+'</article>';
  if(g.source){
   const section=document.createElement('article');
   section.innerHTML='<h3>실명제 등록 승인</h3><div>신청 목록을 불러오는 중입니다.</div>';
@@ -20057,9 +20086,9 @@ function manage(){
  const form=document.createElement('form');
  form.id='mdEdit';
  const officerRows=officers(g).map((o,i)=>infoRow(roles(g)[i],
-   field('이름','leader'+i,o.name)+field('카카오톡 개인톡 링크','link'+i,o.link,'url'))).join('');
+   (i===0?'<small>대표자 이름과 링크는 등록·변경 후 72시간마다 수정할 수 있습니다.</small>':'')+field('이름','leader'+i,o.name)+field('카카오톡 개인톡 링크','link'+i,o.link,'url'))).join('');
  const facts=[['단체 인원',g.players.length+'명 (군실명제 등록 기준)'],['신용평가',g.rating],['패널티',g.penalty]];
- form.innerHTML='<h3>'+escape(g.name)+signal(g)+staffButton('name')+(statusOf(g)==='정지예정'?' <button type="button" data-md="awake">휴면해제</button>':'')+'</h3>'+
+ form.innerHTML='<h3>'+escape(g.name)+signal(g)+staffButton('name')+(g.clubId?' '+btn('attachment','단체 첨부파일'):'')+(statusOf(g)==='정지예정'?' <button type="button" data-md="awake">휴면해제</button>':'')+'</h3>'+
    '<table><tbody>'+officerRows+facts.map(factRow).join('')+
    infoRow('특이사항','<textarea aria-label="특이사항" name="notes" maxlength="1000">'+escape(g.notes)+'</textarea>')+
    infoRow('단체 비밀번호',field('변경 시 새 비밀번호 입력','pw','','password','pattern="[0-9]{4}" maxlength="4"'))+
@@ -20088,18 +20117,22 @@ async function syncDirectory(){
  let reviews=[];
  try{reviews=await sbSelect('luna_group_review',q=>q.select('club_id,rating,penalty,history,mode'))}catch(e){console.warn('단체 운영진 SQL 설치 여부를 확인해주세요.')}
  const clubIds=new Map(clubs.map(c=>[c.club,c.id]));
+ const directoryContacts=await sbSelect('luna_group_contact',q=>q.select('club_id,leader_name,leader_kakao'));
+ const leadersById=new Map(directoryContacts.map(c=>[c.club_id,c]));
  const old=read(),hidden=JSON.parse(localStorage.getItem(key+'.hidden')||'[]');
  groups=old.filter(g=>!g.source&&!initial.some(x=>x.id===g.id));
  for(const [name,players] of latest){
   if(hidden.includes(name))continue;
   const g=old.find(x=>x.source===name||(x.clubId&&x.clubId===clubIds.get(name)))||{...example('club-'+name,name,[]),source:name,pw:''};
   g.source=g.name=name;g.clubId=clubIds.get(name);
+  const leader=leadersById.get(g.clubId);
+  if(leader){g.officers=officers(g).slice();g.officers[0]={name:leader.leader_name,link:leader.leader_kakao}}
   const review=reviews.find(r=>r.club_id===g.clubId);
   g.history=review?.history||[];g.mode=review?.mode||'정지예정';g.rating=review?.rating||'미평가';g.penalty=review?.penalty||'미입력';
   g.players=players;groups.push(g);
  }
  save();list();if(!$('mdDialog').open||!current())profile();
- $('mdStatus').textContent='군실명제 연동 · 프로필 편집과 댓글은 이 브라우저에 샘플로 저장됩니다.';
+ $('mdStatus').textContent='';
 }
 document.addEventListener('luna-real-request-changed',async()=>{
  if(!$('mdDialog').open)return;
@@ -20144,6 +20177,17 @@ $('realMemberLink').onclick=async()=>{
 };
 root.onclick=async e=>{
  const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.favorite||b.dataset.unfavorite){
+  const fid=b.dataset.favorite||b.dataset.unfavorite;
+  const saved=favoriteIds().filter(id=>groups.some(g=>favoriteId(g)===id));
+  if(b.dataset.unfavorite&&!saved.includes(fid)){list();return}
+  if(!saved.includes(fid)&&saved.length>=3){alert('즐겨찾기는 최대 3개까지 등록할 수 있습니다.');return}
+  const next=saved.includes(fid)?saved.filter(id=>id!==fid):[...saved,fid];
+  localStorage.setItem(favoriteKey,JSON.stringify(next));
+  list();
+  Array.from(root.querySelectorAll('[data-favorite]')).find(el=>el.dataset.favorite===fid)?.focus();
+  return;
+ }
  if(b.dataset.group){id=b.dataset.group;session=null;profile();$('mdDialog').showModal();return}
  const g=current(),a=b.dataset.md;
  if((b.dataset.removePenalty||b.dataset.removeComment)&&g){
@@ -20227,6 +20271,23 @@ root.onclick=async e=>{
  if(b.dataset.comment){const c=g.comments.find(c=>c.id===b.dataset.comment),v=Number(b.dataset.vote);c.vote=c.vote===v?0:v;save();profile();return}
  if(a==='close'){$('mdDialog').close();return}
  if(!g)return;
+ if(a==='attachment'){
+  const dlg=document.createElement('dialog');
+  dlg.innerHTML='<form><h3>단체 첨부파일</h3>'+pwField('운영진 비밀번호','secret')+'<button>사진 보기</button> <button type="button">닫기</button></form>';
+  root.append(dlg);dlg.showModal();dlg.onclose=()=>dlg.remove();
+  dlg.querySelector('[type=button]').onclick=()=>dlg.close();
+  dlg.querySelector('form').onsubmit=async ev=>{
+   ev.preventDefault();ev.stopPropagation();
+   const f=ev.currentTarget;
+   try{
+    const {data,error}=await sb.rpc('luna_group_photo',{p_id:g.clubId,p_secret:f.elements.secret.value});f.elements.secret.value='';
+    if(error)throw error;
+    if(!data)return alert('보관된 소통방 스크린샷이 없습니다.');
+    const img=document.createElement('img');img.alt='소통방 스크린샷';img.style.cssText='display:block;max-width:100%;max-height:72vh;object-fit:contain';img.src=data;
+    f.replaceChildren(img,f.querySelector('[type=button]'));
+   }catch(err){alert(err.message||'사진을 불러오지 못했습니다.')}
+  };return;
+ }
  if(a==='manage')manage();
  if(a==='back')profile();
  if(a==='logout'){session=null;profile()}
@@ -20254,6 +20315,12 @@ root.onsubmit=async e=>{
   if(session!==id)return;
   const contacts=roles(g).map((_,i)=>({name:v['leader'+i].trim(),link:v['link'+i].trim()}));
   if(contacts.some(o=>o.link&&(!o.name||!validLink(o.link))))return alert('개인톡 링크가 있는 대표진의 이름과 카카오톡 주소를 확인해주세요.');
+  const prev=officers(g)[0];
+  if(g.source&&(contacts[0].name!==prev.name||contacts[0].link!==prev.link)){
+   const pw=prompt('대표자 변경을 위해 단체 비밀번호를 입력해주세요.');if(!pw)return;
+   const {error}=await sb.rpc('luna_change_leader',{p_id:g.clubId,p_name:contacts[0].name,p_link:contacts[0].link,p_pw:pw});
+   if(error)return alert(error.message);
+  }
   Object.assign(g,{officers:contacts,notes:v.notes.trim(),pw:v.pw||g.pw});
  }
  save();list();profile();
