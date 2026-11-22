@@ -8428,6 +8428,9 @@ user-select:none;
       </div>
 
       <div id="pendingTeamList"></div>
+      <h3>반려된 단체</h3>
+      <small>*이 내용은 일주일 뒤 자동삭제됩니다.</small>
+      <div id="rejectedTeamList" aria-live="polite"></div>
     </div>
   </div>
   <!-- 단체 관리 팝업 -->
@@ -14392,6 +14395,7 @@ function pendingTeams(){
  return pendingTeamRead=sbSelect("team_register_requests",q=>q.select("id,team_name,leader_name").eq("status","대기").order("created_at",{ascending:false})).finally(()=>pendingTeamRead=null);
 }
 async function loadTeamRequests(){
+  if(!document.getElementById('teamRequestPopup')?.classList.contains('hidden'))loadRejectedTeams();
   try{
     const rows=await pendingTeams();
     const count = rows.length;
@@ -14517,29 +14521,40 @@ async function approveTeamRequestById(requestId){
   }
 }
 
+let rejectionLoad=0;
+let rejectionExpiryTimer;
+async function loadRejectedTeams(){
+  const list=document.getElementById('rejectedTeamList');
+  const version=++rejectionLoad;
+  clearTimeout(rejectionExpiryTimer);
+  try{
+    const rows=await sbSelect('luna_team_rejections',q=>q.select('request_id,team_name,reason,rejected_at').order('rejected_at',{ascending:false}));
+    if(version!==rejectionLoad)return;
+    const recent=rows.filter(row=>Date.parse(row.rejected_at)+604800000>Date.now());
+    list.innerHTML=recent.map(row=>`<div class="team-pending-item"><div><b>${esc(row.team_name)}</b><div style="white-space:pre-wrap;overflow-wrap:anywhere">반려된 이유: ${esc(row.reason)}</div></div><button type="button" class="btn link" data-remove-rejection="${Number(row.request_id)}">삭제</button></div>`).join('')||'반려된 단체가 없습니다.';
+    if(recent.length)rejectionExpiryTimer=setTimeout(loadRejectedTeams,Math.max(1,Date.parse(recent[recent.length-1].rejected_at)+604800000-Date.now()+1));
+  }catch(e){if(version===rejectionLoad)list.textContent='반려 목록을 불러오지 못했습니다.'}
+}
+async function removeRejectedTeam(requestId){
+  if(!confirm('공개된 반려 기록을 삭제하시겠습니까?'))return;
+  const pw=askAdminPw();if(!pw)return;
+  try{
+    const {error}=await sb.rpc('luna_delete_rejection',{p_request_id:Number(requestId),p_admin_pw:pw});
+    if(error)throw error;
+    await loadRejectedTeams();
+  }catch(e){alert(e.message||'삭제 실패')}
+}
 async function deleteTeamRequestById(requestId){
   try{
-    await ensureTeamRequestTableReady();
-
-    const adminPw = askAdminPw();
-    if(!adminPw) return;
-
-    const ok = await isAdminPwValue(adminPw);
-    if(!ok){
-      alert("운영진 비밀번호가 틀렸습니다.");
-      return;
-    }
-
-    if(!confirm("이 단체 등록요청을 반려하시겠습니까?")) return;
-
-    const { error } = await sb.rpc("hold_team_request_admin", {
-      p_request_id: Number(requestId),
-      p_admin_pw: adminPw
-    });
-
+    const reason=prompt('반려 이유를 입력해주세요. 입력한 내용은 모든 이용자에게 7일간 공개됩니다.');
+    if(reason===null)return;
+    if(!reason.trim()){alert('반려 이유를 입력해주세요.');return}
+    const adminPw=askAdminPw();if(!adminPw)return;
+    const {error}=await sb.rpc('luna_reject_team',{p_request_id:Number(requestId),p_reason:reason.trim(),p_admin_pw:adminPw});
     if(error) throw error;
 
     alert("단체 등록요청이 반려되었습니다.");
+    await loadRejectedTeams();
     await loadTeamRequests();
     await loadUnifiedPendingRequests();
   }catch(e){
@@ -14636,6 +14651,8 @@ document.addEventListener("click", function(e){
     return;
   }
 
+  const remove=e.target.closest("[data-remove-rejection]");
+  if(remove){removeRejectedTeam(remove.dataset.removeRejection);return}
   const deleteBtn = e.target.closest("[data-delete-team-request]");
 if(deleteBtn){
   e.preventDefault();
