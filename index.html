@@ -8584,19 +8584,28 @@ user-select:none;
 #mdList section+section{border:1px solid #c7cdd2;background:#f3f4f5}
 #matchDemo #mdList section+section>h3{background:#e3e6e8;color:#424c55;margin:-8px -8px 8px;padding:9px 12px;border-radius:8px 8px 0 0}
 #matchDemo #mdList section+section button{border-color:#c7cdd2}
+#matchDemo button[data-md="deleteGroup"]{background:#c2540a;color:white;border:1px solid #ad4605;font-weight:700}
 #matchDemo button[data-md="awake"]{border:3px solid #f5c400}
-#matchDemo .mdDirectoryHead{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
+#matchDemo .mdDirectoryHead{display:grid;grid-template-columns:minmax(0,3fr) minmax(max-content,1.5fr) minmax(0,4.5fr);gap:12px;align-items:start}
 #mdFavorites{background:#fffaf0;border:1px solid #e4cc91;border-radius:10px;padding:10px}
-#matchDemo .mdFavChip{display:inline-flex;align-items:center;background:white;border:1px solid #b4c3dc;border-radius:8px} #matchDemo .mdFavChip button{margin:0;border:0;background:transparent} #matchDemo .mdFavChip button[data-unfavorite]{min-width:24px;padding:4px;color:#985454;font-size:16px} #mdFavoriteLinks{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+#matchDemo .mdFavChip{display:inline-flex;align-items:center;background:white;border:1px solid #b4c3dc;border-radius:8px} #matchDemo .mdFavChip button{margin:0;border:0;background:transparent} #matchDemo .mdFavChip button[data-unfavorite]{min-width:24px;padding:4px;color:#985454;font-size:16px} #mdList .mdGauge{display:flex;gap:3px;margin-top:5px;--fill:#19834e}
+#mdList .mdGauge[data-level="3"]{--fill:#dbad10}
+#matchDemo .mdNewBadge{display:inline-grid;place-items:center;width:1.1em;height:1.1em;border-radius:3px;background:#c52337;color:white;font-family:Arial,sans-serif;font-weight:800;line-height:1;vertical-align:middle}
+#mdList .mdGauge[data-level="2"]{--fill:#ce3046}
+#mdList .mdGauge[data-level="1"]{--fill:#ce3046}
+#mdList .mdGauge i{width:11px;height:7px;box-sizing:border-box;border:1px solid #a7b4bc;border-radius:2px;background:#fff}
+#mdList .mdGauge i.filled{background:var(--fill);border-color:var(--fill)}
+#mdFavoriteLinks{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
 #mdList .mdFavoriteTile{position:relative;display:grid;min-width:0}
-#matchDemo #mdList button[data-group]{padding-right:30px;overflow-wrap:anywhere}
+#matchDemo #mdList button[data-group]{padding-right:54px;overflow-wrap:anywhere}
+#mdList .mdTileSignal{position:absolute;right:32px;top:3px;width:20px;height:30px;display:grid;place-items:center;font-size:22px;line-height:1;pointer-events:none}
 #matchDemo #mdList button[data-favorite]{position:absolute;right:2px;top:3px;width:28px;height:30px;padding:0;background:transparent;border:0;color:#796224;font:22px/1 sans-serif;box-shadow:none}
 #matchDemo #mdList button[data-favorite][aria-pressed=true]{color:#bf8200}
-@media(max-width:680px){#matchDemo .mdDirectoryHead{grid-template-columns:1fr}}
+#mdLegend{display:grid;grid-template-rows:repeat(3,auto);grid-template-columns:repeat(2,max-content);grid-auto-flow:column;gap:3px 12px;align-self:center;font-size:14px;font-weight:700;line-height:1.4} #mdLegend span{white-space:nowrap} @media(max-width:760px){#matchDemo .mdDirectoryHead{grid-template-columns:1fr}}
 </style>
 <div class="mdDirectoryHead"><div><div class="rowx"><h2>루칭방단체</h2><button type="button" class="primary" id="btnOpenTeamRequestPopup">단체등록요청</button></div><small id="mdStatus">군실명제 단체를 불러오는 중입니다.</small>
 <div class="rowx"><input id="mdSearch" type="search" aria-label="단체 검색" placeholder="클럽·크루 이름 검색"></div>
-</div><aside id="mdFavorites"><strong>즐겨찾기 <span id="mdFavoriteCount"></span></strong><div id="mdFavoriteLinks"></div></aside></div>
+</div><aside id="mdLegend" aria-label="단체 상태 안내"><span>🟢 – 정상</span><span>🟡 – 일반</span><span>🔴 – 주의</span><span><span class="mdNewBadge" aria-hidden="true">N</span> – 신규</span><span>❌ – 휴면</span></aside><aside id="mdFavorites"><strong>즐겨찾기 <span id="mdFavoriteCount"></span></strong><div id="mdFavoriteLinks"></div></aside></div>
 <div class="cards" id="mdList"></div><dialog id="mdDialog" aria-label="단체 프로필"><button data-md="close" class="mdClose">닫기 ×</button><div id="mdDetail"></div></dialog>
 </section>
 
@@ -20022,7 +20031,7 @@ function list(){
  $('mdFavoriteLinks').innerHTML=favorites.map(g=>'<span class="mdFavChip"><button type="button" data-group="'+escape(g.id)+'">'+escape(g.name)+'</button><button type="button" data-unfavorite="'+escape(favoriteId(g))+'" aria-label="'+escape(g.name)+' 즐겨찾기 해제">×</button></span>').join('');
  const tile=g=>{
   const fid=favoriteId(g),active=saved.includes(fid);
-  return '<div class="mdFavoriteTile"><button data-group="'+escape(g.id)+'"><b>'+escape(bare(g))+signal(g)+'</b><small>'+g.players.length+'명 등록</small></button>'+
+  return '<div class="mdFavoriteTile"><button data-group="'+escape(g.id)+'"><b>'+escape(bare(g))+'</b><span class="mdTileSignal">'+signal(g,false)+'</span>'+statusGauge(g)+'</button>'+
    '<button type="button" data-favorite="'+escape(fid)+'" aria-label="'+escape(g.name)+' 즐겨찾기" aria-pressed="'+active+'">'+(active?'★':'☆')+'</button></div>';
  };
  const q=$('mdSearch').value.trim().toLowerCase();
@@ -20041,14 +20050,20 @@ const penaltyOptions=["-1점 역주행,막자행위", "-1점 방사", "-1점 지
 const ratingOptions=["미입력", "클럽", "6개월이상 유지된 크루"];
 function totalPenalty(g){return (g.history||[]).reduce((n,row)=>n+Number(row.points),0)}
 function statusOf(g){
- if(!g.mode||g.mode==='기본')return '정지예정';
- if(g.mode==='정지예정'||g.mode==='신규')return g.mode;
+ if(!g.mode||g.mode==='기본'||g.mode==='정지예정')return '휴면';
+ if(g.mode==='신규'&&(!g.newUntil||Date.parse(g.newUntil)>Date.now()))return g.mode;
 
  const points=totalPenalty(g);
  return points<=-3?'주의':points===-2?'일반':'정상';
 }
-function signal(g){const state=statusOf(g);return ' <span style="white-space:nowrap;font-size:.8em">'+({'정상':'🟢','일반':'🟡','주의':'🔴','신규':'🟠','정지예정':'❌'}[state])+' '+state+'</span>'}
-function options(items,current){return items.map(x=>'<option'+(x===current?' selected':'')+'>'+escape(x)+'</option>').join('')}
+function statusGauge(g){
+ const state=statusOf(g);
+ const count=state==='정상'?(totalPenalty(g)<0?4:5):({'일반':3,'주의':2,'신규':1}[state]||0);
+ return '<span class="mdGauge" data-level="'+count+'" role="img" aria-label="'+state+' '+count+'/5칸">'+
+  Array.from({length:5},(_,i)=>i<count?'<i class="filled"></i>':'<i></i>').join('')+'</span>';
+}
+function signal(g,showName=true){const state=statusOf(g);if(!showName&&state!=='신규'&&state!=='휴면')return '';return ' <span role="img" aria-label="'+state+'" title="'+state+'" style="white-space:nowrap;font-size:.8em">'+({'정상':'🟢','일반':'🟡','주의':'🔴','신규':'<span class="mdNewBadge" aria-hidden="true">N</span>','휴면':'❌'}[state])+(showName?' '+state:'')+'</span>'}
+function options(items,current,labels={}){return items.map(x=>'<option value="'+escape(x)+'"'+(x===current?' selected':'')+'>'+escape(labels[x]||x)+'</option>').join('')}
 function staffButton(key){return ' <button type="button" data-staff="'+key+'">수정</button>'}
 function factRow([label,value]){
  const key={'신용평가':'rating','패널티':'penalty'}[label];
@@ -20065,7 +20080,7 @@ function profile(){
  const g=current();if(!g){detail.innerHTML='';if($('mdDialog').open)$('mdDialog').close();return}
  const leaders=officers(g).map((o,i)=>infoRow(roles(g)[i],escape(o.name||'미등록')+(validLink(o.link)?' · <a href="'+escape(o.link)+'" target="_blank" rel="noopener noreferrer">개인톡</a>':''))).join('');
  const facts=[['단체 인원',g.players.length+'명 (군실명제 등록 기준)'],['신용평가',g.rating],['패널티',g.penalty],['특이사항',g.notes||'미등록']];
- detail.innerHTML='<article><h3>'+escape(g.name)+signal(g)+staffButton('name')+(g.clubId?' '+btn('attachment','단체 첨부파일'):'')+(statusOf(g)==='정지예정'?' <button type="button" data-md="awake">휴면해제</button>':'')+'</h3>'+(statusOf(g)==='정지예정'?'<p style="color:#b4232b;font-weight:700">곧 삭제예정인 단체입니다.</p>':'')+'<table><tbody>'+leaders+facts.map(factRow).join('')+'</tbody></table><div class="rowx">'+btn('share','4명 선수 공유하기')+btn('manage','단체 관리')+'</div><div id="mdAction"></div></article><article><h3>단체 댓글</h3><form id="mdComment"><label>댓글 작성<textarea name="body" required maxlength="500"></textarea></label><button>등록</button></form>'+g.comments.map(c=>'<article><small>'+escape(c.date)+' <button type="button" aria-label="댓글 삭제" style="padding:1px 7px;color:#ae3535" data-remove-comment="'+escape(c.id)+'">×</button></small><p>'+escape(c.body)+'</p>'+[1,-1].map(v=>'<button data-comment="'+escape(c.id)+'" data-vote="'+v+'" aria-pressed="'+(c.vote===v)+'">'+(v===1?'좋아요':'싫어요')+' '+Number(c.vote===v)+'</button>').join(' ')+'</article>').join('')+'</article>';
+ detail.innerHTML='<article><h3>'+escape(g.name)+signal(g)+staffButton('name')+(g.clubId?' '+btn('attachment','단체 첨부파일'):'')+(statusOf(g)==='휴면'?' <button type="button" data-md="awake">휴면해제</button>':'')+'</h3>'+(statusOf(g)==='휴면'?'<p style="color:#b4232b;font-weight:700">현재 휴면 상태인 단체입니다.</p>':'')+'<table><tbody>'+leaders+facts.map(factRow).join('')+'</tbody></table><div class="rowx">'+btn('share','4명 선수 공유하기')+btn('manage','단체정보수정')+(g.clubId?btn('deleteGroup','단체삭제'):'')+'</div><div id="mdAction"></div></article><article><h3>단체 댓글</h3><form id="mdComment"><label>댓글 작성<textarea name="body" required maxlength="500"></textarea></label><button>등록</button></form>'+g.comments.map(c=>'<article><small>'+escape(c.date)+' <button type="button" aria-label="댓글 삭제" style="padding:1px 7px;color:#ae3535" data-remove-comment="'+escape(c.id)+'">×</button></small><p>'+escape(c.body)+'</p>'+[1,-1].map(v=>'<button data-comment="'+escape(c.id)+'" data-vote="'+v+'" aria-pressed="'+(c.vote===v)+'">'+(v===1?'좋아요':'싫어요')+' '+Number(c.vote===v)+'</button>').join(' ')+'</article>').join('')+'</article>';
  if(g.source){
   const section=document.createElement('article');
   section.innerHTML='<h3>실명제 등록 승인</h3><div>신청 목록을 불러오는 중입니다.</div>';
@@ -20088,11 +20103,11 @@ function manage(){
  const officerRows=officers(g).map((o,i)=>infoRow(roles(g)[i],
    (i===0?'<small>대표자 이름과 링크는 등록·변경 후 72시간마다 수정할 수 있습니다.</small>':'')+field('이름','leader'+i,o.name)+field('카카오톡 개인톡 링크','link'+i,o.link,'url'))).join('');
  const facts=[['단체 인원',g.players.length+'명 (군실명제 등록 기준)'],['신용평가',g.rating],['패널티',g.penalty]];
- form.innerHTML='<h3>'+escape(g.name)+signal(g)+staffButton('name')+(g.clubId?' '+btn('attachment','단체 첨부파일'):'')+(statusOf(g)==='정지예정'?' <button type="button" data-md="awake">휴면해제</button>':'')+'</h3>'+
+ form.innerHTML='<h3>'+escape(g.name)+signal(g)+staffButton('name')+(g.clubId?' '+btn('attachment','단체 첨부파일'):'')+(statusOf(g)==='휴면'?' <button type="button" data-md="awake">휴면해제</button>':'')+'</h3>'+
    '<table><tbody>'+officerRows+facts.map(factRow).join('')+
    infoRow('특이사항','<textarea aria-label="특이사항" name="notes" maxlength="1000">'+escape(g.notes)+'</textarea>')+
    infoRow('단체 비밀번호',field('변경 시 새 비밀번호 입력','pw','','password','pattern="[0-9]{4}" maxlength="4"'))+
-   '</tbody></table><div class="rowx"><button class="primary" type="submit">변경 저장</button><button type="button" data-md="logout">취소</button><button type="button" data-md="delete">단체 삭제</button></div>';
+   '</tbody></table><div class="rowx"><button class="primary" type="submit">변경 저장</button><button type="button" data-md="logout">취소</button></div>';
  detail.firstElementChild.replaceChildren(form);
  form.elements.leader0.focus();
 }
@@ -20115,7 +20130,7 @@ async function syncDirectory(){
   if(rows.length<500)break;
  }
  let reviews=[];
- try{reviews=await sbSelect('luna_group_review',q=>q.select('club_id,rating,penalty,history,mode'))}catch(e){console.warn('단체 운영진 SQL 설치 여부를 확인해주세요.')}
+ try{const expiry=await sb.rpc('luna_expire_new_groups');if(expiry.error)console.warn('신규 상태 만료 처리 실패');reviews=await sbSelect('luna_group_review',q=>q.select('*'))}catch(e){console.warn('단체 운영진 SQL 설치 여부를 확인해주세요.')}
  const clubIds=new Map(clubs.map(c=>[c.club,c.id]));
  const directoryContacts=await sbSelect('luna_group_contact',q=>q.select('club_id,leader_name,leader_kakao'));
  const leadersById=new Map(directoryContacts.map(c=>[c.club_id,c]));
@@ -20128,7 +20143,7 @@ async function syncDirectory(){
   const leader=leadersById.get(g.clubId);
   if(leader){g.officers=officers(g).slice();g.officers[0]={name:leader.leader_name,link:leader.leader_kakao}}
   const review=reviews.find(r=>r.club_id===g.clubId);
-  g.history=review?.history||[];g.mode=review?.mode||'정지예정';g.rating=review?.rating||'미평가';g.penalty=review?.penalty||'미입력';
+  g.newUntil=review?.new_until;g.history=review?.history||[];g.mode=review?.mode||'정지예정';g.rating=review?.rating||'미평가';g.penalty=review?.penalty||'미입력';
   g.players=players;groups.push(g);
  }
  save();list();if(!$('mdDialog').open||!current())profile();
@@ -20248,7 +20263,7 @@ root.onclick=async e=>{
   {
    const dlg=document.createElement('dialog');
    const setting=k==='name'?field('단체명','name',g.name,'text','required maxlength="45"')+
-     '<label>상태 판정<select name="status">'+options(['자동','신규','정지예정'],g.mode==='활성'?'자동':g.mode==='기본'?'정지예정':g.mode||'정지예정')+'</select></label>':
+     '<label>상태 판정<select name="status">'+options(['자동','신규','정지예정'],(g.mode==='활성'||(g.mode==='신규'&&statusOf(g)!=='신규'))?'자동':g.mode==='기본'?'정지예정':g.mode||'정지예정',{'정지예정':'휴면'})+'</select></label>':
      '<label>'+label+'<select required name="choice">'+(k==='penalty'?'<option value="">유형 선택</option>':'')+options(k==='penalty'?penaltyOptions:ratingOptions,g[k])+'</select></label>';
    dlg.innerHTML='<form><h3>'+label+(k==='penalty'?' 등록':' 수정')+'</h3>'+setting+pwField('운영진 비밀번호','secret')+'<button>저장</button> <button type="button">취소</button></form>';
    root.append(dlg);dlg.showModal();
@@ -20291,7 +20306,26 @@ root.onclick=async e=>{
  if(a==='manage')manage();
  if(a==='back')profile();
  if(a==='logout'){session=null;profile()}
- if(a==='delete'&&session===id&&confirm(g.name+'의 샘플 단체와 댓글을 삭제하시겠습니까?')){if(g.source){const hidden=JSON.parse(localStorage.getItem(key+'.hidden')||'[]');hidden.push(g.source);localStorage.setItem(key+'.hidden',JSON.stringify(hidden))}groups=groups.filter(x=>x.id!==id);save();id=session=null;list();profile()}
+ if(a==='deleteGroup'&&g.clubId){
+  const dlg=document.createElement('dialog');
+  dlg.innerHTML='<form><h3>'+escape(g.name)+' 단체삭제</h3><p>이 단체의 등록 정보, 첨부파일, 신청 내역과 소속 멤버의 군실명제 등록을 삭제합니다. 삭제 후 복구할 수 없습니다.</p>'+pwField('운영진 비밀번호','secret')+'<button type="submit" data-md="deleteGroup">삭제 확정</button> <button type="button">취소</button><p role="alert"></p></form>';
+  root.append(dlg);dlg.onclose=()=>dlg.remove();dlg.showModal();
+  dlg.onclick=ev=>ev.stopPropagation();
+  dlg.querySelector('[type=button]').onclick=()=>dlg.close();
+  dlg.querySelector('form').onsubmit=async ev=>{
+   ev.preventDefault();ev.stopPropagation();
+   const f=ev.currentTarget,submit=f.querySelector('[type=submit]');
+   if(submit.disabled)return;
+   submit.disabled=true;
+   try{
+    const {error}=await sb.rpc('luna_delete_group_admin',{p_id:g.clubId,p_name:g.source,p_secret:f.elements.secret.value});
+    if(error)throw error;
+   }catch(err){f.querySelector('[role=alert]').textContent=err.message||'삭제 실패';submit.disabled=false;return}
+   dlg.close();localStorage.setItem(favoriteKey,JSON.stringify(favoriteIds().filter(x=>x!==favoriteId(g))));
+   groups=groups.filter(x=>x.id!==g.id);id=session=null;save();list();profile();window.REAL_TEAM_CACHE=null;
+   realReads.clear();await refreshAfterTeamManage();
+  };return;
+ }
  if(a==='share'){$('mdAction').innerHTML='<h3>공유할 선수 선택</h3><div class="roster">'+rankedRoster(g.players).map(p=>'<label><input type="checkbox" value="'+escape(p.id)+'"> '+escape(shareLabel(p))+'</label>').join('')+'</div>'+(g.players.length?'<button disabled data-md="copy">공유하기 (0/4)</button>':'등록된 선수가 없습니다.')}
  if(a==='copy'){
  const base=shareBase();if(!base)return;
