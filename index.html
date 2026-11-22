@@ -8587,6 +8587,7 @@ user-select:none;
 #matchDemo button[data-md="deleteGroup"]{background:#c2540a;color:white;border:1px solid #ad4605;font-weight:700}
 #matchDemo button[data-md="awake"]{border:3px solid #f5c400}
 #matchDemo .mdDirectoryHead{display:grid;grid-template-columns:minmax(0,3fr) minmax(max-content,1.5fr) minmax(0,4.5fr);gap:12px;align-items:start}
+#mdTeamPending{display:inline-block;min-width:1.5em;padding:1px 5px;border-radius:12px;background:#c52f43;color:white;font-weight:700;text-align:center}
 #mdFavorites{background:#fffaf0;border:1px solid #e4cc91;border-radius:10px;padding:10px}
 #matchDemo .mdFavChip{display:inline-flex;align-items:center;background:white;border:1px solid #b4c3dc;border-radius:8px} #matchDemo .mdFavChip button{margin:0;border:0;background:transparent} #matchDemo .mdFavChip button[data-unfavorite]{min-width:24px;padding:4px;color:#985454;font-size:16px} #mdList .mdGauge{display:flex;gap:3px;margin-top:5px;--fill:#19834e}
 #mdList .mdGauge[data-level="3"]{--fill:#dbad10}
@@ -8603,7 +8604,7 @@ user-select:none;
 #matchDemo #mdList button[data-favorite][aria-pressed=true]{color:#bf8200}
 #mdLegend{display:grid;grid-template-rows:repeat(3,auto);grid-template-columns:repeat(2,max-content);grid-auto-flow:column;gap:3px 12px;align-self:center;font-size:14px;font-weight:700;line-height:1.4} #mdLegend span{white-space:nowrap} @media(max-width:760px){#matchDemo .mdDirectoryHead{grid-template-columns:1fr}}
 </style>
-<div class="mdDirectoryHead"><div><div class="rowx"><h2>루칭방단체</h2><button type="button" class="primary" id="btnOpenTeamRequestPopup">단체등록요청</button></div><small id="mdStatus">군실명제 단체를 불러오는 중입니다.</small>
+<div class="mdDirectoryHead"><div><div class="rowx"><h2>루칭방단체</h2><button type="button" class="primary" id="btnOpenTeamRequestPopup">단체등록요청 <span id="mdTeamPending" aria-live="polite" title="대기 중인 단체등록요청">…</span></button></div><small id="mdStatus">군실명제 단체를 불러오는 중입니다.</small>
 <div class="rowx"><input id="mdSearch" type="search" aria-label="단체 검색" placeholder="클럽·크루 이름 검색"></div>
 </div><aside id="mdLegend" aria-label="단체 상태 안내"><span>🟢 – 정상</span><span>🟡 – 일반</span><span>🔴 – 주의</span><span><span class="mdNewBadge" aria-hidden="true">N</span> – 신규</span><span>❌ – 휴면</span></aside><aside id="mdFavorites"><strong>즐겨찾기 <span id="mdFavoriteCount"></span></strong><div id="mdFavoriteLinks"></div></aside></div>
 <div class="cards" id="mdList"></div><dialog id="mdDialog" aria-label="단체 프로필"><button data-md="close" class="mdClose">닫기 ×</button><div id="mdDetail"></div></dialog>
@@ -14370,9 +14371,14 @@ async function ensureTeamRequestTableReady(){
   if(!sb) throw new Error("Supabase 연결 정보가 없습니다.");
 }
 
-let __pendingTeamRequestCount = 0;
+let __pendingTeamRequestCount = null;
 let __pendingRealRequestCount = 0;
 function updateUnifiedRequestCountBadge(){
+  const teamBadge=document.getElementById("mdTeamPending");
+  if(teamBadge){
+    teamBadge.textContent=__pendingTeamRequestCount===null?"–":String(__pendingTeamRequestCount);
+    teamBadge.setAttribute("aria-label",__pendingTeamRequestCount===null?"대기 건수 확인 중":"대기 중인 단체 "+__pendingTeamRequestCount+"건");
+  }
   const badge = document.getElementById("unifiedRequestCountBadge");
   if(!badge) return;
   const total = Math.max(0, Number(__pendingRealRequestCount)||0);
@@ -14425,7 +14431,7 @@ const leader = esc(r.leader_name || "");
     }).join("");
   }catch(e){
     console.error(e);
-    __pendingTeamRequestCount = 0;
+    __pendingTeamRequestCount = null;
     updateUnifiedRequestCountBadge();
     const badge = document.getElementById("teamRequestCountBadge");
     if(badge) badge.textContent = "0";
@@ -20157,7 +20163,7 @@ document.addEventListener('luna-real-request-changed',async()=>{
 window.openMatchDemo=()=>{
  showGunpyo();setActiveTab('matching');
  ['gunpyoTopPanel','gunpyoSection'].forEach(x=>$(x).classList.add('hidden'));
- $('gunpyoTopBtns').style.display='none';root.classList.remove('hidden');groups=read();id=session=null;$('mdSearch').value='';list();profile();refreshHeaderPush();
+ $('gunpyoTopBtns').style.display='none';root.classList.remove('hidden');loadTeamRequests();groups=read();id=session=null;$('mdSearch').value='';list();profile();refreshHeaderPush();
  if(!pending)pending=syncDirectory().catch(()=>{
  $('mdStatus').textContent='실시간 조회에 실패해 저장된 목록을 표시합니다. 예시 단체의 비밀번호는 2468입니다.';
  }).finally(()=>pending=null);
